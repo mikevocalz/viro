@@ -1001,7 +1001,7 @@ public class VRTNode extends VRTComponent {
                 Geometry geometry = mNodeJni.getGeometry();
                 if (geometry != null) {
                     geometry.setMaterials(mOriginalEmbeddedMaterials);
-                    geometry.updateSubstrate();
+                    // ponytail: updateSubstrate() commented in Geometry.java source — skipped
                 }
                 // Clear stored materials
                 mOriginalEmbeddedMaterials = null;
@@ -1113,7 +1113,7 @@ public class VRTNode extends VRTComponent {
                     Log.d(TAG, "Merged materials applied successfully");
 
                     // Force geometry substrate to reset after shader override materials are applied
-                    geometry.updateSubstrate();
+                    // ponytail: updateSubstrate() commented in Geometry.java source — skipped
                 }
             }
         }
@@ -1179,7 +1179,7 @@ public class VRTNode extends VRTComponent {
                     geometry.setMaterials(mergedMaterials);
 
                     // Force geometry substrate to reset
-                    geometry.updateSubstrate();
+                    // ponytail: updateSubstrate() commented in Geometry.java source — skipped
                 }
             }
         }
@@ -1198,7 +1198,7 @@ public class VRTNode extends VRTComponent {
                 List<Material> originalMaterials = mChildNodeOriginalMaterials.get(child);
                 if (originalMaterials != null) {
                     geometry.setMaterials(originalMaterials);
-                    geometry.updateSubstrate();
+                    // ponytail: updateSubstrate() commented in Geometry.java source — skipped
                     Log.d(TAG, "Restored " + originalMaterials.size() + " original materials for child node");
                 }
             }
