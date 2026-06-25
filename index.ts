@@ -59,6 +59,25 @@ import { ViroPolyline } from "./components/ViroPolyline";
 import { ViroPortal } from "./components/ViroPortal";
 import { ViroPortalScene } from "./components/ViroPortalScene";
 import { ViroQuad } from "./components/ViroQuad";
+import {
+  ViroGpuPanel,
+  ViroGpuPanelHandle,
+  ViroGpuPanelProps,
+} from "./components/ViroGpuPanel";
+import {
+  ViroThreeJSPanel,
+  ViroThreeJSPanelHandle,
+  ViroThreeJSPanelProps,
+} from "./components/ViroThreeJSPanel";
+import {
+  ViroRivePanel,
+  ViroRivePanelHandle,
+  ViroRivePanelProps,
+} from "./components/ViroRivePanel";
+import {
+  useEnsureWgpuAdapter,
+  UseEnsureWgpuAdapterOptions,
+} from "./components/CanvasPanel/useEnsureWgpuAdapter";
 import { ViroScene } from "./components/ViroScene";
 import { ViroSkyBox } from "./components/ViroSkyBox";
 import { ViroSound } from "./components/ViroSound";
@@ -235,6 +254,17 @@ export {
   ViroPortal,
   ViroPortalScene,
   ViroQuad,
+  ViroGpuPanel,
+  ViroGpuPanelHandle,
+  ViroGpuPanelProps,
+  ViroThreeJSPanel,
+  ViroThreeJSPanelHandle,
+  ViroThreeJSPanelProps,
+  ViroRivePanel,
+  ViroRivePanelHandle,
+  ViroRivePanelProps,
+  useEnsureWgpuAdapter,
+  UseEnsureWgpuAdapterOptions,
   ViroScene,
   ViroSurface,
   ViroSceneNavigator,
