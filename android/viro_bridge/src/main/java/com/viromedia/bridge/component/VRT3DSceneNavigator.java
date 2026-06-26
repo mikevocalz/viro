@@ -134,6 +134,11 @@ public class VRT3DSceneNavigator extends FrameLayout {
      */
     protected ViroView mViroView;
 
+    /** Exposed for extension modules (e.g. @viro-external/splat-pass). */
+    public ViroView getViroView() {
+        return mViroView;
+    }
+
     /**
      * Currently rendered scene
      */

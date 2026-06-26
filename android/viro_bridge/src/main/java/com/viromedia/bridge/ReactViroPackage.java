@@ -91,6 +91,7 @@ import com.viromedia.bridge.module.PerfMonitor;
 import com.viromedia.bridge.module.SoundModule;
 import com.viromedia.bridge.module.VRT3DSceneNavigatorModule;
 import com.viromedia.bridge.module.VRTStudioModule;
+import com.viromedia.bridge.module.ViroSplatPassModule;
 import com.viromedia.bridge.module.StreamingAudioModule;
 import com.viromedia.bridge.module.VRLauncherModule;
 import com.viromedia.bridge.module.VRModuleOpenXR;
@@ -135,7 +136,8 @@ public class ReactViroPackage implements ReactPackage {
                 new ARTrackingTargetsModule(reactContext),
                 new VRT3DSceneNavigatorModule(reactContext),
                 new VRTStudioModule(reactContext),
-                new StreamingAudioModule(reactContext)
+                new StreamingAudioModule(reactContext),
+                new ViroSplatPassModule(reactContext)
         ));
         if (mViroPlatform == ViroPlatform.QUEST) {
             modules.add(new VRModuleOpenXR(reactContext));

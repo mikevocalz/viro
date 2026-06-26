@@ -1,4 +1,21 @@
-configurations.maybeCreate("default")
-artifacts.add("default", file('viro_renderer-release.aar'))
+apply plugin: 'com.android.library'
 
+android {
+    compileSdk rootProject.ext.compileSdkVersion
+    namespace 'com.viromedia.bridge.shim.virorenderer'
 
+    defaultConfig {
+        minSdkVersion rootProject.ext.minSdkVersion
+    }
+
+    flavorDimensions += "device"
+    productFlavors {
+        mobile { dimension "device" }
+        pico   { dimension "device" }
+        quest  { dimension "device" }
+    }
+}
+
+dependencies {
+    api files('viro_renderer-release.aar')
+}
