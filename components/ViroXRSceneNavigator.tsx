@@ -1,7 +1,8 @@
 import * as React from "react";
 import { AppState, NativeModules, ViewProps } from "react-native";
 import { ViroARSceneNavigator } from "./AR/ViroARSceneNavigator";
-import { isQuest } from "./Utilities/ViroPlatform";
+import { ViroVRSceneNavigator } from "./ViroVRSceneNavigator";
+import { isPico, isQuest } from "./Utilities/ViroPlatform";
 import { VRQuestNavigatorBridge } from "./Utilities/VRQuestNavigatorBridge";
 
 const VRLauncher = NativeModules.VRLauncher as
@@ -128,14 +129,21 @@ export const ViroXRSceneNavigator = React.forwardRef<unknown, Props>(
       ...rest
     } = props;
 
-    // Inner ref used on the AR path to capture the ViroARSceneNavigator instance.
+    // Inner refs — one per backend so the exposed handle can target the
+    // right underlying navigator instance.
     const arRef = React.useRef<ViroARSceneNavigator>(null);
+    const vrRef = React.useRef<ViroVRSceneNavigator>(null);
 
     // Expose navigator interface on the ref.
     // Quest: proxy push/pop/etc. through VRQuestNavigatorBridge to VRActivity.
+    // PICO:  expose the inline ViroVRSceneNavigator instance directly
+    //        (MainActivity is itself the immersive Activity on PICO).
     // AR:    expose the underlying ViroARSceneNavigator instance directly.
     React.useImperativeHandle(ref, () => {
-      if (isQuest) {
+      if (isQuest || isPico) {
+        // PICO now follows Quest: navigator ops cross the activity boundary
+        // through the same bridge — VRActivity owns the ViroVRSceneNavigator
+        // instance.
         const bridgeNav = {
           push:    (scene: any) => VRQuestNavigatorBridge.dispatchOp({ type: "push",    scene }),
           replace: (scene: any) => VRQuestNavigatorBridge.dispatchOp({ type: "replace", scene }),
@@ -158,11 +166,13 @@ export const ViroXRSceneNavigator = React.forwardRef<unknown, Props>(
     // contribute to the lifecycle storm in some configurations.
     const leftActiveAtRef = React.useRef(0);
 
-    // On Quest: register the intent (scene + renderer config) then launch VRActivity.
-    // Also re-launch when the app returns from background (e.g. Quest system menu),
-    // because VRActivity auto-finishes when MainActivity resumes.
+    // On Quest AND PICO: register the intent (scene + renderer config)
+    // then launch VRActivity. The VR activity owns the immersive display;
+    // MainActivity stays the 2D panel surface (Horizon-parity on PICO so
+    // a 2D RN UI never bleeds into the XR scene). VRActivity auto-finishes
+    // when MainActivity resumes, so we re-launch on background→active.
     React.useEffect(() => {
-      if (!isQuest) return;
+      if (!isQuest && !isPico) return;
       checkRNVersionForVR();
       const scene = vrInitialScene ?? initialScene;
       if (scene) {
@@ -204,8 +214,10 @@ export const ViroXRSceneNavigator = React.forwardRef<unknown, Props>(
       return () => sub.remove();
     }, []);
 
-    // Quest renders nothing here — VRActivity owns the display.
-    if (isQuest) return null;
+    // Quest AND PICO render nothing here — VRActivity owns the display.
+    // The XR scene runs in a dedicated immersive activity so MainActivity
+    // can stay a 2D panel (no React Native UI bleed into the XR scene).
+    if (isQuest || isPico) return null;
 
     const scene = arInitialScene ?? initialScene;
     if (!scene) {

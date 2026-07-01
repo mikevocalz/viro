@@ -235,18 +235,36 @@ const withViroManifest = (config: ExpoConfig) =>
         contents.manifest.application[0]["meta-data"] = [];
       }
 
-      contents?.manifest?.application?.[0]["meta-data"]?.push({
-        $: {
-          "android:name": "com.google.ar.core",
-          "android:value": "optional",
-        },
-      });
-
-      // Add Google Cloud API key for ARCore Cloud Anchors and Geospatial API if configured
+      // Resolve xRMode so we only declare ARCore on flavors that
+      // actually use it. Quest/PICO ship their own AR runtimes via
+      // OpenXR — declaring ARCore there causes the SDK to launch the
+      // Google Play Services for AR install activity at runtime even
+      // though value="optional".
       const viroPlugin = config?.plugins?.find(
         (plugin) =>
           Array.isArray(plugin) && plugin[0] === "@reactvision/react-viro"
       );
+      const xrModeRaw =
+        Array.isArray(viroPlugin) && viroPlugin.length > 1
+          ? (viroPlugin[1] as any)?.android?.xRMode
+          : undefined;
+      const xrModes: string[] = Array.isArray(xrModeRaw)
+        ? (xrModeRaw as string[])
+        : xrModeRaw
+          ? [xrModeRaw as string]
+          : ["AR", "GVR"];
+      const usesArcore = xrModes.includes("AR");
+
+      if (usesArcore) {
+        contents?.manifest?.application?.[0]["meta-data"]?.push({
+          $: {
+            "android:name": "com.google.ar.core",
+            "android:value": "optional",
+          },
+        });
+      }
+
+      // Add Google Cloud API key for ARCore Cloud Anchors and Geospatial API if configured
 
       if (Array.isArray(viroPlugin) && viroPlugin.length > 1) {
         const pluginOptions = viroPlugin[1] as ViroConfigurationOptions;
@@ -353,17 +371,19 @@ const withViroManifest = (config: ExpoConfig) =>
         );
       }
 
-      contents.manifest.queries = [
-        {
-          package: [
-            {
-              $: {
-                "android:name": "com.google.ar.core",
+      if (usesArcore) {
+        contents.manifest.queries = [
+          {
+            package: [
+              {
+                $: {
+                  "android:name": "com.google.ar.core",
+                },
               },
-            },
-          ],
-        },
-      ];
+            ],
+          },
+        ];
+      }
 
       contents.manifest["uses-feature"] = [];
 

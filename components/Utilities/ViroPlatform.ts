@@ -7,25 +7,28 @@ type AndroidBuildInfo = {
 };
 
 /**
- * True only on actual Meta Quest hardware (Quest 1/2/Pro/3/3S).
+ * Per-vendor headset detection. Both use `Platform.constants`
+ * (Android `Build.MANUFACTURER`, `BRAND`, `MODEL`) — branding strings
+ * are the authoritative "what is the user wearing right now" signal.
+ * `NativeModules.*` presence is not — vendor-specific modules ship in
+ * the same APK that targets phones too.
  *
- * Detection is based on `Platform.constants` (Android `Build.MANUFACTURER`,
- * `BRAND`, `MODEL`) — NOT on the presence of `NativeModules.VRModuleOpenXR`.
- * The OpenXR module ships with any app built against the Quest variant of
- * react-viro and is therefore present on regular Android phones too when the
- * same APK targets both phone and Quest. Branding strings are the
- * authoritative signal for "is the user wearing a Quest right now".
- *
- * Quest 1/2/Pro:  Manufacturer="Oculus", Brand="oculus"
- * Quest 3/3S:     Manufacturer="Meta",   Brand="meta"
+ *   Quest 1/2/Pro:  Manufacturer="Oculus", Brand="oculus"
+ *   Quest 3/3S:     Manufacturer="Meta",   Brand="meta"
+ *   PICO 4 / 4U:    Manufacturer="Pico",   Brand="Pico"
  */
+function readBuildInfo(): { manufacturer: string; brand: string; model: string } {
+  const c = (Platform.constants ?? {}) as AndroidBuildInfo;
+  return {
+    manufacturer: (c.Manufacturer ?? "").toLowerCase(),
+    brand: (c.Brand ?? "").toLowerCase(),
+    model: (c.Model ?? "").toLowerCase(),
+  };
+}
+
 function detectQuest(): boolean {
   if (Platform.OS !== "android") return false;
-  const c = (Platform.constants ?? {}) as AndroidBuildInfo;
-  const manufacturer = (c.Manufacturer ?? "").toLowerCase();
-  const brand = (c.Brand ?? "").toLowerCase();
-  const model = (c.Model ?? "").toLowerCase();
-
+  const { manufacturer, brand, model } = readBuildInfo();
   if (
     manufacturer === "oculus" ||
     manufacturer === "meta" ||
@@ -34,11 +37,37 @@ function detectQuest(): boolean {
   ) {
     return true;
   }
-  // Defensive: future hardware shipping under new manufacturer strings.
   return /\bquest\b/.test(model);
 }
 
+function detectPico(): boolean {
+  if (Platform.OS !== "android") return false;
+  const { manufacturer, brand, model } = readBuildInfo();
+  if (manufacturer === "pico" || brand === "pico") return true;
+  return /\bpico\b/.test(model);
+}
+
+/** True iff the device is a Meta Quest (1, 2, Pro, 3, 3S). */
 export const isQuest: boolean = detectQuest();
+
+/**
+ * True iff the device is a PICO standalone headset (Neo / 4 / 4 Ultra).
+ * Re-exported here because viro's `ViroXRSceneNavigator` consumes the
+ * flag to take a PICO-specific routing branch (render
+ * `ViroVRSceneNavigator` inline since on PICO the MainActivity is
+ * itself the immersive Activity — no separate VRActivity needed).
+ * `@expo-pico/core` still owns app-level PICO config (manifest,
+ * launcher intent-filters, etc.).
+ */
+export const isPico: boolean = detectPico();
+
+/**
+ * True iff the device is any standalone OpenXR-class headset (Quest
+ * or PICO). Use for branches that gate "render through the headset
+ * compositor; skip the ARCore code path." Vendor-specific routing
+ * belongs in the vendor-specific `isQuest` / `isPico` branches.
+ */
+export const isXRHeadset: boolean = isQuest || isPico;
 
 /**
  * True when this app build includes the OpenXR VR native module (i.e. the

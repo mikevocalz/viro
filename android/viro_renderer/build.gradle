@@ -19,3 +19,13 @@ android {
 dependencies {
     api files('viro_renderer-release.aar')
 }
+
+// AGP 8.12+ refuses to bundle a library AAR that carries direct local .aar
+// deps (resulting AAR would be broken). We never publish viro_renderer as
+// an AAR — consumers depend on it as a project — so disable the bundleAar
+// task for every variant. Fixes 'hasLocalAarDeps' evaluation failure.
+afterEvaluate {
+    tasks.matching {
+        it.name.startsWith('bundle') && it.name.endsWith('Aar')
+    }.configureEach { enabled = false }
+}
