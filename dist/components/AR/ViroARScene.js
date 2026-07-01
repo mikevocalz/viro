@@ -52,7 +52,6 @@ const react_native_1 = require("react-native");
 const resolveAssetSource_1 = __importDefault(require("react-native/Libraries/Image/resolveAssetSource"));
 const ViroBase_1 = require("../ViroBase");
 const ViroConstants_1 = require("../ViroConstants");
-const ViroPlatform_1 = require("../Utilities/ViroPlatform");
 const ViroCameraModule = react_native_1.NativeModules.ViroCameraModule;
 class ViroARScene extends ViroBase_1.ViroBase {
     onTrackingFirstInitialized = false;
@@ -290,10 +289,8 @@ class ViroARScene extends ViroBase_1.ViroBase {
         return await ViroCameraModule.getCameraPosition((0, react_native_1.findNodeHandle)(this));
     };
     render() {
-        if (ViroPlatform_1.isQuest) {
-            console.warn("[Viro] ViroARScene is not supported on Quest and will not render. Use ViroScene instead.");
-            return null;
-        }
+        // On Meta Quest, ViroARScene renders as a mixed-reality scene through the
+        // OpenXR renderer (passthrough + XR_FB_scene plane anchors). No longer gated.
         // Uncomment this line to check for misnamed props
         //checkMisnamedProps("ViroARScene", this.props);
         // Since anchorDetectionTypes can be either a string or an array, convert the string to a 1-element array.

@@ -1,5 +1,33 @@
 # CHANGELOG
 
+## v2.57.2 — 29 June 2026
+
+### Fixed
+
+- **16 KB page-size alignment completed for all bundled native libraries (Android).** Companion to the renderer fix in `@reactvision/virocore` 2.57.2. v2.57.0 aligned `libopenxr_loader.so`, but the prebuilt `libc++_shared.so` inside the renderer AAR was still 4 KB-aligned (`2**12`) and failed the 16 KB memory-page requirement for Android 15+ / Google Play. The renderer's Android NDK was bumped from r25 to r27 — whose `libc++_shared.so` is 16 KB-aligned — and the prebuilt AARs (`viro_renderer-release.aar`, `react_viro-release.aar`) were regenerated. Every 64-bit (`arm64-v8a`) library now reports ≥ 16 KB segment alignment (16 KB / `2**14` for most libs, 64 KB / `2**16` for `libvrapi` / `libgvr`), verified with Google's `check_elf_alignment.sh` (0 unaligned). This unblocks Google Play / Meta Quest Store submission for 16 KB devices.
+
+---
+
+## v2.57.1 — 27 June 2026
+
+### Added
+
+- **Mixed Reality on Meta Quest 3 / 3S.** AR scenes now run through the OpenXR renderer with passthrough, lighting up the standard Viro AR component API on Quest with **no separate API**: pass a `ViroARScene` to `ViroXRSceneNavigator` and the same scene runs on phones (ARCore) and Quest (OpenXR). `onAnchorFound` / `onAnchorUpdated` / `onAnchorRemoved`, `ViroARPlane`, and `ViroARPlaneSelector` all fire from the room's detected floors, walls, ceilings, and tables; passthrough is enabled automatically when an AR scene is mounted. Plane data comes from the Quest **room model** (the spatial-entity scene captured in Space Setup), so it requires `horizonos.permission.USE_ANCHOR_API` and a completed Space Setup on the headset. See `docs/QUEST_SETUP.md` §7b.
+
+- **Object detection on Meta Quest.** `ViroObjectDetector` now runs on Quest 3 / 3S. Because there's no ARCore camera and the passthrough layer isn't app-readable, frames come from the **Meta Passthrough Camera API** (Camera2, Horizon OS v74+). The entire YOLOE/ONNX preprocess → inference → `onDetection` pipeline is reused unchanged; v1 emits `label` + normalized `boundingBox` (no `worldPosition` / `screenBoundingBox` yet — those need camera extrinsics + raycast). Requires `horizonos.permission.HEADSET_CAMERA` (runtime-granted). See `docs/ViroObjectDetector.md`.
+
+- **Passthrough styling API.** `setPassthroughStyle(viewTag, { opacity, edgeColor })` styles the Quest passthrough layer (texture opacity + edge-highlight colour) via `XR_FB_passthrough`'s `xrPassthroughLayerSetStyleFB`. Exported alongside `useVRViewTag()` and the new `ViroPassthroughStyle` type. No-op off-Quest.
+
+### Fixed
+
+- **Passthrough showed a black background on Quest.** Mixed-reality scenes have no skybox or camera quad to fill the view, so the projection layer stayed opaque and hid the passthrough layer beneath it. The OpenXR display now clears transparent (alpha 0) when passthrough is enabled and the projection composition layer is submitted with the source-alpha blend flag, so empty regions reveal the room.
+
+- **`passthroughEnabled` / `handTrackingEnabled` dropped when set before the renderer existed.** On Quest the native renderer is created lazily (deferred to the host Activity's first resume), so an initial `passthroughEnabled` prop set during mount was silently ignored. These values are now cached and re-applied once the renderer initializes — passthrough engages reliably from the first frame.
+
+- **`ViroARPlaneSelector` content rendered in only one eye on Quest.** The selector's plane overlays use a translucent material with `writesToDepthBuffer: false`. On Quest's tiled GPU, rendering many non-depth-writing transparent objects breaks the second (right) eye's entire render — the whole eye goes black/garbage (taking any other scene content, e.g. a model on the selected plane, with it), while the left eye is correct. The overlay material now writes depth **on Quest only** (`writesToDepthBuffer: isQuest`), which renders correctly in both eyes; phone AR keeps `false` for clean coplanar overlay blending and is unchanged. (The underlying engine bug — a non-depth-writing transparent pass breaking stereo at quantity — needs on-device GPU capture and is tracked as a follow-up; see `docs/QUEST_SETUP.md` §7b.)
+
+---
+
 ## v2.57.0 — 19 June 2026
 
 ### Added

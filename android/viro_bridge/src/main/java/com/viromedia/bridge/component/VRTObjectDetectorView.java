@@ -117,6 +117,10 @@ public class VRTObjectDetectorView extends FrameLayout {
     private com.viro.core.ViroViewARCore mViroView   = null;
     private boolean      mArListenerActive = false;
     private int          mArRetryCount     = 0;
+
+    // --- Quest mode: no ARCore camera, so capture from the Meta Passthrough Camera
+    // API and feed the same pipeline. Non-null only while running on Quest. ---
+    private QuestPassthroughCamera mQuestCamera = null;
     // The <ViroARSceneNavigator> mounts asynchronously and is usually a SIBLING of this
     // view, so the first lookups can miss it. Retry ~3s (30 × 100ms) before erroring.
     private static final int MAX_AR_RETRIES = 30;
@@ -239,24 +243,65 @@ public class VRTObjectDetectorView extends FrameLayout {
         if (!mSessionStarted) return;
 
         com.viro.core.ViroViewARCore arView = findARView();
-        if (arView == null) {
-            if (mArRetryCount++ < MAX_AR_RETRIES) {
-                mMainHandler.postDelayed(this::startARMode, 100);
-                return;
+        if (arView != null) {
+            mViroView = arView;
+            arView.setCameraImageListener(arView.getViroContext(), this::onARCameraImage);
+            mArListenerActive = true;
+            Log.i(TAG, "AR mode active: listener attached to ViroViewARCore "
+                + arView.getWidth() + "x" + arView.getHeight()
+                + " (provider=" + (sInferenceProvider != null) + ", model=" + mModel + ")");
+            if (!mReadyFired) {
+                mReadyFired = true;
+                emitReady();
             }
-            emitError("useARSession=true but no <ViroARSceneNavigator> was found in the view tree.");
             return;
         }
-        mViroView = arView;
-        arView.setCameraImageListener(arView.getViroContext(), this::onARCameraImage);
-        mArListenerActive = true;
-        Log.i(TAG, "AR mode active: listener attached to ViroViewARCore "
-            + arView.getWidth() + "x" + arView.getHeight()
-            + " (provider=" + (sInferenceProvider != null) + ", model=" + mModel + ")");
+
+        // No ARCore view. On a Quest headset there's no ARCore camera and the
+        // passthrough layer isn't app-readable, so capture from the Meta Passthrough
+        // Camera API instead. The detector is a plain RN view (the camera is
+        // independent of the renderer), so detect Quest by device, not the view tree.
+        if (isQuestDevice()) {
+            startQuestCamera();
+            return;
+        }
+
+        if (mArRetryCount++ < MAX_AR_RETRIES) {
+            mMainHandler.postDelayed(this::startARMode, 100);
+            return;
+        }
+        emitError("No <ViroARSceneNavigator> found and not running on a Quest headset.");
+    }
+
+    // Quest: capture from the headset camera (Camera2 / Passthrough Camera API) and
+    // feed each RGBA frame into the SAME pipeline as the ARCore listener — full-frame
+    // crop, no AR viewport, no intrinsics. addScreenBox no-ops (mViroView == null) so
+    // detections carry labels + normalized boundingBox (no screenBoundingBox in v1).
+    private void startQuestCamera() {
+        if (mQuestCamera != null) return;
+        mQuestCamera = new QuestPassthroughCamera(getContext());
+        mQuestCamera.start(
+            (rgba, w, h) -> onARCameraImage(rgba, w, h, null, 0, 0, w, h),
+            this::emitError);
+        Log.i(TAG, "Quest passthrough-camera mode active (provider="
+            + (sInferenceProvider != null) + ", model=" + mModel + ")");
         if (!mReadyFired) {
             mReadyFired = true;
             emitReady();
         }
+    }
+
+    private void stopQuestCamera() {
+        if (mQuestCamera != null) {
+            mQuestCamera.stop();
+            mQuestCamera = null;
+        }
+    }
+
+    // Quest headsets report MANUFACTURER "Oculus" (older OS) or "Meta" (newer).
+    private static boolean isQuestDevice() {
+        String m = android.os.Build.MANUFACTURER;
+        return m != null && (m.equalsIgnoreCase("Oculus") || m.equalsIgnoreCase("Meta"));
     }
 
     private void stopARMode() {
@@ -360,6 +405,7 @@ public class VRTObjectDetectorView extends FrameLayout {
         if (mArListenerActive) {
             mMainHandler.post(this::stopARMode);
         }
+        stopQuestCamera();
     }
 
     private void restartIfRunning() {

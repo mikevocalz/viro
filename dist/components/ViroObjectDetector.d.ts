@@ -114,11 +114,19 @@ type Props = ViewProps & {
 /**
  * ViroObjectDetector — on-device open-vocabulary object detection powered by YOLOE.
  *
- * Runs **only in AR**: it shares the camera feed of the enclosing
- * `ViroARSceneNavigator` (no separate camera session, no preview of its own) and
- * fires `onDetection` with labels, normalized bounding boxes, and an on-screen
- * `screenBoundingBox` (dp) at up to `maxFPS`. Mount it as a child or sibling of a
- * `ViroARSceneNavigator`; it renders nothing itself, so give it `width: 0, height: 0`.
+ * Runs in AR and on Meta Quest:
+ * - **Phone AR**: shares the camera feed of the enclosing `ViroARSceneNavigator`
+ *   (no separate camera session) and fires `onDetection` with labels, normalized
+ *   bounding boxes, and an on-screen `screenBoundingBox` (dp) at up to `maxFPS`.
+ * - **Meta Quest 3 / 3S** (Horizon OS v74+): when mounted in a Quest MR scene
+ *   (under `ViroXRSceneNavigator`), it captures the headset camera via the Meta
+ *   Passthrough Camera API and runs the same YOLOE pipeline. Requires the
+ *   `horizonos.permission.HEADSET_CAMERA` runtime permission. v1 emits `label` +
+ *   normalized `boundingBox` only — `screenBoundingBox` and `worldPosition` are
+ *   not provided on Quest yet (they need camera extrinsics).
+ *
+ * Mount it as a child or sibling of the scene navigator; it renders nothing itself,
+ * so give it `width: 0, height: 0`.
  *
  * @example
  * ```tsx

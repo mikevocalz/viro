@@ -429,10 +429,8 @@ export class ViroARScene extends ViroBase<Props> {
   };
 
   render() {
-    if (isQuest) {
-      console.warn("[Viro] ViroARScene is not supported on Quest and will not render. Use ViroScene instead.");
-      return null;
-    }
+    // On Meta Quest, ViroARScene renders as a mixed-reality scene through the
+    // OpenXR renderer (passthrough + XR_FB_scene plane anchors). No longer gated.
     // Uncomment this line to check for misnamed props
     //checkMisnamedProps("ViroARScene", this.props);
 

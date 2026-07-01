@@ -1,11 +1,5 @@
 import * as React from "react";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Platform } from "react-native";
 import { ViroAmbientLight } from "../ViroAmbientLight";
 import { ViroARImageMarker } from "../AR/ViroARImageMarker";
@@ -24,11 +18,22 @@ import {
   registerTriggerImageTargets,
 } from "./domain/triggerImageRegistry";
 import { createNode } from "./domain/viroNodeFactory";
-import { executeOnLoadFunction } from "./domain/sceneNavigationHandler";
+import { defaultApiRequestExecutor } from "./domain/defaultApiRequestExecutor";
+import {
+  executeOnLoadFunction,
+  SequenceScheduler,
+} from "./domain/sceneNavigationHandler";
+import { StudioVariableStore } from "./domain/variableStore";
+import { StudioVisibilityStore } from "./domain/visibilityStore";
+import { StudioSoundManager } from "./domain/soundManager";
+import { StudioSounds } from "./domain/StudioSounds";
 import { registerStudioMaterialsForAssets } from "./domain/studioMaterials";
 import { useStudioShaderTimeUniforms } from "./domain/useStudioShaderTimeUniforms";
 import { useStudioShaderViewportUniforms } from "./domain/useStudioShaderViewportUniforms";
-import { buildViroPhysicsWorld, parsePhysicsWorldConfig } from "./domain/physicsConfig";
+import {
+  buildViroPhysicsWorld,
+  parsePhysicsWorldConfig,
+} from "./domain/physicsConfig";
 import {
   StudioAnimation,
   StudioSceneResponse,
@@ -46,6 +51,8 @@ interface StudioARSceneProps {
   onReady?: () => void;
   onError?: (err: Error) => void;
   onSceneChange?: (sceneId: string, sceneName: string) => void;
+  /** Session-scoped store owned by the navigator; survives scene pushes. */
+  variableStore?: StudioVariableStore;
 }
 
 /**
@@ -66,8 +73,99 @@ interface StudioARSceneInnerProps extends StudioARSceneProps {
 }
 
 const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
-  const { sceneNavigator, sceneData, onReady, onSceneChange } = props;
-  const { scene, assets, animations, collision_bindings, functions } = sceneData;
+  const { sceneNavigator, sceneData, onReady, onSceneChange, variableStore } =
+    props;
+  const { scene, assets, animations, collision_bindings, functions } =
+    sceneData;
+
+  // ─── Sequence scheduler ───────────────────────────────────────────────────
+  // One per scene. Drives WAIT steps; cancelled on unmount and on navigation so
+  // a pending WAIT never fires into a torn-down or replaced scene.
+  const schedulerRef = useRef<SequenceScheduler | null>(null);
+  if (schedulerRef.current === null) {
+    schedulerRef.current = new SequenceScheduler();
+  }
+  useEffect(() => {
+    return () => {
+      schedulerRef.current?.dispose();
+      schedulerRef.current = null;
+      // dispose() bumps the scheduler generation first; reset() then clears any
+      // pending sound backstop timers and fires their callbacks, which now
+      // no-op via the generation guard so unmount can't advance a waited step.
+      soundManagerRef.current?.reset();
+    };
+  }, []);
+
+  // ─── Variable store ───────────────────────────────────────────────────────
+  // Normally passed down by the navigator (session-scoped); hosts mounting this
+  // scene directly get a scene-local fallback. Seeding happens here, at instance
+  // init, so values exist before any effect dispatches on_load. seed() is
+  // initialize-if-absent, hence idempotent and strict-mode safe.
+  const variableStoreRef = useRef<StudioVariableStore | null>(null);
+  if (variableStoreRef.current === null) {
+    variableStoreRef.current = variableStore ?? new StudioVariableStore();
+    variableStoreRef.current.seed(sceneData.variables ?? []);
+  }
+
+  // ─── Visibility store ─────────────────────────────────────────────────────
+  // Scene-scoped (asset placements are per-scene), keyed by asset id. Seeded
+  // from each asset's author-time hidden_on_load default; Set Visibility
+  // actions flip it at runtime. Re-seeded on scene change so a persisted
+  // instance doesn't carry stale visibility across a navigation.
+  const visibilityStoreRef = useRef<StudioVisibilityStore | null>(null);
+  if (visibilityStoreRef.current === null) {
+    visibilityStoreRef.current = new StudioVisibilityStore();
+    visibilityStoreRef.current.seed(assets);
+  }
+  useEffect(() => {
+    visibilityStoreRef.current?.reseed(assets);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scene.id]);
+
+  // ─── Sound manager ────────────────────────────────────────────────────────
+  // Per-scene. PLAY/STOP scene-function actions drive it; <StudioSounds> renders
+  // the active list. Reset on scene change so sounds don't leak across a
+  // navigation (sounds, unlike variables, are not session-scoped).
+  const soundManagerRef = useRef<StudioSoundManager | null>(null);
+  if (soundManagerRef.current === null) {
+    soundManagerRef.current = new StudioSoundManager();
+  }
+  useEffect(() => {
+    soundManagerRef.current?.reset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scene.id]);
+
+  // Position for a spatial PLAY: look up the placed target asset (matches the
+  // node factory's position derivation, position_z defaulting to -2).
+  const getAssetPosition = useCallback(
+    (assetId: string): [number, number, number] | undefined => {
+      const a = assets.find((x) => x.id === assetId);
+      if (!a) return undefined;
+      return [a.position_x ?? 0, a.position_y ?? 0, a.position_z ?? -2];
+    },
+    [assets]
+  );
+
+  const runtimeCtx = useMemo(
+    () => ({
+      scheduler: schedulerRef.current!,
+      variableStore: variableStoreRef.current!,
+      apiRequestExecutor: defaultApiRequestExecutor,
+      visibilityStore: visibilityStoreRef.current!,
+      soundManager: soundManagerRef.current!,
+      getAssetPosition,
+    }),
+    [getAssetPosition]
+  );
+
+  // Cancel this scene's pending WAITs before handing off to the next scene.
+  const handleSceneChange = useCallback(
+    (sceneId: string, sceneName: string) => {
+      schedulerRef.current?.cancelAll();
+      onSceneChange?.(sceneId, sceneName);
+    },
+    [onSceneChange]
+  );
 
   // ─── Material registration ────────────────────────────────────────────────
   const materialsRegisteredRef = useRef(false);
@@ -88,11 +186,17 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
   }
 
   // ─── Animation runtime state ──────────────────────────────────────────────
-  const [animOverrides, setAnimOverrides] = useState<Record<string, AnimOverride>>({});
-  const [loadedAssetIds, setLoadedAssetIds] = useState<Record<string, true>>({});
+  const [animOverrides, setAnimOverrides] = useState<
+    Record<string, AnimOverride>
+  >({});
+  const [loadedAssetIds, setLoadedAssetIds] = useState<Record<string, true>>(
+    {}
+  );
 
   const handleAssetLoaded = useCallback((assetId: string) => {
-    setLoadedAssetIds((prev) => prev[assetId] ? prev : { ...prev, [assetId]: true });
+    setLoadedAssetIds((prev) =>
+      prev[assetId] ? prev : { ...prev, [assetId]: true }
+    );
   }, []);
 
   const triggerHandlesRef = useRef<Set<number>>(new Set());
@@ -103,20 +207,27 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
     };
   }, []);
 
-  const triggerAnimation = useCallback((targetAssetId: string, animationKey: string) => {
-    // Viro's animation prop is edge-triggered on false→true. Force false first,
-    // then flip to true on the next frame so a re-trigger of the same key fires.
-    setAnimOverrides((prev) => ({ ...prev, [targetAssetId]: { key: animationKey, run: false } }));
-    const handle = requestAnimationFrame(() => {
-      triggerHandlesRef.current.delete(handle);
-      setAnimOverrides((prev) => {
-        const current = prev[targetAssetId];
-        if (!current || current.key !== animationKey || current.run) return prev;
-        return { ...prev, [targetAssetId]: { key: animationKey, run: true } };
+  const triggerAnimation = useCallback(
+    (targetAssetId: string, animationKey: string) => {
+      // Viro's animation prop is edge-triggered on false→true. Force false first,
+      // then flip to true on the next frame so a re-trigger of the same key fires.
+      setAnimOverrides((prev) => ({
+        ...prev,
+        [targetAssetId]: { key: animationKey, run: false },
+      }));
+      const handle = requestAnimationFrame(() => {
+        triggerHandlesRef.current.delete(handle);
+        setAnimOverrides((prev) => {
+          const current = prev[targetAssetId];
+          if (!current || current.key !== animationKey || current.run)
+            return prev;
+          return { ...prev, [targetAssetId]: { key: animationKey, run: true } };
+        });
       });
-    });
-    triggerHandlesRef.current.add(handle);
-  }, []);
+      triggerHandlesRef.current.add(handle);
+    },
+    []
+  );
 
   const triggerAnimationRef = useRef(triggerAnimation);
   triggerAnimationRef.current = triggerAnimation;
@@ -150,15 +261,41 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
         interruptible: activeAnim.interruptible,
         delay: activeAnim.delay_ms ?? 0,
         onStart: activeAnim.on_start_function
-          ? () => executeOnLoadFunction(activeAnim.on_start_function!, functions, sceneNavigator, animations, (id, key) => triggerAnimationRef.current(id, key))
+          ? () =>
+              executeOnLoadFunction(
+                activeAnim.on_start_function!,
+                functions,
+                sceneNavigator,
+                animations,
+                (id, key) => triggerAnimationRef.current(id, key),
+                handleSceneChange,
+                runtimeCtx
+              )
           : undefined,
         onFinish: activeAnim.on_finish_function
-          ? () => executeOnLoadFunction(activeAnim.on_finish_function!, functions, sceneNavigator, animations, (id, key) => triggerAnimationRef.current(id, key))
+          ? () =>
+              executeOnLoadFunction(
+                activeAnim.on_finish_function!,
+                functions,
+                sceneNavigator,
+                animations,
+                (id, key) => triggerAnimationRef.current(id, key),
+                handleSceneChange,
+                runtimeCtx
+              )
           : undefined,
       };
     }
     return states;
-  }, [animations, animOverrides, loadedAssetIds, functions, sceneNavigator]);
+  }, [
+    animations,
+    animOverrides,
+    loadedAssetIds,
+    functions,
+    sceneNavigator,
+    handleSceneChange,
+    runtimeCtx,
+  ]);
 
   // ─── on_load_function ─────────────────────────────────────────────────────
   const onLoadExecutedRef = useRef(false);
@@ -171,7 +308,8 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
         sceneNavigator,
         animations,
         (id, key) => triggerAnimationRef.current(id, key),
-        onSceneChange,
+        handleSceneChange,
+        runtimeCtx
       );
     }
   }, [scene.id]);
@@ -209,10 +347,18 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
         animations,
         collisionCooldownRef,
         (id, key) => triggerAnimationRef.current(id, key),
-        onSceneChange,
+        handleSceneChange,
+        runtimeCtx
       );
     },
-    [bindingsByPairKey, collisionAssetIds, sceneNavigator, animations]
+    [
+      bindingsByPairKey,
+      collisionAssetIds,
+      sceneNavigator,
+      animations,
+      handleSceneChange,
+      runtimeCtx,
+    ]
   );
 
   // ─── Trigger image targets ────────────────────────────────────────────────
@@ -222,13 +368,17 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
     return { planeAssets: plane, imageTriggeredAssets: imgTriggered };
   }, [assets]);
 
-  const [urlToTargetName, setUrlToTargetName] = useState<Map<string, string>>(() => new Map());
+  const [urlToTargetName, setUrlToTargetName] = useState<Map<string, string>>(
+    () => new Map()
+  );
   const prevTargetNamesRef = useRef<string[]>([]);
 
   useEffect(() => {
     if (isQuest) {
       if (imageTriggeredAssets.length > 0) {
-        console.warn("[Studio] Image-triggered assets are not supported on Quest — skipping.");
+        console.warn(
+          "[Studio] Image-triggered assets are not supported on Quest — skipping."
+        );
       }
       return;
     }
@@ -249,10 +399,13 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
   }, [imageTriggeredAssets]);
 
   // ─── Ready callback ───────────────────────────────────────────────────────
-  useEffect(() => { onReady?.(); }, []);
+  useEffect(() => {
+    onReady?.();
+  }, []);
 
   // ─── Render helpers ───────────────────────────────────────────────────────
-  const maxModels = Platform.OS === "android" ? ANDROID_MAX_3D_MODELS : IOS_MAX_3D_MODELS;
+  const maxModels =
+    Platform.OS === "android" ? ANDROID_MAX_3D_MODELS : IOS_MAX_3D_MODELS;
 
   const renderedPlaneAssets = useMemo(() => {
     let modelCount = 0;
@@ -261,7 +414,9 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
         if (asset.asset_type_name === "3D-MODEL") {
           modelCount++;
           if (modelCount > maxModels) {
-            console.warn(`[Studio] Skipping 3D model "${asset.name}" — ${Platform.OS} limit (${maxModels}) reached`);
+            console.warn(
+              `[Studio] Skipping 3D model "${asset.name}" — ${Platform.OS} limit (${maxModels}) reached`
+            );
             return null;
           }
         }
@@ -274,11 +429,22 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
           animationStates,
           handleAssetLoaded,
           getCollisionHandler(asset.id),
-          onSceneChange,
+          handleSceneChange,
+          runtimeCtx
         );
       })
       .filter(Boolean) as React.ReactElement[];
-  }, [planeAssets, sceneNavigator, animations, animationStates, handleAssetLoaded, getCollisionHandler, maxModels, onSceneChange]);
+  }, [
+    planeAssets,
+    sceneNavigator,
+    animations,
+    animationStates,
+    handleAssetLoaded,
+    getCollisionHandler,
+    maxModels,
+    handleSceneChange,
+    runtimeCtx,
+  ]);
 
   const renderedImageTriggeredAssets = useMemo(() => {
     if (isQuest) return [];
@@ -295,7 +461,8 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
           animationStates,
           handleAssetLoaded,
           getCollisionHandler(asset.id),
-          onSceneChange,
+          handleSceneChange,
+          runtimeCtx
         );
         if (!node) return null;
         return (
@@ -305,16 +472,30 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
         );
       })
       .filter(Boolean) as React.ReactElement[];
-  }, [urlToTargetName, imageTriggeredAssets, sceneNavigator, animations, animationStates, handleAssetLoaded, getCollisionHandler, onSceneChange]);
+  }, [
+    urlToTargetName,
+    imageTriggeredAssets,
+    sceneNavigator,
+    animations,
+    animationStates,
+    handleAssetLoaded,
+    getCollisionHandler,
+    handleSceneChange,
+    runtimeCtx,
+  ]);
 
   // ─── Plane detection (AR only) ────────────────────────────────────────────
-  const planeDetectionMode = ((scene.plane_detection as string) ?? "NONE").toUpperCase();
+  const planeDetectionMode = (
+    (scene.plane_detection as string) ?? "NONE"
+  ).toUpperCase();
   const planeAlignment = (scene.plane_direction ?? "Horizontal") as any;
 
   const renderAssets = () => {
     if (isQuest) {
       if (planeDetectionMode !== "NONE") {
-        console.warn(`[Studio] Plane detection (${planeDetectionMode}) is not supported on Quest — rendering assets without plane anchor.`);
+        console.warn(
+          `[Studio] Plane detection (${planeDetectionMode}) is not supported on Quest — rendering assets without plane anchor.`
+        );
       }
       return <>{renderedPlaneAssets}</>;
     }
@@ -328,7 +509,11 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
     }
     if (planeDetectionMode === "MANUAL") {
       return (
-        <ViroARPlaneSelector minHeight={0.1} minWidth={0.1} alignment={planeAlignment}>
+        <ViroARPlaneSelector
+          minHeight={0.1}
+          minWidth={0.1}
+          alignment={planeAlignment}
+        >
           {renderedPlaneAssets}
         </ViroARPlaneSelector>
       );
@@ -337,12 +522,16 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
   };
 
   // ─── Physics world ────────────────────────────────────────────────────────
-  const physicsWorldConfig = parsePhysicsWorldConfig(scene.physics_world_config);
+  const physicsWorldConfig = parsePhysicsWorldConfig(
+    scene.physics_world_config
+  );
   const physicsWorld = physicsWorldConfig?.enabled
     ? buildViroPhysicsWorld(physicsWorldConfig)
     : undefined;
 
-  const physicsProps = physicsWorld ? { physicsWorld: physicsWorld as any } : {};
+  const physicsProps = physicsWorld
+    ? { physicsWorld: physicsWorld as any }
+    : {};
 
   // ─── Render ───────────────────────────────────────────────────────────────
   const children = (
@@ -351,11 +540,17 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
       <ViroAmbientLight color="#ffffff" intensity={1000} />
       {renderAssets()}
       {renderedImageTriggeredAssets}
+      <StudioSounds manager={soundManagerRef.current!} />
       {assets.length === 0 && (
         <ViroText
           text="No assets to display"
           position={[0, 0, -2]}
-          style={{ fontFamily: "Arial", fontSize: 16, color: "#CCCCCC", textAlign: "center" }}
+          style={{
+            fontFamily: "Arial",
+            fontSize: 16,
+            color: "#CCCCCC",
+            textAlign: "center",
+          }}
         />
       )}
     </>

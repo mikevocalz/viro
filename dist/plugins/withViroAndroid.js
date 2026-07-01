@@ -343,6 +343,24 @@ const withViroManifest = (config) => (0, config_plugins_1.withAndroidManifest)(c
                 $: { "android:name": "com.oculus.permission.EYE_TRACKING" },
             });
         }
+        // Spatial Data / Scene permissions — required for the Meta OpenXR runtime
+        // to expose the scene & spatial-entity extensions (XR_FB_scene,
+        // XR_FB_spatial_entity*, XR_FB_scene_capture). Without USE_ANCHOR_API the
+        // runtime skips those extensions, so plane / anchor data is unavailable on
+        // Quest. These are runtime permissions — also require a grant at runtime.
+        const sceneAnchorPerms = [
+            "horizonos.permission.USE_ANCHOR_API", // gates XR_FB_scene / XR_FB_spatial_entity on current Horizon OS
+            "com.oculus.permission.USE_SCENE", // legacy Scene permission (older OS)
+            // Meta Passthrough Camera API (Quest 3 / 3S, Horizon OS v74+): grants the
+            // app the headset RGB cameras via Camera2, used by ViroObjectDetector to
+            // run on-device object detection over passthrough. Runtime-granted.
+            "horizonos.permission.HEADSET_CAMERA",
+        ];
+        for (const perm of sceneAnchorPerms) {
+            if (!existingPermissions.includes(perm)) {
+                contents.manifest["uses-permission"].push({ $: { "android:name": perm } });
+            }
+        }
     }
     return newConfig;
 });

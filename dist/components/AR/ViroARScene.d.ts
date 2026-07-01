@@ -113,6 +113,6 @@ export declare class ViroARScene extends ViroBase<Props> {
         up: any[];
     }>;
     getCameraPositionAsync: () => Promise<any>;
-    render(): React.JSX.Element | null;
+    render(): React.JSX.Element;
 }
 export {};

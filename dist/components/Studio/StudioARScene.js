@@ -51,7 +51,12 @@ const collisionBindingsRuntime_1 = require("./domain/collisionBindingsRuntime");
 const collisionPairKey_1 = require("./domain/collisionPairKey");
 const triggerImageRegistry_1 = require("./domain/triggerImageRegistry");
 const viroNodeFactory_1 = require("./domain/viroNodeFactory");
+const defaultApiRequestExecutor_1 = require("./domain/defaultApiRequestExecutor");
 const sceneNavigationHandler_1 = require("./domain/sceneNavigationHandler");
+const variableStore_1 = require("./domain/variableStore");
+const visibilityStore_1 = require("./domain/visibilityStore");
+const soundManager_1 = require("./domain/soundManager");
+const StudioSounds_1 = require("./domain/StudioSounds");
 const studioMaterials_1 = require("./domain/studioMaterials");
 const useStudioShaderTimeUniforms_1 = require("./domain/useStudioShaderTimeUniforms");
 const useStudioShaderViewportUniforms_1 = require("./domain/useStudioShaderViewportUniforms");
@@ -70,8 +75,82 @@ const StudioARScene = (props) => {
 };
 exports.StudioARScene = StudioARScene;
 const StudioARSceneInner = (props) => {
-    const { sceneNavigator, sceneData, onReady, onSceneChange } = props;
+    const { sceneNavigator, sceneData, onReady, onSceneChange, variableStore } = props;
     const { scene, assets, animations, collision_bindings, functions } = sceneData;
+    // ─── Sequence scheduler ───────────────────────────────────────────────────
+    // One per scene. Drives WAIT steps; cancelled on unmount and on navigation so
+    // a pending WAIT never fires into a torn-down or replaced scene.
+    const schedulerRef = (0, react_1.useRef)(null);
+    if (schedulerRef.current === null) {
+        schedulerRef.current = new sceneNavigationHandler_1.SequenceScheduler();
+    }
+    (0, react_1.useEffect)(() => {
+        return () => {
+            schedulerRef.current?.dispose();
+            schedulerRef.current = null;
+            // dispose() bumps the scheduler generation first; reset() then clears any
+            // pending sound backstop timers and fires their callbacks, which now
+            // no-op via the generation guard so unmount can't advance a waited step.
+            soundManagerRef.current?.reset();
+        };
+    }, []);
+    // ─── Variable store ───────────────────────────────────────────────────────
+    // Normally passed down by the navigator (session-scoped); hosts mounting this
+    // scene directly get a scene-local fallback. Seeding happens here, at instance
+    // init, so values exist before any effect dispatches on_load. seed() is
+    // initialize-if-absent, hence idempotent and strict-mode safe.
+    const variableStoreRef = (0, react_1.useRef)(null);
+    if (variableStoreRef.current === null) {
+        variableStoreRef.current = variableStore ?? new variableStore_1.StudioVariableStore();
+        variableStoreRef.current.seed(sceneData.variables ?? []);
+    }
+    // ─── Visibility store ─────────────────────────────────────────────────────
+    // Scene-scoped (asset placements are per-scene), keyed by asset id. Seeded
+    // from each asset's author-time hidden_on_load default; Set Visibility
+    // actions flip it at runtime. Re-seeded on scene change so a persisted
+    // instance doesn't carry stale visibility across a navigation.
+    const visibilityStoreRef = (0, react_1.useRef)(null);
+    if (visibilityStoreRef.current === null) {
+        visibilityStoreRef.current = new visibilityStore_1.StudioVisibilityStore();
+        visibilityStoreRef.current.seed(assets);
+    }
+    (0, react_1.useEffect)(() => {
+        visibilityStoreRef.current?.reseed(assets);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [scene.id]);
+    // ─── Sound manager ────────────────────────────────────────────────────────
+    // Per-scene. PLAY/STOP scene-function actions drive it; <StudioSounds> renders
+    // the active list. Reset on scene change so sounds don't leak across a
+    // navigation (sounds, unlike variables, are not session-scoped).
+    const soundManagerRef = (0, react_1.useRef)(null);
+    if (soundManagerRef.current === null) {
+        soundManagerRef.current = new soundManager_1.StudioSoundManager();
+    }
+    (0, react_1.useEffect)(() => {
+        soundManagerRef.current?.reset();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [scene.id]);
+    // Position for a spatial PLAY: look up the placed target asset (matches the
+    // node factory's position derivation, position_z defaulting to -2).
+    const getAssetPosition = (0, react_1.useCallback)((assetId) => {
+        const a = assets.find((x) => x.id === assetId);
+        if (!a)
+            return undefined;
+        return [a.position_x ?? 0, a.position_y ?? 0, a.position_z ?? -2];
+    }, [assets]);
+    const runtimeCtx = (0, react_1.useMemo)(() => ({
+        scheduler: schedulerRef.current,
+        variableStore: variableStoreRef.current,
+        apiRequestExecutor: defaultApiRequestExecutor_1.defaultApiRequestExecutor,
+        visibilityStore: visibilityStoreRef.current,
+        soundManager: soundManagerRef.current,
+        getAssetPosition,
+    }), [getAssetPosition]);
+    // Cancel this scene's pending WAITs before handing off to the next scene.
+    const handleSceneChange = (0, react_1.useCallback)((sceneId, sceneName) => {
+        schedulerRef.current?.cancelAll();
+        onSceneChange?.(sceneId, sceneName);
+    }, [onSceneChange]);
     // ─── Material registration ────────────────────────────────────────────────
     const materialsRegisteredRef = (0, react_1.useRef)(false);
     if (!materialsRegisteredRef.current) {
@@ -103,7 +182,10 @@ const StudioARSceneInner = (props) => {
     const triggerAnimation = (0, react_1.useCallback)((targetAssetId, animationKey) => {
         // Viro's animation prop is edge-triggered on false→true. Force false first,
         // then flip to true on the next frame so a re-trigger of the same key fires.
-        setAnimOverrides((prev) => ({ ...prev, [targetAssetId]: { key: animationKey, run: false } }));
+        setAnimOverrides((prev) => ({
+            ...prev,
+            [targetAssetId]: { key: animationKey, run: false },
+        }));
         const handle = requestAnimationFrame(() => {
             triggerHandlesRef.current.delete(handle);
             setAnimOverrides((prev) => {
@@ -148,21 +230,29 @@ const StudioARSceneInner = (props) => {
                 interruptible: activeAnim.interruptible,
                 delay: activeAnim.delay_ms ?? 0,
                 onStart: activeAnim.on_start_function
-                    ? () => (0, sceneNavigationHandler_1.executeOnLoadFunction)(activeAnim.on_start_function, functions, sceneNavigator, animations, (id, key) => triggerAnimationRef.current(id, key))
+                    ? () => (0, sceneNavigationHandler_1.executeOnLoadFunction)(activeAnim.on_start_function, functions, sceneNavigator, animations, (id, key) => triggerAnimationRef.current(id, key), handleSceneChange, runtimeCtx)
                     : undefined,
                 onFinish: activeAnim.on_finish_function
-                    ? () => (0, sceneNavigationHandler_1.executeOnLoadFunction)(activeAnim.on_finish_function, functions, sceneNavigator, animations, (id, key) => triggerAnimationRef.current(id, key))
+                    ? () => (0, sceneNavigationHandler_1.executeOnLoadFunction)(activeAnim.on_finish_function, functions, sceneNavigator, animations, (id, key) => triggerAnimationRef.current(id, key), handleSceneChange, runtimeCtx)
                     : undefined,
             };
         }
         return states;
-    }, [animations, animOverrides, loadedAssetIds, functions, sceneNavigator]);
+    }, [
+        animations,
+        animOverrides,
+        loadedAssetIds,
+        functions,
+        sceneNavigator,
+        handleSceneChange,
+        runtimeCtx,
+    ]);
     // ─── on_load_function ─────────────────────────────────────────────────────
     const onLoadExecutedRef = (0, react_1.useRef)(false);
     (0, react_1.useEffect)(() => {
         if (scene.on_load_function && !onLoadExecutedRef.current) {
             onLoadExecutedRef.current = true;
-            (0, sceneNavigationHandler_1.executeOnLoadFunction)(scene.on_load_function, functions, sceneNavigator, animations, (id, key) => triggerAnimationRef.current(id, key), onSceneChange);
+            (0, sceneNavigationHandler_1.executeOnLoadFunction)(scene.on_load_function, functions, sceneNavigator, animations, (id, key) => triggerAnimationRef.current(id, key), handleSceneChange, runtimeCtx);
         }
     }, [scene.id]);
     // ─── Collision bindings ───────────────────────────────────────────────────
@@ -188,8 +278,15 @@ const StudioARSceneInner = (props) => {
     const getCollisionHandler = (0, react_1.useCallback)((placementId) => {
         if (!collisionAssetIds.has(placementId))
             return undefined;
-        return (0, collisionBindingsRuntime_1.createPlacementCollisionHandler)(placementId, bindingsByPairKey, sceneNavigator, animations, collisionCooldownRef, (id, key) => triggerAnimationRef.current(id, key), onSceneChange);
-    }, [bindingsByPairKey, collisionAssetIds, sceneNavigator, animations]);
+        return (0, collisionBindingsRuntime_1.createPlacementCollisionHandler)(placementId, bindingsByPairKey, sceneNavigator, animations, collisionCooldownRef, (id, key) => triggerAnimationRef.current(id, key), handleSceneChange, runtimeCtx);
+    }, [
+        bindingsByPairKey,
+        collisionAssetIds,
+        sceneNavigator,
+        animations,
+        handleSceneChange,
+        runtimeCtx,
+    ]);
     // ─── Trigger image targets ────────────────────────────────────────────────
     const { planeAssets, imageTriggeredAssets } = (0, react_1.useMemo)(() => {
         const plane = assets.filter((a) => !a.trigger_image_url);
@@ -221,7 +318,9 @@ const StudioARSceneInner = (props) => {
         };
     }, [imageTriggeredAssets]);
     // ─── Ready callback ───────────────────────────────────────────────────────
-    (0, react_1.useEffect)(() => { onReady?.(); }, []);
+    (0, react_1.useEffect)(() => {
+        onReady?.();
+    }, []);
     // ─── Render helpers ───────────────────────────────────────────────────────
     const maxModels = react_native_1.Platform.OS === "android" ? ANDROID_MAX_3D_MODELS : IOS_MAX_3D_MODELS;
     const renderedPlaneAssets = (0, react_1.useMemo)(() => {
@@ -235,10 +334,20 @@ const StudioARSceneInner = (props) => {
                     return null;
                 }
             }
-            return (0, viroNodeFactory_1.createNode)(asset, sceneNavigator, animations, scene, (id, key) => triggerAnimationRef.current(id, key), animationStates, handleAssetLoaded, getCollisionHandler(asset.id), onSceneChange);
+            return (0, viroNodeFactory_1.createNode)(asset, sceneNavigator, animations, scene, (id, key) => triggerAnimationRef.current(id, key), animationStates, handleAssetLoaded, getCollisionHandler(asset.id), handleSceneChange, runtimeCtx);
         })
             .filter(Boolean);
-    }, [planeAssets, sceneNavigator, animations, animationStates, handleAssetLoaded, getCollisionHandler, maxModels, onSceneChange]);
+    }, [
+        planeAssets,
+        sceneNavigator,
+        animations,
+        animationStates,
+        handleAssetLoaded,
+        getCollisionHandler,
+        maxModels,
+        handleSceneChange,
+        runtimeCtx,
+    ]);
     const renderedImageTriggeredAssets = (0, react_1.useMemo)(() => {
         if (ViroPlatform_1.isQuest)
             return [];
@@ -247,7 +356,7 @@ const StudioARSceneInner = (props) => {
             const targetName = urlToTargetName.get(asset.trigger_image_url);
             if (!targetName)
                 return null;
-            const node = (0, viroNodeFactory_1.createNode)(asset, sceneNavigator, animations, scene, (id, key) => triggerAnimationRef.current(id, key), animationStates, handleAssetLoaded, getCollisionHandler(asset.id), onSceneChange);
+            const node = (0, viroNodeFactory_1.createNode)(asset, sceneNavigator, animations, scene, (id, key) => triggerAnimationRef.current(id, key), animationStates, handleAssetLoaded, getCollisionHandler(asset.id), handleSceneChange, runtimeCtx);
             if (!node)
                 return null;
             return (<ViroARImageMarker_1.ViroARImageMarker key={asset.id} target={targetName}>
@@ -255,7 +364,17 @@ const StudioARSceneInner = (props) => {
           </ViroARImageMarker_1.ViroARImageMarker>);
         })
             .filter(Boolean);
-    }, [urlToTargetName, imageTriggeredAssets, sceneNavigator, animations, animationStates, handleAssetLoaded, getCollisionHandler, onSceneChange]);
+    }, [
+        urlToTargetName,
+        imageTriggeredAssets,
+        sceneNavigator,
+        animations,
+        animationStates,
+        handleAssetLoaded,
+        getCollisionHandler,
+        handleSceneChange,
+        runtimeCtx,
+    ]);
     // ─── Plane detection (AR only) ────────────────────────────────────────────
     const planeDetectionMode = (scene.plane_detection ?? "NONE").toUpperCase();
     const planeAlignment = (scene.plane_direction ?? "Horizontal");
@@ -283,14 +402,22 @@ const StudioARSceneInner = (props) => {
     const physicsWorld = physicsWorldConfig?.enabled
         ? (0, physicsConfig_1.buildViroPhysicsWorld)(physicsWorldConfig)
         : undefined;
-    const physicsProps = physicsWorld ? { physicsWorld: physicsWorld } : {};
+    const physicsProps = physicsWorld
+        ? { physicsWorld: physicsWorld }
+        : {};
     // ─── Render ───────────────────────────────────────────────────────────────
     const children = (<>
       {ViroPlatform_1.isQuest && <ViroController_1.ViroController controllerVisibility reticleVisibility/>}
       <ViroAmbientLight_1.ViroAmbientLight color="#ffffff" intensity={1000}/>
       {renderAssets()}
       {renderedImageTriggeredAssets}
-      {assets.length === 0 && (<ViroText_1.ViroText text="No assets to display" position={[0, 0, -2]} style={{ fontFamily: "Arial", fontSize: 16, color: "#CCCCCC", textAlign: "center" }}/>)}
+      <StudioSounds_1.StudioSounds manager={soundManagerRef.current}/>
+      {assets.length === 0 && (<ViroText_1.ViroText text="No assets to display" position={[0, 0, -2]} style={{
+                fontFamily: "Arial",
+                fontSize: 16,
+                color: "#CCCCCC",
+                textAlign: "center",
+            }}/>)}
     </>);
     if (ViroPlatform_1.isQuest) {
         return <ViroScene_1.ViroScene {...physicsProps}>{children}</ViroScene_1.ViroScene>;

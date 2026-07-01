@@ -133,18 +133,35 @@ The detector reuses the enclosing `ViroARSceneNavigator`'s camera feed rather th
 
 Draw the overlay from `screenBoundingBox`. For stable boxes across frames, bind each detection to a slot by **screen proximity** (not array index or label) and EMA-smooth — the model's confidence ordering and labels flicker frame-to-frame, so index/label matching makes boxes swap places. See the showcase `yoloe-ar-scene` component for a reference tracker.
 
+### On Meta Quest
+
+On Quest 3 / 3S there's no ARCore camera, and the passthrough layer isn't
+app-readable, so the detector sources frames from the **Meta Passthrough Camera
+API** (Camera2, Horizon OS v74+). The branch is automatic: when no
+`ViroViewARCore` is in the tree and the device is a Quest, the detector opens the
+passthrough camera and feeds the **same** preprocess → inference → emit pipeline.
+
+- Requires `horizonos.permission.HEADSET_CAMERA` (+ `android.permission.CAMERA`),
+  both runtime-granted. Request them before mounting the detector.
+- v1 emits `label` + normalized `boundingBox` only — **no** `worldPosition` or
+  `screenBoundingBox` (the camera has its own FOV distinct from the rendered view;
+  world projection needs camera extrinsics + a raycast).
+- The detector is independent of the renderer, so it can run alongside an immersive
+  `ViroXRSceneNavigator`; bridge `onDetection` into the VR scene via a module-level
+  store (both Activities share one JS engine). See `docs/QUEST_SETUP.md` §7c.
+
 ---
 
 ## Platform support
 
-| Capability | iOS | Android |
-|------------|-----|---------|
-| AR-session detection (shared camera feed) | ✅ (ARKit `currentFrame`) | ✅ (`ViroViewARCore` listener) |
-| ONNX inference + NMS + class names from metadata | ✅ | ✅ |
-| `text` mode category filter, `maxDetections` | ✅ | ✅ |
-| Center-square crop preprocessing | ✅ | ✅ |
-| `screenBoundingBox` (dp, aligned) | ✅ (ARKit `displayTransform`) | ✅ (uncropped frame + viewport crop rect) |
-| `worldPosition` | ✅ (ARKit hit-test) | ⏳ not yet (use `screenBoundingBox`) |
+| Capability | iOS | Android (phone) | Meta Quest 3 / 3S |
+|------------|-----|---------|-----|
+| Camera source | ARKit `currentFrame` | `ViroViewARCore` listener | Passthrough Camera API (Camera2) |
+| ONNX inference + NMS + class names from metadata | ✅ | ✅ | ✅ |
+| `text` mode category filter, `maxDetections` | ✅ | ✅ | ✅ |
+| Center-square crop preprocessing | ✅ | ✅ | ✅ (full-frame) |
+| `screenBoundingBox` (dp, aligned) | ✅ (ARKit `displayTransform`) | ✅ (uncropped frame + viewport crop rect) | ⏳ not yet |
+| `worldPosition` | ✅ (ARKit hit-test) | ⏳ not yet (use `screenBoundingBox`) | ⏳ not yet |
 
 Android reaches iOS parity for detection and the 2D overlay. Remaining differences:
 - **`worldPosition`** (3D raycast) is not yet emitted on Android; `performARHitTest` is async, so it needs a gather-before-emit pass. The 2D overlay uses `screenBoundingBox` and does not require it.
