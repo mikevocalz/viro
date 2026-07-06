@@ -793,15 +793,12 @@ public class MaterialManager extends ReactContextBaseJavaModule {
     }
 
     private boolean isVideoTexture(String path, String type) {
-        if (path.contains(("mp4"))) {
-            return path.contains("mp4");
-        }
-
-        if (type != null && type.contains("mp4")) {
-            return true;
-        }
-
-        return false;
+        // ExoPlayer handles all of these; anything unrecognized falls through
+        // to the image loader, which chokes on video manifests (e.g. HLS).
+        String p = path != null ? path.toLowerCase() : "";
+        String t = type != null ? type.toLowerCase() : "";
+        return p.contains("mp4") || p.contains("m3u8") || p.contains("webm") || p.contains("mpd")
+                || t.contains("mp4") || t.contains("m3u8") || t.contains("video");
     }
 
     /**

@@ -91,6 +91,19 @@ public class PerfMonitor extends ReactContextBaseJavaModule {
         view.setDebugHUDEnabled(mIsShowing);
     }
 
+    /**
+     * The most recently constructed {@link ViroView}, or null if none is
+     * alive. Every VRT scene navigator registers its ViroView here in its
+     * constructor (see VRT3DSceneNavigator), which makes this the canonical
+     * "current ViroView" lookup for headless modules (e.g. the external GPU
+     * texture bridge in react-native-viro-mux) that need a ViroContext but
+     * have no view tag.
+     */
+    public ViroView getView() {
+        WeakReference<ViroView> ref = mView;
+        return ref == null ? null : ref.get();
+    }
+
     @Override
     public String getName() {
         return "VRTPerfMonitor";

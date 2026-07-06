@@ -33,7 +33,8 @@ export type ViroCommonProps = ViewProps & {
     | "FixedDistance"
     | "FixedDistanceOrigin"
     | "FixedToWorld"
-    | "FixedToPlane";
+    | "FixedToPlane"
+    | "Gizmo";
   dragPlane?: {
     planePoint: Viro3DPoint;
     planeNormal: Viro3DPoint;

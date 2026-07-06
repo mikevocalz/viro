@@ -52,7 +52,11 @@ class ViroMaterialVideo extends React.Component {
         const nodeHandle = (0, react_native_1.findNodeHandle)(this);
         if (nodeHandle) {
             if (react_native_1.Platform.OS === "android") {
-                react_native_1.NativeModules.UIManager.dispatchViewManagerCommand(nodeHandle, react_native_1.NativeModules.UIManager.VRTMaterialVideo.Commands.pause, [0]);
+                // Bridgeless-safe: NativeModules.UIManager is null on New Architecture.
+                const cmd = react_native_1.UIManager.getViewManagerConfig?.("VRTMaterialVideo")?.Commands?.pause;
+                if (cmd !== undefined) {
+                    react_native_1.UIManager.dispatchViewManagerCommand(nodeHandle, cmd, [0]);
+                }
             }
             else if (react_native_1.Platform.OS === "ios") {
                 // Also pause on iOS to ensure video resources are released
@@ -99,9 +103,13 @@ class ViroMaterialVideo extends React.Component {
             case "ios":
                 react_native_1.NativeModules.VRTMaterialVideoManager.seekToTime((0, react_native_1.findNodeHandle)(this), timeInSeconds);
                 break;
-            case "android":
-                react_native_1.NativeModules.UIManager.dispatchViewManagerCommand((0, react_native_1.findNodeHandle)(this), react_native_1.NativeModules.UIManager.VRTMaterialVideo.Commands.seekToTime, [timeInSeconds]);
+            case "android": {
+                const cmd = react_native_1.UIManager.getViewManagerConfig?.("VRTMaterialVideo")?.Commands?.seekToTime;
+                if (cmd !== undefined) {
+                    react_native_1.UIManager.dispatchViewManagerCommand((0, react_native_1.findNodeHandle)(this), cmd, [timeInSeconds]);
+                }
                 break;
+            }
         }
     };
 }
