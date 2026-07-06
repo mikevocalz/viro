@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.VRModuleOpenXR = void 0;
 exports.exitVRScene = exitVRScene;
+exports.triggerHaptic = triggerHaptic;
 exports.setPassthroughStyle = setPassthroughStyle;
 exports.useVRViewTag = useVRViewTag;
 const react_1 = require("react");
@@ -15,6 +16,25 @@ function exitVRScene() {
     VRQuestNavigatorBridge_1.VRQuestNavigatorBridge.setVRActive(false);
     react_native_1.NativeModules.VRLauncher
         ?.exitVRScene?.();
+}
+const HAND_CODE = {
+    left: 0,
+    right: 1,
+    both: 2,
+    active: -1,
+};
+/**
+ * Fire a native OpenXR controller haptic pulse (XR_FB / touch controller).
+ * No-op off-Quest/PICO. amplitude ∈ [0,1], durationSec in seconds.
+ *
+ * ```tsx
+ * const viewTag = useVRViewTag();
+ * if (viewTag != null) triggerHaptic(viewTag);            // quick tick, active hand
+ * ```
+ */
+function triggerHaptic(viewTag, opts = {}) {
+    const hand = HAND_CODE[opts.hand ?? "active"];
+    exports.VRModuleOpenXR?.triggerHaptic?.(viewTag, hand, opts.amplitude ?? 0.6, opts.durationSec ?? 0.03);
 }
 /**
  * Style the Quest passthrough layer (XR_FB_passthrough). No-op off-Quest.

@@ -179,6 +179,17 @@ public class VRTVRSceneNavigator extends VRT3DSceneNavigator {
     }
 
     /**
+     * Fire a controller haptic pulse. hand: 0 = left, 1 = right, 2 = both,
+     * -1 = whichever controller last pressed its trigger.
+     * No-op when the underlying view is not a {@link ViroViewOpenXR}.
+     */
+    public void triggerHaptic(int hand, float amplitude, float durationSec) {
+        if (mViroView instanceof ViroViewOpenXR) {
+            ((ViroViewOpenXR) mViroView).triggerHaptic(hand, amplitude, durationSec);
+        }
+    }
+
+    /**
      * Style the passthrough layer (opacity + edge-highlight colour).
      * No-op when the underlying view is not a {@link ViroViewOpenXR}.
      */

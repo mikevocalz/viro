@@ -23,7 +23,49 @@ export type VRModuleOpenXRType = {
     edgeB: number,
     edgeA: number
   ) => void;
+  triggerHaptic?: (
+    viewTag: number,
+    hand: number,
+    amplitude: number,
+    durationSec: number
+  ) => void;
 };
+
+/**
+ * Which controller to buzz. "active" (default) targets whichever controller
+ * last pressed its trigger — so a UI press buzzes the hand that pressed it,
+ * never the idle one.
+ */
+export type ViroHapticHand = "left" | "right" | "both" | "active";
+
+const HAND_CODE: Record<ViroHapticHand, number> = {
+  left: 0,
+  right: 1,
+  both: 2,
+  active: -1,
+};
+
+/**
+ * Fire a native OpenXR controller haptic pulse (XR_FB / touch controller).
+ * No-op off-Quest/PICO. amplitude ∈ [0,1], durationSec in seconds.
+ *
+ * ```tsx
+ * const viewTag = useVRViewTag();
+ * if (viewTag != null) triggerHaptic(viewTag);            // quick tick, active hand
+ * ```
+ */
+export function triggerHaptic(
+  viewTag: number,
+  opts: { hand?: ViroHapticHand; amplitude?: number; durationSec?: number } = {}
+): void {
+  const hand = HAND_CODE[opts.hand ?? "active"];
+  VRModuleOpenXR?.triggerHaptic?.(
+    viewTag,
+    hand,
+    opts.amplitude ?? 0.6,
+    opts.durationSec ?? 0.03
+  );
+}
 
 /** Options for {@link setPassthroughStyle}. All channels are normalized [0,1]. */
 export type ViroPassthroughStyle = {

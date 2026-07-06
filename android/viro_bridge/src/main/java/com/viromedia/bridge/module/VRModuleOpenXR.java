@@ -111,4 +111,27 @@ public class VRModuleOpenXR extends ReactContextBaseJavaModule {
             }
         });
     }
+
+    /**
+     * Fire a controller haptic pulse. hand: 0 = left, 1 = right, 2 = both,
+     * -1 = whichever controller last pressed its trigger. amplitude ∈ [0,1],
+     * durationSec is the pulse length in seconds (e.g. 0.02–0.06 for a UI tick).
+     */
+    @ReactMethod
+    public void triggerHaptic(final int sceneNavTag, final int hand,
+                              final float amplitude, final float durationSec) {
+        UIManager uiManager = UIManagerHelper.getUIManager(getReactApplicationContext(), sceneNavTag);
+        if (uiManager == null) {
+            return;
+        }
+        ((FabricUIManager) uiManager).addUIBlock(new com.facebook.react.fabric.interop.UIBlock() {
+            @Override
+            public void execute(com.facebook.react.fabric.interop.UIBlockViewResolver viewResolver) {
+                View view = viewResolver.resolveView(sceneNavTag);
+                if (view instanceof VRTVRSceneNavigator) {
+                    ((VRTVRSceneNavigator) view).triggerHaptic(hand, amplitude, durationSec);
+                }
+            }
+        });
+    }
 }
