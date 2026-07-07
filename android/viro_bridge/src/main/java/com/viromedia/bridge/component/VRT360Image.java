@@ -204,7 +204,11 @@ public class VRT360Image extends VRTNode {
                     }
 
                     mLatestImage = new Image(result, mFormat);
-                    setBackgroundTexture(new Texture(mLatestImage, true, false, mStereoMode));
+                    // mipmap=true: without mips, high-frequency detail sparkles on head
+                    // rotation. The renderer pairs runtime mips with anisotropic
+                    // filtering, which prevents the pole/oblique smear plain trilinear
+                    // would cause on an equirect sphere.
+                    setBackgroundTexture(new Texture(mLatestImage, true, true, mStereoMode));
 
                     imageDownloadDidFinish();
                     mImageDownloadListener = null;
