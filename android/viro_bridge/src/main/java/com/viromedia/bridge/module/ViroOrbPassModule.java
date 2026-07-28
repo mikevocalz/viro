@@ -10,6 +10,7 @@
 
 package com.viromedia.bridge.module;
 
+import android.util.Log;
 import android.view.View;
 
 import com.facebook.react.bridge.Promise;
@@ -25,8 +26,18 @@ import com.viromedia.bridge.component.VRT3DSceneNavigator;
 
 public class ViroOrbPassModule extends ReactContextBaseJavaModule {
 
+    private static final String TAG = "ViroOrbPass";
+    private static final boolean LIBRARY_LOADED;
+
     static {
-        System.loadLibrary("viro_orb_pass");
+        boolean ok = false;
+        try {
+            System.loadLibrary("viro_orb_pass");
+            ok = true;
+        } catch (UnsatisfiedLinkError e) {
+            Log.i(TAG, "libviro_orb_pass.so not present in this build — orb-pass disabled");
+        }
+        LIBRARY_LOADED = ok;
     }
 
     public ViroOrbPassModule(ReactApplicationContext reactContext) {
@@ -40,11 +51,15 @@ public class ViroOrbPassModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void isAvailable(Promise promise) {
-        promise.resolve(true);
+        promise.resolve(LIBRARY_LOADED);
     }
 
     @ReactMethod
     public void registerPass(final int sceneNavTag, final int priority, final Promise promise) {
+        if (!LIBRARY_LOADED) {
+            promise.reject("ENO_LIB", "libviro_orb_pass.so not present in this build");
+            return;
+        }
         getReactApplicationContext().runOnUiQueueThread(new Runnable() {
             @Override public void run() {
                 UIManager uiManager = UIManagerHelper.getUIManager(getReactApplicationContext(), sceneNavTag);
@@ -86,6 +101,10 @@ public class ViroOrbPassModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void unregisterPass(final String id, final Promise promise) {
+        if (!LIBRARY_LOADED) {
+            promise.reject("ENO_LIB", "libviro_orb_pass.so not present in this build");
+            return;
+        }
         boolean ok = nativeDetach(id);
         promise.resolve(ok);
     }

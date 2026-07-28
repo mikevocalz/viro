@@ -39,6 +39,8 @@ function detectPico() {
     const { manufacturer, brand, model } = readBuildInfo();
     if (manufacturer === "pico" || brand === "pico")
         return true;
+    if (model === "a9210" || model === "a92y0" || model === "sparrow")
+        return true;
     return /\bpico\b/.test(model);
 }
 /** True iff the device is a Meta Quest (1, 2, Pro, 3, 3S). */

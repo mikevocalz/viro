@@ -44,6 +44,7 @@ function detectPico(): boolean {
   if (Platform.OS !== "android") return false;
   const { manufacturer, brand, model } = readBuildInfo();
   if (manufacturer === "pico" || brand === "pico") return true;
+  if (model === "a9210" || model === "a92y0" || model === "sparrow") return true;
   return /\bpico\b/.test(model);
 }
 

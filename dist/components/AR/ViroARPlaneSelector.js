@@ -160,10 +160,19 @@ class ViroARPlaneSelector extends React.Component {
             if (accepted === false)
                 return;
         }
+        // autoSelect: seat children on the FIRST detected plane with no tap.
+        const shouldAutoSelect = this.props.autoSelect && this.state.selectedPlaneId == null;
         this.setState((prev) => {
             const next = new Map(prev.planes);
             next.set(anchor.anchorId, anchor);
+            if (shouldAutoSelect && prev.selectedPlaneId == null) {
+                return { planes: next, selectedPlaneId: anchor.anchorId, tapLocalPosition: null };
+            }
             return { planes: next };
+        }, () => {
+            if (shouldAutoSelect && this.state.selectedPlaneId === anchor.anchorId) {
+                this.props.onPlaneSelected?.(anchor, anchor.position);
+            }
         });
     };
     /**

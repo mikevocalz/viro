@@ -74,6 +74,12 @@ type Props = {
   ) => void;
 
   /**
+   * When true, the FIRST detected plane that passes the filters is selected
+   * automatically (children seat on it at its origin), with no user tap.
+   */
+  autoSelect?: boolean;
+
+  /**
    * Called for every plane that passes the alignment and size filters,
    * before it is added to the visible set.
    *
@@ -283,11 +289,23 @@ export class ViroARPlaneSelector extends React.Component<Props, State> {
       if (accepted === false) return;
     }
 
-    this.setState((prev) => {
-      const next = new Map(prev.planes);
-      next.set(anchor.anchorId, anchor);
-      return { planes: next };
-    });
+    // autoSelect: seat children on the FIRST detected plane with no tap.
+    const shouldAutoSelect = this.props.autoSelect && this.state.selectedPlaneId == null;
+    this.setState(
+      (prev) => {
+        const next = new Map(prev.planes);
+        next.set(anchor.anchorId, anchor);
+        if (shouldAutoSelect && prev.selectedPlaneId == null) {
+          return { planes: next, selectedPlaneId: anchor.anchorId, tapLocalPosition: null };
+        }
+        return { planes: next };
+      },
+      () => {
+        if (shouldAutoSelect && this.state.selectedPlaneId === anchor.anchorId) {
+          this.props.onPlaneSelected?.(anchor as unknown as ViroPlaneUpdatedMap, anchor.position);
+        }
+      }
+    );
   };
 
   /**

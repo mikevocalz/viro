@@ -52,6 +52,11 @@ type Props = {
      */
     onPlaneSelected?: (plane: ViroPlaneUpdatedMap, tapPosition?: [number, number, number]) => void;
     /**
+     * When true, the FIRST detected plane that passes the filters is selected
+     * automatically (children seat on it at its origin), with no user tap.
+     */
+    autoSelect?: boolean;
+    /**
      * Called for every plane that passes the alignment and size filters,
      * before it is added to the visible set.
      *

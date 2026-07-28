@@ -28,6 +28,7 @@ import com.facebook.react.uimanager.ThemedReactContext;
 import com.facebook.react.uimanager.annotations.ReactProp;
 import com.viromedia.bridge.ReactViroPackage;
 import com.viromedia.bridge.utility.ViroEvents;
+import android.util.Log;
 
 import java.util.Map;
 
@@ -52,6 +53,7 @@ public class VRTVRSceneNavigatorManager extends VRTViroViewGroupManager<VRTVRSce
 
     @Override
     protected VRTVRSceneNavigator createViewInstance(ThemedReactContext reactContext) {
+        Log.i("VRTVRSceneNavigator", "createViewInstance platform=" + mPlatform);
         return new VRTVRSceneNavigator(reactContext, mPlatform);
     }
 

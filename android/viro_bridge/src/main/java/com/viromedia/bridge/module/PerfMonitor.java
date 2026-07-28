@@ -22,6 +22,8 @@
 package com.viromedia.bridge.module;
 
 import android.app.Application;
+import android.app.Activity;
+import android.util.Log;
 
 import com.facebook.react.ReactApplication;
 import com.facebook.react.bridge.ReactApplicationContext;
@@ -35,6 +37,7 @@ import java.lang.ref.WeakReference;
 
 @ReactModule(name = "VRTPerfMonitor")
 public class PerfMonitor extends ReactContextBaseJavaModule {
+    private static final String TAG = "VRTPerfMonitor";
     // https://stackoverflow.com/a/44879687
     @Override
     public boolean canOverrideExistingModule() {
@@ -77,18 +80,22 @@ public class PerfMonitor extends ReactContextBaseJavaModule {
 
     public void setView(ViroView view) {
         if (!mIsInitialized) {
-            Application application = getCurrentActivity().getApplication();
+            Activity activity = getCurrentActivity();
+            Application application = activity == null ? null : activity.getApplication();
             if (application instanceof ReactApplication) {
                 ReactApplication reactApplication = (ReactApplication) application;
                 DevSupportManager devSupport = reactApplication.getReactHost().getDevSupportManager();
                 devSupport.addCustomDevOption("[Viro] Toggle FPS Display", new PerfOptionHandler(this));
 
                 mIsInitialized = true;
+            } else {
+                Log.w(TAG, "setView: current Activity unavailable; FPS dev option deferred");
             }
         }
 
         mView = new WeakReference<ViroView>(view);
         view.setDebugHUDEnabled(mIsShowing);
+        Log.i(TAG, "setView: " + view.getClass().getSimpleName());
     }
 
     /**
