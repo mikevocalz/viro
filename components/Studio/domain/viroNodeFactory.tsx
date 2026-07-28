@@ -20,9 +20,14 @@ import {
 } from "./apiRequestHelpers";
 import { parseMaterialConfig, studioMaterialName } from "./materialConfig";
 import { DragConfiguration } from "./dragConfiguration";
-import { buildViroPhysicsBody, parsePhysicsBodyConfig } from "./physicsConfig";
+import {
+  buildViroPhysicsBody,
+  parsePhysicsBodyConfig,
+  shouldUseKinematicPhysicsDrag,
+} from "./physicsConfig";
 import { StudioVariableStore } from "./variableStore";
 import { StudioVisibilityStore } from "./visibilityStore";
+import { StudioPlacementStore } from "./placementStore";
 
 type SceneNavigator = any;
 
@@ -43,6 +48,12 @@ export type NodeConfig = {
   physicsBody?: Record<string, unknown>;
   viroTag?: string;
   onClick?: () => void;
+  // On Gaze (headset eye-gaze). Setting it enables the node's native canHover.
+  onGaze?: (
+    isHovering: boolean,
+    position: [number, number, number],
+    source: number
+  ) => void;
   animation?: ViroAnimationProp;
 };
 
@@ -54,13 +65,18 @@ export function createNodeConfig(
   scene: StudioSceneMeta | null,
   onAnimationTrigger?: (targetAssetId: string, animKey: string) => void,
   animationStates?: Record<string, ViroAnimationProp>,
+  isDragActive?: (assetId: string) => boolean,
   onSceneChange?: (sceneId: string, sceneName: string) => void,
   runtimeCtx?: SequenceRuntimeContext
 ): NodeConfig {
   const hasTriggerImage = !!asset.trigger_image_url;
+  // Tap-to-place stores the author position as an OFFSET from the runtime tap
+  // point (PlaceableNode adds it), so the camera-relative -2 default and the
+  // "too close" clamp — both meant for camera/plane assets — must not apply.
+  const isTapToPlace = !!asset.tap_to_place && !hasTriggerImage;
 
-  let posZ = asset.position_z ?? -2;
-  if (!hasTriggerImage && posZ > -0.5) {
+  let posZ = asset.position_z ?? (isTapToPlace ? 0 : -2);
+  if (!hasTriggerImage && !isTapToPlace && posZ > -0.5) {
     console.warn(
       `[Studio/NodeFactory] Asset "${asset.name}" Z=${posZ} too close, clamping to -2`
     );
@@ -107,8 +123,12 @@ export function createNodeConfig(
   }
 
   const parsedPhysics = parsePhysicsBodyConfig(asset.physics_config);
+  const dragActive = isDragActive?.(asset.id) ?? false;
   const physicsBody = parsedPhysics
-    ? buildViroPhysicsBody(parsedPhysics)
+    ? buildViroPhysicsBody(parsedPhysics, {
+        kinematicDragOverride:
+          dragActive && shouldUseKinematicPhysicsDrag(asset, parsedPhysics),
+      })
     : undefined;
   const viroTag = parsedPhysics ? asset.id : undefined;
 
@@ -194,11 +214,13 @@ function create3DObject(
   asset: StudioAsset,
   config: NodeConfig,
   onAssetLoaded?: (id: string) => void,
+  notifyPhysicsDrag?: (assetId: string) => void,
   onCollision?: (
     viroTag: string,
     collidedPoint: [number, number, number],
     collidedNormal: [number, number, number]
-  ) => void
+  ) => void,
+  nodeRef?: (ref: unknown) => void
 ): React.ReactElement | null {
   if (!asset.file_url) {
     console.warn(`[Studio] 3D model "${asset.name}" has no file_url`);
@@ -225,6 +247,7 @@ function create3DObject(
   return (
     <Viro3DObject
       key={asset.id}
+      {...(nodeRef ? { ref: nodeRef as any } : {})}
       source={{ uri: asset.file_url }}
       position={config.position}
       rotation={config.rotation}
@@ -241,12 +264,15 @@ function create3DObject(
       }
       // Viro derives native canDrag from `onDrag != undefined`; without this prop
       // the drag recognizer is never attached, even when dragType is set.
-      {...(config.dragType ? { onDrag: () => {} } : {})}
+      {...(config.dragType
+        ? { onDrag: () => notifyPhysicsDrag?.(asset.id) }
+        : {})}
       {...(shaderOverrides ? { shaderOverrides } : {})}
       {...(config.physicsBody
         ? { physicsBody: config.physicsBody as any, viroTag: config.viroTag }
         : {})}
       {...(onCollision ? { onCollision: onCollision as any } : {})}
+      {...(config.onGaze ? { onGaze: config.onGaze as any } : {})}
     />
   );
 }
@@ -254,7 +280,9 @@ function create3DObject(
 function createImage(
   asset: StudioAsset,
   config: NodeConfig,
-  onAssetLoaded?: (id: string) => void
+  onAssetLoaded?: (id: string) => void,
+  notifyPhysicsDrag?: (assetId: string) => void,
+  nodeRef?: (ref: unknown) => void
 ): React.ReactElement | null {
   if (!asset.file_url) {
     console.warn(`[Studio] Image "${asset.name}" has no file_url`);
@@ -264,6 +292,7 @@ function createImage(
   return (
     <ViroImage
       key={asset.id}
+      {...(nodeRef ? { ref: nodeRef as any } : {})}
       source={{ uri: asset.file_url }}
       position={config.position}
       rotation={config.rotation}
@@ -273,7 +302,10 @@ function createImage(
       onClick={config.onClick}
       onLoadEnd={() => onAssetLoaded?.(asset.id)}
       onError={(e) => console.error(`[Studio] Image "${asset.name}" error:`, e)}
-      {...(config.dragType ? { onDrag: () => {} } : {})}
+      {...(config.dragType
+        ? { onDrag: () => notifyPhysicsDrag?.(asset.id) }
+        : {})}
+      {...(config.onGaze ? { onGaze: config.onGaze as any } : {})}
     />
   );
 }
@@ -288,10 +320,24 @@ const VariableText: React.FC<{
   asset: StudioAsset;
   config: NodeConfig;
   store?: StudioVariableStore;
-  // Injected by VisibleNode via cloneElement; TEXT is the only node type that
-  // is a component wrapper, so it forwards visibility to its ViroText.
+  notifyPhysicsDrag?: (assetId: string) => void;
+  nodeRef?: (ref: unknown) => void;
+  // Injected via cloneElement; TEXT is the only node type that is a component
+  // wrapper, so it must forward these to its ViroText: `visible` from
+  // VisibleNode, `position`/`rotation` from PlaceableNode (tap-relative placement).
   visible?: boolean;
-}> = ({ asset, config, store, visible }) => {
+  position?: [number, number, number];
+  rotation?: [number, number, number];
+}> = ({
+  asset,
+  config,
+  store,
+  notifyPhysicsDrag,
+  nodeRef,
+  visible,
+  position,
+  rotation,
+}) => {
   const template = asset.name ?? "";
   const compute = () =>
     store
@@ -309,9 +355,10 @@ const VariableText: React.FC<{
 
   return (
     <ViroText
+      {...(nodeRef ? { ref: nodeRef as any } : {})}
       text={text}
-      position={config.position}
-      rotation={config.rotation}
+      position={position ?? config.position}
+      rotation={rotation ?? config.rotation}
       scale={config.scale}
       dragType={config.dragType}
       animation={config.animation as any}
@@ -323,7 +370,10 @@ const VariableText: React.FC<{
         color: "#FFFFFF",
         textAlign: "center",
       }}
-      {...(config.dragType ? { onDrag: () => {} } : {})}
+      {...(config.dragType
+        ? { onDrag: () => notifyPhysicsDrag?.(asset.id) }
+        : {})}
+      {...(config.onGaze ? { onGaze: config.onGaze as any } : {})}
     />
   );
 };
@@ -354,19 +404,74 @@ const VisibleNode: React.FC<{
   return React.cloneElement(children, { visible });
 };
 
+/**
+ * Gates a tap-to-place node: renders nothing until the end user places the
+ * asset, then mounts it at the tap point with the author position AND rotation
+ * applied relative to where the user was facing when they tapped (see
+ * StudioPlacementStore.resolvePlacedPosition / resolvePlacedRotation), and hands
+ * off to VisibleNode so Set Visibility still applies. Rendered at scene root
+ * (world space), never inside a plane wrapper.
+ */
+const PlaceableNode: React.FC<{
+  assetId: string;
+  store: StudioPlacementStore;
+  authorPosition: [number, number, number];
+  authorRotation: [number, number, number];
+  visibilityStore?: StudioVisibilityStore;
+  children: React.ReactElement<any>;
+}> = ({
+  assetId,
+  store,
+  authorPosition,
+  authorRotation,
+  visibilityStore,
+  children,
+}) => {
+  const [placed, setPlaced] = React.useState(() => store.isPlaced(assetId));
+
+  React.useEffect(() => {
+    setPlaced(store.isPlaced(assetId));
+    return store.subscribe(assetId, () => setPlaced(store.isPlaced(assetId)));
+  }, [store, assetId]);
+
+  if (!placed) return null;
+
+  const position =
+    store.resolvePlacedPosition(assetId, authorPosition) ?? authorPosition;
+  const rotation =
+    store.resolvePlacedRotation(assetId, authorRotation) ?? authorRotation;
+
+  return (
+    <VisibleNode assetId={assetId} store={visibilityStore}>
+      {React.cloneElement(children, { position, rotation })}
+    </VisibleNode>
+  );
+};
+
 function createText(
   asset: StudioAsset,
   config: NodeConfig,
-  store?: StudioVariableStore
+  notifyPhysicsDrag?: (assetId: string) => void,
+  store?: StudioVariableStore,
+  nodeRef?: (ref: unknown) => void
 ): React.ReactElement {
   return (
-    <VariableText key={asset.id} asset={asset} config={config} store={store} />
+    <VariableText
+      key={asset.id}
+      asset={asset}
+      config={config}
+      store={store}
+      notifyPhysicsDrag={notifyPhysicsDrag}
+      nodeRef={nodeRef}
+    />
   );
 }
 
 function createVideo(
   asset: StudioAsset,
-  config: NodeConfig
+  config: NodeConfig,
+  notifyPhysicsDrag?: (assetId: string) => void,
+  nodeRef?: (ref: unknown) => void
 ): React.ReactElement | null {
   if (!asset.file_url) {
     console.warn(`[Studio] Video "${asset.name}" has no file_url`);
@@ -376,6 +481,7 @@ function createVideo(
   return (
     <ViroVideo
       key={asset.id}
+      {...(nodeRef ? { ref: nodeRef as any } : {})}
       source={{ uri: asset.file_url }}
       position={config.position}
       rotation={config.rotation}
@@ -386,7 +492,10 @@ function createVideo(
       loop={true}
       muted={false}
       onError={(e) => console.error(`[Studio] Video "${asset.name}" error:`, e)}
-      {...(config.dragType ? { onDrag: () => {} } : {})}
+      {...(config.dragType
+        ? { onDrag: () => notifyPhysicsDrag?.(asset.id) }
+        : {})}
+      {...(config.onGaze ? { onGaze: config.onGaze as any } : {})}
     />
   );
 }
@@ -404,8 +513,19 @@ export function createNode(
     collidedPoint: [number, number, number],
     collidedNormal: [number, number, number]
   ) => void,
+  isDragActive?: (assetId: string) => boolean,
+  notifyPhysicsDrag?: (assetId: string) => void,
   onSceneChange?: (sceneId: string, sceneName: string) => void,
-  runtimeCtx?: SequenceRuntimeContext
+  runtimeCtx?: SequenceRuntimeContext,
+  // When set (proximity-target assets), captures the live Viro node so the host
+  // can read its world transform for the distance check.
+  registerProximityTarget?: (assetId: string, ref: unknown) => void,
+  // When set (gaze-target assets on a headset), the node's native onGaze handler.
+  onGaze?: (
+    isHovering: boolean,
+    position: [number, number, number],
+    source: number
+  ) => void
 ): React.ReactElement | null {
   const type = resolveType(asset);
   const config = createNodeConfig(
@@ -415,23 +535,50 @@ export function createNode(
     scene,
     onAnimationTrigger,
     animationStates,
+    isDragActive,
     onSceneChange,
     runtimeCtx
   );
+  config.onGaze = onGaze;
+
+  const proximityRef = registerProximityTarget
+    ? (ref: unknown) => registerProximityTarget(asset.id, ref)
+    : undefined;
 
   let node: React.ReactElement | null;
   switch (type) {
     case "3D-MODEL":
-      node = create3DObject(asset, config, onAssetLoaded, onCollision);
+      // NOTE: notifyPhysicsDrag and onCollision are distinct wirings — keep both;
+      // a drag-only merge here once silently killed collisions.
+      node = create3DObject(
+        asset,
+        config,
+        onAssetLoaded,
+        notifyPhysicsDrag,
+        onCollision,
+        proximityRef
+      );
       break;
     case "IMAGE":
-      node = createImage(asset, config, onAssetLoaded);
+      node = createImage(
+        asset,
+        config,
+        onAssetLoaded,
+        notifyPhysicsDrag,
+        proximityRef
+      );
       break;
     case "TEXT":
-      node = createText(asset, config, runtimeCtx?.variableStore);
+      node = createText(
+        asset,
+        config,
+        notifyPhysicsDrag,
+        runtimeCtx?.variableStore,
+        proximityRef
+      );
       break;
     case "VIDEO":
-      node = createVideo(asset, config);
+      node = createVideo(asset, config, notifyPhysicsDrag, proximityRef);
       break;
     default:
       console.warn(`[Studio] Unknown asset type "${type}" for "${asset.name}"`);
@@ -439,6 +586,24 @@ export function createNode(
   }
 
   if (!node) return null;
+
+  // Tap-to-place assets are withheld until placed; PlaceableNode then mounts the
+  // node at the tap point with the author position and rotation applied relative
+  // to the user's facing, and wraps it in VisibleNode itself.
+  if (asset.tap_to_place && runtimeCtx?.placementStore) {
+    return (
+      <PlaceableNode
+        key={asset.id}
+        assetId={asset.id}
+        store={runtimeCtx.placementStore}
+        authorPosition={config.position}
+        authorRotation={config.rotation}
+        visibilityStore={runtimeCtx?.visibilityStore}
+      >
+        {node}
+      </PlaceableNode>
+    );
+  }
 
   // Drive show/hide/toggle from the visibility store (Set Visibility actions);
   // seeded from the asset's author-time hidden_on_load default.

@@ -4,7 +4,14 @@
  *
  */
 import { ViroAnimations } from "./components/Animation/ViroAnimations";
-import { StudioSceneNavigator, StudioARScene } from "./components/Studio";
+import {
+  StudioSceneNavigator,
+  StudioARScene,
+  StudioRecordingIndicator,
+  StudioPlacementIndicator,
+  useStudioRecording,
+  useStudioPlacement,
+} from "./components/Studio";
 import { ViroVisionOSModule, isVisionOS, enterImmersiveSpace, exitImmersiveSpace } from "./components/VisionOS/ViroVisionOSModule";
 import { Viro3DObject } from "./components/Viro3DObject";
 import { Viro360Image } from "./components/Viro360Image";
@@ -416,6 +423,10 @@ export {
   // Studio Integration
   StudioSceneNavigator,
   StudioARScene,
+  StudioRecordingIndicator,
+  StudioPlacementIndicator,
+  useStudioRecording,
+  useStudioPlacement,
   // VisionOS
   ViroVisionOSModule,
   isVisionOS,
@@ -434,4 +445,6 @@ export type {
   StudioSceneFunction,
   StudioSceneMeta,
   StudioProjectMeta,
+  StudioSceneNavigatorHandle,
+  StudioSceneNavigatorProps,
 } from "./components/Studio";
