@@ -20,12 +20,11 @@ exports.isWeb = react_native_1.Platform.OS === "web";
  *   PICO 4 / 4U:    Manufacturer="Pico",   Brand="Pico"
  */
 function readBuildInfo() {
-    var _a, _b, _c, _d;
-    const c = ((_a = react_native_1.Platform.constants) !== null && _a !== void 0 ? _a : {});
+    const c = (react_native_1.Platform.constants ?? {});
     return {
-        manufacturer: ((_b = c.Manufacturer) !== null && _b !== void 0 ? _b : "").toLowerCase(),
-        brand: ((_c = c.Brand) !== null && _c !== void 0 ? _c : "").toLowerCase(),
-        model: ((_d = c.Model) !== null && _d !== void 0 ? _d : "").toLowerCase(),
+        manufacturer: (c.Manufacturer ?? "").toLowerCase(),
+        brand: (c.Brand ?? "").toLowerCase(),
+        model: (c.Model ?? "").toLowerCase(),
     };
 }
 function detectQuest() {

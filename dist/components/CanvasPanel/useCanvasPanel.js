@@ -35,7 +35,18 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.useCanvasPanel = useCanvasPanel;
 const React = __importStar(require("react"));
-const nitro_canvas_in_Vision_1 = require("nitro-canvas-in-Vision");
+// nitro-canvas-in-Vision is an OPTIONAL, private dependency (decax9 panels).
+// require-in-try marks it an optional dep for Metro (allowOptionalDependencies),
+// so apps that never render Gpu/Rive/ThreeJS panels bundle without it; using a
+// panel without the package throws this clear error instead.
+let nitro_canvas_in_Vision_1;
+try {
+    nitro_canvas_in_Vision_1 = require("nitro-canvas-in-Vision");
+} catch (e) {
+    nitro_canvas_in_Vision_1 = new Proxy({}, { get() {
+        throw new Error("This Viro panel needs the optional 'nitro-canvas-in-Vision' package, which is not installed.");
+    } });
+}
 const ViroMaterials_1 = require("../Material/ViroMaterials");
 function useCanvasPanel(opts) {
     const { producerFactory, resolution, sRGB = true, androidRoute = "ahb", lightingModel = "Constant", fallbackColor = "#02070d", materialName: materialNameOverride, onReady, onError, autoTick = true, } = opts;

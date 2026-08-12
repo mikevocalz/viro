@@ -15,5 +15,5 @@
  */
 import * as React from "react";
 export declare class ViroExternalVideo extends React.Component<any> {
-    render(): any;
+    render(): null;
 }

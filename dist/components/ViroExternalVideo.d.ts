@@ -81,6 +81,6 @@ export declare class ViroExternalVideo extends React.Component<Props> {
     _component: ViroNativeRef;
     _onSurfaceReady: () => void;
     _onError: (event: NativeSyntheticEvent<ViroErrorEvent>) => void;
-    render(): React.JSX.Element;
+    render(): React.JSX.Element | null;
 }
 export {};
