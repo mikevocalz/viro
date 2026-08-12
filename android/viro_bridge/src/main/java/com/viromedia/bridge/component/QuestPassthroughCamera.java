@@ -79,10 +79,17 @@ class QuestPassthroughCamera {
             fail("CAMERA permission not granted");
             return;
         }
-        // HEADSET_CAMERA is a custom Horizon OS permission; checkSelfPermission returns
-        // DENIED on non-Quest devices (permission undefined), which is fine — they have
-        // no passthrough camera anyway. On Quest it must be granted at runtime.
-        if (mContext.checkSelfPermission("horizonos.permission.HEADSET_CAMERA")
+        // HEADSET_CAMERA is a Horizon OS (Quest) permission. On Quest it gates the
+        // passthrough camera and must be granted at runtime. On PICO it is UNDEFINED
+        // — `pm` reports "Unknown permission", so checkSelfPermission ALWAYS returns
+        // DENIED even though the manifest declaration is what un-filters the RGB
+        // see-through cameras from Camera2 enumeration. Enforcing the runtime check
+        // there would make the camera permanently unreachable. So only enforce it on
+        // Quest;
+        // elsewhere (PICO) rely on android.permission.CAMERA + the declaration.
+        String mfr = android.os.Build.MANUFACTURER;
+        boolean isQuest = mfr != null && (mfr.equalsIgnoreCase("Oculus") || mfr.equalsIgnoreCase("Meta"));
+        if (isQuest && mContext.checkSelfPermission("horizonos.permission.HEADSET_CAMERA")
                 != PackageManager.PERMISSION_GRANTED) {
             fail("horizonos.permission.HEADSET_CAMERA not granted — request it at runtime "
                 + "or `adb shell pm grant <pkg> horizonos.permission.HEADSET_CAMERA`");

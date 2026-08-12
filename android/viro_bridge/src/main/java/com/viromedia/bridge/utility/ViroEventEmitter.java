@@ -4,6 +4,8 @@
 
 package com.viromedia.bridge.utility;
 
+import android.util.Log;
+
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.uimanager.UIManagerHelper;
@@ -41,6 +43,8 @@ public final class ViroEventEmitter {
      * @param eventName     one of {@link ViroEvents}
      * @param payload       event data (may be null)
      */
+    private static int sDetDiag = 0;
+
     public static void emit(ReactContext reactContext,
                             int viewId,
                             String eventName,
@@ -50,13 +54,28 @@ public final class ViroEventEmitter {
         }
         EventDispatcher dispatcher =
                 UIManagerHelper.getEventDispatcherForReactTag(reactContext, viewId);
+        // Fabric routes events by surfaceId; the legacy Event(viewId) constructor
+        // leaves it UNSET (-1) and the C++ event pipe then drops the event. Resolve
+        // the real surfaceId so an event from ANY surface reaches JS — including a
+        // backgrounded panel surface (e.g. the ObjectDetector view while an immersive
+        // VRActivity is foreground), whose dispatcher is still live even though it is
+        // not the visible surface.
+        final int surfaceId = UIManagerHelper.getSurfaceId(reactContext);
+        // One-shot diagnostic: the detector's onDetection was silently not reaching
+        // JS on New Arch; log the first few emits with the routing facts.
+        if ("onDetectionViro".equals(eventName) && sDetDiag < 5) {
+            sDetDiag++;
+            Log.i("ViroEventEmitter", "onDetectionViro emit #" + sDetDiag
+                + " dispatcher=" + (dispatcher != null) + " surfaceId=" + surfaceId
+                + " viewId=" + viewId);
+        }
         if (dispatcher == null) {
             // View not in the active UIManager — happens for components mounted
             // in a surface that is no longer attached. Drop silently; the live
             // surface (if any) will receive its own dispatch.
             return;
         }
-        dispatcher.dispatchEvent(new ViroBridgeEvent(viewId, eventName, payload));
+        dispatcher.dispatchEvent(new ViroBridgeEvent(surfaceId, viewId, eventName, payload));
     }
 
     /**
@@ -69,8 +88,8 @@ public final class ViroEventEmitter {
         private final String mEventName;
         private final WritableMap mPayload;
 
-        ViroBridgeEvent(int viewId, String eventName, WritableMap payload) {
-            super(viewId);
+        ViroBridgeEvent(int surfaceId, int viewId, String eventName, WritableMap payload) {
+            super(surfaceId, viewId);
             mEventName = eventName;
             mPayload = payload;
         }

@@ -150,7 +150,8 @@ public class ReactViroPackage implements ReactPackage {
                 new VRTStudioModule(reactContext),
                 new StreamingAudioModule(reactContext),
                 new ViroSplatPassModule(reactContext),
-                new ViroOrbPassModule(reactContext)
+                new ViroOrbPassModule(reactContext),
+                new com.viromedia.bridge.component.ViroDetectorModule(reactContext)
         ));
         if (mViroPlatform == ViroPlatform.QUEST) {
             modules.add(new VRModuleOpenXR(reactContext));

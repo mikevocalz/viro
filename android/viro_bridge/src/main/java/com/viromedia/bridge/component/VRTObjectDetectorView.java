@@ -76,9 +76,106 @@ public class VRTObjectDetectorView extends FrameLayout {
 
     private static InferenceProvider sInferenceProvider = null;
 
+    /** Most recent inference results (plain, normalized-box data), for the JS PULL
+     *  path — native→JS push events don't cross reliably on bridgeless New Arch, so
+     *  JS polls ViroDetectorModule.getLatestDetections() instead of receiving onDetection. */
+    private static volatile java.util.List<java.util.Map<String, Object>> sLatestDets =
+        java.util.Collections.emptyList();
+
     /** Called by react-viro-onnx at install time. */
     public static void registerInferenceProvider(InferenceProvider provider) {
         sInferenceProvider = provider;
+    }
+
+    /** Snapshot of the latest detections as a JSON string: [{label,confidence,
+     *  boundingBox:{x,y,width,height}}]. boundingBox is normalized [0,1]. Read by
+     *  ViroDetectorModule for the JS pull loop. */
+    public static String latestDetectionsJson() {
+        java.util.List<java.util.Map<String, Object>> dets = sLatestDets;
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < dets.size(); i++) {
+            java.util.Map<String, Object> d = dets.get(i);
+            if (i > 0) sb.append(',');
+            Object label = d.get("label");
+            Object conf = d.get("confidence");
+            @SuppressWarnings("unchecked")
+            java.util.Map<String, Object> bb = (java.util.Map<String, Object>) d.get("boundingBox");
+            sb.append("{\"label\":\"")
+              .append(label == null ? "" : String.valueOf(label).replace("\\", "\\\\").replace("\"", "\\\""))
+              .append("\",\"confidence\":")
+              .append(conf instanceof Number ? ((Number) conf).doubleValue() : 0)
+              .append(",\"boundingBox\":{\"x\":").append(bbNum(bb, "x"))
+              .append(",\"y\":").append(bbNum(bb, "y"))
+              .append(",\"width\":").append(bbNum(bb, "width"))
+              .append(",\"height\":").append(bbNum(bb, "height"))
+              .append("}}");
+        }
+        return sb.append("]").toString();
+    }
+
+    private static double bbNum(java.util.Map<String, Object> m, String k) {
+        Object v = m == null ? null : m.get(k);
+        return v instanceof Number ? ((Number) v).doubleValue() : 0;
+    }
+
+    /** JPEG (base64) crop of the top detection out of the model-input bitmap, for
+     *  the JS CLIP identifier. Empty until a detection has been cropped. */
+    private static volatile String sLatestCropB64 = "";
+
+    public static String latestCardCropB64() {
+        return sLatestCropB64;
+    }
+
+    /** Crop the highest-confidence detection out of mScaledBitmap (the 640² model
+     *  input, where boxes are normalized [0,1]) and cache it as base64 JPEG. Runs on
+     *  the inference thread; a small region encode is cheap at the throttled FPS. */
+    private void cacheTopCrop(java.util.List<java.util.Map<String, Object>> dets) {
+        final Bitmap src = mScaledBitmap;
+        if (src == null) return;
+        final int W = src.getWidth(), H = src.getHeight();
+        // Prefer the highest-confidence detection's box; but the live card-detector
+        // has poor recall on the grainy passthrough feed, so when it finds nothing
+        // fall back to a fixed CENTER square. That RETICLE path lets the JS CLIP
+        // identifier recognize a card the user simply holds in the middle of view,
+        // independent of whether the detector fired.
+        java.util.Map<String, Object> top = null;
+        double best = -1;
+        if (dets != null) {
+            for (java.util.Map<String, Object> d : dets) {
+                Object c = d.get("confidence");
+                double cf = c instanceof Number ? ((Number) c).doubleValue() : 0;
+                if (cf > best) { best = cf; top = d; }
+            }
+        }
+        int x, y, w, h;
+        @SuppressWarnings("unchecked")
+        java.util.Map<String, Object> bb =
+            top == null ? null : (java.util.Map<String, Object>) top.get("boundingBox");
+        if (bb != null) {
+            x = (int) Math.max(0, Math.round(bbNum(bb, "x") * W));
+            y = (int) Math.max(0, Math.round(bbNum(bb, "y") * H));
+            w = (int) Math.round(bbNum(bb, "width") * W);
+            h = (int) Math.round(bbNum(bb, "height") * H);
+            w = Math.min(w, W - x);
+            h = Math.min(h, H - y);
+        } else {
+            int side = (int) (Math.min(W, H) * 0.66); // centre reticle
+            x = (W - side) / 2;
+            y = (H - side) / 2;
+            w = side;
+            h = side;
+        }
+        if (w < 32 || h < 32) return; // too small to identify — skip
+        try {
+            Bitmap crop = Bitmap.createBitmap(src, x, y, w, h);
+            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+            crop.compress(Bitmap.CompressFormat.JPEG, 88, baos);
+            crop.recycle();
+            sLatestCropB64 = android.util.Base64.encodeToString(
+                baos.toByteArray(), android.util.Base64.NO_WRAP);
+        } catch (Exception e) {
+            Log.w(TAG, "cacheTopCrop failed", e);
+        }
     }
 
     private static final int   DEFAULT_MAX_FPS    = 15;
@@ -201,6 +298,21 @@ public class VRTObjectDetectorView extends FrameLayout {
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
+        Log.i(TAG, "onAttachedToWindow -> startSession");
+        startSession();
+    }
+
+    /**
+     * Start once props are applied, WITHOUT waiting for onAttachedToWindow. On the
+     * immersive path (Quest / PICO) this detector is a zero-size view in the panel
+     * Activity, which is backgrounded the instant the VRActivity launches, so its
+     * view never attaches to a window and onAttachedToWindow never fires. The app
+     * is still foreground (via the VRActivity), so the Camera2 headset path runs
+     * fine — it just needs a trigger that doesn't depend on attachment. Called from
+     * the ViewManager's onAfterUpdateTransaction. Idempotent (startSession guards
+     * on mSessionStarted).
+     */
+    public void ensureStarted() {
         startSession();
     }
 
@@ -218,6 +330,9 @@ public class VRTObjectDetectorView extends FrameLayout {
         if (mSessionStarted) return;
         mSessionStarted = true;
         mArRetryCount = 0;
+        Log.i(TAG, "startSession begin (model=" + mModel + ", provider="
+            + (sInferenceProvider != null) + ", quest=" + isQuestDevice()
+            + ", pico=" + isPicoDevice() + ")");
 
         mCameraExecutor.execute(() -> {
             // The inference provider (react-viro-onnx) owns model loading + inference; it
@@ -257,11 +372,15 @@ public class VRTObjectDetectorView extends FrameLayout {
             return;
         }
 
-        // No ARCore view. On a Quest headset there's no ARCore camera and the
-        // passthrough layer isn't app-readable, so capture from the Meta Passthrough
-        // Camera API instead. The detector is a plain RN view (the camera is
-        // independent of the renderer), so detect Quest by device, not the view tree.
-        if (isQuestDevice()) {
+        // No ARCore view. On a headset (Quest OR PICO) there's no ARCore camera and
+        // the passthrough layer isn't app-readable, so capture from the headset RGB
+        // camera via Camera2 instead. PICO OS honors horizonos.permission.HEADSET_CAMERA
+        // exactly as Horizon OS does — WITHOUT it the OS filters the see-through cameras
+        // out of Camera2 enumeration ("Available cameras: 0"); WITH it (the app declares
+        // it) they enumerate and QuestPassthroughCamera's back-facing fallback opens one.
+        // Detect by device, not the view tree (the detector is a plain RN view, so the
+        // camera is independent of the renderer).
+        if (isQuestDevice() || isPicoDevice()) {
             startQuestCamera();
             return;
         }
@@ -270,7 +389,7 @@ public class VRTObjectDetectorView extends FrameLayout {
             mMainHandler.postDelayed(this::startARMode, 100);
             return;
         }
-        emitError("No <ViroARSceneNavigator> found and not running on a Quest headset.");
+        emitError("No <ViroARSceneNavigator> found and not running on a camera-capable headset (Quest / PICO).");
     }
 
     // Quest: capture from the headset camera (Camera2 / Passthrough Camera API) and
@@ -283,7 +402,7 @@ public class VRTObjectDetectorView extends FrameLayout {
         mQuestCamera.start(
             (rgba, w, h) -> onARCameraImage(rgba, w, h, null, 0, 0, w, h),
             this::emitError);
-        Log.i(TAG, "Quest passthrough-camera mode active (provider="
+        Log.i(TAG, "Headset passthrough-camera mode active (provider="
             + (sInferenceProvider != null) + ", model=" + mModel + ")");
         if (!mReadyFired) {
             mReadyFired = true;
@@ -302,6 +421,13 @@ public class VRTObjectDetectorView extends FrameLayout {
     private static boolean isQuestDevice() {
         String m = android.os.Build.MANUFACTURER;
         return m != null && (m.equalsIgnoreCase("Oculus") || m.equalsIgnoreCase("Meta"));
+    }
+
+    // PICO headsets (Neo/4/4 Ultra) report MANUFACTURER "Pico". Their OS honors
+    // horizonos.permission.HEADSET_CAMERA to un-filter the RGB see-through cameras.
+    private static boolean isPicoDevice() {
+        String m = android.os.Build.MANUFACTURER;
+        return m != null && m.equalsIgnoreCase("Pico");
     }
 
     private void stopARMode() {
@@ -474,6 +600,14 @@ public class VRTObjectDetectorView extends FrameLayout {
             : mModel;
         List<java.util.Map<String, Object>> dets =
             sInferenceProvider.infer(modelPath, nchwData, MODEL_INPUT_SIZE, mConfidenceThreshold);
+        // Cache for the JS pull path (see latestDetectionsJson): plain data, safe to
+        // hold statically — unlike the single-use WritableMaps built below.
+        sLatestDets = dets != null ? dets : java.util.Collections.<java.util.Map<String, Object>>emptyList();
+        // Crop the top detection out of the model-input bitmap so JS can run the CLIP
+        // identifier ON the card pixels. This is the only source that ACTUALLY sees the
+        // card in immersive XR — takeScreenshot captures the Viro render, not the
+        // passthrough camera the detection came from.
+        cacheTopCrop(dets);
         for (java.util.Map<String, Object> d : dets) {
             String label = (String) d.get("label");
             if (!matchesCategories(label)) continue;
@@ -606,14 +740,39 @@ public class VRTObjectDetectorView extends FrameLayout {
     // -------------------------------------------------------------------------
 
     private void emitDetections(List<WritableMap> detections) {
+        final WritableMap event = Arguments.createMap();
         WritableArray array = Arguments.createArray();
         for (WritableMap d : detections) {
             array.pushMap(d);
         }
-        WritableMap event = Arguments.createMap();
         event.putArray("detections", array);
-        emitEvent(ViroEvents.ON_DETECTION, event);
+        event.putInt("viewId", getId());
+        final int n = detections.size();
+        final ReactContext ctx = (ReactContext) getContext();
+        if (ctx == null) return;
+        // Custom DIRECT view events from this legacy (Paper) view do not survive the
+        // New-Architecture Fabric interop in the immersive panel↔VRActivity split
+        // (native dispatch is correct — live dispatcher, valid surfaceId — but the
+        // interop never delivers to JS). Emit a GLOBAL device event instead: surface/
+        // activity independent, so it reaches JS whichever surface is foreground.
+        // Consumers subscribe via DeviceEventEmitter('onViroObjectDetection').
+        // MUST post to the main handler: emitDetections runs on the camera-executor
+        // background thread, and device-event delivery has to originate on the main/JS
+        // thread to reach JS on bridgeless (the view-event path posts likewise).
+        mMainHandler.post(() -> {
+            if (sDetEmitDiag < 5) {
+                sDetEmitDiag++;
+                Log.i(TAG, "emitDeviceEvent onViroObjectDetection #" + sDetEmitDiag + " n=" + n);
+            }
+            try {
+                ctx.emitDeviceEvent("onViroObjectDetection", event);
+            } catch (Exception e) {
+                Log.w(TAG, "device-event emit failed", e);
+            }
+        });
     }
+
+    private static int sDetEmitDiag = 0;
 
     private void emitReady() {
         emitEvent(ViroEvents.ON_DETECTOR_READY, Arguments.createMap());

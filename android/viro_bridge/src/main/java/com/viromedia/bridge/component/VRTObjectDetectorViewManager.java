@@ -36,7 +36,20 @@ public class VRTObjectDetectorViewManager extends SimpleViewManager<VRTObjectDet
 
     @Override
     protected VRTObjectDetectorView createViewInstance(ThemedReactContext reactContext) {
+        android.util.Log.i("VRTObjectDetector", "createViewInstance");
         return new VRTObjectDetectorView(reactContext);
+    }
+
+    @Override
+    protected void onAfterUpdateTransaction(VRTObjectDetectorView view) {
+        super.onAfterUpdateTransaction(view);
+        // Start the detector once props are applied, independent of window
+        // attachment. On the immersive path the view lives in the backgrounded
+        // panel Activity and onAttachedToWindow never fires, so relying on it
+        // leaves the detector dead (no camera, no detections). This hook runs on
+        // every mount/prop-commit; ensureStarted() is idempotent.
+        android.util.Log.i("VRTObjectDetector", "onAfterUpdateTransaction -> ensureStarted");
+        view.ensureStarted();
     }
 
     @ReactProp(name = "model")
