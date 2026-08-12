@@ -638,38 +638,21 @@ public class VRTARSceneNavigator extends VRT3DSceneNavigator {
      * ViroWorkspace/plans/viro-ar-recording-playback-plan.md. Not to be confused with
      * startVideoRecording/stopVideoRecording above, which capture the rendered screen only.
      */
+    // FORK NOTE: upstream's AR session recording (W4) needs ARScene.startRecording /
+    // RecordingStatus from the upstream viro_renderer AAR. This fork ships its own
+    // renderer AAR (PICO passthrough, per-eye FBO, haptics, ExternalSurfaceTexture)
+    // which predates that API, so the bridge reports UNSUPPORTED instead of calling
+    // through. Restore upstream's bodies when the fork renderer picks up recording.
     public void startRecording(String outputDir, RecordingCallback callback) {
-        ARScene arScene = getCurrentARScene();
-        if (arScene == null) {
-            callback.onFailure("AR scene not available");
-            return;
-        }
-        arScene.startRecording(outputDir, getContext(), new ARScene.RecordingStartListener() {
-            @Override
-            public void onSuccess() {
-                callback.onSuccess();
-            }
-
-            @Override
-            public void onFailure(String error) {
-                callback.onFailure(error);
-            }
-        });
+        callback.onFailure("AR session recording is not supported by this renderer build");
     }
 
     public void stopRecording() {
-        ARScene arScene = getCurrentARScene();
-        if (arScene != null) {
-            arScene.stopRecording();
-        }
+        // no-op — see FORK NOTE on startRecording
     }
 
     public String getRecordingStatus() {
-        ARScene arScene = getCurrentARScene();
-        if (arScene == null) {
-            return ARScene.RecordingStatus.UNSUPPORTED.name();
-        }
-        return arScene.getRecordingStatus().name();
+        return "UNSUPPORTED"; // mirrors ARScene.RecordingStatus.UNSUPPORTED.name()
     }
 
     public void resolveCloudAnchor(String cloudAnchorId,
