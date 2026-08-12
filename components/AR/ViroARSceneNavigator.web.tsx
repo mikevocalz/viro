@@ -8,9 +8,11 @@
  * permission can only be requested from a tap. So we render a "Start AR" overlay
  * and begin tracking on tap.
  *
- * slam-wasm is loaded as a classic <script> exposing a global `SlamModule`
- * factory (matches the slam web build: MODULARIZE + EXPORT_NAME='SlamModule').
- * Override via the `loadSlam` prop for bundler/ESM setups.
+ * The tracking engine is loaded as a classic <script> exposing a global
+ * `SlamModule` factory (MODULARIZE + EXPORT_NAME='SlamModule'). That engine is
+ * tinyvio, built through its platforms/slam drop-in C API — the name is the
+ * interface's, not the implementation's, and keeping it is why this file did
+ * not change when the engine did. Override via `loadSlam` for ESM setups.
  *
  * MVP scope: single scene; camera + 6-DoF pose tracking. Planes/hit-test are a
  * follow-up.
@@ -48,6 +50,7 @@ type ArOptions = Partial<
     | "detectPlanes"
     | "maxPlanes"
     | "renderWhileLimited"
+    | "playback"
   >
 >;
 
@@ -57,7 +60,7 @@ type Props = {
   /** WASM renderer asset-loading options (bundler/ESM). See Viro3DSceneNavigator.web. */
   webRendererOptions?: Omit<ViroWebRendererOptions, "canvas">;
   /**
-   * URL to the slam-wasm glue (slam_wasm.js). Injected as a <script>; the build
+   * URL to the tracking engine's glue (tinyvio-slam.js). Injected as a <script>; the build
    * exposes a global `SlamModule` factory. Ignored if `loadSlam` is provided.
    */
   slamScriptUrl?: string;
@@ -65,6 +68,14 @@ type Props = {
   loadSlam?: ViroArSessionOptions["loadSlam"];
   /** Capture/tuning options for tracking. */
   arOptions?: ArOptions;
+  /**
+   * Called once the AR session is running, with the session itself.
+   *
+   * For hosts that drive the session rather than only observe it — replaying a
+   * recording means stepping frames by hand, which needs the session object.
+   * Live hosts do not need this; the session is also on ViroARContext.
+   */
+  onSessionReady?: (session: ViroArSession) => void;
   /** Overlay label for the start button. */
   startLabel?: string;
   [key: string]: any;
@@ -226,8 +237,13 @@ export function ViroARSceneNavigator(props: Props) {
     if (!renderer || starting || started) return;
     setStarting(true);
     setError(null);
-    // Request DeviceMotion permission from within this tap (required on iOS).
-    await requestDeviceMotionPermission();
+    // Replay needs neither: no camera to open, no motion events to subscribe to.
+    // Asking anyway would put a permission prompt in front of a preview that
+    // cannot use the answer.
+    if (!props.arOptions?.playback) {
+      // Request DeviceMotion permission from within this tap (required on iOS).
+      await requestDeviceMotionPermission();
+    }
     const session = new ViroArSession({
       sceneApi: renderer.scene,
       loadSlam: resolveLoadSlam(),
@@ -245,7 +261,20 @@ export function ViroARSceneNavigator(props: Props) {
     await session.start();
     setStarted(true);
     setStarting(false);
-  }, [renderer, starting, started, resolveLoadSlam, props.arOptions]);
+    props.onSessionReady?.(session);
+  }, [renderer, starting, started, resolveLoadSlam, props.arOptions, props.onSessionReady]);
+
+  // Replay starts on its own. The button exists to satisfy a browser that will
+  // not open a camera without a gesture; there is no camera here, and a preview
+  // that waits for a click nobody is there to make would simply never render.
+  useEffect(() => {
+    // Waits for rootNode, not just for the renderer: the live path starts from a
+    // tap, which happens long after the scene has mounted, and matching that
+    // ordering costs nothing.
+    if (props.arOptions?.playback && renderer && rootNode && !started && !starting) {
+      void startAR();
+    }
+  }, [props.arOptions?.playback, renderer, rootNode, started, starting, startAR]);
 
   const SceneComponent = props.initialScene?.scene;
 

@@ -1,3 +1,9 @@
+/**
+ * True when running on the web platform (react-native-web). Web uses the
+ * WASM/WebGL2 renderer via @reactvision/viro-web-renderer and the .web.tsx
+ * bridge instead of the native view managers.
+ */
+export declare const isWeb: boolean;
 /** True iff the device is a Meta Quest (1, 2, Pro, 3, 3S). */
 export declare const isQuest: boolean;
 /**

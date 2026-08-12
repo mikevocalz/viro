@@ -1,7 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.hasOpenXRSupport = exports.isXRHeadset = exports.isPico = exports.isQuest = void 0;
+exports.hasOpenXRSupport = exports.isXRHeadset = exports.isPico = exports.isQuest = exports.isWeb = void 0;
 const react_native_1 = require("react-native");
+/**
+ * True when running on the web platform (react-native-web). Web uses the
+ * WASM/WebGL2 renderer via @reactvision/viro-web-renderer and the .web.tsx
+ * bridge instead of the native view managers.
+ */
+exports.isWeb = react_native_1.Platform.OS === "web";
 /**
  * Per-vendor headset detection. Both use `Platform.constants`
  * (Android `Build.MANUFACTURER`, `BRAND`, `MODEL`) — branding strings
@@ -14,11 +20,12 @@ const react_native_1 = require("react-native");
  *   PICO 4 / 4U:    Manufacturer="Pico",   Brand="Pico"
  */
 function readBuildInfo() {
-    const c = (react_native_1.Platform.constants ?? {});
+    var _a, _b, _c, _d;
+    const c = ((_a = react_native_1.Platform.constants) !== null && _a !== void 0 ? _a : {});
     return {
-        manufacturer: (c.Manufacturer ?? "").toLowerCase(),
-        brand: (c.Brand ?? "").toLowerCase(),
-        model: (c.Model ?? "").toLowerCase(),
+        manufacturer: ((_b = c.Manufacturer) !== null && _b !== void 0 ? _b : "").toLowerCase(),
+        brand: ((_c = c.Brand) !== null && _c !== void 0 ? _c : "").toLowerCase(),
+        model: ((_d = c.Model) !== null && _d !== void 0 ? _d : "").toLowerCase(),
     };
 }
 function detectQuest() {

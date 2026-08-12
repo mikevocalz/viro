@@ -23,6 +23,8 @@ import { Viro3DSceneNavigator } from "../Viro3DSceneNavigator.web";
 import { ViroARSceneNavigator } from "../AR/ViroARSceneNavigator.web";
 import { StudioARScene } from "./StudioARScene.web";
 import { StudioVariableStore } from "./domain/variableStore";
+import { StudioPlacementIndicator } from "./StudioPlacementIndicator.web";
+import { StudioRecordingIndicator } from "./StudioRecordingIndicator.web";
 import type { SequenceRuntimeContext } from "./domain/sceneNavigationHandler";
 import type { StudioSceneResponse } from "./types";
 
@@ -51,6 +53,28 @@ export interface StudioSceneNavigatorWebProps {
   onSceneLoaded?: (sceneData: StudioSceneResponse) => void;
   onPlaneDetected?: () => void;
   onUnsupported?: (features: string[]) => void;
+  /**
+   * Render the REC pill while a RECORD_VIDEO toggle is running. Default true,
+   * matching native. Hosts with their own chrome set this false and render
+   * <StudioRecordingIndicator /> where it fits.
+   */
+  recordingIndicator?: boolean;
+  /**
+   * Render the tap-to-place prompt while a scene asset awaits placement.
+   * Default true, matching native.
+   */
+  placementIndicator?: boolean;
+  /**
+   * Capture/tuning options forwarded to the AR session. Merged over the
+   * defaults this component sets, so a caller can add without restating them.
+   * Passing `playback` here replays a recording instead of opening a camera.
+   */
+  arOptions?: Record<string, unknown>;
+  /**
+   * Called with the AR session once it is running, for hosts that drive it
+   * rather than only observe it — stepping a replay, for instance.
+   */
+  onSessionReady?: (session: any) => void;
   noAssetsMessage?: string;
   loadingView?: React.ReactNode;
   renderError?: (error: Error) => React.ReactNode;
@@ -66,6 +90,10 @@ export const StudioSceneNavigator = forwardRef<
   StudioSceneNavigatorWebProps
 >((props, ref) => {
   const {
+    recordingIndicator = true,
+    placementIndicator = true,
+    arOptions,
+    onSessionReady,
     sceneData: injectedSceneData,
     loadScene,
     sceneId,
@@ -173,20 +201,47 @@ export const StudioSceneNavigator = forwardRef<
     />
   );
 
+  // The two HUD pills sit over the canvas rather than in it: they are DOM
+  // siblings, so neither the WebGL capture nor a canvas recorder sees them,
+  // which is the same guarantee the native ones give. Offsets mirror the
+  // native constants (iOS branch — there is no status bar to measure on web).
+  const overlay: React.CSSProperties = {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    display: "flex",
+    justifyContent: "center",
+    pointerEvents: "none",
+  };
+
   return (
-    <div ref={containerRef} style={{ width: "100%", height: "100%" }}>
+    <div
+      ref={containerRef}
+      style={{ width: "100%", height: "100%", position: "relative" }}
+    >
       {resolvedMode === "ar" ? (
         <ViroARSceneNavigator
           initialScene={{ scene: SceneComponent }}
           webRendererOptions={webRendererOptions}
           slamScriptUrl={slamScriptUrl}
-          arOptions={{ detectPlanes: true }}
+          arOptions={{ detectPlanes: true, ...arOptions }}
+          onSessionReady={onSessionReady}
         />
       ) : (
         <Viro3DSceneNavigator
           initialScene={{ scene: SceneComponent }}
           webRendererOptions={webRendererOptions}
         />
+      )}
+      {recordingIndicator && (
+        <div style={{ ...overlay, top: 52 }}>
+          <StudioRecordingIndicator />
+        </div>
+      )}
+      {placementIndicator && (
+        <div style={{ ...overlay, top: 64, padding: "0 24px" }}>
+          <StudioPlacementIndicator />
+        </div>
       )}
     </div>
   );

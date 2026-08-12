@@ -3,10 +3,12 @@
  * to the native VRTMaterialManager, it stores them in the web material registry,
  * where node components resolve them by name and build materials via the C API.
  *
- * MVP scope: diffuseColor + lightingModel. Textures/PBR maps/shader modifiers
- * are accepted but currently ignored on web.
+ * Supports diffuseColor, lightingModel, scalar properties, PBR textures,
+ * shaderModifiers, updateShaderUniform, and deleteMaterials (parsed/dispatched
+ * the same way as MaterialManager.java's native bridge — see
+ * viroMaterialRegistry.ts).
  */
-import { registerViroMaterials } from "../Web/viroMaterialRegistry";
+import { registerViroMaterials, updateMaterialShaderUniform, deleteViroMaterials } from "../Web/viroMaterialRegistry";
 
 // Type-only re-exports (erased at compile time — no native module import).
 export type {
@@ -27,7 +29,16 @@ export class ViroMaterials {
     registerViroMaterials(materials);
   }
 
-  // Not yet implemented on web; accepted as no-ops so shared code doesn't break.
-  static deleteMaterials(_materials: any) {}
-  static updateShaderUniform(_material: any, _uniform: any, _value: any) {}
+  static deleteMaterials(materials: string[]) {
+    deleteViroMaterials(materials);
+  }
+
+  static updateShaderUniform(
+    materialName: string,
+    uniformName: string,
+    uniformType: "float" | "vec2" | "vec3" | "vec4" | "mat4" | "sampler2D",
+    value: number | number[] | any,
+  ) {
+    updateMaterialShaderUniform(materialName, uniformName, uniformType, value);
+  }
 }
