@@ -121,13 +121,19 @@ public class ReactViroPackage implements ReactPackage {
         @Deprecated
         OVR_MOBILE,
         AR,
-        QUEST
+        QUEST,
+        // PICO OS OpenXR headsets, same backend as QUEST.
+        PICO
     }
 
     private final ViroPlatform mViroPlatform;
 
     public ReactViroPackage(ViroPlatform platform) {
         mViroPlatform = platform;
+    }
+
+    private boolean isOpenXR() {
+        return mViroPlatform == ViroPlatform.QUEST || mViroPlatform == ViroPlatform.PICO;
     }
 
     @Override
@@ -156,7 +162,7 @@ public class ReactViroPackage implements ReactPackage {
                 new ViroOrbPassModule(reactContext),
                 new com.viromedia.bridge.component.ViroDetectorModule(reactContext)
         ));
-        if (mViroPlatform == ViroPlatform.QUEST) {
+        if (isOpenXR()) {
             modules.add(new VRModuleOpenXR(reactContext));
             modules.add(new VRLauncherModule(reactContext));
         }

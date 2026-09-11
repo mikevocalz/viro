@@ -138,6 +138,7 @@ public class VRTVRSceneNavigator extends VRT3DSceneNavigator {
 
         @Override
         public void onFailure(ViroViewOpenXR.StartupError error, String message) {
+            ViroLog.error(TAG, "OpenXR startup failed: " + error + " — " + message);
             // TODO: propagate failure to JS via onError event
         }
     }
@@ -158,6 +159,7 @@ public class VRTVRSceneNavigator extends VRT3DSceneNavigator {
                         + "use ViroPlatform.QUEST (OpenXR) for Meta headsets.");
                 return new ViroViewOVR(reactContext.getCurrentActivity(),
                         new StartupListenerOVR(this));
+            case PICO:
             case QUEST:
                 return new ViroViewOpenXR(reactContext.getCurrentActivity(),
                         new StartupListenerOpenXR(this));

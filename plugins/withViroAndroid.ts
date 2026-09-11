@@ -83,9 +83,9 @@ const withBranchAndroid: ConfigPlugin<ViroConfigurationOptions> = (config) => {
           if (Array.isArray(viroPlugin[1].android?.xRMode)) {
             viroPluginConfig = (
               viroPlugin[1].android?.xRMode as XrMode[]
-            ).filter((mode) => ["AR", "GVR", "OVR_MOBILE", "QUEST"].includes(mode));
+            ).filter((mode) => ["AR", "GVR", "OVR_MOBILE", "QUEST", "PICO"].includes(mode));
           } else if (
-            ["AR", "GVR", "OVR_MOBILE", "QUEST"].includes(viroPlugin[1]?.android?.xRMode)
+            ["AR", "GVR", "OVR_MOBILE", "QUEST", "PICO"].includes(viroPlugin[1]?.android?.xRMode)
           ) {
             viroPluginConfig = [viroPlugin[1]?.android.xRMode];
           }
@@ -229,6 +229,7 @@ const withViroManifest = (config: ExpoConfig) =>
   withAndroidManifest(
     config,
     async (newConfig: ExportedConfigWithProps<any>) => {
+      // TODO(pico): PICO manifest block + activity registration — see docs/pico, gated on device facts
       const contents = newConfig.modResults;
       contents.manifest.$["xmlns:tools"] = "http://schemas.android.com/tools";
 
@@ -526,15 +527,20 @@ const withViroQuestActivity: ConfigPlugin<ViroConfigurationOptions> = (config, p
     const xrMode = viroPluginEntry[1]?.android?.xRMode;
     if (Array.isArray(xrMode)) {
       xrModes = xrMode.filter((m: string) =>
-        ["AR", "GVR", "OVR_MOBILE", "QUEST"].includes(m)
+        ["AR", "GVR", "OVR_MOBILE", "QUEST", "PICO"].includes(m)
       );
     } else if (
       typeof xrMode === "string" &&
-      ["AR", "GVR", "OVR_MOBILE", "QUEST"].includes(xrMode)
+      ["AR", "GVR", "OVR_MOBILE", "QUEST", "PICO"].includes(xrMode)
     ) {
       xrModes = [xrMode];
     }
   }
+  // QUEST-only (not widened to PICO): the VRActivity.kt template itself is
+  // Android-generic, but this same function (step 3 below) registers the
+  // activity with com.oculus.intent.category.VR + com.oculus.vr.focusaware —
+  // Quest-specific. PICO uses pvr.app.type=vr and no oculus categories, an
+  // unresolved PICO-vs-Quest manifest difference — see TODO(pico) above.
   if (!xrModes.includes("QUEST")) return config;
 
   // 1. Generate VRActivity.kt
