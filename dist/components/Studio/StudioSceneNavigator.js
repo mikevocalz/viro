@@ -287,7 +287,7 @@ exports.StudioSceneNavigator = (0, react_1.forwardRef)(function StudioSceneNavig
         loadedSceneIdRef.current = resolvedSceneId;
         // Names for the tap-to-place prompt (overlay reads this on placement).
         placementNamesRef.current = new Map(sceneData.assets
-            .filter((a) => a.tap_to_place)
+            .filter((a) => (0, placementStore_1.isTapToPlaceAsset)(a))
             .map((a) => [a.id, a.name ?? ""]));
         const triggerImageCount = sceneData.assets.filter((a) => !!a.trigger_image_url).length;
         setNumberOfTrackedImages(triggerImageCount > 0 ? Math.min(triggerImageCount, 5) : undefined);
@@ -366,7 +366,12 @@ exports.StudioSceneNavigator = (0, react_1.forwardRef)(function StudioSceneNavig
     }
     return (<StudioSceneErrorBoundary_1.StudioSceneErrorBoundary sceneId={sceneId} onError={onError} renderError={renderError}>
       <react_native_1.View style={style ?? react_native_1.StyleSheet.absoluteFill}>
-        <ViroXRSceneNavigator_1.ViroXRSceneNavigator ref={navigatorRef} arInitialScene={{ scene: LoadingARScene }} vrInitialScene={vrSceneEntry ?? { scene: LoadingVRScene }} worldAlignment={worldAlignment} autofocus={autofocus} numberOfTrackedImages={numberOfTrackedImages} occlusionMode={occlusionMode} onExitViro={onExitViro} style={react_native_1.StyleSheet.absoluteFill}/>
+        <ViroXRSceneNavigator_1.ViroXRSceneNavigator ref={navigatorRef} arInitialScene={{ scene: LoadingARScene }} vrInitialScene={vrSceneEntry ?? { scene: LoadingVRScene }} worldAlignment={worldAlignment} autofocus={autofocus} numberOfTrackedImages={numberOfTrackedImages} occlusionMode={occlusionMode} 
+    // Both default on natively, where Hable luminance-only tone mapping
+    // renders pure white at about 0.77 and bright materials glow. The
+    // editor previews neither, and Studio content is white-heavy text and
+    // images, so the tone curve is what an author notices.
+    hdrEnabled={false} bloomEnabled={false} onExitViro={onExitViro} style={react_native_1.StyleSheet.absoluteFill}/>
         {/* Absolutely filled so the overlay covers the navigator instead of
             taking flow space beneath it. Swapping the overlay's content, rather
             than replacing this subtree, keeps the AR session and its camera

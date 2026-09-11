@@ -27,7 +27,7 @@ import { studioPlacementBannerStore } from "./domain/placementBannerStore";
 import { registerSceneAnimations } from "./domain/animationRegistry";
 import { registerStudioMaterialsForAssets } from "./domain/studioMaterials";
 import { StudioVariableStore } from "./domain/variableStore";
-import { StudioPlacementStore } from "./domain/placementStore";
+import { StudioPlacementStore, isTapToPlaceAsset } from "./domain/placementStore";
 import { studioApiError } from "./domain/studioApiError";
 import { StudioARScene, type StudioPlacementApi } from "./StudioARScene";
 import { StudioSceneErrorBoundary } from "./StudioSceneErrorBoundary";
@@ -425,7 +425,7 @@ export const StudioSceneNavigator = forwardRef<
       // Names for the tap-to-place prompt (overlay reads this on placement).
       placementNamesRef.current = new Map(
         sceneData.assets
-          .filter((a) => a.tap_to_place)
+          .filter((a) => isTapToPlaceAsset(a))
           .map((a) => [a.id, a.name ?? ""])
       );
 
@@ -533,6 +533,12 @@ export const StudioSceneNavigator = forwardRef<
           autofocus={autofocus}
           numberOfTrackedImages={numberOfTrackedImages}
           occlusionMode={occlusionMode}
+          // Both default on natively, where Hable luminance-only tone mapping
+          // renders pure white at about 0.77 and bright materials glow. The
+          // editor previews neither, and Studio content is white-heavy text and
+          // images, so the tone curve is what an author notices.
+          hdrEnabled={false}
+          bloomEnabled={false}
           onExitViro={onExitViro}
           style={StyleSheet.absoluteFill}
         />
