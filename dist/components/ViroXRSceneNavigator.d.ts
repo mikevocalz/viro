@@ -58,6 +58,12 @@ export declare const ViroXRSceneNavigator: React.ForwardRefExoticComponent<ViewP
     vrModeEnabled?: boolean;
     passthroughEnabled?: boolean;
     handTrackingEnabled?: boolean;
+    /**
+     * Vertical origin for OpenXR headsets: `"eye"` (default, origin at head
+     * height — upstream behaviour) or `"floor"` (a node at y=0 sits on the
+     * physical floor). See ViroVRSceneNavigator.trackingOrigin.
+     */
+    trackingOrigin?: "eye" | "floor";
     onExitViro?: () => void;
     /**
      * Immersion style used when the ImmersiveSpace is opened on visionOS.

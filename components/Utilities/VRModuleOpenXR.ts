@@ -12,9 +12,13 @@ export function exitVRScene(): void {
     ?.exitVRScene?.();
 }
 
+/** Vertical tracking origin: "eye" = head-height (default), "floor" = physical floor. */
+export type ViroTrackingOrigin = "eye" | "floor";
+
 export type VRModuleOpenXRType = {
   recenterTracking?: (viewTag: number) => void;
   setPassthroughEnabled?: (viewTag: number, enabled: boolean) => void;
+  setTrackingOrigin?: (viewTag: number, origin: ViroTrackingOrigin) => void;
   setPassthroughStyle?: (
     viewTag: number,
     opacity: number,

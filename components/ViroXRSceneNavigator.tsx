@@ -88,6 +88,12 @@ type Props = ViewProps & {
   vrModeEnabled?: boolean;
   passthroughEnabled?: boolean;
   handTrackingEnabled?: boolean;
+  /**
+   * Vertical origin for OpenXR headsets: `"eye"` (default, origin at head
+   * height — upstream behaviour) or `"floor"` (a node at y=0 sits on the
+   * physical floor). See ViroVRSceneNavigator.trackingOrigin.
+   */
+  trackingOrigin?: "eye" | "floor";
   onExitViro?: () => void;
 
   // ── visionOS ───────────────────────────────────────────────────────────────
@@ -153,6 +159,7 @@ export const ViroXRSceneNavigator = React.forwardRef<unknown, Props>(
       vrModeEnabled,
       passthroughEnabled,
       handTrackingEnabled,
+      trackingOrigin,
       onExitViro,
       debug,
       visionOSImmersionStyle = "mixed",
@@ -248,6 +255,7 @@ export const ViroXRSceneNavigator = React.forwardRef<unknown, Props>(
           vrModeEnabled,
           passthroughEnabled,
           handTrackingEnabled,
+          trackingOrigin,
           onExitViro,
           debug,
         });

@@ -273,7 +273,7 @@ import { VIRO_VERSION } from "./components/Utilities/ViroVersion";
 import { ViroQuestEntryPoint } from "./components/ViroQuestEntryPoint";
 import { VRQuestNavigatorBridge } from "./components/Utilities/VRQuestNavigatorBridge";
 import { VRModuleOpenXR, useVRViewTag, exitVRScene, setPassthroughStyle, triggerHaptic } from "./components/Utilities/VRModuleOpenXR";
-import type { VRModuleOpenXRType, ViroPassthroughStyle, ViroHapticHand } from "./components/Utilities/VRModuleOpenXR";
+import type { VRModuleOpenXRType, ViroPassthroughStyle, ViroHapticHand, ViroTrackingOrigin } from "./components/Utilities/VRModuleOpenXR";
 import { StreamingAudioManager } from "./components/Utilities/StreamingAudioManager";
 import { AppRegistry } from "react-native";
 
@@ -518,7 +518,7 @@ export {
   setInputTuning,
 };
 
-export type { VRModuleOpenXRType, ViroPassthroughStyle, ViroHapticHand };
+export type { VRModuleOpenXRType, ViroPassthroughStyle, ViroHapticHand, ViroTrackingOrigin };
 export type { ImmersiveSpaceStyle, ViroInputTuning, ViroSharedSpaceState } from "./components/VisionOS/ViroVisionOSModule";
 
 export type {

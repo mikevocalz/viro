@@ -62,6 +62,18 @@ type Props = ViewProps & {
      */
     handTrackingEnabled?: boolean;
     /**
+     * Where the world origin sits vertically (OpenXR backends).
+     *
+     *  - `"eye"` (default) — origin at the headset's position when the session
+     *    started, matching every other Viro platform. A node at y=0 floats at
+     *    eye level.
+     *  - `"floor"` — origin on the physical floor (XR_REFERENCE_SPACE_TYPE_LOCAL_FLOOR
+     *    when the runtime enumerates it, otherwise derived from the STAGE space).
+     *    A ViroQuad at y=0 coincides with the floor. Falls back to `"eye"` with a
+     *    logged warning when the runtime supports neither source.
+     */
+    trackingOrigin?: "eye" | "floor";
+    /**
      * Per-frame skeletal hand joint data. Fires at display refresh rate (72/90 Hz).
      * null for a hand means it is not currently tracked.
      */
@@ -153,7 +165,7 @@ export declare class ViroVRSceneNavigator extends React.Component<Props, State> 
     _recenterTracking: () => void;
     _project: (point: Viro3DPoint) => Promise<any>;
     _unproject: (point: Viro3DPoint) => Promise<any>;
-    _renderSceneStackItems(): React.JSX.Element[];
+    _renderSceneStackItems(): any[];
     sceneNavigator: {
         push: (param1?: ViroScene | string, param2?: ViroScene) => void;
         pop: () => void;

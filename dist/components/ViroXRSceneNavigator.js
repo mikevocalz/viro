@@ -97,7 +97,7 @@ exports.ViroXRSceneNavigator = React.forwardRef(function ViroXRSceneNavigator(pr
     // bridge rather than as props; the AR branch passes it on by hand below,
     // and leaving it out of that list is how the AR path silently lost every
     // one of these.
-    hdrEnabled, pbrEnabled, bloomEnabled, shadowsEnabled, multisamplingEnabled, vrModeEnabled, passthroughEnabled, handTrackingEnabled, onExitViro, debug, visionOSImmersionStyle = "mixed", ...rest } = props;
+    hdrEnabled, pbrEnabled, bloomEnabled, shadowsEnabled, multisamplingEnabled, vrModeEnabled, passthroughEnabled, handTrackingEnabled, trackingOrigin, onExitViro, debug, visionOSImmersionStyle = "mixed", ...rest } = props;
     // Inner refs — one per backend so the exposed handle can target the
     // right underlying navigator instance.
     const arRef = React.useRef(null);
@@ -183,6 +183,7 @@ exports.ViroXRSceneNavigator = React.forwardRef(function ViroXRSceneNavigator(pr
                 vrModeEnabled,
                 passthroughEnabled,
                 handTrackingEnabled,
+                trackingOrigin,
                 onExitViro,
                 debug,
             });

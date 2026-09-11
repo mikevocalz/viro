@@ -41,6 +41,7 @@ export type VRQuestRendererConfig = {
   vrModeEnabled?: boolean;
   passthroughEnabled?: boolean;
   handTrackingEnabled?: boolean;
+  trackingOrigin?: "eye" | "floor";
   debug?: boolean;
   onExitViro?: () => void;
 };

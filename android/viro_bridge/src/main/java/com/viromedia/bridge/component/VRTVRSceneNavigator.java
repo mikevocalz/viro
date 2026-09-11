@@ -185,6 +185,17 @@ public class VRTVRSceneNavigator extends VRT3DSceneNavigator {
     }
 
     /**
+     * Select the vertical tracking origin: "eye" (default, head-height origin)
+     * or "floor" (origin on the physical floor via LOCAL_FLOOR / STAGE-derived
+     * offset). No-op when the underlying view is not a {@link ViroViewOpenXR}.
+     */
+    public void setTrackingOrigin(String origin) {
+        if (mViroView instanceof ViroViewOpenXR) {
+            ((ViroViewOpenXR) mViroView).setTrackingOrigin("floor".equals(origin));
+        }
+    }
+
+    /**
      * Fire a controller haptic pulse. hand: 0 = left, 1 = right, 2 = both,
      * -1 = whichever controller last pressed its trigger.
      * No-op when the underlying view is not a {@link ViroViewOpenXR}.

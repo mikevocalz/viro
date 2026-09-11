@@ -120,6 +120,11 @@ public class VRTVRSceneNavigatorManager extends VRTViroViewGroupManager<VRTVRSce
         navigator.setHandTrackingEnabled(enabled);
     }
 
+    @ReactProp(name = "trackingOrigin")
+    public void setTrackingOrigin(VRTVRSceneNavigator navigator, String origin) {
+        navigator.setTrackingOrigin(origin);
+    }
+
     @Override
     public Map getExportedCustomDirectEventTypeConstants() {
         return MapBuilder.of(

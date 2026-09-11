@@ -90,6 +90,31 @@ public class VRModuleOpenXR extends ReactContextBaseJavaModule {
     }
 
     /**
+     * Select the vertical tracking origin at runtime: "eye" (head-height,
+     * default) or "floor" (origin on the physical floor). The renderer rebuilds
+     * its reference space; content placed relative to y=0 moves accordingly.
+     *
+     * @param sceneNavTag React tag of the ViroVRSceneNavigator view.
+     * @param origin      "eye" or "floor".
+     */
+    @ReactMethod
+    public void setTrackingOrigin(final int sceneNavTag, final String origin) {
+        UIManager uiManager = UIManagerHelper.getUIManager(getReactApplicationContext(), sceneNavTag);
+        if (uiManager == null) {
+            return;
+        }
+        ((FabricUIManager) uiManager).addUIBlock(new com.facebook.react.fabric.interop.UIBlock() {
+            @Override
+            public void execute(com.facebook.react.fabric.interop.UIBlockViewResolver viewResolver) {
+                View view = viewResolver.resolveView(sceneNavTag);
+                if (view instanceof VRTVRSceneNavigator) {
+                    ((VRTVRSceneNavigator) view).setTrackingOrigin(origin);
+                }
+            }
+        });
+    }
+
+    /**
      * Style the passthrough layer. opacity ∈ [0,1]; edge[RGBA] is the edge
      * highlight colour (alpha 0 disables the edge effect).
      */

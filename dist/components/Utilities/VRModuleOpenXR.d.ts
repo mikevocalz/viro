@@ -3,9 +3,12 @@
  * Safe to call on any platform — no-op when VRLauncher is unavailable.
  */
 export declare function exitVRScene(): void;
+/** Vertical tracking origin: "eye" = head-height (default), "floor" = physical floor. */
+export type ViroTrackingOrigin = "eye" | "floor";
 export type VRModuleOpenXRType = {
     recenterTracking?: (viewTag: number) => void;
     setPassthroughEnabled?: (viewTag: number, enabled: boolean) => void;
+    setTrackingOrigin?: (viewTag: number, origin: ViroTrackingOrigin) => void;
     setPassthroughStyle?: (viewTag: number, opacity: number, edgeR: number, edgeG: number, edgeB: number, edgeA: number) => void;
     triggerHaptic?: (viewTag: number, hand: number, amplitude: number, durationSec: number) => void;
 };
@@ -51,7 +54,7 @@ export declare function setPassthroughStyle(viewTag: number, style: ViroPassthro
  * Typed reference to the VRModuleOpenXR native module.
  * undefined when not running on Meta Quest (no-op calls are safe via optional chaining).
  */
-export declare const VRModuleOpenXR: VRModuleOpenXRType | undefined;
+export declare const VRModuleOpenXR: VRModuleOpenXRType;
 /**
  * Returns the live viewTag of the ViroVRSceneNavigator running in VRActivity,
  * kept in sync via VRQuestNavigatorBridge.  null until ViroQuestEntryPoint has
