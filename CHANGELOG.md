@@ -1,5 +1,68 @@
 # CHANGELOG
 
+## Unreleased
+
+### Added
+
+- **Replicated room state**: `useViroReplicatedState` and `ViroReplicationClient`. Ordered, conflict-resolved, authoritative application state for co-located sessions — what moved, who is holding it — on a separate socket from the pose channel and the same room id. Entities are claimed before they are changed, so two people grabbing the same object resolves instead of racing: the first `claim` wins and the second is refused with the current owner attached. `expectVersion` opts a write into optimistic concurrency; unowned entities are last-writer-wins; a peer that disconnects releases whatever it held. A delta whose sequence skips ahead triggers a resync rather than leaving a hole in local state, and a reconnect resumes from the last applied sequence. Optimistic writes are opt-in per call and roll back to the server's value if refused.
+
+  Two constraints worth reading before building on it. **There is no persistence** — state lives as long as the room has occupants, and restarting the server loses it. And the reference server keeps rooms in one process's memory, so replicated state must not run on more than one instance, or behind anything that can restart it, until that is solved. Both are in `reactvisioncca/server/README.md`.
+- **`<ViroARCloudAnchor>` — co-located AR.** Renders its children in a resolved cloud anchor's *location frame*, which is the shared coordinate frame two devices in the same space can agree on. Mount it with the same `cloudAnchorId` on both devices and a child at `[0, 0, -1]` is the same physical metre on each, with no coordinate maths in app code — previously `resolveCloudAnchor()` returned position/rotation/scale and no scene node, leaving every app to redo the frame arithmetic itself. Fires `onLocalized` once the frame exists, and `onLocalizeError` when localisation fails or times out.
+- **Location-frame conversion helpers**: `parseLocationTransform`, `locationToWorld`, `worldToLocation`, `invertTransform`. World coordinates are per-session — each AR session picks its origin wherever tracking started — so anything two devices exchange has to travel as location-frame coordinates and be converted on arrival. **Send frame coordinates, never world coordinates.**
+- **Quest Store packaging defaults** when `xRMode` includes `"QUEST"`: `reactNativeArchitectures=arm64-v8a` (Quest hardware is 64-bit, the store warns on 32-bit libraries, and dropping the other ABIs roughly halves the APK; opt out with `android.questArm64Only: false`) and a `com.oculus.supportedDevices` manifest entry defaulting to `quest2|questpro|quest3|quest3s` (clears the "Quest 1 is no longer supported" warning; override with `android.questSupportedDevices`).
+
+### Fixed
+
+- **Quest builds failed Meta Horizon Store validation on Expo projects.** Two checks the plugin meant to handle never did. The `targetSdkVersion` cap rewrote `app/build.gradle`, but Expo's template resolves targetSdk from `gradle.properties` through `rootProject.ext`, so nothing matched and the APK shipped with targetSdk 36. The GLES `uses-feature` was declared `required="false"`, which the store validator does not count as a graphics API. When `xRMode` includes `"QUEST"`, the plugin now writes `android.targetSdkVersion=34` to `gradle.properties` (only ever lowering it; `android.questTargetSdkVersion` overrides the ceiling) and declares GLES 3.0 as required. Phone-only builds are unchanged.
+- **`ViroController` crashed the app on the first button event (`TypeError: Cannot read property 'props' of undefined`).** Its event handlers were prototype methods handed to the native view unbound; React Native dispatches them detached, so `this` was undefined once a click-type prop was set. They are now arrow class fields like `ViroBase`'s.
+- **Quest: `onDrag` followed the idle hand and objects jumped on grab / release when both hands were tracked.** Fixed in `@reactvision/virocore` (drag ownership per aim ray; grip / A / X / Y / thumbstick sources resolve against their own hand's ray).
+- **Quest: clicks on a highlighted button were dropped, and `onClick` (state `Clicked`) rarely fired.** Fixed in `@reactvision/virocore` (aim lasers no longer hit-testable, click grace and press capture, `Clicked` compared on handler nodes, button edges resolved against the current frame's hit).
+
+  > **The two Quest input fixes above are still inert in this branch.** Their native half is now on `virocore/develop` (`ffb38acb`, #369), but it landed after this branch's `viro_renderer-release.aar` was built, so the bundled binary does not carry it yet — see the Migration note.
+
+### Migration
+
+- No breaking changes for phone builds. If an app also sets `android.targetSdkVersion` or `buildArchs` through `expo-build-properties`, the plugin listed earlier in `plugins` wins on the same `gradle.properties` key, because config-plugin mods run in reverse registration order.
+- **The bundled `viro_renderer-release.aar` needs a rebuild before release.** The 2.58.2 back-merge hit a genuine conflict on it: `release/2.58.2`'s AAR carries the Quest input fixes but predates the OBJ material fix, while develop's carries the OBJ fix and not the Quest ones — neither is a superset. Develop's was kept, because taking the other would regress OBJ materials. The rebuild is no longer waiting on anything: `virocore/develop` now carries the Quest input work (`ffb38acb`, #369) on top of the OBJ fix, so an AAR built from it is the superset neither side was, and the Quest input fixes stop being inert.
+
+## v2.58.1 — 17 August 2026
+
+### Fixed
+
+- **AR session recordings played sideways (iOS and Android).** `video.mp4` carried no rotation on either platform, so players showed the camera sensor's landscape frame however the phone was held — ARKit and ARCore both deliver the captured image in sensor orientation. Both recorders now tag the file for a quarter turn clockwise on playback. Fixed in `@reactvision/virocore` 2.58.1, which this release bundles.
+- **AR session recordings were unusable for analysis on iOS: the IMU was in the wrong units.** `session.jsonl` uses one schema for both platforms, but iOS wrote `imu.accel` and `pose.gravity` in G while Android wrote m/s² — the same field meaning two things, off by 9.81×. Anything integrating acceleration was wrong by exactly that factor. iOS now writes m/s². Measured against tinyvio on a real recording, this took tracking from **0% of frames to 96%**.
+- **iOS recordings held one more pose line than the video had frames.** ARKit can deliver the same frame twice; the duplicate added a pose line while the muxer dropped its video frame, and since the format pairs the two by array position, every pose after that point described the wrong frame. Duplicates are now dropped whole, and a pose line is only written once its frame has actually reached the encoder, so the pairing survives a dropped frame too. A recording that loses video entirely still keeps its full IMU/pose sidecar.
+- **AR session recordings had scrambled colour (Android).** Luma was intact — the video looked sharp and correctly framed — while chroma landed in the wrong bytes, painting large green/magenta blocks over it. The encoder was configured with an *abstract* pixel format (`COLOR_FormatYUV420Flexible`) and fed a tightly-packed planar I420 buffer, but most devices lay that memory out as NV12 semi-planar with a padded row stride. Frames now go through `MediaCodec.getInputImage()` and honour the encoder's real per-plane strides.
+
+  Note this affects `startRecording()` (the offline-analysis session capture), **not** `startVideoRecording()`, which records the rendered screen with audio and was never affected.
+
+### Migration
+
+- **No breaking changes.** Both items are bug fixes.
+- iOS `imu.accel`/`pose.gravity` are now m/s² rather than G, matching Android. The recording format only shipped in 2.58.0, so there is effectively no earlier iOS data to reconcile.
+- If you have tooling that decodes a recording's `video.mp4` for tracking or measurement, pass ffmpeg `-noautorotate`. The new rotation is container metadata only — the frames stay sensor-native so they keep matching the intrinsics in `session.jsonl` — but ffmpeg applies a display matrix by default, which would rotate the pixels while `ffprobe` still reports the unrotated size those intrinsics assume. Nothing errors; the geometry just comes out wrong. Recordings made before this release carry no matrix, so the flag is a no-op on them. Playback and preview paths want the rotation and need no change.
+- Pairs with `@reactvision/virocore` 2.58.1.
+
+## v2.58.0 — 16 August 2026
+
+### Added
+
+- **AR Session Recording** (`ViroARSceneNavigator`). `startRecording(outputDir)`/`stopRecording()`/`getRecordingStatus()` capture a session to local storage — `video.mp4` (the camera passthrough feed) + `session.jsonl` (raw IMU + the platform's own tracked pose as ground truth) — for **offline** analysis/replay via `tinyvio`, not in-app playback. A different feature from `ViroCameraTexture.startRecording()` (camera-feed-only MP4). iOS + Android.
+
+### Fixed
+
+- **The package could crash on first import when bundled with `react-native-web`.** Ten native-only components (`ViroARImageMarker`, `ViroARObjectMarker`, `ViroAnimatedImage`, `ViroCameraTexture`, `ViroController`, `ViroObjectDetector`, `ViroSceneNavigator`, `ViroVRSceneNavigator`, `ViroVirtualButton`, `ViroVirtualJoystick`) called `requireNativeComponent()` at module scope with no `.web.tsx` variant to substitute — and since `dist/index.js` is a single CommonJS barrel that `require()`s every component eagerly, importing *anything* from the package under a web bundle crashed immediately via whichever of the ten loaded first, regardless of which components an app actually used. All ten now have a minimal `.web.tsx` stub (renders `null`, dev-only warning).
+- **GLB/glTF models with sparse accessors or non-indexed (draw-arrays) primitives failed to load.** Both are legal per the glTF spec — a sparse-only accessor can leave its buffer view unset, and a primitive can omit `indices` entirely — but the loader rejected both. Fixed in `@reactvision/virocore` 2.58.0 (VIRO-3664).
+
+### Changed
+
+- **Android alert dialogs now follow Material 3** (#508). React Native's `Alert` builds an AppCompat dialog styled by the host activity's theme, and the RN/Expo template parent (`Theme.AppCompat`) renders it as Material 2. `ReactViroPackage` now overlays just `alertDialogTheme` with a Material 3-styled dialog theme (rounded corners, day/night colour sets), re-applied on every host resume so activity recreation keeps it. Only the alert dialog theme attribute is overlaid, so the rest of a host app's theme is untouched. *(Shipped in 2.58.0; documented retroactively.)*
+- **`docs/` moved out of the repository.** The package's markdown docs (`AR_SESSION_RECORDING.md`, `ViroObjectDetector.md`, `PLATFORM_EXTENSIONS.md`, `QUEST_SETUP.md`, `ViroCameraTexture.md`) are no longer tracked in this repo or shipped in the npm package — they're maintained privately alongside the workspace for internal/MCP tooling use. Older CHANGELOG entries that reference a `docs/*.md` path describe the state at that release; those files are no longer present in a fresh checkout or install.
+
+### Migration
+
+- **No breaking changes.** Everything in this release is additive or a bug fix.
+
 ## v2.57.5 — 26 July 2026
 
 ### Added
