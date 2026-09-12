@@ -9,7 +9,7 @@ import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.internal.featureflags.ReactNativeFeatureFlags;
-import com.facebook.react.internal.featureflags.ReactNativeFeatureFlagsDefaults;
+import com.facebook.react.internal.featureflags.ReactNativeNewArchitectureFeatureFlagsDefaults;
 
 /**
  * VRLauncherModule
@@ -47,22 +47,21 @@ public class VRLauncherModule extends ReactContextBaseJavaModule {
         // unaffected. skipActivityIdentityAssertionOnHostPause has not been read yet
         // (it is only read in ReactHostImpl.onHostPause, triggered after startActivity).
         try {
+            // Extend ReactNativeNewArchitectureFeatureFlagsDefaults, NOT the plain
+            // ReactNativeFeatureFlagsDefaults. dangerouslyForceOverride REPLACES the
+            // provider outright, and the plain defaults report the New Architecture
+            // flags as false — forcing those silently drops the app back to the bridge,
+            // so ReactActivityDelegate.onCreate() / ReactDelegate.loadApp() take the
+            // old-arch path, ReactHost never starts, and the app renders nothing at all
+            // with no exception logged. The new-arch defaults are the same class
+            // DefaultNewArchitectureEntryPoint installs for ReleaseLevel.STABLE
+            // (Overrides_RNOSS_Stable_Android is an empty subclass of it), so every
+            // new-arch flag keeps the value RN chose — including ones added in future
+            // RN releases, which listing flags by hand here would silently miss.
             ReactNativeFeatureFlags.INSTANCE.dangerouslyForceOverride(
-                new ReactNativeFeatureFlagsDefaults() {
+                new ReactNativeNewArchitectureFeatureFlagsDefaults() {
                     @Override
                     public boolean skipActivityIdentityAssertionOnHostPause() { return true; }
-                    // dangerouslyForceOverride replaces the C++ provider, so all uncached
-                    // reads now go through this provider. The Expo app uses ReactHost
-                    // (bridgeless API) but dangerouslyForceOverride resets the JVM and C++
-                    // caches. We must return true for the three New Architecture flags so
-                    // that ReactActivityDelegate.onCreate() and ReactDelegate.loadApp() /
-                    // onHostResume() take the bridgeless path instead of the old-arch path.
-                    @Override
-                    public boolean enableBridgelessArchitecture() { return true; }
-                    @Override
-                    public boolean enableFabricRenderer() { return true; }
-                    @Override
-                    public boolean useTurboModules() { return true; }
                 }
             );
         } catch (Exception ignored) {}
