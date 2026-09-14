@@ -38,5 +38,33 @@ export declare class Viro3DObject extends ViroBase<Props> {
     _onLoadEnd: (event: NativeSyntheticEvent<ViroLoadEndEvent>) => void;
     getBoundingBoxAsync: () => Promise<any>;
     getMorphTargets: () => Promise<any>;
+    /**
+     * Set several morph target weights in one native call. Positionally paired
+     * arrays, fire-and-forget — built for driving a face at frame rate without a
+     * React render or a Promise per frame.
+     */
+    setMorphTargetWeights: (names: string[], weights: number[]) => void;
+    /**
+     * The model's skeleton bone names, in skeleton order. Resolves to
+     * `{ bones: string[] }`; empty for an unskinned model. Android only today.
+     */
+    getSkeletonBoneKeys: () => Promise<{
+        bones: string[];
+    }>;
+    /**
+     * The named bones' current world transforms, as `{ matrices: number[] }` —
+     * 16 column-major floats per bone in request order. For a model that has not
+     * been animated these are the rest poses: read them once, compose deltas
+     * against them, and drive with setSkeletonBoneTransforms.
+     */
+    getSkeletonBoneTransforms: (names: string[]) => Promise<{
+        matrices: number[];
+    }>;
+    /**
+     * Set bone world transforms — 16 column-major floats per name — in one native
+     * call. `recurse` carries each bone's descendants along with it, which is what
+     * a procedural head turn or breath wants. Fire-and-forget, frame-rate safe.
+     */
+    setSkeletonBoneTransforms: (names: string[], matrices: number[], recurse: boolean) => void;
 }
 export {};

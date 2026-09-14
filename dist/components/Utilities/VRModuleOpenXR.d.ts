@@ -54,7 +54,7 @@ export declare function setPassthroughStyle(viewTag: number, style: ViroPassthro
  * Typed reference to the VRModuleOpenXR native module.
  * undefined when not running on Meta Quest (no-op calls are safe via optional chaining).
  */
-export declare const VRModuleOpenXR: VRModuleOpenXRType;
+export declare const VRModuleOpenXR: VRModuleOpenXRType | undefined;
 /**
  * Returns the live viewTag of the ViroVRSceneNavigator running in VRActivity,
  * kept in sync via VRQuestNavigatorBridge.  null until ViroQuestEntryPoint has

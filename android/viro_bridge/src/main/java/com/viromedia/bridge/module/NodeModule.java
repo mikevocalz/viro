@@ -252,6 +252,151 @@ public class NodeModule extends ReactContextBaseJavaModule {
         });
     }
 
+    /**
+     * Resolves the Object3D behind a VRT3DObject view tag inside a UI block, or null —
+     * the transient view-lifecycle races are the same ones getNodeTransform documents,
+     * and every avatar-pose method below needs the identical walk.
+     */
+    private interface Object3DBlock {
+        void execute(Object3D node);
+    }
+
+    private void withObject3D(final int viewTag, final Promise promiseOrNull, final Object3DBlock block) {
+        UIManager uiManager = UIManagerHelper.getUIManager(getReactApplicationContext(), viewTag);
+        if (uiManager == null) {
+            if (promiseOrNull != null) {
+                promiseOrNull.reject("ERROR", "UIManager not available");
+            }
+            return;
+        }
+        ((FabricUIManager) uiManager).addUIBlock(new com.facebook.react.fabric.interop.UIBlock() {
+            @Override
+            public void execute(com.facebook.react.fabric.interop.UIBlockViewResolver viewResolver) {
+                View viroView = viewResolver.resolveView(viewTag);
+                if (!(viroView instanceof VRT3DObject)) {
+                    if (promiseOrNull != null) {
+                        promiseOrNull.reject("view_not_ready", "Node view not registered yet");
+                    }
+                    return;
+                }
+                Object3D node = (Object3D) ((VRT3DObject) viroView).getNodeJni();
+                if (node == null) {
+                    if (promiseOrNull != null) {
+                        promiseOrNull.reject("view_not_ready", "Node has been torn down");
+                    }
+                    return;
+                }
+                block.execute(node);
+            }
+        });
+    }
+
+    /**
+     * The whole face in one bridge call — names and weights, positionally paired.
+     * Fire-and-forget on purpose: this runs at frame rate and a Promise per frame
+     * is a leak of exactly the thing the batching saves.
+     */
+    @ReactMethod
+    public void setMorphTargetWeights(final int viewTag, final ReadableArray names,
+                                      final ReadableArray weights) {
+        if (names == null || weights == null || names.size() != weights.size()) {
+            return;
+        }
+        final int count = names.size();
+        final String[] nameArray = new String[count];
+        final float[] weightArray = new float[count];
+        for (int i = 0; i < count; i++) {
+            nameArray[i] = names.getString(i);
+            weightArray[i] = (float) weights.getDouble(i);
+        }
+        withObject3D(viewTag, null, new Object3DBlock() {
+            @Override
+            public void execute(Object3D node) {
+                node.setMorphTargetWeights(nameArray, weightArray);
+            }
+        });
+    }
+
+    /** The skeleton's bone names, in skeleton order. Empty for an unskinned model. */
+    @ReactMethod
+    public void getSkeletonBoneKeys(final int viewTag, final Promise promise) {
+        withObject3D(viewTag, promise, new Object3DBlock() {
+            @Override
+            public void execute(Object3D node) {
+                String[] keys = node.getSkeletonBoneKeys();
+                WritableArray bones = Arguments.createArray();
+                for (String key : keys) {
+                    bones.pushString(key);
+                }
+                WritableMap returnMap = Arguments.createMap();
+                returnMap.putArray("bones", bones);
+                promise.resolve(returnMap);
+            }
+        });
+    }
+
+    /**
+     * The named bones' current world transforms — 16 column-major floats each,
+     * concatenated in request order. Read once at load: these are the rest poses a
+     * procedural driver composes its deltas against. An unknown bone contributes
+     * sixteen zeros rather than shifting everything after it.
+     */
+    @ReactMethod
+    public void getSkeletonBoneTransforms(final int viewTag, final ReadableArray names,
+                                          final Promise promise) {
+        if (names == null) {
+            promise.reject("ERROR", "No bone names given");
+            return;
+        }
+        final int count = names.size();
+        final String[] nameArray = new String[count];
+        for (int i = 0; i < count; i++) {
+            nameArray[i] = names.getString(i);
+        }
+        withObject3D(viewTag, promise, new Object3DBlock() {
+            @Override
+            public void execute(Object3D node) {
+                WritableArray matrices = Arguments.createArray();
+                for (String name : nameArray) {
+                    float[] transform = node.getSkeletonBoneWorldTransform(name);
+                    for (int i = 0; i < 16; i++) {
+                        matrices.pushDouble(i < transform.length ? transform[i] : 0);
+                    }
+                }
+                WritableMap returnMap = Arguments.createMap();
+                returnMap.putArray("matrices", matrices);
+                promise.resolve(returnMap);
+            }
+        });
+    }
+
+    /**
+     * One pose, one crossing: bone names plus 16 column-major floats per bone.
+     * Fire-and-forget for the same reason setMorphTargetWeights is.
+     */
+    @ReactMethod
+    public void setSkeletonBoneTransforms(final int viewTag, final ReadableArray names,
+                                          final ReadableArray matrices, final boolean recurse) {
+        if (names == null || matrices == null || matrices.size() != names.size() * 16) {
+            return;
+        }
+        final int count = names.size();
+        final String[] nameArray = new String[count];
+        for (int i = 0; i < count; i++) {
+            nameArray[i] = names.getString(i);
+        }
+        final float[] matrixArray = new float[count * 16];
+        for (int i = 0; i < matrixArray.length; i++) {
+            matrixArray[i] = (float) matrices.getDouble(i);
+        }
+        withObject3D(viewTag, null, new Object3DBlock() {
+            @Override
+            public void execute(Object3D node) {
+                node.setSkeletonBoneWorldTransforms(nameArray, matrixArray, recurse);
+            }
+        });
+    }
+
     @ReactMethod
     public void getMorphTargets(final int viewTag, final Promise promise) {
         UIManager uiManager = UIManagerHelper.getUIManager(getReactApplicationContext(), viewTag);

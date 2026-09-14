@@ -91,6 +91,38 @@ class Viro3DObject extends ViroBase_1.ViroBase {
     getMorphTargets = () => {
         return react_native_1.NativeModules.VRTNodeModule.getMorphTargets((0, react_native_1.findNodeHandle)(this));
     };
+    /**
+     * Set several morph target weights in one native call. Positionally paired
+     * arrays, fire-and-forget — built for driving a face at frame rate without a
+     * React render or a Promise per frame.
+     */
+    setMorphTargetWeights = (names, weights) => {
+        react_native_1.NativeModules.VRTNodeModule.setMorphTargetWeights((0, react_native_1.findNodeHandle)(this), names, weights);
+    };
+    /**
+     * The model's skeleton bone names, in skeleton order. Resolves to
+     * `{ bones: string[] }`; empty for an unskinned model. Android only today.
+     */
+    getSkeletonBoneKeys = () => {
+        return react_native_1.NativeModules.VRTNodeModule.getSkeletonBoneKeys((0, react_native_1.findNodeHandle)(this));
+    };
+    /**
+     * The named bones' current world transforms, as `{ matrices: number[] }` —
+     * 16 column-major floats per bone in request order. For a model that has not
+     * been animated these are the rest poses: read them once, compose deltas
+     * against them, and drive with setSkeletonBoneTransforms.
+     */
+    getSkeletonBoneTransforms = (names) => {
+        return react_native_1.NativeModules.VRTNodeModule.getSkeletonBoneTransforms((0, react_native_1.findNodeHandle)(this), names);
+    };
+    /**
+     * Set bone world transforms — 16 column-major floats per name — in one native
+     * call. `recurse` carries each bone's descendants along with it, which is what
+     * a procedural head turn or breath wants. Fire-and-forget, frame-rate safe.
+     */
+    setSkeletonBoneTransforms = (names, matrices, recurse) => {
+        react_native_1.NativeModules.VRTNodeModule.setSkeletonBoneTransforms((0, react_native_1.findNodeHandle)(this), names, matrices, recurse);
+    };
 }
 exports.Viro3DObject = Viro3DObject;
 // We can probably give a better type for this, but it's not exposed ouside this file so not urgent

@@ -46,9 +46,9 @@ const withBranchAndroid = (config) => {
                 const viroPlugin = config?.plugins?.find((plugin) => Array.isArray(plugin) && plugin[0] === "@reactvision/react-viro");
                 if (Array.isArray(viroPlugin)) {
                     if (Array.isArray(viroPlugin[1].android?.xRMode)) {
-                        viroPluginConfig = (viroPlugin[1].android?.xRMode).filter((mode) => ["AR", "GVR", "OVR_MOBILE", "QUEST"].includes(mode));
+                        viroPluginConfig = (viroPlugin[1].android?.xRMode).filter((mode) => ["AR", "GVR", "OVR_MOBILE", "QUEST", "PICO"].includes(mode));
                     }
-                    else if (["AR", "GVR", "OVR_MOBILE", "QUEST"].includes(viroPlugin[1]?.android?.xRMode)) {
+                    else if (["AR", "GVR", "OVR_MOBILE", "QUEST", "PICO"].includes(viroPlugin[1]?.android?.xRMode)) {
                         viroPluginConfig = [viroPlugin[1]?.android.xRMode];
                     }
                 }
@@ -145,6 +145,7 @@ project(':react_viro').projectDir = new File('../node_modules/@reactvision/react
     return config;
 });
 const withViroManifest = (config) => (0, config_plugins_1.withAndroidManifest)(config, async (newConfig) => {
+    // TODO(pico): PICO manifest block + activity registration — see docs/pico, gated on device facts
     const contents = newConfig.modResults;
     contents.manifest.$["xmlns:tools"] = "http://schemas.android.com/tools";
     // Initialize meta-data array if it doesn't exist
@@ -404,13 +405,18 @@ const withViroQuestActivity = (config, props) => {
     if (Array.isArray(viroPluginEntry)) {
         const xrMode = viroPluginEntry[1]?.android?.xRMode;
         if (Array.isArray(xrMode)) {
-            xrModes = xrMode.filter((m) => ["AR", "GVR", "OVR_MOBILE", "QUEST"].includes(m));
+            xrModes = xrMode.filter((m) => ["AR", "GVR", "OVR_MOBILE", "QUEST", "PICO"].includes(m));
         }
         else if (typeof xrMode === "string" &&
-            ["AR", "GVR", "OVR_MOBILE", "QUEST"].includes(xrMode)) {
+            ["AR", "GVR", "OVR_MOBILE", "QUEST", "PICO"].includes(xrMode)) {
             xrModes = [xrMode];
         }
     }
+    // QUEST-only (not widened to PICO): the VRActivity.kt template itself is
+    // Android-generic, but this same function (step 3 below) registers the
+    // activity with com.oculus.intent.category.VR + com.oculus.vr.focusaware —
+    // Quest-specific. PICO uses pvr.app.type=vr and no oculus categories, an
+    // unresolved PICO-vs-Quest manifest difference — see TODO(pico) above.
     if (!xrModes.includes("QUEST"))
         return config;
     // 1. Generate VRActivity.kt
