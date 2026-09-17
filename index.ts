@@ -518,6 +518,9 @@ export {
   setInputTuning,
 };
 
+export { useOpenXRCapabilities } from "./components/Utilities/useOpenXRCapabilities";
+export type { ViroOpenXRCapabilities } from "./components/Utilities/useOpenXRCapabilities";
+
 export type { VRModuleOpenXRType, ViroPassthroughStyle, ViroHapticHand, ViroTrackingOrigin };
 export type { ImmersiveSpaceStyle, ViroInputTuning, ViroSharedSpaceState } from "./components/VisionOS/ViroVisionOSModule";
 

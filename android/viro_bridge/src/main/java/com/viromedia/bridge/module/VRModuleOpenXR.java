@@ -4,6 +4,10 @@
 package com.viromedia.bridge.module;
 
 import android.view.View;
+import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.Promise;
+import com.facebook.react.bridge.WritableMap;
+import com.viro.core.ViroViewOpenXR;
 
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
@@ -41,6 +45,39 @@ public class VRModuleOpenXR extends ReactContextBaseJavaModule {
         return "VRModuleOpenXR";
     }
 
+    /** Capability facts after native initialization, including permission failure. */
+    @ReactMethod
+    public void getCapabilities(final int sceneNavTag, final Promise promise) {
+        UIManager manager = UIManagerHelper.getUIManagerForReactTag(getReactApplicationContext(), sceneNavTag);
+        if (!(manager instanceof FabricUIManager)) {
+            promise.reject("E_XR_VIEW_UNAVAILABLE", "OpenXR view manager is unavailable");
+            return;
+        }
+        ((FabricUIManager) manager).addUIBlock(new com.facebook.react.fabric.interop.UIBlock() {
+            @Override
+            public void execute(com.facebook.react.fabric.interop.UIBlockViewResolver resolver) {
+                try {
+                    View view = resolver.resolveView(sceneNavTag);
+                    if (!(view instanceof VRT3DSceneNavigator) ||
+                        !(((VRT3DSceneNavigator) view).getViroView() instanceof ViroViewOpenXR)) {
+                        promise.reject("E_XR_VIEW_UNAVAILABLE", "OpenXR view is not mounted");
+                        return;
+                    }
+                    ViroViewOpenXR xrView = (ViroViewOpenXR) ((VRT3DSceneNavigator) view).getViroView();
+                    int status = xrView.getPlaneDetectionStatus();
+                    WritableMap result = Arguments.createMap();
+                    if (status < 0) result.putNull("planeDetection");
+                    else result.putBoolean("planeDetection", status == 1);
+                    promise.resolve(result);
+                } catch (Exception error) {
+                    promise.reject("E_XR_CAPABILITIES", error);
+                } catch (LinkageError error) {
+                    promise.reject("E_XR_REBUILD_REQUIRED", "Rebuild both ViroCore and the Viro bridge", error);
+                }
+            }
+        });
+    }
+
     /**
      * Recenters the VR tracking origin to the current head pose.
      * Equivalent to pressing the Meta button to re-orient the view.
@@ -49,7 +86,7 @@ public class VRModuleOpenXR extends ReactContextBaseJavaModule {
      */
     @ReactMethod
     public void recenterTracking(final int sceneNavTag) {
-        UIManager uiManager = UIManagerHelper.getUIManager(getReactApplicationContext(), sceneNavTag);
+        UIManager uiManager = UIManagerHelper.getUIManagerForReactTag(getReactApplicationContext(), sceneNavTag);
         if (uiManager == null) {
             return;
         }
@@ -74,7 +111,7 @@ public class VRModuleOpenXR extends ReactContextBaseJavaModule {
      */
     @ReactMethod
     public void setPassthroughEnabled(final int sceneNavTag, final boolean enabled) {
-        UIManager uiManager = UIManagerHelper.getUIManager(getReactApplicationContext(), sceneNavTag);
+        UIManager uiManager = UIManagerHelper.getUIManagerForReactTag(getReactApplicationContext(), sceneNavTag);
         if (uiManager == null) {
             return;
         }
@@ -99,7 +136,7 @@ public class VRModuleOpenXR extends ReactContextBaseJavaModule {
      */
     @ReactMethod
     public void setTrackingOrigin(final int sceneNavTag, final String origin) {
-        UIManager uiManager = UIManagerHelper.getUIManager(getReactApplicationContext(), sceneNavTag);
+        UIManager uiManager = UIManagerHelper.getUIManagerForReactTag(getReactApplicationContext(), sceneNavTag);
         if (uiManager == null) {
             return;
         }
@@ -122,7 +159,7 @@ public class VRModuleOpenXR extends ReactContextBaseJavaModule {
     public void setPassthroughStyle(final int sceneNavTag, final float opacity,
                                     final float edgeR, final float edgeG,
                                     final float edgeB, final float edgeA) {
-        UIManager uiManager = UIManagerHelper.getUIManager(getReactApplicationContext(), sceneNavTag);
+        UIManager uiManager = UIManagerHelper.getUIManagerForReactTag(getReactApplicationContext(), sceneNavTag);
         if (uiManager == null) {
             return;
         }
@@ -145,7 +182,7 @@ public class VRModuleOpenXR extends ReactContextBaseJavaModule {
     @ReactMethod
     public void triggerHaptic(final int sceneNavTag, final int hand,
                               final float amplitude, final float durationSec) {
-        UIManager uiManager = UIManagerHelper.getUIManager(getReactApplicationContext(), sceneNavTag);
+        UIManager uiManager = UIManagerHelper.getUIManagerForReactTag(getReactApplicationContext(), sceneNavTag);
         if (uiManager == null) {
             return;
         }

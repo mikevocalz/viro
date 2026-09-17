@@ -1,5 +1,5 @@
 import { Alert, AppState } from "react-native";
-import { isQuest } from "../../Utilities/ViroPlatform";
+import { isXRHeadset } from "../../Utilities/ViroPlatform";
 import {
   StudioAnimation,
   StudioApiRequestExecutor,
@@ -17,6 +17,7 @@ import {
   valueMatchesType,
 } from "./expressionEvaluator";
 import { studioRecordingStore } from "./recordingStore";
+import { questAlertStore } from "./questAlertStore";
 import { studioApiError } from "./studioApiError";
 import { StudioSoundManager } from "./soundManager";
 import { StudioVariableStore } from "./variableStore";
@@ -720,12 +721,12 @@ export function executeFunctionWithRelations(
       s ? interpolateDisplayTemplate(s, (name) => store?.get(name)) : "";
     const title = fill(alert.alert_title);
     const message = fill(alert.alert_message);
-    if (isQuest) {
+    if (isXRHeadset) {
       // Alert.alert shows a 2D panel dialog — invisible in the VR compositor.
-      // Log it so it's not silently swallowed; in-scene VR alert UI is a TODO.
-      console.warn(
-        `[Studio] Alert (Quest — not shown in VR): "${title}" — ${message}`
-      );
+      // questAlertStore drives an in-scene head-locked panel instead (see
+      // StudioQuestAlertOverlay), dismissed by a controller click, same as
+      // tapping "OK" dismisses the native dialog on phones.
+      questAlertStore.show(title, message);
       return;
     }
     Alert.alert(title || "Alert", message, [{ text: "OK", style: "default" }]);
