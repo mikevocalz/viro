@@ -394,11 +394,20 @@ exports.StudioSceneNavigator = (0, react_1.forwardRef)(function StudioSceneNavig
     // Blinn. The tone curve is switched off per scene instead, which is what
     // `toneMappingEnabled` on StudioARScene does — on its Quest/visionOS
     // ViroScene branch as well as the mobile ViroARScene one, and on the two
-    // loading scenes above — so the headset path gets the untouched curve
-    // without losing PBR either. Passed explicitly rather than left to the
-    // native default, so this cannot be switched off again without meeting
-    // the reason it is on.
-    hdrEnabled bloomEnabled={false} onExitViro={onExitViro} passthroughEnabled={ViroPlatform_1.isXRHeadset ? true : undefined} handTrackingEnabled={ViroPlatform_1.isXRHeadset ? true : undefined} style={react_native_1.StyleSheet.absoluteFill}/>
+    // loading scenes above — so the path gets the untouched curve without
+    // losing PBR either.
+    //
+    // Off on Quest, and only there: the HDR composite occludes the
+    // passthrough layer on that compositor, which costs the whole mixed
+    // reality scene rather than just a tone curve. Upstream documents it as
+    // a requirement, not a preference — docs/QUEST_SETUP.md:381 and the
+    // Quest row of the platform matrix both say to set it false for MR
+    // scenes, and all eight Quest/AR showcase examples do. PICO is not
+    // covered by that guidance and is deliberately left on until case K07
+    // in docs/pico/g5-runbook.md establishes which way its compositor
+    // behaves; widening this to `!isXRHeadset` without that observation
+    // would be a guess.
+    hdrEnabled={!ViroPlatform_1.isQuest} bloomEnabled={false} onExitViro={onExitViro} passthroughEnabled={ViroPlatform_1.isXRHeadset ? true : undefined} handTrackingEnabled={ViroPlatform_1.isXRHeadset ? true : undefined} style={react_native_1.StyleSheet.absoluteFill}/>
         {/* Absolutely filled so the overlay covers the navigator instead of
             taking flow space beneath it. Swapping the overlay's content, rather
             than replacing this subtree, keeps the AR session and its camera
