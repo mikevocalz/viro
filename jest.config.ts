@@ -116,7 +116,7 @@ const config: Config = {
   // preset: undefined,
 
   // Run tests from one or more projects
-  // projects: undefined,
+  projects: ["<rootDir>/jest.native.config.js", "<rootDir>/jest.web.config.js"],
 
   // Use this configuration option to add custom reporters to Jest
   // reporters: undefined,
