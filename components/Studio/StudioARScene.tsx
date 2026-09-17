@@ -7,7 +7,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { Platform } from "react-native";
 import { ViroAmbientLight } from "../ViroAmbientLight";
 import { ViroDirectionalLight } from "../ViroDirectionalLight";
 import { ViroARImageMarker } from "../AR/ViroARImageMarker";
@@ -80,9 +79,6 @@ import {
   StudioSceneResponse,
   ViroAnimationProp,
 } from "./types";
-
-const ANDROID_MAX_3D_MODELS = 3;
-const IOS_MAX_3D_MODELS = 10;
 
 // The native camera-transform event can fire per frame; throttle the proximity
 // distance sweep to this cadence.
@@ -189,7 +185,11 @@ interface StudioARSceneProps {
  */
 export const StudioARScene: React.FC<StudioARSceneProps> = (props) => {
   if (!props.sceneData) {
-    return isQuest ? <ViroScene /> : <ViroARScene />;
+    return isQuest ? (
+      <ViroScene toneMappingEnabled={false} />
+    ) : (
+      <ViroARScene toneMappingEnabled={false} />
+    );
   }
   return <StudioARSceneInner {...props} sceneData={props.sceneData} />;
 };
@@ -1056,23 +1056,10 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
   }, [scene.id]);
 
   // ─── Render helpers ───────────────────────────────────────────────────────
-  const maxModels =
-    Platform.OS === "android" ? ANDROID_MAX_3D_MODELS : IOS_MAX_3D_MODELS;
-
   const renderedPlaneAssets = useMemo(() => {
-    let modelCount = 0;
     return planeAssets
-      .map((asset) => {
-        if (asset.asset_type_name === "3D-MODEL") {
-          modelCount++;
-          if (modelCount > maxModels) {
-            console.warn(
-              `[Studio] Skipping 3D model "${asset.name}" — ${Platform.OS} limit (${maxModels}) reached`
-            );
-            return null;
-          }
-        }
-        return createNode(
+      .map((asset) =>
+        createNode(
           asset,
           sceneNavigator,
           animations,
@@ -1090,8 +1077,8 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
             : undefined,
           getGazeHandler(asset.id),
           dragSurface
-        );
-      })
+        )
+      )
       .filter(Boolean) as React.ReactElement[];
   }, [
     planeAssets,
@@ -1103,7 +1090,6 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
     getCollisionHandler,
     isDragActive,
     notifyPhysicsDrag,
-    maxModels,
     handleSceneChange,
     runtimeCtx,
     proximityTargetIds,
@@ -1114,19 +1100,9 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
   // Tap-to-place nodes render at scene root (world space); each is gated by the
   // placement store (null until placed, then mounted at the placed world point).
   const renderedTapToPlaceAssets = useMemo(() => {
-    let modelCount = 0;
     return tapToPlaceAssets
-      .map((asset) => {
-        if (asset.asset_type_name === "3D-MODEL") {
-          modelCount++;
-          if (modelCount > maxModels) {
-            console.warn(
-              `[Studio] Skipping 3D model "${asset.name}" — ${Platform.OS} limit (${maxModels}) reached`
-            );
-            return null;
-          }
-        }
-        return createNode(
+      .map((asset) =>
+        createNode(
           asset,
           sceneNavigator,
           animations,
@@ -1143,8 +1119,8 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
             ? registerProximityTarget
             : undefined,
           getGazeHandler(asset.id)
-        );
-      })
+        )
+      )
       .filter(Boolean) as React.ReactElement[];
   }, [
     tapToPlaceAssets,
@@ -1155,7 +1131,6 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
     getCollisionHandler,
     isDragActive,
     notifyPhysicsDrag,
-    maxModels,
     handleSceneChange,
     runtimeCtx,
     proximityTargetIds,
@@ -1437,7 +1412,11 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
 
   if (isQuest) {
     return (
-      <ViroScene {...physicsProps} {...cameraTransformProp}>
+      <ViroScene
+        {...physicsProps}
+        {...cameraTransformProp}
+        toneMappingEnabled={false}
+      >
         {children}
       </ViroScene>
     );
@@ -1445,6 +1424,10 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
   return (
     <ViroARScene
       ref={arSceneRef}
+      // The editor previews no tone curve, and virocore's default Hable
+      // luminance-only pass renders pure white at about 0.77. Off here rather
+      // than via the navigator's `hdrEnabled`, which would take PBR with it.
+      toneMappingEnabled={false}
       {...physicsProps}
       {...cameraTransformProp}
       anchorDetectionTypes={anchorDetectionTypes}

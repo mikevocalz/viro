@@ -333,7 +333,14 @@ dragSurface) {
                 return null;
         }
     };
-    const node = config.launchVelocity ? (<LaunchNode velocity={config.launchVelocity} forwardRef={proximityRef} render={buildNode}/>) : (buildNode(proximityRef));
+    // Two routes exist for the authored one-shot velocity and only one may run:
+    // LaunchNode sends it through the node's ref (VRTNodeModule.setVelocity),
+    // while buildViroPhysicsBody can instead put `instantVelocity` on the body
+    // itself, which the bridges hand to the same setVelocity(isConstant: NO). Both
+    // at once would latch the impulse twice, so the body's own prop wins wherever
+    // it is present and LaunchNode covers the case where it is not.
+    const launchesViaPhysicsBody = config.physicsBody?.instantVelocity !== undefined;
+    const node = config.launchVelocity && !launchesViaPhysicsBody ? (<LaunchNode velocity={config.launchVelocity} forwardRef={proximityRef} render={buildNode}/>) : (buildNode(proximityRef));
     if (!node)
         return null;
     // Tap-to-place assets are withheld until placed; PlaceableNode then mounts the
