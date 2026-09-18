@@ -44,31 +44,12 @@
  * mount finds an initialized WebGPU runtime.
  */
 import * as React from "react";
-import { CanvasSurface, GpuProducer, GpuProducerInit } from "nitro-canvas-in-Vision";
-type Vec3 = [number, number, number];
-export type ViroGpuPanelProps = {
+import { GpuProducer, type GpuProducerInit } from "nitro-canvas-in-Vision";
+import { type ViroCanvasPanelHandle, type ViroCanvasPanelSurfaceProps } from "./CanvasPanel/ViroCanvasPanel";
+export type ViroGpuPanelProps = ViroCanvasPanelSurfaceProps & {
     init: GpuProducerInit;
-    width: number;
-    height: number;
-    position?: Vec3;
-    rotation?: Vec3;
-    resolution?: {
-        width: number;
-        height: number;
-    };
-    sRGB?: boolean;
-    androidRoute?: "ahb" | "surface-texture";
-    lightingModel?: "Constant" | "Lambert" | "Blinn" | "Phong" | "PBR";
-    fallbackColor?: string;
-    materialName?: string;
-    onReady?: () => void;
-    onError?: (error: Error) => void;
-    autoTick?: boolean;
 };
-export type ViroGpuPanelHandle = {
-    surface: CanvasSurface | null;
-    producer: GpuProducer | null;
-    materialName: string;
-};
-export declare const ViroGpuPanel: React.ForwardRefExoticComponent<ViroGpuPanelProps & React.RefAttributes<ViroGpuPanelHandle>>;
-export {};
+export type ViroGpuPanelHandle = ViroCanvasPanelHandle<GpuProducer>;
+export declare const ViroGpuPanel: React.ForwardRefExoticComponent<ViroCanvasPanelSurfaceProps & {
+    init: GpuProducerInit;
+} & React.RefAttributes<ViroGpuPanelHandle>>;

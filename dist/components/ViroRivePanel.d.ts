@@ -29,31 +29,12 @@
  * change once it does.
  */
 import * as React from "react";
-import { CanvasSurface, RiveProducer, RiveProducerInit } from "nitro-canvas-in-Vision";
-type Vec3 = [number, number, number];
-export type ViroRivePanelProps = {
+import { RiveProducer, type RiveProducerInit } from "nitro-canvas-in-Vision";
+import { type ViroCanvasPanelHandle, type ViroCanvasPanelSurfaceProps } from "./CanvasPanel/ViroCanvasPanel";
+export type ViroRivePanelProps = ViroCanvasPanelSurfaceProps & {
     init: RiveProducerInit;
-    width: number;
-    height: number;
-    position?: Vec3;
-    rotation?: Vec3;
-    resolution?: {
-        width: number;
-        height: number;
-    };
-    sRGB?: boolean;
-    androidRoute?: "ahb" | "surface-texture";
-    lightingModel?: "Constant" | "Lambert" | "Blinn" | "Phong" | "PBR";
-    fallbackColor?: string;
-    materialName?: string;
-    onReady?: () => void;
-    onError?: (error: Error) => void;
-    autoTick?: boolean;
 };
-export type ViroRivePanelHandle = {
-    surface: CanvasSurface | null;
-    producer: RiveProducer | null;
-    materialName: string;
-};
-export declare const ViroRivePanel: React.ForwardRefExoticComponent<ViroRivePanelProps & React.RefAttributes<ViroRivePanelHandle>>;
-export {};
+export type ViroRivePanelHandle = ViroCanvasPanelHandle<RiveProducer>;
+export declare const ViroRivePanel: React.ForwardRefExoticComponent<ViroCanvasPanelSurfaceProps & {
+    init: RiveProducerInit;
+} & React.RefAttributes<ViroRivePanelHandle>>;
