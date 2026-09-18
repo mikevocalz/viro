@@ -73,3 +73,32 @@ during the session, so those need a fresh capture.
 
 Note for the next session: injected taps are unreliable against this panel's
 controls. Drive with the controller and use adb for capture rather than input.
+
+## K04 — exit from XR, PASS with a defect behind it
+
+Hardware back while in XR: `.VRActivity` is gone from the activity list on the
+next dump and only `.MainActivity` remains. The process survives — same pid
+before and after — so the exit is a clean activity finish, not a teardown.
+
+`onExitViro` firing could not be confirmed. Nothing logs it, and the app prints
+no marker on that path. The observable contract holds: XR closes and the panel
+comes back.
+
+**The panel comes back without its controls.** After returning from XR the tree
+holds only the title and the description paragraph. The chips, the Enter XR
+button and both rows are absent, so there is no way to re-enter XR or reach
+Diagnostics without restarting the app. The screen is settled, not mid-render —
+`await-screen-idle` reports stable after 1.6 s and the tree does not change.
+Reproduced on both exits this session.
+
+That makes the exit path a one-way trip in practice. Worth fixing before the
+rest of the matrix is run, because every remaining case needs to enter XR again.
+
+## Notes for whoever runs the rest
+
+`uiautomator dump` crashes against argent's devtools — `UiAutomationService
+already registered`, killing the dump process, not the app. Use `describe`
+rather than a raw dump.
+
+The logcat buffer rotates quickly on this device with the default size. Raise it
+first: `adb logcat -G 16M`.
