@@ -27,3 +27,24 @@ iOS needs a custom ViroKit/CCA/ViroReact rebuild and verification of deployment
 minimums. The imported 15.1 declaration alone does not establish that an existing
 binary built for a higher target will load on 15.1. Keep these changes in draft
 until native builds and headset regressions are validated.
+
+## Design and QA documents
+
+In this repo, because they describe surfaces and components that live here:
+
+- [`g5-runbook.md`](./g5-runbook.md) — the on-device gate. Cases K01–K12, the two
+  preconditions that block a G5 pass, and the header every result is recorded
+  against. `components/Studio/StudioSceneNavigator.tsx:577` defers to case K07.
+- [`design-system-audit.md`](./design-system-audit.md) — every hardcoded colour,
+  size and spacing value in the in-scene HUD and alert, measured against the
+  spatial layout tokens. Inventory only; no code change.
+
+In [virocore's `docs/pico/`](https://github.com/mikevocalz/virocore/tree/codex/pico-cli-bridge/docs/pico),
+because they cover the renderer and the coordinated change as a whole:
+
+- `research-plan.md` — first-run script, and the G5 moderated usability pass with
+  tasks T1–T8 and the SEV bands.
+- `handoff.md` — as-built spec for surfaces S1–S5, with metre and angular sizes.
+- `ux-copy.md` — final strings S1–S6.
+- `code-review.md` — blockers and majors across all three repositories.
+- `device-profiles.md`, `adr-0001-reference-space.md`, `mobbin-refs.md`.
