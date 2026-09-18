@@ -19,7 +19,7 @@
     "tsc": "tsc",
     "harness": "vite",
     "prebuild": "node -p \"'export const VIRO_VERSION = ' + JSON.stringify(require('./package.json').version) + ';'\" > components/Utilities/ViroVersion.ts",
-    "build": "tsc && npm run copy-files",
+    "build": "node scripts/typecheck-gate.js && npm run copy-files",
     "bundle": "./prepare_release.sh",
     "copy-files": "cp -r ./components/Resources/ ./dist/components/Resources/",
     "clean": "rm -rf ./dist/ *.tgz node_modules/",
