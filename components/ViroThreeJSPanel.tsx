@@ -25,97 +25,27 @@
  * the upgrade is native EGL/IOSurface binding — same JS API, faster path.
  */
 import * as React from "react";
+import { GLES3Producer, type GLES3ProducerInit } from "nitro-canvas-in-Vision";
 import {
-  CanvasSurface,
-  GLES3Producer,
-  GLES3ProducerInit,
-} from "nitro-canvas-in-Vision";
-import { ViroNode } from "./ViroNode";
-import { ViroQuad } from "./ViroQuad";
-import { useCanvasPanel } from "./CanvasPanel/useCanvasPanel";
+  ViroCanvasPanel,
+  type ViroCanvasPanelHandle,
+  type ViroCanvasPanelSurfaceProps,
+} from "./CanvasPanel/ViroCanvasPanel";
 
-type Vec3 = [number, number, number];
-
-export type ViroThreeJSPanelProps = {
-  /** `import * as THREE from 'three'`. */
-  three: GLES3ProducerInit["three"];
-  /** Build the scene + return the per-frame render callback. */
-  setup: GLES3ProducerInit["setup"];
-
-  width: number;
-  height: number;
-  position?: Vec3;
-  rotation?: Vec3;
-
-  resolution?: { width: number; height: number };
-  sRGB?: boolean;
-  androidRoute?: "ahb" | "surface-texture";
-  lightingModel?: "Constant" | "Lambert" | "Blinn" | "Phong" | "PBR";
-  fallbackColor?: string;
-  materialName?: string;
-  onReady?: () => void;
-  onError?: (error: Error) => void;
-  autoTick?: boolean;
+export type ViroThreeJSPanelProps = ViroCanvasPanelSurfaceProps & {
+  init: GLES3ProducerInit;
 };
 
-export type ViroThreeJSPanelHandle = {
-  surface: CanvasSurface | null;
-  producer: GLES3Producer | null;
-  materialName: string;
-};
+export type ViroThreeJSPanelHandle = ViroCanvasPanelHandle<GLES3Producer>;
 
-export const ViroThreeJSPanel = React.forwardRef<
-  ViroThreeJSPanelHandle,
-  ViroThreeJSPanelProps
->(function ViroThreeJSPanel(props, ref) {
-  const {
-    three,
-    setup,
-    width,
-    height,
-    position = [0, 1.45, -2.0],
-    rotation,
-    resolution = { width: 1024, height: 1024 },
-    sRGB,
-    androidRoute,
-    lightingModel,
-    fallbackColor,
-    materialName,
-    onReady,
-    onError,
-    autoTick,
-  } = props;
-
-  // ponytail: init is captured on first mount; changing `three` or `setup`
-  // mid-life requires remount. Standard for renderer-owning components.
-  const initRef = React.useRef<GLES3ProducerInit>({ three, setup });
-
-  const state = useCanvasPanel<GLES3Producer>({
-    producerFactory: () => new GLES3Producer(initRef.current),
-    resolution,
-    sRGB,
-    androidRoute,
-    lightingModel,
-    fallbackColor,
-    materialName,
-    onReady,
-    onError,
-    autoTick,
-  });
-
-  React.useImperativeHandle(
-    ref,
-    () => ({
-      surface: state.surface,
-      producer: state.producer,
-      materialName: state.materialName,
-    }),
-    [state.surface, state.producer, state.materialName]
-  );
-
-  return (
-    <ViroNode position={position} rotation={rotation}>
-      <ViroQuad width={width} height={height} materials={[state.materialName]} />
-    </ViroNode>
-  );
-});
+export const ViroThreeJSPanel = React.forwardRef<ViroThreeJSPanelHandle, ViroThreeJSPanelProps>(
+  function ViroThreeJSPanel({ init, ...surface }, ref) {
+    return (
+      <ViroCanvasPanel<GLES3Producer>
+        ref={ref}
+        producerFactory={() => new GLES3Producer(init)}
+        {...surface}
+      />
+    );
+  }
+);

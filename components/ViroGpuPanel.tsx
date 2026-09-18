@@ -44,89 +44,27 @@
  * mount finds an initialized WebGPU runtime.
  */
 import * as React from "react";
+import { GpuProducer, type GpuProducerInit } from "nitro-canvas-in-Vision";
 import {
-  CanvasSurface,
-  GpuProducer,
-  GpuProducerInit,
-} from "nitro-canvas-in-Vision";
-import { ViroNode } from "./ViroNode";
-import { ViroQuad } from "./ViroQuad";
-import { useCanvasPanel } from "./CanvasPanel/useCanvasPanel";
+  ViroCanvasPanel,
+  type ViroCanvasPanelHandle,
+  type ViroCanvasPanelSurfaceProps,
+} from "./CanvasPanel/ViroCanvasPanel";
 
-type Vec3 = [number, number, number];
-
-export type ViroGpuPanelProps = {
+export type ViroGpuPanelProps = ViroCanvasPanelSurfaceProps & {
   init: GpuProducerInit;
-
-  width: number;
-  height: number;
-  position?: Vec3;
-  rotation?: Vec3;
-
-  resolution?: { width: number; height: number };
-  sRGB?: boolean;
-  androidRoute?: "ahb" | "surface-texture";
-  lightingModel?: "Constant" | "Lambert" | "Blinn" | "Phong" | "PBR";
-  fallbackColor?: string;
-  materialName?: string;
-  onReady?: () => void;
-  onError?: (error: Error) => void;
-  autoTick?: boolean;
 };
 
-export type ViroGpuPanelHandle = {
-  surface: CanvasSurface | null;
-  producer: GpuProducer | null;
-  materialName: string;
-};
+export type ViroGpuPanelHandle = ViroCanvasPanelHandle<GpuProducer>;
 
-export const ViroGpuPanel = React.forwardRef<
-  ViroGpuPanelHandle,
-  ViroGpuPanelProps
->(function ViroGpuPanel(props, ref) {
-  const {
-    init,
-    width,
-    height,
-    position = [0, 1.45, -2.0],
-    rotation,
-    resolution = { width: 1024, height: 1024 },
-    sRGB,
-    androidRoute,
-    lightingModel,
-    fallbackColor,
-    materialName,
-    onReady,
-    onError,
-    autoTick,
-  } = props;
-
-  const state = useCanvasPanel<GpuProducer>({
-    producerFactory: () => new GpuProducer(init),
-    resolution,
-    sRGB,
-    androidRoute,
-    lightingModel,
-    fallbackColor,
-    materialName,
-    onReady,
-    onError,
-    autoTick,
-  });
-
-  React.useImperativeHandle(
-    ref,
-    () => ({
-      surface: state.surface,
-      producer: state.producer,
-      materialName: state.materialName,
-    }),
-    [state.surface, state.producer, state.materialName]
-  );
-
-  return (
-    <ViroNode position={position} rotation={rotation}>
-      <ViroQuad width={width} height={height} materials={[state.materialName]} />
-    </ViroNode>
-  );
-});
+export const ViroGpuPanel = React.forwardRef<ViroGpuPanelHandle, ViroGpuPanelProps>(
+  function ViroGpuPanel({ init, ...surface }, ref) {
+    return (
+      <ViroCanvasPanel<GpuProducer>
+        ref={ref}
+        producerFactory={() => new GpuProducer(init)}
+        {...surface}
+      />
+    );
+  }
+);
