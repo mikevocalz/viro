@@ -1,4 +1,4 @@
-import { CanvasProducer, CanvasSurface } from "nitro-canvas-in-Vision";
+import type { CanvasProducer, CanvasSurface } from "nitro-canvas-in-Vision";
 /**
  * Common lifecycle for every Viro "canvas panel" (ViroThreeJSPanel,
  * ViroWgpuPanel, ViroSkiaPanel, ViroRivePanel, ...): allocate a

@@ -44,11 +44,12 @@
  * mount finds an initialized WebGPU runtime.
  */
 import * as React from "react";
-import {
+import type {
   CanvasSurface,
   GpuProducer,
   GpuProducerInit,
 } from "nitro-canvas-in-Vision";
+import { requireNitroCanvas } from "./CanvasPanel/nitroCanvas";
 import { ViroNode } from "./ViroNode";
 import { ViroQuad } from "./ViroQuad";
 import { useCanvasPanel } from "./CanvasPanel/useCanvasPanel";
@@ -102,7 +103,7 @@ export const ViroGpuPanel = React.forwardRef<
   } = props;
 
   const state = useCanvasPanel<GpuProducer>({
-    producerFactory: () => new GpuProducer(init),
+    producerFactory: () => new (requireNitroCanvas().GpuProducer)(init),
     resolution,
     sRGB,
     androidRoute,

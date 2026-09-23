@@ -29,7 +29,7 @@
  * change once it does.
  */
 import * as React from "react";
-import { CanvasSurface, RiveProducer, RiveProducerInit } from "nitro-canvas-in-Vision";
+import type { CanvasSurface, RiveProducer, RiveProducerInit } from "nitro-canvas-in-Vision";
 type Vec3 = [number, number, number];
 export type ViroRivePanelProps = {
     init: RiveProducerInit;

@@ -25,11 +25,12 @@
  * the upgrade is native EGL/IOSurface binding — same JS API, faster path.
  */
 import * as React from "react";
-import {
+import type {
   CanvasSurface,
   GLES3Producer,
   GLES3ProducerInit,
 } from "nitro-canvas-in-Vision";
+import { requireNitroCanvas } from "./CanvasPanel/nitroCanvas";
 import { ViroNode } from "./ViroNode";
 import { ViroQuad } from "./ViroQuad";
 import { useCanvasPanel } from "./CanvasPanel/useCanvasPanel";
@@ -91,7 +92,7 @@ export const ViroThreeJSPanel = React.forwardRef<
   const initRef = React.useRef<GLES3ProducerInit>({ three, setup });
 
   const state = useCanvasPanel<GLES3Producer>({
-    producerFactory: () => new GLES3Producer(initRef.current),
+    producerFactory: () => new (requireNitroCanvas().GLES3Producer)(initRef.current),
     resolution,
     sRGB,
     androidRoute,

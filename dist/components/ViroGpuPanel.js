@@ -80,14 +80,14 @@ exports.ViroGpuPanel = void 0;
  * mount finds an initialized WebGPU runtime.
  */
 const React = __importStar(require("react"));
-const nitro_canvas_in_Vision_1 = require("nitro-canvas-in-Vision");
+const nitroCanvas_1 = require("./CanvasPanel/nitroCanvas");
 const ViroNode_1 = require("./ViroNode");
 const ViroQuad_1 = require("./ViroQuad");
 const useCanvasPanel_1 = require("./CanvasPanel/useCanvasPanel");
 exports.ViroGpuPanel = React.forwardRef(function ViroGpuPanel(props, ref) {
     const { init, width, height, position = [0, 1.45, -2.0], rotation, resolution = { width: 1024, height: 1024 }, sRGB, androidRoute, lightingModel, fallbackColor, materialName, onReady, onError, autoTick, } = props;
     const state = (0, useCanvasPanel_1.useCanvasPanel)({
-        producerFactory: () => new nitro_canvas_in_Vision_1.GpuProducer(init),
+        producerFactory: () => new ((0, nitroCanvas_1.requireNitroCanvas)().GpuProducer)(init),
         resolution,
         sRGB,
         androidRoute,

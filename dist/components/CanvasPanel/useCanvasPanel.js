@@ -35,11 +35,11 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.useCanvasPanel = useCanvasPanel;
 const React = __importStar(require("react"));
-const nitro_canvas_in_Vision_1 = require("nitro-canvas-in-Vision");
+const nitroCanvas_1 = require("./nitroCanvas");
 const ViroMaterials_1 = require("../Material/ViroMaterials");
 function useCanvasPanel(opts) {
     const { producerFactory, resolution, sRGB = true, androidRoute = "ahb", lightingModel = "Constant", fallbackColor = "#02070d", materialName: materialNameOverride, onReady, onError, autoTick = true, } = opts;
-    const surface = React.useMemo(() => (0, nitro_canvas_in_Vision_1.createCanvasSurface)({
+    const surface = React.useMemo(() => (0, nitroCanvas_1.requireNitroCanvas)().createCanvasSurface({
         width: resolution.width,
         height: resolution.height,
         sRGB,
@@ -65,7 +65,7 @@ function useCanvasPanel(opts) {
     if (!_matRegistered.current) {
         ViroMaterials_1.ViroMaterials.createMaterials({
             [materialName]: {
-                diffuseTexture: (0, nitro_canvas_in_Vision_1.canvasSource)(surface),
+                diffuseTexture: (0, nitroCanvas_1.requireNitroCanvas)().canvasSource(surface),
                 diffuseColor: fallbackColor,
                 lightingModel,
             },

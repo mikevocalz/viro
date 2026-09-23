@@ -61,7 +61,7 @@ exports.ViroThreeJSPanel = void 0;
  * the upgrade is native EGL/IOSurface binding — same JS API, faster path.
  */
 const React = __importStar(require("react"));
-const nitro_canvas_in_Vision_1 = require("nitro-canvas-in-Vision");
+const nitroCanvas_1 = require("./CanvasPanel/nitroCanvas");
 const ViroNode_1 = require("./ViroNode");
 const ViroQuad_1 = require("./ViroQuad");
 const useCanvasPanel_1 = require("./CanvasPanel/useCanvasPanel");
@@ -71,7 +71,7 @@ exports.ViroThreeJSPanel = React.forwardRef(function ViroThreeJSPanel(props, ref
     // mid-life requires remount. Standard for renderer-owning components.
     const initRef = React.useRef({ three, setup });
     const state = (0, useCanvasPanel_1.useCanvasPanel)({
-        producerFactory: () => new nitro_canvas_in_Vision_1.GLES3Producer(initRef.current),
+        producerFactory: () => new ((0, nitroCanvas_1.requireNitroCanvas)().GLES3Producer)(initRef.current),
         resolution,
         sRGB,
         androidRoute,

@@ -29,11 +29,12 @@
  * change once it does.
  */
 import * as React from "react";
-import {
+import type {
   CanvasSurface,
   RiveProducer,
   RiveProducerInit,
 } from "nitro-canvas-in-Vision";
+import { requireNitroCanvas } from "./CanvasPanel/nitroCanvas";
 import { ViroNode } from "./ViroNode";
 import { ViroQuad } from "./ViroQuad";
 import { useCanvasPanel } from "./CanvasPanel/useCanvasPanel";
@@ -85,7 +86,7 @@ export const ViroRivePanel = React.forwardRef<
   } = props;
 
   const state = useCanvasPanel<RiveProducer>({
-    producerFactory: () => new RiveProducer(init),
+    producerFactory: () => new (requireNitroCanvas().RiveProducer)(init),
     resolution,
     sRGB,
     androidRoute,

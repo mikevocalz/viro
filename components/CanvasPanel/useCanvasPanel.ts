@@ -1,10 +1,6 @@
 import * as React from "react";
-import {
-  CanvasProducer,
-  CanvasSurface,
-  canvasSource,
-  createCanvasSurface,
-} from "nitro-canvas-in-Vision";
+import type { CanvasProducer, CanvasSurface } from "nitro-canvas-in-Vision";
+import { requireNitroCanvas } from "./nitroCanvas";
 import { ViroMaterials } from "../Material/ViroMaterials";
 
 /**
@@ -73,7 +69,7 @@ export function useCanvasPanel<P extends CanvasProducer>(
 
   const surface = React.useMemo(
     () =>
-      createCanvasSurface({
+      requireNitroCanvas().createCanvasSurface({
         width: resolution.width,
         height: resolution.height,
         sRGB,
@@ -105,7 +101,7 @@ export function useCanvasPanel<P extends CanvasProducer>(
   if (!_matRegistered.current) {
     ViroMaterials.createMaterials({
       [materialName]: {
-        diffuseTexture: canvasSource(surface),
+        diffuseTexture: requireNitroCanvas().canvasSource(surface),
         diffuseColor: fallbackColor,
         lightingModel,
       },

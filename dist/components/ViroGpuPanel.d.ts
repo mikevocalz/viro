@@ -44,7 +44,7 @@
  * mount finds an initialized WebGPU runtime.
  */
 import * as React from "react";
-import { CanvasSurface, GpuProducer, GpuProducerInit } from "nitro-canvas-in-Vision";
+import type { CanvasSurface, GpuProducer, GpuProducerInit } from "nitro-canvas-in-Vision";
 type Vec3 = [number, number, number];
 export type ViroGpuPanelProps = {
     init: GpuProducerInit;

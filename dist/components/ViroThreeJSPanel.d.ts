@@ -25,7 +25,7 @@
  * the upgrade is native EGL/IOSurface binding — same JS API, faster path.
  */
 import * as React from "react";
-import { CanvasSurface, GLES3Producer, GLES3ProducerInit } from "nitro-canvas-in-Vision";
+import type { CanvasSurface, GLES3Producer, GLES3ProducerInit } from "nitro-canvas-in-Vision";
 type Vec3 = [number, number, number];
 export type ViroThreeJSPanelProps = {
     /** `import * as THREE from 'three'`. */
