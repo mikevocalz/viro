@@ -3,6 +3,8 @@
  * Safe to call on any platform — no-op when VRLauncher is unavailable.
  */
 export declare function exitVRScene(): void;
+/** Vertical tracking origin: "eye" = head-height (default), "floor" = physical floor. */
+export type ViroTrackingOrigin = "eye" | "floor";
 /** What the native shared-frame calls resolve to. Never rejects — see the module. */
 export type VRSharedFrameResult = {
     success: boolean;
@@ -18,8 +20,30 @@ export type VRModuleOpenXRType = {
     /** CL-H: recover the frame another headset published to that group. */
     rvJoinSharedFrame?: (viewTag: number, groupId: string) => Promise<VRSharedFrameResult>;
     setPassthroughEnabled?: (viewTag: number, enabled: boolean) => void;
+    setTrackingOrigin?: (viewTag: number, origin: ViroTrackingOrigin) => void;
     setPassthroughStyle?: (viewTag: number, opacity: number, edgeR: number, edgeG: number, edgeB: number, edgeA: number) => void;
+    triggerHaptic?: (viewTag: number, hand: number, amplitude: number, durationSec: number) => void;
 };
+/**
+ * Which controller to buzz. "active" (default) targets whichever controller
+ * last pressed its trigger — so a UI press buzzes the hand that pressed it,
+ * never the idle one.
+ */
+export type ViroHapticHand = "left" | "right" | "both" | "active";
+/**
+ * Fire a native OpenXR controller haptic pulse (XR_FB / touch controller).
+ * No-op off-Quest/PICO. amplitude ∈ [0,1], durationSec in seconds.
+ *
+ * ```tsx
+ * const viewTag = useVRViewTag();
+ * if (viewTag != null) triggerHaptic(viewTag);            // quick tick, active hand
+ * ```
+ */
+export declare function triggerHaptic(viewTag: number, opts?: {
+    hand?: ViroHapticHand;
+    amplitude?: number;
+    durationSec?: number;
+}): void;
 /** Options for {@link setPassthroughStyle}. All channels are normalized [0,1]. */
 export type ViroPassthroughStyle = {
     /** Texture opacity factor [0,1]. Default 1 (fully opaque passthrough). */
