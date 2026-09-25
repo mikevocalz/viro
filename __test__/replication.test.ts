@@ -100,8 +100,9 @@ describe("connection", () => {
       "x-project-id": "p",
       // Logged by the relay so one client build can be told from another. The
       // version is generated from package.json, so match the shape, not a
-      // number that changes every release.
-      "x-rv-client": expect.stringMatching(/^viro\/\d+\.\d+\.\d+ \(\w+\)$/),
+      // number that changes every release. The fork ships prerelease suffixes
+      // (e.g. 3.0.1-moyo.0), so allow an optional -suffix.
+      "x-rv-client": expect.stringMatching(/^viro\/\d+\.\d+\.\d+(-[\w.]+)? \(\w+\)$/),
     });
   });
 
