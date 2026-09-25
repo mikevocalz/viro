@@ -354,7 +354,7 @@ export type ViroSoundFinishEvent = any;
  * State of a cloud anchor operation.
  * Maps to GARCloudAnchorState (iOS) and Anchor.CloudAnchorState (Android)
  */
-export type ViroCloudAnchorState = "None" | "Success" | "ErrorInternal" | "TaskInProgress" | "ErrorNotAuthorized" | "ErrorResourceExhausted" | "ErrorHostingDatasetProcessingFailed" | "ErrorCloudIdNotFound" | "ErrorResolvingSdkVersionTooOld" | "ErrorResolvingSdkVersionTooNew" | "ErrorHostingServiceUnavailable"
+export type ViroCloudAnchorState = "None" | "Success" | "ErrorInternal" | "TaskInProgress" | "ErrorNotAuthorized" | "ErrorResourceExhausted" | "ErrorHostingDatasetProcessingFailed" | "ErrorCloudIdNotFound" | "ErrorResolvingSdkVersionTooOld" | "ErrorResolvingSdkVersionTooNew" | "ErrorHostingServiceUnavailable" | "ErrorNetworkFailure" | "ErrorAuthenticationFailed" | "ErrorHostingInsufficientVisualFeatures" | "ErrorResolvingLocalizationNoMatch" | "ErrorAnchorExpired"
 /**
  * Emitted by JS platform guards, never by native: the running platform has no
  * cloud anchor path at all (Quest, visionOS). Distinct from a failure — there
@@ -424,6 +424,56 @@ export type ViroFinishScanResult = {
      */
     locationTransform?: string;
     error?: string;
+    /**
+     * What the coverage gate measured, when it is the reason this failed.
+     *
+     * The message is a sentence for a person; this is the same verdict in numbers, so an app can
+     * say which one fell short instead of repeating "insufficient scan quality".
+     */
+    diagnostics?: ViroScanDiagnostics;
+};
+/**
+ * How a scan is doing while it is still going.
+ *
+ * Safe to poll on a timer: the renderer reads the keyframe buffer's camera poses and
+ * triangulates nothing.
+ */
+export type ViroScanStatus = {
+    /** False when no ReactVision provider is configured — nothing is being scanned. */
+    available: boolean;
+    /** True between startScan() and finishScan(). */
+    scanning?: boolean;
+    keyframes?: number;
+    /** Keyframe pairs at least 3 cm apart — the same measure the coverage gate applies. */
+    viewpointPairs?: number;
+    /**
+     * Bounding-box diagonal of the camera path so far.
+     *
+     * Not the number the gate finally checks, which is the spread of the *triangulated points*
+     * and only exists after finishScan(). Walking a wider path is what produces a wider cloud,
+     * but treat this as guidance, not as a prediction.
+     */
+    cameraSpreadMeters?: number;
+    minKeyframes?: number;
+    minViewpointPairs?: number;
+    minSpreadMeters?: number;
+    meetsKeyframes?: boolean;
+    meetsViewpointPairs?: boolean;
+    meetsSpread?: boolean;
+    error?: string;
+};
+/** The measurements behind the last scan-based host, pass or fail. */
+export type ViroScanDiagnostics = {
+    /** False until a scan has finished or failed in this session. */
+    valid: boolean;
+    keyframes?: number;
+    triangulatedPoints?: number;
+    viewpointPairs?: number;
+    /** Spread of the triangulated points — the number the gate compared. */
+    spreadMeters?: number;
+    minPoints?: number;
+    minViewpointPairs?: number;
+    minSpreadMeters?: number;
 };
 /**
  * Result of snapshotWorldMeshToFile() (WS-C). filePath points at a local
@@ -453,6 +503,21 @@ export type ViroResolveCloudAnchorResult = {
     anchor?: ViroCloudAnchor;
     error?: string;
     state: ViroCloudAnchorState;
+};
+/**
+ * Progress of a cloud anchor resolve, from `getCloudAnchorStatus()`.
+ *
+ * `message` is the useful field: resolving passes through downloading the
+ * anchor, looking for it, and holding after a first match, and only the message
+ * separates "never seen" from "seen once" — which is the difference between a
+ * hopeless spot and one worth standing still in.
+ */
+export type ViroCloudAnchorStatus = {
+    /** False when nothing is resolving; the other fields are then empty. */
+    active: boolean;
+    /** 0 to 1, monotonic within one resolve. */
+    progress: number;
+    message: string;
 };
 /**
  * Result of `rvCreateSharedFrame()` / `rvJoinSharedFrame()` (CL-H).
@@ -485,7 +550,18 @@ export type ViroLocalizedEvent = {
     transform: string;
 };
 /**
- * Event fired when a cloud anchor state changes.
+ * @deprecated Never fired. The `onCloudAnchorStateChange` prop this typed was
+ * declared on `ViroARSceneNavigator` and never wired to anything — no handler,
+ * no native event constant on either platform — so an app that set it heard
+ * nothing. The prop was removed in 3.0.1; this type is kept exported so an
+ * existing import does not break, and will go in the next major.
+ *
+ * Cloud anchor state is available without it, and always was:
+ *
+ * - `hostCloudAnchor()` and `resolveCloudAnchor()` resolve with `state` on the
+ *   result, which is the outcome this event would have reported.
+ * - `rvGetCloudAnchor(anchorId)` returns the current state of a known anchor,
+ *   for polling one you did not just host or resolve.
  */
 export type ViroCloudAnchorStateChangeEvent = {
     anchorId: string;

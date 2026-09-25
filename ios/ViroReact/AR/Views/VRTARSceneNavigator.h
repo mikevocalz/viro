@@ -104,6 +104,10 @@ typedef void (^CloudAnchorResolveCompletionHandler)(BOOL success,
 - (void)resolveCloudAnchor:(NSString *)cloudAnchorId
          completionHandler:(CloudAnchorResolveCompletionHandler)completionHandler;
 
+// Progress of a resolve in flight, or nil when none is. Polled rather than
+// pushed: resolve localisation runs per AR frame with no event channel to JS.
+- (NSDictionary *)cloudAnchorStatus;
+
 - (void)cancelCloudAnchorOperations;
 
 #pragma mark - AR Session Recording Methods
@@ -212,6 +216,9 @@ typedef void (^GeospatialAnchorCompletionHandler)(BOOL success,
 // there is no placed anchor for a finishScan()-hosted mesh to read a
 // transform from otherwise. Returns nil if there is no current mesh.
 - (NSString *)rvSnapshotWorldMeshToFile:(NSString *)locationTransformCsv;
+/** Same, but says which precondition failed instead of answering nil for all six. */
+- (NSString *)rvSnapshotWorldMeshToFile:(NSString *)locationTransformCsv
+                                  error:(NSString **)outError;
 // WS-C: load a mesh snapshot (downloaded to filePath by the app from the
 // resolved anchor's asset fileUrl) and attach it for both physics collision
 // and visual occlusion. resolvedTransformCsv is the resolved anchor's
@@ -228,6 +235,16 @@ typedef void (^GeospatialAnchorCompletionHandler)(BOOL success,
 
 // Cloud anchor management
 - (void)rvStartScan;
+/** Scan status as the renderer's JSON; `{"available":false}` when there is no session. */
+// Whether a world mesh exists and how big it is. Polled, because the `onWorldMeshUpdated`
+// event prop never fires: VROARScene calls its delegate, but neither VROARSceneDelegateiOS nor
+// VRTARScene forwards that call, so the chain to JS was never finished.
+- (NSDictionary *)rvGetWorldMeshStats;
+
+- (NSString *)rvGetScanStatusJson;
+/** Last scan-based host's measurements as the renderer's JSON. */
+- (NSString *)rvGetScanDiagnosticsJson;
+
 - (void)rvFinishScan:(NSInteger)ttlDays
    completionHandler:(void (^)(BOOL success, NSString *cloudAnchorId,
                                NSString *locationTransformCsv, NSString *error))completionHandler;

@@ -48,13 +48,16 @@ exports.ViroARSceneNavigator = void 0;
 const React = __importStar(require("react"));
 const react_native_1 = require("react-native");
 const ViroPlatform_1 = require("../Utilities/ViroPlatform");
-const ViroARSceneNavigatorModule = react_native_1.NativeModules.VRTARSceneNavigatorModule;
+const ViroScanStatus_1 = require("./ViroScanStatus");
+const ViroNativeModule_1 = require("../Utilities/ViroNativeModule");
+const ViroARSceneNavigatorModule = (0, ViroNativeModule_1.withMissingModuleFallback)(react_native_1.NativeModules.VRTARSceneNavigatorModule, "VRTARSceneNavigatorModule");
 let mathRandomOffset = 0;
 /**
  * ViroARSceneNavigator is used to transition between multiple AR Scenes.
  */
 class ViroARSceneNavigator extends React.Component {
     static _questWarningLogged = false;
+    static _visionOSWarningLogged = false;
     _component = null;
     constructor(props) {
         super(props);
@@ -530,6 +533,18 @@ class ViroARSceneNavigator extends React.Component {
         return await ViroARSceneNavigatorModule.resolveCloudAnchor((0, react_native_1.findNodeHandle)(this), cloudAnchorId);
     };
     /**
+     * Progress of a resolve in flight. `active` is false when none is running.
+     *
+     * Poll it: resolving a cloud anchor is multi-frame SIFT matching over a 30
+     * second window, and `resolveCloudAnchor()` says nothing until it ends. The
+     * `message` distinguishes the states that matter — downloading the anchor,
+     * looking for it, and having seen it once while it waits for a second
+     * consistent match.
+     */
+    _getCloudAnchorStatus = async () => {
+        return await ViroARSceneNavigatorModule.getCloudAnchorStatus((0, react_native_1.findNodeHandle)(this));
+    };
+    /**
      * Cancel all pending cloud anchor operations.
      * Use this when exiting a scene or when cloud operations are no longer needed.
      */
@@ -554,8 +569,55 @@ class ViroARSceneNavigator extends React.Component {
      * @returns Promise resolving to the hosting result with cloudAnchorId
      */
     _finishScan = async (ttlDays = 1) => {
-        return await ViroARSceneNavigatorModule.rvFinishScan((0, react_native_1.findNodeHandle)(this), Math.max(1, Math.min(365, ttlDays)) // Clamp to valid range
+        const nodeHandle = (0, react_native_1.findNodeHandle)(this);
+        const result = await ViroARSceneNavigatorModule.rvFinishScan(nodeHandle, Math.max(1, Math.min(365, ttlDays)) // Clamp to valid range
         );
+        // A failure arrives as a sentence, which is all a person needs and not enough for an app to
+        // say what to do differently. The numbers the gate compared are attached here so a caller can
+        // tell "walk to more positions" from "there was nothing to see".
+        if (!result?.success) {
+            return (0, ViroScanStatus_1.withScanDiagnostics)(result, await this._getScanDiagnostics());
+        }
+        return result;
+    };
+    /**
+     * How the scan in progress is doing.
+     *
+     * Cheap enough to poll on a timer while someone walks a room: the renderer reads the keyframe
+     * buffer's camera poses and triangulates nothing.
+     */
+    _getScanStatus = async () => {
+        try {
+            return (0, ViroScanStatus_1.parseScanStatus)(await ViroARSceneNavigatorModule.rvGetScanStatus((0, react_native_1.findNodeHandle)(this)));
+        }
+        catch (error) {
+            return { available: false, error: String(error) };
+        }
+    };
+    /**
+     * Whether a world mesh exists and how big it is.
+     *
+     * Poll this rather than relying on the `onWorldMeshUpdated` prop, which never fires — see
+     * {@link ViroWorldMeshStatsResult}. `snapshotWorldMeshToFile()` needs a non-zero `vertexCount`,
+     * the mesh takes a few seconds of looking around to accumulate after `worldMeshEnabled` goes
+     * true, so this is how a caller knows when the snapshot is worth attempting.
+     */
+    _getWorldMeshStats = async () => {
+        try {
+            return (0, ViroScanStatus_1.parseWorldMeshStats)(await ViroARSceneNavigatorModule.rvGetWorldMeshStats((0, react_native_1.findNodeHandle)(this)));
+        }
+        catch (error) {
+            return { available: false, reason: String(error) };
+        }
+    };
+    /** The measurements behind the last scan-based host, pass or fail. */
+    _getScanDiagnostics = async () => {
+        try {
+            return (0, ViroScanStatus_1.parseScanDiagnostics)(await ViroARSceneNavigatorModule.rvGetScanDiagnostics((0, react_native_1.findNodeHandle)(this)));
+        }
+        catch {
+            return { valid: false };
+        }
     };
     /**
      * CL-H: establish a platform-native shared coordinate frame and publish it to
@@ -584,6 +646,16 @@ class ViroARSceneNavigator extends React.Component {
      * @returns Promise resolving to the snapshot result with filePath
      */
     _snapshotWorldMeshToFile = async (locationTransform) => {
+        // Refused here rather than sent on. The transform is what puts the mesh in the scan's frame,
+        // and the only source of one is a finishScan() that succeeded — so a missing value means the
+        // caller is ahead of itself, and saying that beats a native failure about a malformed string.
+        if (!(0, ViroScanStatus_1.isLocationTransform)(locationTransform)) {
+            return {
+                success: false,
+                error: "snapshotWorldMeshToFile needs the locationTransform returned by finishScan(). " +
+                    "Host a scan first.",
+            };
+        }
         return await ViroARSceneNavigatorModule.rvSnapshotWorldMeshToFile((0, react_native_1.findNodeHandle)(this), locationTransform);
     };
     /**
@@ -601,6 +673,15 @@ class ViroARSceneNavigator extends React.Component {
      * @returns Promise resolving to the load result
      */
     _loadWorldMeshFromFile = async (filePath, resolvedTransform) => {
+        // Same reasoning as the snapshot: without the frame the mesh was written in, it loads
+        // somewhere arbitrary. A resolved anchor supplies it; so does the scan that hosted it.
+        if (!filePath || !(0, ViroScanStatus_1.isLocationTransform)(resolvedTransform)) {
+            return {
+                success: false,
+                error: "loadWorldMeshFromFile needs a file path and the transform of the frame the mesh " +
+                    "was written in — from a resolved anchor, or from the finishScan() that hosted it.",
+            };
+        }
         return await ViroARSceneNavigatorModule.rvLoadWorldMeshFromFile((0, react_native_1.findNodeHandle)(this), filePath, resolvedTransform);
     };
     // ===========================================================================
@@ -990,9 +1071,13 @@ class ViroARSceneNavigator extends React.Component {
         unproject: this._unproject,
         hostCloudAnchor: this._hostCloudAnchor,
         resolveCloudAnchor: this._resolveCloudAnchor,
+        getCloudAnchorStatus: this._getCloudAnchorStatus,
         cancelCloudAnchorOperations: this._cancelCloudAnchorOperations,
         startScan: this._startScan,
         finishScan: this._finishScan,
+        getScanStatus: this._getScanStatus,
+        getWorldMeshStats: this._getWorldMeshStats,
+        getScanDiagnostics: this._getScanDiagnostics,
         rvCreateSharedFrame: this._rvCreateSharedFrame,
         rvJoinSharedFrame: this._rvJoinSharedFrame,
         snapshotWorldMeshToFile: this._snapshotWorldMeshToFile,
@@ -1061,9 +1146,13 @@ class ViroARSceneNavigator extends React.Component {
         unproject: this._unproject,
         hostCloudAnchor: this._hostCloudAnchor,
         resolveCloudAnchor: this._resolveCloudAnchor,
+        getCloudAnchorStatus: this._getCloudAnchorStatus,
         cancelCloudAnchorOperations: this._cancelCloudAnchorOperations,
         startScan: this._startScan,
         finishScan: this._finishScan,
+        getScanStatus: this._getScanStatus,
+        getWorldMeshStats: this._getWorldMeshStats,
+        getScanDiagnostics: this._getScanDiagnostics,
         rvCreateSharedFrame: this._rvCreateSharedFrame,
         rvJoinSharedFrame: this._rvJoinSharedFrame,
         snapshotWorldMeshToFile: this._snapshotWorldMeshToFile,
@@ -1117,6 +1206,24 @@ class ViroARSceneNavigator extends React.Component {
     render() {
         // Uncomment this line to check for misnamed props
         //checkMisnamedProps("ViroARSceneNavigator", this.props);
+        // visionOS ships no AR subsystem: every VROAR* class is excluded from that renderer, so
+        // VRTARSceneNavigator has no view manager to mount and reaching it takes the app down rather
+        // than rendering nothing. Guarded the same way Quest is, and for the same reason.
+        if (ViroPlatform_1.isVisionOS) {
+            if (!ViroARSceneNavigator._visionOSWarningLogged) {
+                console.warn("[Viro] ViroARSceneNavigator is not supported on Apple Vision Pro. " +
+                    "Use ViroXRSceneNavigator (auto-detects visionOS) or ViroSceneNavigator instead.");
+                ViroARSceneNavigator._visionOSWarningLogged = true;
+            }
+            if ("visionOSFallback" in this.props) {
+                return <>{this.props.visionOSFallback}</>;
+            }
+            return (<react_native_1.View style={[styles.container, styles.questFallback]}>
+          <react_native_1.Text style={styles.questFallbackText}>
+            AR is not supported on Apple Vision Pro.
+          </react_native_1.Text>
+        </react_native_1.View>);
+        }
         if (ViroPlatform_1.isQuest) {
             if (!ViroARSceneNavigator._questWarningLogged) {
                 console.warn("[Viro] ViroARSceneNavigator is not supported on Meta Quest. " +

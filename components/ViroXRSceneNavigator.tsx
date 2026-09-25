@@ -1,14 +1,38 @@
 import * as React from "react";
-import { AppState, NativeModules, StyleSheet, View, ViewProps } from "react-native";
+import {
+  AppState,
+  NativeModules,
+  PermissionsAndroid,
+  StyleSheet,
+  View,
+  ViewProps,
+} from "react-native";
 import { ViroARSceneNavigator } from "./AR/ViroARSceneNavigator";
 import { ViroSceneNavigator } from "./ViroSceneNavigator";
 import { isPico, isQuest, isVisionOS } from "./Utilities/ViroPlatform";
+import {
+  beginSceneRootScan,
+  claimImmersiveSpace,
+  ownsImmersiveSpace,
+  releaseImmersiveSpace,
+  scheduleImmersiveSpaceExit,
+  sawARSceneRoot,
+} from "./VisionOS/ViroImmersiveSpaceGate";
 import {
   enterImmersiveSpace,
   exitImmersiveSpace,
   ImmersiveSpaceStyle,
 } from "./VisionOS/ViroVisionOSModule";
 import { VRQuestNavigatorBridge } from "./Utilities/VRQuestNavigatorBridge";
+import { VRModuleOpenXR } from "./Utilities/VRModuleOpenXR";
+import type { Viro3DPoint } from "./Types/ViroUtils";
+
+const ViroSceneNavigatorModule = NativeModules.VRTSceneNavigatorModule as
+  | {
+      project: (tag: number, point: Viro3DPoint) => Promise<any>;
+      unproject: (tag: number, point: Viro3DPoint) => Promise<any>;
+    }
+  | undefined;
 
 const VRLauncher = NativeModules.VRLauncher as
   | { launchVRScene?: () => void }
@@ -23,6 +47,19 @@ const VRLauncher = NativeModules.VRLauncher as
 // AR continues to work on RN >= 0.81 (Expo 54+) — only the Quest VR launch
 // is gated.
 const MIN_RN_FOR_VR = { major: 0, minor: 83 };
+
+// Declared in the manifest by withViroAndroid.ts, but Horizon OS treats these
+// as dangerous runtime permissions — the manifest entry alone doesn't grant
+// them. USE_ANCHOR_API/USE_SCENE gate plane & anchor data (needed now that the
+// ViroARScene root mounts on Quest too); HEADSET_CAMERA gates the passthrough
+// Camera2 feed ViroObjectDetector reads. Requested once before the first VR
+// launch; denial degrades gracefully elsewhere (no planes / no passthrough
+// feed, see QuestPassthroughCamera) rather than blocking VR.
+const QUEST_RUNTIME_PERMISSIONS = [
+  "horizonos.permission.USE_ANCHOR_API",
+  "com.oculus.permission.USE_SCENE",
+  "horizonos.permission.HEADSET_CAMERA",
+];
 
 function checkRNVersionForVR(): void {
   let version = "unknown";
@@ -143,6 +180,10 @@ type Props = ViewProps & {
  */
 export const ViroXRSceneNavigator = React.forwardRef<unknown, Props>(
   function ViroXRSceneNavigator(props, ref) {
+    // Opens the scan the mount effect reads. Here rather than in an effect because a parent
+    // renders before its children: this has to run before the scene root does.
+    if (isVisionOS) beginSceneRootScan();
+
     const {
       initialScene,
       arInitialScene,
@@ -179,15 +220,56 @@ export const ViroXRSceneNavigator = React.forwardRef<unknown, Props>(
     // AR:    expose the underlying ViroARSceneNavigator instance directly.
     React.useImperativeHandle(ref, () => {
       if (isQuest || isPico) {
-        // PICO now follows Quest: navigator ops cross the activity boundary
-        // through the same bridge — VRActivity owns the ViroVRSceneNavigator
-        // instance.
+        // PICO follows Quest: navigator ops cross the activity boundary through
+        // the same bridge — VRActivity owns the ViroVRSceneNavigator instance.
+        // project/unproject/recenterTracking can't go through dispatchOp — that
+        // queue is fire-and-forget (push/pop/etc. have no return value), while
+        // these three need a result back. Instead they reuse the same viewTag
+        // handoff VRQuestNavigatorBridge already publishes for VRModuleOpenXR:
+        // both activities share one Fabric UIManager, so a tag captured in
+        // VRActivity resolves fine from a native module call made here in the
+        // panel. recenterTracking goes through VRModuleOpenXR (Quest-specific,
+        // already used this way elsewhere); project/unproject reuse the generic
+        // VRTSceneNavigatorModule, which already resolves views by raw tag.
+        const requireViewTag = (): number => {
+          const tag = VRQuestNavigatorBridge.getViewTag();
+          if (tag == null) {
+            throw new Error(
+              "[Viro] Quest VR scene not mounted yet — call this after the VR scene is active."
+            );
+          }
+          return tag;
+        };
         const bridgeNav = {
           push:    (scene: any) => VRQuestNavigatorBridge.dispatchOp({ type: "push",    scene }),
           replace: (scene: any) => VRQuestNavigatorBridge.dispatchOp({ type: "replace", scene }),
           jump:    (scene: any) => VRQuestNavigatorBridge.dispatchOp({ type: "jump",    scene }),
           pop:     ()           => VRQuestNavigatorBridge.dispatchOp({ type: "pop"              }),
           popN:    (n: number)  => VRQuestNavigatorBridge.dispatchOp({ type: "popN",   n       }),
+          recenterTracking: () => VRModuleOpenXR?.recenterTracking?.(requireViewTag()),
+          // async so a missing viewTag rejects the returned promise instead of
+          // throwing synchronously — callers doing `nav.project(p).catch(...)`
+          // without awaiting still get the rejection.
+          project: async (point: Viro3DPoint) =>
+            ViroSceneNavigatorModule?.project(requireViewTag(), point),
+          unproject: async (point: Viro3DPoint) =>
+            ViroSceneNavigatorModule?.unproject(requireViewTag(), point),
+          // CL-H. These are the two names `metaSpatialAnchorFrameSource` looks for,
+          // and their absence here is the whole of why co-location did not work on
+          // Quest: the native side has driven Meta's group sharing since the OpenXR
+          // session learned it, and nothing forwarded to it. They go through
+          // VRModuleOpenXR rather than ARSceneNavigatorModule because that module
+          // resolves its view as a VRTARSceneNavigator, which VRActivity does not host.
+          rvCreateSharedFrame: async (groupId: string) =>
+            VRModuleOpenXR?.rvCreateSharedFrame?.(requireViewTag(), groupId) ?? {
+              success: false,
+              error: "VRModuleOpenXR is unavailable — is this a Quest build?",
+            },
+          rvJoinSharedFrame: async (groupId: string) =>
+            VRModuleOpenXR?.rvJoinSharedFrame?.(requireViewTag(), groupId) ?? {
+              success: false,
+              error: "VRModuleOpenXR is unavailable — is this a Quest build?",
+            },
         };
         return { sceneNavigator: bridgeNav, arSceneNavigator: bridgeNav };
       }
@@ -203,6 +285,9 @@ export const ViroXRSceneNavigator = React.forwardRef<unknown, Props>(
 
     // Track AppState so we can detect background → active transitions.
     const appStateRef = React.useRef(AppState.currentState);
+    // Identity of this navigator for ImmersiveSpace ownership. A symbol rather than a
+    // counter: it cannot collide, and it means nothing outside this comparison.
+    const visionOSOwnerRef = React.useRef<symbol>(Symbol("ViroXRSceneNavigator"));
     // Timestamp at which AppState last left "active". Lets us distinguish a
     // genuine Quest-menu return (background lasts seconds) from racy
     // background→active bounces caused by the dual-Activity ReactHost
@@ -220,19 +305,55 @@ export const ViroXRSceneNavigator = React.forwardRef<unknown, Props>(
     // the native side hands its VRTScene to the CompositorServices render loop.
     React.useEffect(() => {
       if (!isVisionOS) return;
+      // An AR-rooted scene has nothing to put in the space — ViroARScene cannot mount on visionOS
+      // and rendered null just above. Opening it anyway dims the room and shows an empty world.
+      if (sawARSceneRoot()) {
+        console.warn(
+          "[Viro] The scene given to ViroXRSceneNavigator is rooted in ViroARScene, which " +
+            "visionOS does not support, so the ImmersiveSpace was not opened. Root the scene " +
+            "in ViroScene, or pass one through `vrInitialScene`."
+        );
+        return;
+      }
+      // Ownership, as on Quest. There VRActivity is the single display and `setVRActive` names
+      // who has it; here the ImmersiveSpace is, and this is the same flag. The last navigator to
+      // claim it is the one driving it, and only that one may close it again.
+      const owner = visionOSOwnerRef.current;
+      claimImmersiveSpace(owner);
+
       let cancelled = false;
-      enterImmersiveSpace(visionOSImmersionStyle).then((opened) => {
-        if (!opened && !cancelled) {
-          console.warn(
-            "[Viro] Could not open the visionOS ImmersiveSpace. Check that the host app's " +
-              "SwiftUI App declares `ImmersiveSpace(id: ViroImmersiveSpace.id)` and applies " +
-              "`.viroImmersiveSpaceController()` to the React Native root view."
-          );
+      const open = () =>
+        enterImmersiveSpace(visionOSImmersionStyle).then((opened) => {
+          if (!opened && !cancelled) {
+            console.warn(
+              "[Viro] Could not open the visionOS ImmersiveSpace. Check that the host app's " +
+                "SwiftUI App declares `ImmersiveSpace(id: ViroImmersiveSpace.id)` and applies " +
+                "`.viroImmersiveSpaceController()` to the React Native root view."
+            );
+          }
+        });
+      open();
+
+      // Quest re-launches VRActivity when the app comes back from the system menu, because the
+      // Activity finishes on the way out. visionOS closes the ImmersiveSpace on the same
+      // transition, so it is reopened for the same reason — and only by whoever owns it, or two
+      // mounted navigators would both reopen and fight over the one surface.
+      const appStateSub = AppState.addEventListener("change", (nextState) => {
+        if (nextState === "active" && ownsImmersiveSpace(owner)) {
+          open();
         }
       });
+
       return () => {
         cancelled = true;
-        exitImmersiveSpace();
+        appStateSub.remove();
+        // Not on the way out of a screen that no longer owns the space: another navigator has
+        // taken it over, and closing it would blank what the wearer is actually looking at.
+        if (releaseImmersiveSpace(owner)) {
+          scheduleImmersiveSpaceExit(() => {
+            exitImmersiveSpace();
+          });
+        }
       };
     }, []);
 
@@ -244,24 +365,34 @@ export const ViroXRSceneNavigator = React.forwardRef<unknown, Props>(
     React.useEffect(() => {
       if (!isQuest && !isPico) return;
       checkRNVersionForVR();
-      const scene = vrInitialScene ?? initialScene;
-      if (scene) {
-        VRQuestNavigatorBridge.setIntent(scene, {
-          hdrEnabled,
-          pbrEnabled,
-          bloomEnabled,
-          shadowsEnabled,
-          multisamplingEnabled,
-          vrModeEnabled,
-          passthroughEnabled,
-          handTrackingEnabled,
-          trackingOrigin,
-          onExitViro,
-          debug,
-        });
-      }
-      VRQuestNavigatorBridge.setVRActive(true);
-      VRLauncher?.launchVRScene?.();
+
+      const registerIntentAndLaunch = () => {
+        const scene = vrInitialScene ?? initialScene;
+        if (scene) {
+          VRQuestNavigatorBridge.setIntent(scene, {
+            hdrEnabled,
+            pbrEnabled,
+            bloomEnabled,
+            shadowsEnabled,
+            multisamplingEnabled,
+            vrModeEnabled,
+            passthroughEnabled,
+            handTrackingEnabled,
+            trackingOrigin,
+            onExitViro,
+            debug,
+          });
+        }
+        VRQuestNavigatorBridge.setVRActive(true);
+        VRLauncher?.launchVRScene?.();
+      };
+
+      // Request the runtime grants once before the first launch. Caught and
+      // ignored on failure — a denied/unavailable permission should degrade
+      // (no planes, no passthrough camera), not block VR from opening at all.
+      PermissionsAndroid.requestMultiple(QUEST_RUNTIME_PERMISSIONS as any)
+        .catch(() => undefined)
+        .then(registerIntentAndLaunch);
 
       const sub = AppState.addEventListener("change", (nextState) => {
         const prev = appStateRef.current;

@@ -1021,6 +1021,27 @@ static NSString *rvMatrixToCsv(const VROMatrix4f &m) {
     }
 }
 
+- (NSDictionary *)cloudAnchorStatus {
+    if (!_vroView) {
+        return nil;
+    }
+    VROViewAR *viewAR = (VROViewAR *) _vroView;
+    std::shared_ptr<VROARSession> arSession = [viewAR getARSession];
+    if (!arSession) {
+        return nil;
+    }
+
+    std::string message;
+    float progress = 0.0f;
+    if (!arSession->getCloudAnchorStatus(message, progress)) {
+        return nil;
+    }
+    return @{
+        @"progress": @(progress),
+        @"message": [NSString stringWithUTF8String:message.c_str()]
+    };
+}
+
 - (void)resolveCloudAnchor:(NSString *)cloudAnchorId
          completionHandler:(CloudAnchorResolveCompletionHandler)completionHandler {
     if (!_vroView) {
@@ -1760,6 +1781,50 @@ static NSArray *rvParseAnchorArrayJson(NSString *json) {
     arSession->rvStartScan();
 }
 
+- (NSDictionary *)rvGetWorldMeshStats {
+    if (!_vroView || !_currentScene) {
+        return @{@"available": @NO, @"reason": @"The AR view is not ready"};
+    }
+
+    std::shared_ptr<VROSceneController> sceneController = [_currentScene sceneController];
+    if (!sceneController) {
+        return @{@"available": @NO, @"reason": @"No scene is mounted"};
+    }
+
+    std::shared_ptr<VROARScene> arScene = std::dynamic_pointer_cast<VROARScene>(sceneController->getScene());
+    if (!arScene) {
+        return @{@"available": @NO, @"reason": @"The mounted scene is not a ViroARScene"};
+    }
+
+    if (!arScene->getWorldMesh()) {
+        return @{@"available": @NO, @"enabled": @NO,
+                 @"reason": @"World mesh capture is off - set worldMeshEnabled"};
+    }
+
+    VROWorldMeshStats stats = arScene->getWorldMeshStats();
+    return @{@"available": @YES,
+             @"enabled": @(arScene->isWorldMeshEnabled()),
+             @"vertexCount": @(stats.vertexCount),
+             @"triangleCount": @(stats.triangleCount),
+             @"averageConfidence": @(stats.averageConfidence),
+             @"lastUpdateTimeMs": @(stats.lastUpdateTimeMs),
+             @"isStale": @(stats.isStale)};
+}
+
+- (NSString *)rvGetScanStatusJson {
+    if (!_vroView) return @"{\"available\":false,\"error\":\"AR view not initialized\"}";
+    std::shared_ptr<VROARSession> arSession = [(VROViewAR *)_vroView getARSession];
+    if (!arSession) return @"{\"available\":false,\"error\":\"AR session not available\"}";
+    return [NSString stringWithUTF8String:arSession->rvGetScanStatusJson().c_str()];
+}
+
+- (NSString *)rvGetScanDiagnosticsJson {
+    if (!_vroView) return @"{\"valid\":false}";
+    std::shared_ptr<VROARSession> arSession = [(VROViewAR *)_vroView getARSession];
+    if (!arSession) return @"{\"valid\":false}";
+    return [NSString stringWithUTF8String:arSession->rvGetScanDiagnosticsJson().c_str()];
+}
+
 - (void)rvFinishScan:(NSInteger)ttlDays
    completionHandler:(void (^)(BOOL, NSString *, NSString *, NSString *))completionHandler {
     if (!_vroView) { if (completionHandler) completionHandler(NO, nil, nil, @"AR view not initialized"); return; }
@@ -2141,38 +2206,51 @@ static VROMatrix4f rvParseMatrixCsv(NSString *csv) {
 // WS-C: serialize the current world mesh to a temp file, returning its path
 // (or nil on failure/no mesh) — ready to pass straight into rvUploadAsset().
 - (NSString *)rvSnapshotWorldMeshToFile:(NSString *)locationTransformCsv {
+    return [self rvSnapshotWorldMeshToFile:locationTransformCsv error:nil];
+}
+
+// Six ways to fail, and they used to be one `nil` that the module turned into "No world mesh
+// available to snapshot" whichever it was. "The scene is not an AR scene" and "the mesh has no
+// geometry yet" call for opposite responses from the caller, so each says which it is.
+- (NSString *)rvSnapshotWorldMeshToFile:(NSString *)locationTransformCsv
+                                  error:(NSString **)outError {
+    #define RV_FAIL(msg) do { if (outError) { *outError = (msg); } return nil; } while (0)
+
     if (!_vroView || !_currentScene || !locationTransformCsv) {
-        return nil;
+        RV_FAIL(@"The AR view is not ready, or no locationTransform was given");
     }
 
     std::shared_ptr<VROSceneController> sceneController = [_currentScene sceneController];
     if (!sceneController) {
-        return nil;
+        RV_FAIL(@"No scene is mounted");
     }
 
     std::shared_ptr<VROARScene> arScene = std::dynamic_pointer_cast<VROARScene>(sceneController->getScene());
     if (!arScene) {
-        return nil;
+        RV_FAIL(@"The mounted scene is not a ViroARScene");
     }
 
     std::shared_ptr<VROARWorldMesh> worldMesh = arScene->getWorldMesh();
     if (!worldMesh) {
-        return nil;
+        RV_FAIL(@"World mesh capture is off - set worldMeshEnabled before scanning");
     }
 
     VROMatrix4f locationTransform = rvParseMatrixCsv(locationTransformCsv);
     std::vector<uint8_t> bytes = worldMesh->serializeCurrentMesh(locationTransform);
     if (bytes.empty()) {
-        return nil;
+        RV_FAIL(@"The world mesh is still empty - this device needs LiDAR, and the mesh takes "
+                 "a few seconds of looking around to accumulate");
     }
 
     NSData *data = [NSData dataWithBytes:bytes.data() length:bytes.size()];
     NSString *fileName = [NSString stringWithFormat:@"rvmesh_%@.bin", [[NSUUID UUID] UUIDString]];
     NSString *filePath = [NSTemporaryDirectory() stringByAppendingPathComponent:fileName];
     if (![data writeToFile:filePath atomically:YES]) {
-        return nil;
+        RV_FAIL(@"Could not write the mesh to the temporary directory");
     }
     return filePath;
+
+    #undef RV_FAIL
 }
 
 // WS-C: reverse of rvSnapshotWorldMeshToFile — load a resolved mesh snapshot

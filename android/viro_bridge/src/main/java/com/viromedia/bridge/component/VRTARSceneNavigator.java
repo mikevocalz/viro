@@ -435,9 +435,6 @@ public class VRTARSceneNavigator extends VRT3DSceneNavigator {
     private String mRvApiKey = null;
     private String mRvProjectId = null;
     private String mRvEndpoint = null;
-    // Improvement 5: track whether credentials have been pushed to the native session
-    // so setReactVisionConfig() is called exactly once per provider activation.
-    private boolean mRvConfigApplied = false;
     private boolean mGeoProviderApplied = false;
     private static final String TAG = "ViroAR";
 
@@ -459,8 +456,6 @@ public class VRTARSceneNavigator extends VRT3DSceneNavigator {
     private boolean mLocationAccuracyReduced = false;
 
     public void setCloudAnchorProvider(String provider) {
-        // Improvement 5: reset so credentials are re-applied on next host/resolve
-        mRvConfigApplied = false;
         mCloudAnchorProvider = provider != null ? provider.toLowerCase() : "none";
 
         Log.i(TAG, "Setting cloud anchor provider: " + mCloudAnchorProvider);
@@ -544,19 +539,16 @@ public class VRTARSceneNavigator extends VRT3DSceneNavigator {
         return null;
     }
 
-    /**
-     * Improvement 5: apply ReactVision credentials to the native AR session exactly once
-     * per provider activation. Subsequent calls to hostCloudAnchor / resolveCloudAnchor
-     * skip the JNI call because the session already has the credentials.
-     */
+    // Re-sent on every call rather than latched. The native side now queues the
+    // config until the AR session exists, but a latch once masked a dropped call
+    // and left the session without credentials for the navigator's life. The
+    // C++ setter is idempotent, so re-sending is cheap.
     private void ensureRvConfigApplied(ARScene arScene) {
-        if (mRvConfigApplied) return;
         if (!"reactvision".equals(mCloudAnchorProvider)) return;
         if (arScene == null) return;
         if (mRvApiKey == null || mRvApiKey.isEmpty()) return;
         arScene.setReactVisionConfig(mRvApiKey, mRvProjectId != null ? mRvProjectId : "",
                 mRvEndpoint != null ? mRvEndpoint : "");
-        mRvConfigApplied = true;
     }
 
     private void ensureGeoProviderApplied(ARScene arScene) {
@@ -600,7 +592,6 @@ public class VRTARSceneNavigator extends VRT3DSceneNavigator {
             return;
         }
 
-        // Improvement 5: apply credentials once per provider activation
         ensureRvConfigApplied(arScene);
 
         // Host the anchor via the configured cloud anchor provider
@@ -655,6 +646,15 @@ public class VRTARSceneNavigator extends VRT3DSceneNavigator {
         return "UNSUPPORTED"; // mirrors ARScene.RecordingStatus.UNSUPPORTED.name()
     }
 
+    /** "progress|message" for a resolve in flight, empty when none is. */
+    public String getCloudAnchorStatus() {
+        ARScene arScene = getCurrentARScene();
+        if (arScene == null) {
+            return "";
+        }
+        return arScene.getCloudAnchorStatus();
+    }
+
     public void resolveCloudAnchor(String cloudAnchorId,
                                    ARSceneNavigatorModule.CloudAnchorResolveCallback callback) {
         if (!"arcore".equals(mCloudAnchorProvider) && !"reactvision".equals(mCloudAnchorProvider)) {
@@ -669,7 +669,6 @@ public class VRTARSceneNavigator extends VRT3DSceneNavigator {
             return;
         }
 
-        // Improvement 5: apply credentials once per provider activation
         ensureRvConfigApplied(arScene);
 
         // Resolve the cloud anchor via the configured provider
@@ -1207,17 +1206,93 @@ public class VRTARSceneNavigator extends VRT3DSceneNavigator {
     }
 
     /**
+     * Scan status or diagnostics, whichever was asked for, as the renderer's own JSON.
+     *
+     * No ensureRvConfigApplied: this reads state, and a reader should not be the thing that
+     * configures the provider — if there is none, saying so is the answer.
+     */
+    public void rvGetScanJson(boolean diagnostics, ARScene.RvScanJsonCallback callback) {
+        ARScene arScene = getCurrentARScene();
+        if (arScene == null) {
+            if (callback != null) {
+                callback.onResult(diagnostics ? "{\"valid\":false}"
+                                              : "{\"available\":false,\"error\":\"AR scene not available\"}");
+            }
+            return;
+        }
+        if (diagnostics) {
+            arScene.rvGetScanDiagnostics(callback);
+        } else {
+            arScene.rvGetScanStatus(callback);
+        }
+    }
+
+    /**
+     * Whether a world mesh exists and how big it is, as JSON.
+     *
+     * Separate from {@link #rvGetScanJson} rather than a third flag on it: mesh capture is scene
+     * state and answers even with no AR session, while the scan getters need one.
+     */
+    public void rvGetWorldMeshStatsJson(ARScene.RvScanJsonCallback callback) {
+        ARScene arScene = getCurrentARScene();
+        if (arScene == null) {
+            if (callback != null) {
+                callback.onResult("{\"available\":false,\"reason\":\"AR scene not available\"}");
+            }
+            return;
+        }
+        arScene.rvGetWorldMeshStats(callback);
+    }
+
+    // CL-H: platform-native shared frames (Quest). No ensureRvConfigApplied —
+    // these never reach the ReactVision backend, so the API key and project id
+    // that cloud anchors need are irrelevant here.
+    public void rvCreateSharedFrame(String groupId, ARScene.RvSharedFrameCallback callback) {
+        ARScene arScene = getCurrentARScene();
+        if (arScene == null) { if (callback != null) callback.onResult(false, "", "", "AR scene not available"); return; }
+        arScene.rvCreateSharedFrame(groupId, callback);
+    }
+
+    public void rvJoinSharedFrame(String groupId, ARScene.RvSharedFrameCallback callback) {
+        ARScene arScene = getCurrentARScene();
+        if (arScene == null) { if (callback != null) callback.onResult(false, "", "", "AR scene not available"); return; }
+        arScene.rvJoinSharedFrame(groupId, callback);
+    }
+
+    /**
      * WS-C: serialize the current world mesh to a cache file, returning its
      * path (or null on failure/no mesh) — ready to pass straight into
      * rvUploadAsset(). locationTransformCsv is the value
      * {@link ARScene.RvFinishScanCallback} returned.
      */
     public String rvSnapshotWorldMeshToFile(String locationTransformCsv) {
+        return rvSnapshotWorldMeshToFile(locationTransformCsv, null);
+    }
+
+    /**
+     * Same, but says which precondition failed.
+     *
+     * Every path used to answer `null`, which the module turned into "No world mesh available to
+     * snapshot" whichever it was — and "there is no AR scene" and "the mesh has no geometry yet"
+     * ask the caller for opposite things.
+     *
+     * @param outError a one-element array the reason is written into, or null if not wanted
+     */
+    public String rvSnapshotWorldMeshToFile(String locationTransformCsv, String[] outError) {
         ARScene arScene = getCurrentARScene();
-        if (arScene == null) return null;
+        if (arScene == null) {
+            if (outError != null) outError[0] = "No AR scene is mounted";
+            return null;
+        }
 
         byte[] bytes = arScene.rvSnapshotWorldMesh(locationTransformCsv);
-        if (bytes == null || bytes.length == 0) return null;
+        if (bytes == null || bytes.length == 0) {
+            if (outError != null) {
+                outError[0] = "The world mesh is still empty - this device needs depth support, "
+                        + "and the mesh takes a few seconds of looking around to accumulate";
+            }
+            return null;
+        }
 
         try {
             java.io.File outFile = new java.io.File(getContext().getCacheDir(),
@@ -1228,6 +1303,7 @@ public class VRTARSceneNavigator extends VRT3DSceneNavigator {
             return outFile.getAbsolutePath();
         } catch (java.io.IOException e) {
             Log.w(TAG, "rvSnapshotWorldMeshToFile: failed to write cache file", e);
+            if (outError != null) outError[0] = "Could not write the mesh to the cache directory";
             return null;
         }
     }

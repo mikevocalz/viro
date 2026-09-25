@@ -3,9 +3,10 @@
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
-  "version": "3.0.0-moyo.4",
+  "version": "3.0.1-moyo.0",
   "license": "MIT",
   "publishConfig": {
+    "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
   "repository": {
@@ -27,11 +28,12 @@
     "after:release": "./prepare_release.sh",
     "prepare": "npm run build",
     "harness:assets": "bash scripts/sync-harness-assets.sh",
-    "preharness": "npm run harness:assets"
+    "preharness": "npm run harness:assets",
+    "audit:events": "node scripts/audit-events.cjs"
   },
   "peerDependencies": {
     "@reactvision/react-native-visionos": ">=0.86.0 <0.87.0",
-    "@reactvision/viro-web-renderer": ">=0.0.1",
+    "@reactvision/viro-web-renderer": "^1.0.0",
     "expo": ">=57.0.0 <58.0.0",
     "react": ">=19.0.0",
     "react-native": ">=0.86.0 <0.87.0",
@@ -82,6 +84,7 @@
   ],
   "devDependencies": {
     "@babel/core": "^7.25.2",
+    "@babel/plugin-transform-react-jsx": "^7.29.7",
     "@babel/preset-env": "^7.25.3",
     "@babel/preset-typescript": "^7.26.0",
     "@babel/standalone": "^7.29.8",
