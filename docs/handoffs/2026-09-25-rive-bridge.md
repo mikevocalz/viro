@@ -33,7 +33,7 @@ Nitro's `scripts/check-android.py --gradle /path/to/gradle --viro /path/to/viro`
 Set JAVA_HOME/ANDROID_HOME. Install Nitro dev dependencies first.
 
 The rebuilt renderer and bridge AARs are staged in this isolated worktree;
-package version is `3.0.0-moyo.5-rive.5`. These are build-verified artifacts,
+package version is `3.0.0-moyo.5-rive.6`. These are build-verified artifacts,
 not a headset-qualified release. Device validation is last by user request.
 The full rolling handoff is in the companion Moyo worktree at
 `docs/handoffs/2026-09-25-rive-viro-panel.md`.
@@ -45,3 +45,5 @@ The full APK check exposed duplicate React Native core codegen classes in the br
 Quest capture confirmed Rive pixels; user confirmed parent-grip dragging but reported selection failure and ray clipping. The next renderer keeps hit testing active for input-only drags. Fraction-count converter and text-size corrections live in the Moyo probe. Android selection retry remains required; the device disconnected during diagnosis.
 
 Latest placement update: the consumer supplies a camera-relative initial pose (1.8 m ahead, 0.2 m below eye height), then preserves world-space grip movement. Grip text uses font 20 scaled to 0.25, centered and clipped inside 0.6 × 0.09 m. Viro MCP prop lookup, scene validation (zero issues), and web layout render passed. This does not validate native Rive or controller interaction. Renderer rive.5 includes live hit testing for input-only drags; physical selection acceptance remains pending.
+
+The user confirmed that “Moving panel” remains after releasing both triggers and grips. Renderer rive.6 (ViroCore `7a366057`) suppresses hand pinch/grab events while a controller owns that side and cancels held trigger/grip actions when inactive or tracking is lost. This prevents duplicate hand/controller edges and missing release on inactive actions. Host button-edge tests, arm64 renderer build, and all 14 native library alignment checks passed. Physical release and selection still require validation in the new APK.
