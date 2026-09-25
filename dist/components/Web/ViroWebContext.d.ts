@@ -1,5 +1,5 @@
 import { ViroTrackingState, type ViroWebRenderer, type ViroSceneApi, type ViroHandle, type ViroArSession, type ArPlaneAnchor } from "@reactvision/viro-web-renderer";
-export declare const ViroRendererContext: import("react").Context<any>;
+export declare const ViroRendererContext: import("react").Context<ViroWebRenderer | null>;
 /**
  * AR session state, provided by ViroARSceneNavigator.web and consumed by
  * ViroARScene / ViroARPlane. `anchors` is the latest detected plane set;
@@ -26,7 +26,7 @@ export interface ViroARPlaneClaims {
 }
 export declare const ViroARPlaneClaimsContext: import("react").Context<ViroARPlaneClaims | null>;
 /** The parent node handle for the current subtree (0 = scene root not yet available). */
-export declare const ViroParentNodeContext: import("react").Context<ViroHandle>;
+export declare const ViroParentNodeContext: import("react").Context<number>;
 export declare function useViroRenderer(): ViroWebRenderer;
 export declare function useViroScene(): ViroSceneApi;
 export declare function useViroParentNode(): ViroHandle;
