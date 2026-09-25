@@ -3,7 +3,7 @@
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
-  "version": "3.0.0-moyo.5-rive.4",
+  "version": "3.0.0-moyo.5-rive.5",
   "license": "MIT",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"

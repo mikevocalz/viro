@@ -18,7 +18,7 @@ The input source is numeric, not an image asset descriptor; event types were
 corrected accordingly.
 
 Build evidence on 2026-09-25:
-- ViroCore `:viroreact:assembleRelease`: pass, both configured Android ABIs.
+- ViroCore `:viroreact:assembleRelease`: pass. The latest live-ray rebuild targets arm64-v8a only; the earlier build covered both configured ABIs.
 - All 14 arm64 native libraries: pass 16 KB ELF alignment.
 - Nitro `:nitro-canvas:assembleDebug`: pass (arm64).
 - Viro `:viro_bridge:assembleRelease`: pass against RN 0.88.0-rc.2.
@@ -33,7 +33,7 @@ Nitro's `scripts/check-android.py --gradle /path/to/gradle --viro /path/to/viro`
 Set JAVA_HOME/ANDROID_HOME. Install Nitro dev dependencies first.
 
 The rebuilt renderer and bridge AARs are staged in this isolated worktree;
-package version is `3.0.0-moyo.5-rive.4`. These are build-verified artifacts,
+package version is `3.0.0-moyo.5-rive.5`. These are build-verified artifacts,
 not a headset-qualified release. Device validation is last by user request.
 The full rolling handoff is in the companion Moyo worktree at
 `docs/handoffs/2026-09-25-rive-viro-panel.md`.
@@ -41,3 +41,7 @@ The full rolling handoff is in the companion Moyo worktree at
 User requested RN 0.88.0-rc.2 during device preparation. The combined consumer harness was rerun successfully, and the React bridge AAR was rebuilt and restaged against rc.2. ViroCore’s renderer is unchanged by that RN tooling update.
 
 The full APK check exposed duplicate React Native core codegen classes in the bridge AAR. Removed the React Gradle plugin from this handwritten Java library (it has no codegen specs), cleaned and rebuilt. The consumer harness now rejects generated React core classes in the AAR. No APK duplicate-class exclusions are used.
+
+Quest capture confirmed Rive pixels; user confirmed parent-grip dragging but reported selection failure and ray clipping. The next renderer keeps hit testing active for input-only drags. Fraction-count converter and text-size corrections live in the Moyo probe. Android selection retry remains required; the device disconnected during diagnosis.
+
+Latest placement update: the consumer supplies a camera-relative initial pose (1.8 m ahead, 0.2 m below eye height), then preserves world-space grip movement. Grip text uses font 20 scaled to 0.25, centered and clipped inside 0.6 × 0.09 m. Viro MCP prop lookup, scene validation (zero issues), and web layout render passed. This does not validate native Rive or controller interaction. Renderer rive.5 includes live hit testing for input-only drags; physical selection acceptance remains pending.
