@@ -11,20 +11,20 @@
  * - clickState types
  */
 import { ViroARTrackingReasonConstants, ViroTrackingStateConstants } from "../ViroConstants";
-import { Viro3DPoint, ViroRotation, ViroSource } from "./ViroUtils";
+import { Viro3DPoint, ViroRotation } from "./ViroUtils";
 export type ViroHoverEvent = {
     isHovering: boolean;
     position: Viro3DPoint;
-    source: ViroSource;
+    source: number;
 };
 export type ViroClickEvent = {
     position: Viro3DPoint;
-    source: ViroSource;
+    source: number;
 };
 export type ViroClickStateEvent = {
     clickState: ViroClickState;
     position: Viro3DPoint;
-    source: ViroSource;
+    source: number;
 };
 export type ViroClickState = ViroClickStateTypes.CLICK_DOWN | ViroClickStateTypes.CLICK_UP | ViroClickStateTypes.CLICKED;
 export declare enum ViroClickStateTypes {
@@ -35,23 +35,23 @@ export declare enum ViroClickStateTypes {
 export type ViroTouchEvent = {
     touchState: any;
     touchPos: Viro3DPoint;
-    source: ViroSource;
+    source: number;
 };
 export type ViroScrollEvent = {
     scrollPos: Viro3DPoint;
-    source: ViroSource;
+    source: number;
 };
 export type ViroSwipeEvent = {
     swipeState: any;
-    source: ViroSource;
+    source: number;
 };
 export type ViroFuseEvent = {
-    source: ViroSource;
+    source: number;
 };
 export type ViroPinchEvent = {
     pinchState: ViroPinchState;
     scaleFactor: number;
-    source: ViroSource;
+    source: number;
 };
 export type ViroPinchState = ViroPinchStateTypes.PINCH_START | ViroPinchStateTypes.PINCH_MOVE | ViroPinchStateTypes.PINCH_END;
 export declare enum ViroPinchStateTypes {
@@ -62,7 +62,7 @@ export declare enum ViroPinchStateTypes {
 export type ViroRotateEvent = {
     rotateState: ViroRotateState;
     rotationFactor: number;
-    source: ViroSource;
+    source: number;
 };
 export type ViroRotateState = ViroRotateStateTypes.ROTATE_START | ViroRotateStateTypes.ROTATE_MOVE | ViroRotateStateTypes.ROTATE_END;
 export declare enum ViroRotateStateTypes {
@@ -72,7 +72,7 @@ export declare enum ViroRotateStateTypes {
 }
 export type ViroDragEvent = {
     dragToPos: Viro3DPoint;
-    source: ViroSource;
+    source: number;
 };
 export type ViroPlatformEvent = {
     platformInfoViro: ViroPlatformInfo;
@@ -335,7 +335,7 @@ export type ViroNativeTransformUpdateEvent = {
 };
 export type ViroControllerStatusEvent = {
     controllerStatus: ViroControllerStatus;
-    source: ViroSource;
+    source: number;
 };
 export type ViroControllerStatus = any;
 /** ===========================================================================

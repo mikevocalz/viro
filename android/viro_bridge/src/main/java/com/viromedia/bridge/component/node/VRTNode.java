@@ -1482,15 +1482,10 @@ public class VRTNode extends VRTComponent {
             for (int i = 0; i < mMaterials.size(); i++) {
                 String materialName = mMaterials.get(i).getName();
                 Material nativeMaterial = materialManager.getMaterial(materialName);
-                if (materialManager.isVideoMaterial(materialName)) {
-                    if (!(nativeMaterial.getDiffuseTexture() instanceof VideoTexture)) {
-                        // Recreate the material with the proper context.
-                            MaterialManager.MaterialWrapper materialWrapper = materialManager.getMaterialWrapper(materialName);
-                            VideoTexture videoTexture = new VideoTexture(context, materialWrapper.getVideoTextureURI());
-                            materialWrapper.recreate(videoTexture);
-                            nativeMaterial = materialWrapper.getNativeMaterial();
-                            materialsChanged = true;
-                    }
+                MaterialManager.MaterialWrapper wrapper = materialManager.getMaterialWrapper(materialName);
+                if (wrapper != null && wrapper.ensureContextTexture(context)) {
+                    nativeMaterial = wrapper.getNativeMaterial();
+                    materialsChanged = true;
                 }
 
                 if (nativeMaterial == null) {
@@ -1605,6 +1600,10 @@ public class VRTNode extends VRTComponent {
 
     protected void setTimeToFuse(float durationInMillis){
         mEventDelegateJni.setTimeToFuse(durationInMillis);
+    }
+
+    public void setDragTransform(String transform) {
+        if (!isTornDown()) mNodeJni.setDragTransform(transform == null ? "self" : transform);
     }
 
     public void setDragType(String dragType) {

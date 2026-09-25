@@ -34,61 +34,75 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ViroRivePanel = void 0;
-/**
- * ViroRivePanel
- *
- * The native Rive bridge. Sister panel to ViroGpuPanel — different runtime
- * (no GPUCanvasContext), same lifecycle. Consumers supply a Rive runtime
- * adapter that knows how to draw into the CanvasSurface's backing buffer
- * (AHardwareBuffer on Android, IOSurface on Apple).
- *
- *   <ViroRivePanel
- *     width={1.2} height={0.8}
- *     position={[0, 1.45, -2.0]}
- *     init={{
- *       createRuntime: async (surface) => {
- *         // attach a Rive runtime to the surface's backing buffer here
- *         return {
- *           advance(dt) { stateMachine.advance(dt) },
- *           draw()      { riveRenderer.draw(skSurface.getCanvas()) },
- *           release()   { riveRenderer.release() },
- *         };
- *       },
- *     }}
- *   />
- *
- * Note: the native shim that bridges @rive-app/react-native's runtime to a
- * Viro material is the missing piece — `@rive-app/react-native` ships a
- * `<RiveView>` for screen rendering but does not expose its renderer for
- * off-screen targeting today. Until that native bridge lands the producer
- * is dormant; the JS surface is here so plug-in is one render-runtime
- * change once it does.
- */
+/** Native Rive panel. Its runtime owns the idle-aware frame clock. */
 const React = __importStar(require("react"));
 const nitroCanvas_1 = require("./CanvasPanel/nitroCanvas");
 const ViroNode_1 = require("./ViroNode");
 const ViroQuad_1 = require("./ViroQuad");
 const useCanvasPanel_1 = require("./CanvasPanel/useCanvasPanel");
 exports.ViroRivePanel = React.forwardRef(function ViroRivePanel(props, ref) {
-    const { init, width, height, position = [0, 1.45, -2.0], rotation, resolution = { width: 1024, height: 1024 }, sRGB, androidRoute, lightingModel, fallbackColor, materialName, onReady, onError, autoTick, } = props;
+    const { init, source, input, onRuntimeReady, width, height, position = [0, 1.45, -2.0], rotation, resolution = { width: 1024, height: 1024 }, sRGB, androidRoute = "surface-texture", lightingModel, fallbackColor, materialName, onReady, onError, autoTick, } = props;
+    const runtime = React.useRef(null);
+    React.useEffect(() => () => { runtime.current = null; }, [source, init]);
+    const ready = React.useRef(onRuntimeReady);
+    ready.current = onRuntimeReady;
     const state = (0, useCanvasPanel_1.useCanvasPanel)({
-        producerFactory: () => new ((0, nitroCanvas_1.requireNitroCanvas)().RiveProducer)(init),
+        resourceKey: source ?? init,
+        producerFactory: () => {
+            if ((source == null) === (init == null))
+                throw new Error("Provide exactly one of source or init");
+            return new ((0, nitroCanvas_1.requireNitroCanvas)().RiveProducer)(init ?? {
+                createRuntime: async (surface) => {
+                    const result = await (0, nitroCanvas_1.requireNitroCanvas)().createRiveCanvasRuntime(surface, source);
+                    return result;
+                },
+            });
+        },
         resolution,
         sRGB,
         androidRoute,
         lightingModel,
         fallbackColor,
         materialName,
-        onReady,
+        onReady: ({ producer }) => {
+            const value = producer.runtime;
+            runtime.current = value && "panel" in value ? value.panel : null;
+            if (runtime.current)
+                ready.current?.(runtime.current);
+            onReady?.();
+        },
         onError,
         autoTick,
     });
     React.useImperativeHandle(ref, () => ({
-        surface: state.surface,
-        producer: state.producer,
-        materialName: state.materialName,
-    }), [state.surface, state.producer, state.materialName]);
+        get runtime() { return state ? runtime.current : null; },
+        surface: state?.surface ?? null,
+        producer: state?.producer ?? null,
+        materialName: state?.materialName ?? "",
+    }), [state]);
+    if (!state)
+        return null;
     return (<ViroNode_1.ViroNode position={position} rotation={rotation}>
-      <ViroQuad_1.ViroQuad width={width} height={height} materials={[state.materialName]}/>
+      {input ? <InteractiveRiveQuad width={width} height={height} materialName={state.materialName} input={input} producer={state.producer} runtime={runtime} fit={source?.fit ?? "contain"} resolution={resolution}/>
+            : <ViroQuad_1.ViroQuad width={width} height={height} materials={[state.materialName]}/>}
     </ViroNode_1.ViroNode>);
 });
+function InteractiveRiveQuad({ width, height, materialName, input, producer, runtime, fit, resolution }) {
+    const sink = React.useRef(null);
+    const pointer = React.useCallback((event) => {
+        const panel = runtime.current;
+        if (!panel)
+            return;
+        if (!sink.current || event.phase === "down")
+            sink.current = (0, nitroCanvas_1.requireNitroCanvas)().artboardPointerSink({
+                artboard: { width: panel.artboardWidth, height: panel.artboardHeight },
+                surface: resolution, fit,
+            }, ({ phase, x, y }) => producer.onPointer(phase, x, y));
+        sink.current(event);
+    }, [producer, fit, resolution.width, resolution.height]);
+    const handlers = (0, nitroCanvas_1.requireNitroCanvas)().useCanvasInViroInput({
+        ...input, size: { width, height }, onPointer: pointer,
+    });
+    return <ViroQuad_1.ViroQuad width={width} height={height} materials={[materialName]} {...handlers} dragPlane={{ ...handlers.dragPlane, planePoint: [...handlers.dragPlane.planePoint],
+            planeNormal: [...handlers.dragPlane.planeNormal] }}/>;
+}

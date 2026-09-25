@@ -35,6 +35,10 @@ export type ViroCommonProps = ViewProps & {
     | "FixedToWorld"
     | "FixedToPlane"
     | "Gizmo";
+  /** Android: move this node (default), its parent group, or only emit pointer motion.
+   * onDrag continues reporting this node's destination in world coordinates.
+   * "none" also reports hover position changes within the input-only collider. */
+  dragTransform?: "self" | "parent" | "none";
   dragPlane?: {
     planePoint: Viro3DPoint;
     planeNormal: Viro3DPoint;
@@ -44,7 +48,7 @@ export type ViroCommonProps = ViewProps & {
   onHover?: (
     isHovering: boolean,
     position: Viro3DPoint,
-    source: ViroSource
+    source: number
   ) => void;
   /**
    * Fires when the node is hovered by the eye-gaze ray specifically (Meta Quest
@@ -56,31 +60,31 @@ export type ViroCommonProps = ViewProps & {
   onGaze?: (
     isHovering: boolean,
     position: Viro3DPoint,
-    source: ViroSource
+    source: number
   ) => void;
-  onClick?: (position: Viro3DPoint, source: ViroSource) => void;
+  onClick?: (position: Viro3DPoint, source: number) => void;
   onClickState?: (
     clickState: ViroClickState,
     position: Viro3DPoint,
-    source: ViroSource
+    source: number
   ) => void;
   onTouch?: (
     touchState: any,
     touchPos: Viro3DPoint,
-    source: ViroSource
+    source: number
   ) => void;
-  onScroll?: (scrollPos: Viro3DPoint, source: ViroSource) => void;
-  onSwipe?: (swipeState: any, source: ViroSource) => void;
-  onDrag?: (dragToPos: Viro3DPoint, source: ViroSource) => void;
+  onScroll?: (scrollPos: Viro3DPoint, source: number) => void;
+  onSwipe?: (swipeState: any, source: number) => void;
+  onDrag?: (dragToPos: Viro3DPoint, source: number) => void;
   onPinch?: (
     pinchState: ViroPinchState,
     scaleFactor: number,
-    source: ViroSource
+    source: number
   ) => void;
   onRotate?: (
     rotateState: ViroRotateState,
     rotationFactor: number,
-    source: ViroSource
+    source: number
   ) => void;
   onFuse?:
     | { callback: (source: any) => void; timeToFuse?: number }

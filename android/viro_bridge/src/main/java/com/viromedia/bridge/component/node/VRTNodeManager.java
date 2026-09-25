@@ -225,6 +225,11 @@ public abstract class VRTNodeManager<T extends VRTNode> extends VRTViroViewGroup
         safelyApplyProp(view, "timeToFuse", v -> v.setTimeToFuse(durationMillis));
     }
 
+    @ReactProp(name = "dragTransform")
+    public void setDragTransform(T view, String transform) {
+        safelyApplyProp(view, "dragTransform", v -> v.setDragTransform(transform));
+    }
+
     @ReactProp(name = "dragType")
     public void setDragType(T view, String dragType) {
         safelyApplyProp(view, "dragType", v -> v.setDragType(dragType));
@@ -255,16 +260,9 @@ public abstract class VRTNodeManager<T extends VRTNode> extends VRTViroViewGroup
             if (materials != null) {
                 for (int i = 0; i < materials.size(); i++) {
                     Material nativeMaterial = materialManager.getMaterial(materials.getString(i));
-                    if (materialManager.isVideoMaterial(materials.getString(i))) {
-                        if (!(nativeMaterial.getDiffuseTexture() instanceof VideoTexture)) {
-                            // Recreate the material with the proper context.
-                            if (v.getViroContext() != null) {
-                                MaterialWrapper materialWrapper = materialManager.getMaterialWrapper(materials.getString(i));
-                                VideoTexture videoTexture = new VideoTexture(v.getViroContext(), materialWrapper.getVideoTextureURI());
-                                materialWrapper.recreate(videoTexture);
-                                nativeMaterial = materialWrapper.getNativeMaterial();
-                            }
-                        }
+                    MaterialWrapper wrapper = materialManager.getMaterialWrapper(materials.getString(i));
+                    if (wrapper != null && wrapper.ensureContextTexture(v.getViroContext())) {
+                        nativeMaterial = wrapper.getNativeMaterial();
                     }
 
                     if (nativeMaterial == null) {

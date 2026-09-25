@@ -15,23 +15,23 @@ import {
   ViroARTrackingReasonConstants,
   ViroTrackingStateConstants,
 } from "../ViroConstants";
-import { Viro3DPoint, ViroRotation, ViroSource } from "./ViroUtils";
+import { Viro3DPoint, ViroRotation } from "./ViroUtils";
 
 export type ViroHoverEvent = {
   isHovering: boolean;
   position: Viro3DPoint;
-  source: ViroSource;
+  source: number;
 };
 
 export type ViroClickEvent = {
   position: Viro3DPoint;
-  source: ViroSource;
+  source: number;
 };
 
 export type ViroClickStateEvent = {
   clickState: ViroClickState;
   position: Viro3DPoint;
-  source: ViroSource;
+  source: number;
 };
 
 export type ViroClickState =
@@ -48,27 +48,27 @@ export enum ViroClickStateTypes {
 export type ViroTouchEvent = {
   touchState: any; // TODO: is there a better type for this?
   touchPos: Viro3DPoint;
-  source: ViroSource;
+  source: number;
 };
 
 export type ViroScrollEvent = {
   scrollPos: Viro3DPoint;
-  source: ViroSource;
+  source: number;
 };
 
 export type ViroSwipeEvent = {
   swipeState: any; // TODO: is there a better type for this?
-  source: ViroSource;
+  source: number;
 };
 
 export type ViroFuseEvent = {
-  source: ViroSource;
+  source: number;
 };
 
 export type ViroPinchEvent = {
   pinchState: ViroPinchState;
   scaleFactor: number;
-  source: ViroSource;
+  source: number;
 };
 
 export type ViroPinchState =
@@ -85,7 +85,7 @@ export enum ViroPinchStateTypes {
 export type ViroRotateEvent = {
   rotateState: ViroRotateState;
   rotationFactor: number; // TODO: confirm this type is correct
-  source: ViroSource;
+  source: number;
 };
 
 export type ViroRotateState =
@@ -101,7 +101,7 @@ export enum ViroRotateStateTypes {
 
 export type ViroDragEvent = {
   dragToPos: Viro3DPoint;
-  source: ViroSource;
+  source: number;
 };
 
 export type ViroPlatformEvent = {
@@ -434,7 +434,7 @@ export type ViroNativeTransformUpdateEvent = {
 
 export type ViroControllerStatusEvent = {
   controllerStatus: ViroControllerStatus;
-  source: ViroSource;
+  source: number;
 };
 
 export type ViroControllerStatus = any;

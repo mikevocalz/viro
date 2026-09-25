@@ -99,10 +99,12 @@ exports.ViroGpuPanel = React.forwardRef(function ViroGpuPanel(props, ref) {
         autoTick,
     });
     React.useImperativeHandle(ref, () => ({
-        surface: state.surface,
-        producer: state.producer,
-        materialName: state.materialName,
-    }), [state.surface, state.producer, state.materialName]);
+        surface: state?.surface ?? null,
+        producer: state?.producer ?? null,
+        materialName: state?.materialName ?? "",
+    }), [state]);
+    if (!state)
+        return null;
     return (<ViroNode_1.ViroNode position={position} rotation={rotation}>
       <ViroQuad_1.ViroQuad width={width} height={height} materials={[state.materialName]}/>
     </ViroNode_1.ViroNode>);
