@@ -147,7 +147,9 @@ function InteractiveRiveQuad({ width, height, materialName, input, producer, run
   const handlers: CanvasInViroInputProps = requireNitroCanvas().useCanvasInViroInput({
     ...input, size: { width, height }, onPointer: pointer,
   });
+  // The input adapter requires a point on the panel plane, not its world AABB.
   return <ViroQuad width={width} height={height} materials={[materialName]} {...handlers}
+    highAccuracyEvents
     dragPlane={{ ...handlers.dragPlane, planePoint: [...handlers.dragPlane.planePoint],
       planeNormal: [...handlers.dragPlane.planeNormal] }} />;
 }

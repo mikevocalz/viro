@@ -33,7 +33,7 @@ Nitro's `scripts/check-android.py --gradle /path/to/gradle --viro /path/to/viro`
 Set JAVA_HOME/ANDROID_HOME. Install Nitro dev dependencies first.
 
 The rebuilt renderer and bridge AARs are staged in this isolated worktree;
-package version is `3.0.0-moyo.5-rive.7`. These are build-verified artifacts,
+package version is `3.0.0-moyo.5-rive.8`. These are build-verified artifacts,
 not a headset-qualified release. Device validation is last by user request.
 The full rolling handoff is in the companion Moyo worktree at
 `docs/handoffs/2026-09-25-rive-viro-panel.md`.
@@ -49,3 +49,13 @@ Latest placement update: the consumer supplies a camera-relative initial pose (1
 The user confirmed that “Moving panel” remains after releasing both triggers and grips. Renderer rive.6 (ViroCore `7a366057`) suppresses hand pinch/grab events while a controller owns that side and cancels held trigger/grip actions when inactive or tracking is lost. This prevents duplicate hand/controller edges and missing release on inactive actions. Host button-edge tests, arm64 renderer build, and all 14 native library alignment checks passed. Physical release and selection still require validation in the new APK.
 
 Rive.7 extends inactive-action cancellation to A/B/X/Y/menu. The rive.6 runtime exposed capture from source 5 (A button), whose boolean action had the same ignored-inactive-state path. Physical acceptance remains open.
+
+Rive.8 addresses the release loss observed in the live controller trace: normal
+presses reached JS as ClickDown (1), then Clicked (3), without ClickUp (2).
+ViroBridgeEvent inherited RN Event.canCoalesce=true, allowing adjacent Up/Clicked
+events to merge. Click and hover events now opt out; other continuous events keep
+existing coalescing. The missing grip release also left panelWorld at its initial
+pose after native movement, so subsequent world hits were rejected off-plane.
+Interactive Rive and grip quads now use highAccuracyEvents for plane-accurate hits.
+Viro MCP confirmed ViroQuad support; bridge build and targeted TypeScript passed.
+Physical release, hint toggle and post-drag selection remain acceptance checks.
