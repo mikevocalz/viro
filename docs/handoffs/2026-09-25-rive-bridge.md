@@ -33,7 +33,7 @@ Nitro's `scripts/check-android.py --gradle /path/to/gradle --viro /path/to/viro`
 Set JAVA_HOME/ANDROID_HOME. Install Nitro dev dependencies first.
 
 The rebuilt renderer and bridge AARs are staged in this isolated worktree;
-package version is `3.0.0-moyo.5-rive.8`. These are build-verified artifacts,
+package version is `3.0.0-moyo.5-rive.9`. These are build-verified artifacts,
 not a headset-qualified release. Device validation is last by user request.
 The full rolling handoff is in the companion Moyo worktree at
 `docs/handoffs/2026-09-25-rive-viro-panel.md`.
@@ -59,3 +59,10 @@ pose after native movement, so subsequent world hits were rejected off-plane.
 Interactive Rive and grip quads now use highAccuracyEvents for plane-accurate hits.
 Viro MCP confirmed ViroQuad support; bridge build and targeted TypeScript passed.
 Physical release, hint toggle and post-drag selection remain acceptance checks.
+
+The user confirmed selection works and chose a visible endpoint on the panel.
+Rive.9 adds a per-controller cyan hit dot in the native OpenXR presenter, keeps
+beams ending at the hit, and draws pointer geometry after scene geometry. Dots
+are hidden on no-hit/tracking loss and honor reticle visibility. They are excluded
+from hit testing. Existing click/hover delivery and geometry-accurate input stay
+in place. Headset visual acceptance follows the build/install.
