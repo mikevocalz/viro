@@ -35,12 +35,17 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.useCanvasPanel = useCanvasPanel;
 const React = __importStar(require("react"));
+const zustand_1 = require("zustand");
+const vanilla_1 = require("zustand/vanilla");
 const react_native_1 = require("react-native");
 const nitroCanvas_1 = require("./nitroCanvas");
 const ViroMaterials_1 = require("../Material/ViroMaterials");
 /** Allocate after commit, then render the quad only after its material exists. */
 function useCanvasPanel(opts) {
-    const [state, setState] = React.useState(null);
+    const store = React.useMemo(() => (0, vanilla_1.createStore)(() => ({
+        resource: null,
+    })), []);
+    const state = (0, zustand_1.useStore)(store, value => value.resource);
     const latest = React.useRef(opts);
     latest.current = opts;
     const updateClock = React.useRef(null);
@@ -110,7 +115,7 @@ function useCanvasPanel(opts) {
                     diffuseTexture: (0, nitroCanvas_1.requireNitroCanvas)().canvasSource(surface),
                     diffuseColor: fallbackColor, lightingModel,
                 } });
-            setState(resource);
+            store.setState({ resource });
             void Promise.resolve().then(() => {
                 if (alive)
                     return producer.attach(surface);
@@ -150,7 +155,7 @@ function useCanvasPanel(opts) {
             updateClock.current = null;
             subscription.remove();
             cancelFrame();
-            setState(null);
+            store.setState({ resource: null });
             if (resource) {
                 resource.producer.setActive?.(false);
                 try {

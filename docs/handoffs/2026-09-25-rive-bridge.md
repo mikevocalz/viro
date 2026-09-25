@@ -33,7 +33,7 @@ Nitro's `scripts/check-android.py --gradle /path/to/gradle --viro /path/to/viro`
 Set JAVA_HOME/ANDROID_HOME. Install Nitro dev dependencies first.
 
 The rebuilt renderer and bridge AARs are staged in this isolated worktree;
-package version is `3.0.0-moyo.5-rive.9`. These are build-verified artifacts,
+package version is `3.0.0-moyo.5-rive.10`. These are build-verified artifacts,
 not a headset-qualified release. Device validation is last by user request.
 The full rolling handoff is in the companion Moyo worktree at
 `docs/handoffs/2026-09-25-rive-viro-panel.md`.
@@ -66,3 +66,12 @@ beams ending at the hit, and draws pointer geometry after scene geometry. Dots
 are hidden on no-hit/tracking loss and honor reticle visibility. They are excluded
 from hit testing. Existing click/hover delivery and geometry-accurate input stay
 in place. Headset visual acceptance follows the build/install.
+
+Rive.10 moves shared canvas state and the example probe to scoped Zustand stores,
+per user instruction (no React useState). The probe observes Rive piece0..piece3,
+derives their count in Zustand, and publishes the aggregate to selectedCount.
+Quest had pieces [0,1,1,0] while the authored selectedCount remained zero, so
+observing that stale aggregate alone could never update the host label. Rive
+continues to own click/selection behavior. The helper hydrates current values and
+retires queued callbacks on cleanup; no polling is used for selection. Native
+renderer/bridge AARs are unchanged from rive.9.

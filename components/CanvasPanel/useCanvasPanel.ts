@@ -1,4 +1,6 @@
 import * as React from "react";
+import { useStore } from "zustand";
+import { createStore } from "zustand/vanilla";
 import { AppState } from "react-native";
 import type { CanvasProducer, CanvasSurface } from "nitro-canvas-in-Vision";
 import { requireNitroCanvas } from "./nitroCanvas";
@@ -28,7 +30,10 @@ export type CanvasPanelState<P extends CanvasProducer> = {
 
 /** Allocate after commit, then render the quad only after its material exists. */
 export function useCanvasPanel<P extends CanvasProducer>(opts: CanvasPanelOpts<P>): CanvasPanelState<P> | null {
-  const [state, setState] = React.useState<CanvasPanelState<P> | null>(null);
+  const store = React.useMemo(() => createStore(() => ({
+    resource: null as CanvasPanelState<P> | null,
+  })), []);
+  const state = useStore(store, value => value.resource);
   const latest = React.useRef(opts);
   latest.current = opts;
   const updateClock = React.useRef<(() => void) | null>(null);
@@ -87,7 +92,7 @@ export function useCanvasPanel<P extends CanvasProducer>(opts: CanvasPanelOpts<P
         diffuseTexture: requireNitroCanvas().canvasSource(surface),
         diffuseColor: fallbackColor, lightingModel,
       } });
-      setState(resource);
+      store.setState({ resource });
       void Promise.resolve().then(() => {
         if (alive) return producer.attach(surface);
       }).then(() => {
@@ -115,7 +120,7 @@ export function useCanvasPanel<P extends CanvasProducer>(opts: CanvasPanelOpts<P
       updateClock.current = null;
       subscription.remove();
       cancelFrame();
-      setState(null);
+      store.setState({ resource: null });
       if (resource) {
         resource.producer.setActive?.(false);
         try { resource.producer.dispose(); } finally {

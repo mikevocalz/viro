@@ -3,7 +3,7 @@
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
-  "version": "3.0.0-moyo.5-rive.9",
+  "version": "3.0.0-moyo.5-rive.10",
   "license": "MIT",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
@@ -119,6 +119,7 @@
   "homepage": "https://reactvision.xyz/viro-react",
   "author": "ReactVision, Inc",
   "dependencies": {
-    "react": "~19.2.3"
+    "react": ">=19.0.0",
+    "zustand": "5.0.15"
   }
 }
