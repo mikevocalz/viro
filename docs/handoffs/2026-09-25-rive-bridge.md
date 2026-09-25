@@ -21,7 +21,7 @@ Build evidence on 2026-09-25:
 - ViroCore `:viroreact:assembleRelease`: pass, both configured Android ABIs.
 - All 14 arm64 native libraries: pass 16 KB ELF alignment.
 - Nitro `:nitro-canvas:assembleDebug`: pass (arm64).
-- Viro `:viro_bridge:assembleRelease`: pass against RN 0.88.0-rc.0.
+- Viro `:viro_bridge:assembleRelease`: pass against RN 0.88.0-rc.2.
 - Rive panel + shared hook targeted TypeScript check: pass.
 - Whole repository TypeScript: fails on existing web-renderer dependency,
   missing `GpuProducer` exports, and unrelated source errors. Do not report it
@@ -33,7 +33,11 @@ Nitro's `scripts/check-android.py --gradle /path/to/gradle --viro /path/to/viro`
 Set JAVA_HOME/ANDROID_HOME. Install Nitro dev dependencies first.
 
 The rebuilt renderer and bridge AARs are staged in this isolated worktree;
-package version is `3.0.0-moyo.5-rive.2`. These are build-verified artifacts,
+package version is `3.0.0-moyo.5-rive.4`. These are build-verified artifacts,
 not a headset-qualified release. Device validation is last by user request.
 The full rolling handoff is in the companion Moyo worktree at
 `docs/handoffs/2026-09-25-rive-viro-panel.md`.
+
+User requested RN 0.88.0-rc.2 during device preparation. The combined consumer harness was rerun successfully, and the React bridge AAR was rebuilt and restaged against rc.2. ViroCore’s renderer is unchanged by that RN tooling update.
+
+The full APK check exposed duplicate React Native core codegen classes in the bridge AAR. Removed the React Gradle plugin from this handwritten Java library (it has no codegen specs), cleaned and rebuilt. The consumer harness now rejects generated React core classes in the AAR. No APK duplicate-class exclusions are used.
