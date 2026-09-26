@@ -122,6 +122,7 @@
   "homepage": "https://reactvision.xyz/viro-react",
   "author": "ReactVision, Inc",
   "dependencies": {
-    "react": "~19.2.3"
+    "react": ">=19.0.0",
+    "zustand": "5.0.15"
   }
 }

@@ -46,8 +46,8 @@
 import * as React from "react";
 import type {
   CanvasSurface,
-  GpuProducer,
-  GpuProducerInit,
+  GLES3Producer,
+  GLES3ProducerInit,
 } from "nitro-canvas-in-Vision";
 import { requireNitroCanvas } from "./CanvasPanel/nitroCanvas";
 import { ViroNode } from "./ViroNode";
@@ -57,7 +57,7 @@ import { useCanvasPanel } from "./CanvasPanel/useCanvasPanel";
 type Vec3 = [number, number, number];
 
 export type ViroGpuPanelProps = {
-  init: GpuProducerInit;
+  init: GLES3ProducerInit;
 
   width: number;
   height: number;
@@ -77,7 +77,7 @@ export type ViroGpuPanelProps = {
 
 export type ViroGpuPanelHandle = {
   surface: CanvasSurface | null;
-  producer: GpuProducer | null;
+  producer: GLES3Producer | null;
   materialName: string;
 };
 
@@ -102,8 +102,8 @@ export const ViroGpuPanel = React.forwardRef<
     autoTick,
   } = props;
 
-  const state = useCanvasPanel<GpuProducer>({
-    producerFactory: () => new (requireNitroCanvas().GpuProducer)(init),
+  const state = useCanvasPanel<GLES3Producer>({
+    producerFactory: () => new (requireNitroCanvas().GLES3Producer)(init),
     resolution,
     sRGB,
     androidRoute,
@@ -118,12 +118,14 @@ export const ViroGpuPanel = React.forwardRef<
   React.useImperativeHandle(
     ref,
     () => ({
-      surface: state.surface,
-      producer: state.producer,
-      materialName: state.materialName,
+      surface: state?.surface ?? null,
+      producer: state?.producer ?? null,
+      materialName: state?.materialName ?? "",
     }),
-    [state.surface, state.producer, state.materialName]
+    [state]
   );
+
+  if (!state) return null;
 
   return (
     <ViroNode position={position} rotation={rotation}>

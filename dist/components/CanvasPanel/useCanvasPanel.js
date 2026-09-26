@@ -35,81 +35,140 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.useCanvasPanel = useCanvasPanel;
 const React = __importStar(require("react"));
+const zustand_1 = require("zustand");
+const vanilla_1 = require("zustand/vanilla");
+const react_native_1 = require("react-native");
 const nitroCanvas_1 = require("./nitroCanvas");
 const ViroMaterials_1 = require("../Material/ViroMaterials");
+/** Allocate after commit, then render the quad only after its material exists. */
 function useCanvasPanel(opts) {
-    const { producerFactory, resolution, sRGB = true, androidRoute = "ahb", lightingModel = "Constant", fallbackColor = "#02070d", materialName: materialNameOverride, onReady, onError, autoTick = true, } = opts;
-    const surface = React.useMemo(() => (0, nitroCanvas_1.requireNitroCanvas)().createCanvasSurface({
-        width: resolution.width,
-        height: resolution.height,
-        sRGB,
-        androidRoute,
-    }), 
-    // Resolution / colorspace / route changes require a full reattach;
-    // remount the component to swap.
-    [resolution.width, resolution.height, sRGB, androidRoute]);
-    const materialName = materialNameOverride ?? `viroCanvasPanel_${surface.id}`;
-    const producer = React.useMemo(() => producerFactory(), 
-    // The factory closure captures consumer init; treat as immutable
-    // for the surface's lifetime. To swap, remount.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [surface]);
-    // ponytail: register the material SYNCHRONOUSLY at render time, not in
-    // useEffect. Effects run after React commit, but child ViroQuad's `materials`
-    // prop is processed by the native bridge DURING commit. If we register in an
-    // effect, MaterialManager.getMaterial() returns null → NPE in
-    // safelyApplyProp → swallowed → Quad keeps a default Material with no
-    // canvasSource binding (panel renders blank). Registering during render
-    // makes the material exist by the time the Quad's prop is applied.
-    const _matRegistered = React.useRef(false);
-    if (!_matRegistered.current) {
-        ViroMaterials_1.ViroMaterials.createMaterials({
-            [materialName]: {
-                diffuseTexture: (0, nitroCanvas_1.requireNitroCanvas)().canvasSource(surface),
-                diffuseColor: fallbackColor,
-                lightingModel,
-            },
-        });
-        _matRegistered.current = true;
-    }
-    React.useEffect(() => {
-        surface.markDirty();
-    }, [surface, materialName, lightingModel, fallbackColor]);
+    const store = React.useMemo(() => (0, vanilla_1.createStore)(() => ({
+        resource: null,
+    })), []);
+    const state = (0, zustand_1.useStore)(store, value => value.resource);
+    const latest = React.useRef(opts);
+    latest.current = opts;
+    const updateClock = React.useRef(null);
+    const { resolution: { width, height }, sRGB = true, androidRoute = "ahb", materialName: override, lightingModel = "Constant", fallbackColor = "#ffffff" } = opts;
     React.useEffect(() => {
         let alive = true;
-        void (async () => {
+        let attached = false;
+        let settled = false;
+        let surfaceDisposed = false;
+        let frame = null;
+        let foreground = react_native_1.AppState.currentState !== "background" && react_native_1.AppState.currentState !== "inactive";
+        let resource = null;
+        const report = (error) => {
+            if (alive)
+                latest.current.onError?.(error instanceof Error ? error : new Error(String(error)));
+        };
+        const disposeSurface = () => {
+            if (!resource || surfaceDisposed)
+                return;
+            surfaceDisposed = true;
+            resource.surface.dispose();
+        };
+        const cancelFrame = () => {
+            if (frame !== null)
+                cancelAnimationFrame(frame);
+            frame = null;
+        };
+        const tick = () => {
+            frame = null;
+            if (!alive || !foreground || latest.current.autoTick === false || !resource)
+                return;
             try {
-                await producer.attach(surface);
+                resource.producer.renderFrame();
+                frame = requestAnimationFrame(tick);
+            }
+            catch (error) {
+                report(error);
+            }
+        };
+        const syncClock = () => {
+            cancelFrame();
+            if (!attached || !resource || !alive)
+                return;
+            const playing = foreground && latest.current.autoTick !== false;
+            resource.producer.setActive?.(playing);
+            if (playing && !resource.producer.managesOwnFrames)
+                frame = requestAnimationFrame(tick);
+        };
+        updateClock.current = syncClock;
+        const subscription = react_native_1.AppState.addEventListener("change", (value) => {
+            foreground = value === "active";
+            syncClock();
+        });
+        try {
+            const surface = (0, nitroCanvas_1.requireNitroCanvas)().createCanvasSurface({ width, height, sRGB, androidRoute });
+            let producer;
+            try {
+                producer = latest.current.producerFactory();
+            }
+            catch (error) {
+                surface.dispose();
+                throw error;
+            }
+            const materialName = override ?? `viroCanvasPanel_${surface.id}`;
+            resource = { surface, producer, materialName };
+            ViroMaterials_1.ViroMaterials.createMaterials({ [materialName]: {
+                    diffuseTexture: (0, nitroCanvas_1.requireNitroCanvas)().canvasSource(surface),
+                    diffuseColor: fallbackColor, lightingModel,
+                } });
+            store.setState({ resource });
+            void Promise.resolve().then(() => {
+                if (alive)
+                    return producer.attach(surface);
+            }).then(() => {
                 if (!alive)
                     return;
-                onReady?.();
-                if (!autoTick)
-                    return;
-                while (alive) {
-                    producer.renderFrame();
-                    await Promise.resolve();
+                attached = true;
+                syncClock();
+                latest.current.onReady?.(resource);
+            }).catch(report).finally(() => {
+                settled = true;
+                // A late attach must retire its own resources before its surface is released.
+                if (!alive) {
+                    try {
+                        producer.dispose();
+                    }
+                    finally {
+                        disposeSurface();
+                    }
+                }
+            });
+        }
+        catch (error) {
+            settled = true;
+            if (resource) {
+                try {
+                    resource.producer.dispose();
+                }
+                finally {
+                    disposeSurface();
                 }
             }
-            catch (err) {
-                if (alive)
-                    onError?.(err);
-            }
-        })();
+            report(error);
+        }
         return () => {
             alive = false;
-            // surface is a Nitro HybridObject — a double dispose throws
-            // "Cannot call hybrid function HybridObject.dispose(...)". React
-            // StrictMode and HMR can re-fire this cleanup, so swallow that
-            // specific failure path on both calls.
-            try {
-                producer.dispose?.();
+            updateClock.current = null;
+            subscription.remove();
+            cancelFrame();
+            store.setState({ resource: null });
+            if (resource) {
+                resource.producer.setActive?.(false);
+                try {
+                    resource.producer.dispose();
+                }
+                finally {
+                    ViroMaterials_1.ViroMaterials.deleteMaterials([resource.materialName]);
+                    if (settled)
+                        disposeSurface();
+                }
             }
-            catch { }
-            try {
-                surface.dispose();
-            }
-            catch { }
         };
-    }, [producer, surface, autoTick, onReady, onError]);
-    return { surface, producer, materialName };
+    }, [width, height, sRGB, androidRoute, override, lightingModel, fallbackColor, opts.resourceKey]);
+    React.useEffect(() => { updateClock.current?.(); }, [opts.autoTick]);
+    return state;
 }

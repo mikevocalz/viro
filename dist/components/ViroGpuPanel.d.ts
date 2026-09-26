@@ -44,10 +44,10 @@
  * mount finds an initialized WebGPU runtime.
  */
 import * as React from "react";
-import type { CanvasSurface, GpuProducer, GpuProducerInit } from "nitro-canvas-in-Vision";
+import type { CanvasSurface, GLES3Producer, GLES3ProducerInit } from "nitro-canvas-in-Vision";
 type Vec3 = [number, number, number];
 export type ViroGpuPanelProps = {
-    init: GpuProducerInit;
+    init: GLES3ProducerInit;
     width: number;
     height: number;
     position?: Vec3;
@@ -67,7 +67,7 @@ export type ViroGpuPanelProps = {
 };
 export type ViroGpuPanelHandle = {
     surface: CanvasSurface | null;
-    producer: GpuProducer | null;
+    producer: GLES3Producer | null;
     materialName: string;
 };
 export declare const ViroGpuPanel: React.ForwardRefExoticComponent<ViroGpuPanelProps & React.RefAttributes<ViroGpuPanelHandle>>;
