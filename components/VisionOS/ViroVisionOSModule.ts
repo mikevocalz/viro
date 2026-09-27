@@ -132,6 +132,7 @@ export function setInputTuning(tuning: ViroInputTuning): void {
 export type ViroSpatialStylusSample = {
   tracked: boolean;
   position: readonly [number, number, number] | null;
+  headPosition: readonly [number, number, number] | null;
   tipPressed: boolean;
   primaryPressed: boolean;
   secondaryPressed: boolean;
