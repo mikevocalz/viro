@@ -12,7 +12,7 @@ import {
   useStudioRecording,
   useStudioPlacement,
 } from "./components/Studio";
-import { ViroVisionOSModule, isVisionOS, enterImmersiveSpace, exitImmersiveSpace, setInputTuning, sharedSpaceState, sharedSpaceNextOutgoing, sharedSpacePushIncoming } from "./components/VisionOS/ViroVisionOSModule";
+import { ViroVisionOSModule, isVisionOS, enterImmersiveSpace, exitImmersiveSpace, setInputTuning, subscribeSpatialStylus, sharedSpaceState, sharedSpaceNextOutgoing, sharedSpacePushIncoming } from "./components/VisionOS/ViroVisionOSModule";
 import { Viro3DObject } from "./components/Viro3DObject";
 import { Viro360Image } from "./components/Viro360Image";
 import { Viro360Video } from "./components/Viro360Video";
@@ -516,10 +516,11 @@ export {
   sharedSpacePushIncoming,
   exitImmersiveSpace,
   setInputTuning,
+  subscribeSpatialStylus,
 };
 
 export type { VRModuleOpenXRType, ViroPassthroughStyle, ViroHapticHand, ViroTrackingOrigin };
-export type { ImmersiveSpaceStyle, ViroInputTuning, ViroSharedSpaceState } from "./components/VisionOS/ViroVisionOSModule";
+export type { ImmersiveSpaceStyle, ViroInputTuning, ViroSharedSpaceState, ViroSpatialStylusSample } from "./components/VisionOS/ViroVisionOSModule";
 
 export type {
   StudioSceneResponse,
