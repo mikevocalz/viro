@@ -18,6 +18,7 @@ import {
   enterImmersiveSpace,
   exitImmersiveSpace,
   setInputTuning,
+  subscribeSpatialStylus,
   sharedSpaceState,
   sharedSpaceNextOutgoing,
   sharedSpacePushIncoming,
@@ -623,6 +624,7 @@ export {
   sharedSpacePushIncoming,
   exitImmersiveSpace,
   setInputTuning,
+  subscribeSpatialStylus,
 };
 
 export type {
@@ -635,6 +637,7 @@ export type {
   ImmersiveSpaceStyle,
   ViroInputTuning,
   ViroSharedSpaceState,
+  ViroSpatialStylusSample,
 } from "./components/VisionOS/ViroVisionOSModule";
 
 export type {
@@ -652,3 +655,4 @@ export type {
 } from "./components/Studio";
 
 export { isStudioApiError } from "./components/Studio";
+

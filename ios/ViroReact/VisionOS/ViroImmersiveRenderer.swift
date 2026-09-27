@@ -9,6 +9,7 @@ import Foundation
 import CompositorServices
 import Metal
 import ARKit
+import GameController
 // When built as part of the ViroReact pod, VRORendererBridge arrives as a module.
 // The standalone ViroKitVisionOSTest app compiles this file directly and exposes the
 // bridge through its bridging header instead, so the module is not available there.
@@ -40,11 +41,18 @@ public final class ViroImmersiveRenderer: @unchecked Sendable {
     private let arSession = ARKitSession()
     private let worldTracking = WorldTrackingProvider()
 
-    // Hand tracking is the only input a fully immersive app receives: gaze-and-pinch is
-    // delivered as a SwiftUI SpatialEventGesture, which needs a view, and CompositorServices
-    // hands out a Metal layer with no input API at all. So the pointing ray comes from the
-    // index finger and the click from a pinch.
+    // CompositorServices does not deliver SwiftUI spatial gestures to this Metal layer.
+    // Hands supply Viro's pinch ray; spatial styli supply a separate tracked input stream.
     private let handTracking = HandTrackingProvider()
+
+    // One ARKitSession owns world, hand and accessory tracking. Re-running it with the
+    // existing providers when a pen pairs keeps their world coordinates aligned.
+    private var activeStylus: GCStylus?
+    private var stylusTracking: AccessoryTrackingProvider?
+    private var lastStylusScan: TimeInterval = 0
+    private var stylusVisible = false
+    private var stylusButtons = (tip: false, primary: false, secondary: false, pressure: Float(0))
+    private static let stylusNotification = Notification.Name("ViroSpatialStylus")
 
     // Co-location (CL-I). Joins this session rather than opening its own: a
     // second ARKitSession is refused while one is live. Inert until an app
@@ -91,24 +99,11 @@ public final class ViroImmersiveRenderer: @unchecked Sendable {
 
     public func startRenderLoop() {
         renderTask = Task(priority: .high) {
-            // Both providers go into a single run() — a second ARKitSession would be
-            // refused, and running them together is what keeps their timestamps comparable.
-            var providers: [any DataProvider] = []
-            if WorldTrackingProvider.isSupported { providers.append(self.worldTracking) }
-            if HandTrackingProvider.isSupported  { providers.append(self.handTracking) }
-            else { NSLog("[Viro] hand tracking unsupported on this device — input will be inert") }
-
-            // Guarded the same way as the others: an unsupported device keeps
-            // rendering and simply cannot co-locate.
-            if let shared = self.sharedSpace.dataProvider { providers.append(shared) }
-
-            if !providers.isEmpty {
-                do {
-                    try await self.arSession.run(providers)
-                    self.sharedSpace.start()
-                } catch {
-                    NSLog("[Viro] ARKitSession.run() FAILED: %@", error.localizedDescription)
-                }
+            do {
+                try await self.runTrackingProviders()
+                self.sharedSpace.start()
+            } catch {
+                NSLog("[Viro] ARKitSession.run() FAILED: %@", error.localizedDescription)
             }
             await self.runRenderLoop()
         }
@@ -139,6 +134,7 @@ public final class ViroImmersiveRenderer: @unchecked Sendable {
                 NSLog("[Viro] render loop exiting: state=invalidated after \(loopCount) iterations")
                 break
             case .paused:
+                clearStylusTracking()
                 layerRenderer.waitUntilRunning()
                 continue
             default:
@@ -149,13 +145,145 @@ public final class ViroImmersiveRenderer: @unchecked Sendable {
 
             renderFrame()
             loopCount += 1
+            // Poll at a low rate to handle pens paired after the immersive space opens.
+            // This task also owns renderFrame(), so provider reconfiguration cannot race it.
+            await refreshStylusIfNeeded()
         }
         NSLog("[Viro] render loop ended after \(loopCount) iterations, cancelled=\(Task.isCancelled)")
+        clearStylusTracking()
 
         DispatchQueue.main.async {
             NotificationCenter.default.post(
                 name: ViroImmersiveRenderer.didBecomeInactiveNotification,
                 object: nil)
+        }
+    }
+
+    // MARK: - Spatial stylus
+
+    private func runTrackingProviders() async throws {
+        var providers: [any DataProvider] = []
+        if WorldTrackingProvider.isSupported { providers.append(worldTracking) }
+        if HandTrackingProvider.isSupported { providers.append(handTracking) }
+        if let shared = sharedSpace.dataProvider { providers.append(shared) }
+        if let stylusTracking { providers.append(stylusTracking) }
+        if !providers.isEmpty { try await arSession.run(providers) }
+    }
+
+    private func refreshStylusIfNeeded() async {
+        let now = CACurrentMediaTime()
+        guard now - lastStylusScan >= 0.5 else { return }
+        lastStylusScan = now
+
+        let connected = GCStylus.styli.first {
+            $0.productCategory == GCProductCategorySpatialStylus
+        }
+        if let connected, let activeStylus, connected === activeStylus { return }
+        if connected == nil && activeStylus == nil { return }
+
+        // A disconnected pen cannot complete a stroke, even if ARKit retains an old anchor.
+        clearStylusTracking()
+        activeStylus = nil
+        stylusTracking = nil
+        stylusButtons = (false, false, false, 0)
+
+        if let connected, AccessoryTrackingProvider.isSupported {
+            do {
+                let accessory = try await Accessory(device: connected)
+                connected.input?.inputStateQueueDepth = 100
+                activeStylus = connected
+                stylusTracking = AccessoryTrackingProvider(accessories: [accessory])
+            } catch {
+                NSLog("[Viro] spatial stylus setup failed: %@", error.localizedDescription)
+            }
+        }
+
+        do {
+            // Re-use world/hand/shared providers. ARKitSession.run replaces only providers
+            // absent from the new array; no competing session may own the world origin.
+            try await runTrackingProviders()
+        } catch {
+            NSLog("[Viro] spatial stylus tracking failed: %@", error.localizedDescription)
+            clearStylusTracking()
+            activeStylus = nil
+            stylusTracking = nil
+            // Keep hand and world input alive if accessory authorization is denied.
+            try? await runTrackingProviders()
+        }
+    }
+
+    private func updateStylusInput(headPosition: simd_float3?) {
+        guard let stylus = activeStylus, let stylusTracking, let headPosition else {
+            clearStylusTracking()
+            return
+        }
+
+        // Drain the input queue before reading this frame's anchor. Keeping the latest
+        // button state makes a held side button a continuous stroke between HID reports.
+        if let input = stylus.input {
+            while let state = input.nextInputState() {
+                let tip = state.buttons[.stylusTip]?.pressedInput
+                let primary = state.buttons[.stylusPrimaryButton]?.pressedInput
+                let secondary = state.buttons[.stylusSecondaryButton]?.pressedInput
+                stylusButtons = (
+                    tip?.isPressed == true,
+                    primary?.isPressed == true,
+                    secondary?.isPressed == true,
+                    max(Float(tip?.value ?? 0), Float(primary?.value ?? 0),
+                        Float(secondary?.value ?? 0))
+                )
+            }
+        }
+
+        guard stylusTracking.state == .running,
+              let anchor = stylusTracking.latestAnchors.first(where: { $0.isTracked })
+        else {
+            clearStylusTracking()
+            return
+        }
+
+        // The aim location is the pen tip. Its coordinate space has the same world
+        // reference as the device anchor and all Viro scene positions.
+        let m = anchor.coordinateSpace(for: .aim, correction: .none)
+            .ancestorFromSpaceTransformFloat().matrix
+        let p = m.columns.3
+        guard p.x.isFinite && p.y.isFinite && p.z.isFinite else {
+            clearStylusTracking()
+            return
+        }
+
+        stylusVisible = true
+        let buttons = stylusButtons
+        let sample: [String: Any] = [
+            "tracked": true,
+            "position": [p.x, p.y, p.z],
+            "headPosition": [headPosition.x, headPosition.y, headPosition.z],
+            "tipPressed": buttons.tip,
+            "primaryPressed": buttons.primary,
+            "secondaryPressed": buttons.secondary,
+            "pressure": min(max(buttons.pressure, 0), 1)
+        ]
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: Self.stylusNotification,
+                                            object: nil, userInfo: sample)
+        }
+    }
+
+    private func clearStylusTracking() {
+        guard stylusVisible else { return }
+        stylusVisible = false
+        let sample: [String: Any] = [
+            "tracked": false,
+            "position": NSNull(),
+            "headPosition": NSNull(),
+            "tipPressed": false,
+            "primaryPressed": false,
+            "secondaryPressed": false,
+            "pressure": 0
+        ]
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: Self.stylusNotification,
+                                            object: nil, userInfo: sample)
         }
     }
 
@@ -232,6 +360,11 @@ public final class ViroImmersiveRenderer: @unchecked Sendable {
         // same input state. Doing it per drawable would let the two eyes disagree about where
         // the pointer is, which reads as jitter.
         updateHandInput()
+        let currentHead: simd_float3? = deviceAnchor.map {
+            let p = $0.originFromAnchorTransform.columns.3
+            return simd_float3(p.x, p.y, p.z)
+        }
+        updateStylusInput(headPosition: currentHead)
 
         // Each drawable (built-in display, capture target, etc.) needs its own
         // command buffer and an encodePresent call — cp_frame_end_submission asserts
@@ -478,3 +611,4 @@ public final class ViroImmersiveRenderer: @unchecked Sendable {
     }
 }
 #endif  // os(visionOS)
+
