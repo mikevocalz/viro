@@ -213,8 +213,8 @@ public final class ViroImmersiveRenderer: @unchecked Sendable {
         }
     }
 
-    private func updateStylusInput() {
-        guard let stylus = activeStylus, let stylusTracking else {
+    private func updateStylusInput(headPosition: simd_float3?) {
+        guard let stylus = activeStylus, let stylusTracking, let headPosition else {
             clearStylusTracking()
             return
         }
@@ -258,6 +258,7 @@ public final class ViroImmersiveRenderer: @unchecked Sendable {
         let sample: [String: Any] = [
             "tracked": true,
             "position": [p.x, p.y, p.z],
+            "headPosition": [headPosition.x, headPosition.y, headPosition.z],
             "tipPressed": buttons.tip,
             "primaryPressed": buttons.primary,
             "secondaryPressed": buttons.secondary,
@@ -275,6 +276,7 @@ public final class ViroImmersiveRenderer: @unchecked Sendable {
         let sample: [String: Any] = [
             "tracked": false,
             "position": NSNull(),
+            "headPosition": NSNull(),
             "tipPressed": false,
             "primaryPressed": false,
             "secondaryPressed": false,
@@ -359,7 +361,11 @@ public final class ViroImmersiveRenderer: @unchecked Sendable {
         // same input state. Doing it per drawable would let the two eyes disagree about where
         // the pointer is, which reads as jitter.
         updateHandInput()
-        updateStylusInput()
+        let currentHead: simd_float3? = deviceAnchor.map {
+            let p = $0.originFromAnchorTransform.columns.3
+            return simd_float3(p.x, p.y, p.z)
+        }
+        updateStylusInput(headPosition: currentHead)
 
         // Each drawable (built-in display, capture target, etc.) needs its own
         // command buffer and an encodePresent call — cp_frame_end_submission asserts
