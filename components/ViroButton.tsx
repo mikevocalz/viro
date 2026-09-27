@@ -241,7 +241,7 @@ export class ViroButton extends React.Component<Props, State> {
   _onButtonHover = (
     isHovering: boolean,
     position: Viro3DPoint,
-    source: ViroSource
+    source: number
   ) => {
     if (isHovering) {
       this.setState({
@@ -258,7 +258,7 @@ export class ViroButton extends React.Component<Props, State> {
     }
   };
 
-  _onButtonClicked = (position: Viro3DPoint, source: ViroSource) => {
+  _onButtonClicked = (position: Viro3DPoint, source: number) => {
     this.setState({
       buttonType: ViroButtonStateTypes.BTN_TYPE_CLICKED,
     });

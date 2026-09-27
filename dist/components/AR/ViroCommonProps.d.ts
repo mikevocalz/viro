@@ -11,12 +11,16 @@ export type ViroCommonProps = ViewProps & {
     opacity?: number;
     ignoreEventHandling?: boolean;
     dragType?: "FixedDistance" | "FixedDistanceOrigin" | "FixedToWorld" | "FixedToPlane" | "Gizmo";
+    /** Android: move this node (default), its parent group, or only emit pointer motion.
+     * onDrag continues reporting this node's destination in world coordinates.
+     * "none" also reports hover position changes within the input-only collider. */
+    dragTransform?: "self" | "parent" | "none";
     dragPlane?: {
         planePoint: Viro3DPoint;
         planeNormal: Viro3DPoint;
         maxDistance: number;
     };
-    onHover?: (isHovering: boolean, position: Viro3DPoint, source: ViroSource) => void;
+    onHover?: (isHovering: boolean, position: Viro3DPoint, source: number) => void;
     /**
      * Fires when the node is hovered by the eye-gaze ray specifically (Meta Quest
      * Pro, via XR_EXT_eye_gaze_interaction). Same payload as onHover but limited to
@@ -24,15 +28,15 @@ export type ViroCommonProps = ViewProps & {
      * hands, eye gaze). Setting onGaze alone is enough to enable hover events on the
      * node. No-op on devices without eye tracking.
      */
-    onGaze?: (isHovering: boolean, position: Viro3DPoint, source: ViroSource) => void;
-    onClick?: (position: Viro3DPoint, source: ViroSource) => void;
-    onClickState?: (clickState: ViroClickState, position: Viro3DPoint, source: ViroSource) => void;
-    onTouch?: (touchState: any, touchPos: Viro3DPoint, source: ViroSource) => void;
-    onScroll?: (scrollPos: Viro3DPoint, source: ViroSource) => void;
-    onSwipe?: (swipeState: any, source: ViroSource) => void;
-    onDrag?: (dragToPos: Viro3DPoint, source: ViroSource) => void;
-    onPinch?: (pinchState: ViroPinchState, scaleFactor: number, source: ViroSource) => void;
-    onRotate?: (rotateState: ViroRotateState, rotationFactor: number, source: ViroSource) => void;
+    onGaze?: (isHovering: boolean, position: Viro3DPoint, source: number) => void;
+    onClick?: (position: Viro3DPoint, source: number) => void;
+    onClickState?: (clickState: ViroClickState, position: Viro3DPoint, source: number) => void;
+    onTouch?: (touchState: any, touchPos: Viro3DPoint, source: number) => void;
+    onScroll?: (scrollPos: Viro3DPoint, source: number) => void;
+    onSwipe?: (swipeState: any, source: number) => void;
+    onDrag?: (dragToPos: Viro3DPoint, source: number) => void;
+    onPinch?: (pinchState: ViroPinchState, scaleFactor: number, source: number) => void;
+    onRotate?: (rotateState: ViroRotateState, rotationFactor: number, source: number) => void;
     onFuse?: {
         callback: (source: any) => void;
         timeToFuse?: number;

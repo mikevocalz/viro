@@ -47,3 +47,4 @@ test('visionOS setup preserves a wrapped Metro resolver and resolves hoisted pod
     assert.equal(fs.existsSync(path.join(root,'patches')), false);
   } finally { fs.rmSync(root,{recursive:true,force:true}); }
 });
+

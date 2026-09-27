@@ -107,12 +107,14 @@ export const ViroThreeJSPanel = React.forwardRef<
   React.useImperativeHandle(
     ref,
     () => ({
-      surface: state.surface,
-      producer: state.producer,
-      materialName: state.materialName,
+      surface: state?.surface ?? null,
+      producer: state?.producer ?? null,
+      materialName: state?.materialName ?? "",
     }),
-    [state.surface, state.producer, state.materialName]
+    [state]
   );
+
+  if (!state) return null;
 
   return (
     <ViroNode position={position} rotation={rotation}>

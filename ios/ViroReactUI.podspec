@@ -53,3 +53,4 @@ Pod::Spec.new do |s|
     ].join(' ')
   }
 end
+

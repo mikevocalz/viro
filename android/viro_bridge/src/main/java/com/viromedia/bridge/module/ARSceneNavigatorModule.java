@@ -661,7 +661,9 @@ public class ARSceneNavigatorModule extends ReactContextBaseJavaModule {
                 if (!(view instanceof VRTARSceneNavigator)) {
                     WritableMap result = Arguments.createMap();
                     result.putBoolean("success", false);
-                    result.putString("error", "Invalid view type");
+                    result.putString("error", view == null
+                            ? "AR navigator is not mounted yet"
+                            : "Invalid view type");
                     result.putString("state", "ErrorInternal");
                     promise.resolve(result);
                     return;
@@ -776,6 +778,56 @@ public class ARSceneNavigatorModule extends ReactContextBaseJavaModule {
         });
     }
 
+    /**
+     * Progress of a resolve in flight, as {@code {progress, message}}, or nulls
+     * when nothing is resolving. Polled rather than pushed: resolve localisation
+     * runs per AR frame and has no event channel to JS.
+     */
+    @ReactMethod
+    public void getCloudAnchorStatus(final int sceneNavTag, final Promise promise) {
+        UIManager uiManager = UIManagerHelper.getUIManager(getReactApplicationContext(), sceneNavTag);
+        if (uiManager == null) {
+            promise.resolve(emptyCloudAnchorStatus());
+            return;
+        }
+
+        ((FabricUIManager) uiManager).addUIBlock(new com.facebook.react.fabric.interop.UIBlock() {
+            @Override
+            public void execute(com.facebook.react.fabric.interop.UIBlockViewResolver viewResolver) {
+                View view = viewResolver.resolveView(sceneNavTag);
+                if (!(view instanceof VRTARSceneNavigator)) {
+                    promise.resolve(emptyCloudAnchorStatus());
+                    return;
+                }
+
+                String raw = ((VRTARSceneNavigator) view).getCloudAnchorStatus();
+                int split = raw == null ? -1 : raw.indexOf('|');
+                if (split < 0) {
+                    promise.resolve(emptyCloudAnchorStatus());
+                    return;
+                }
+
+                WritableMap result = Arguments.createMap();
+                result.putBoolean("active", true);
+                try {
+                    result.putDouble("progress", Double.parseDouble(raw.substring(0, split)));
+                } catch (NumberFormatException e) {
+                    result.putDouble("progress", 0);
+                }
+                result.putString("message", raw.substring(split + 1));
+                promise.resolve(result);
+            }
+        });
+    }
+
+    private static WritableMap emptyCloudAnchorStatus() {
+        WritableMap result = Arguments.createMap();
+        result.putBoolean("active", false);
+        result.putDouble("progress", 0);
+        result.putString("message", "");
+        return result;
+    }
+
     @ReactMethod
     public void resolveCloudAnchor(final int sceneNavTag, final String cloudAnchorId,
                                    final Promise promise) {
@@ -796,7 +848,11 @@ public class ARSceneNavigatorModule extends ReactContextBaseJavaModule {
                 if (!(view instanceof VRTARSceneNavigator)) {
                     WritableMap result = Arguments.createMap();
                     result.putBoolean("success", false);
-                    result.putString("error", "Invalid view type");
+                    // Null on a scene's first frame, before Fabric has mounted the
+                    // navigator. Retryable, so a caller can wait instead of giving up.
+                    result.putString("error", view == null
+                            ? "AR navigator is not mounted yet"
+                            : "Invalid view type");
                     result.putString("state", "ErrorInternal");
                     promise.resolve(result);
                     return;
@@ -1912,6 +1968,62 @@ public class ARSceneNavigatorModule extends ReactContextBaseJavaModule {
         });
     }
 
+    /**
+     * How the scan in progress is doing. Resolves the renderer's JSON verbatim, parsed on the JS
+     * side — the shape is defined once, in VROARSession, rather than restated in three bridges.
+     */
+    @ReactMethod
+    public void rvGetScanStatus(final int sceneNavTag, final Promise promise) {
+        rvResolveScanJson(sceneNavTag, false, promise);
+    }
+
+    /** The numbers behind the last scan-based host. */
+    @ReactMethod
+    public void rvGetScanDiagnostics(final int sceneNavTag, final Promise promise) {
+        rvResolveScanJson(sceneNavTag, true, promise);
+    }
+
+    /** Whether a world mesh exists and how big it is. Poll it: the update event never fires. */
+    @ReactMethod
+    public void rvGetWorldMeshStats(final int sceneNavTag, final Promise promise) {
+        UIManager uiManager = UIManagerHelper.getUIManager(getReactApplicationContext(), sceneNavTag);
+        if (uiManager == null) { promise.resolve("{\"available\":false,\"reason\":\"UIManager not available\"}"); return; }
+        ((FabricUIManager) uiManager).addUIBlock(new com.facebook.react.fabric.interop.UIBlock() {
+            @Override public void execute(com.facebook.react.fabric.interop.UIBlockViewResolver viewResolver) {
+                try {
+                    View view = viewResolver.resolveView(sceneNavTag);
+                    if (!(view instanceof VRTARSceneNavigator)) {
+                        promise.resolve("{\"available\":false,\"reason\":\"AR navigator is not mounted yet\"}");
+                        return;
+                    }
+                    ((VRTARSceneNavigator) view).rvGetWorldMeshStatsJson(json -> promise.resolve(json));
+                } catch (Exception e) {
+                    promise.resolve("{\"available\":false,\"reason\":\"" + String.valueOf(e.getMessage()) + "\"}");
+                }
+            }
+        });
+    }
+
+    private void rvResolveScanJson(final int sceneNavTag, final boolean diagnostics,
+                                   final Promise promise) {
+        UIManager uiManager = UIManagerHelper.getUIManager(getReactApplicationContext(), sceneNavTag);
+        if (uiManager == null) { promise.resolve("{\"available\":false,\"error\":\"UIManager not available\"}"); return; }
+        ((FabricUIManager) uiManager).addUIBlock(new com.facebook.react.fabric.interop.UIBlock() {
+            @Override public void execute(com.facebook.react.fabric.interop.UIBlockViewResolver viewResolver) {
+                try {
+                    View view = viewResolver.resolveView(sceneNavTag);
+                    if (!(view instanceof VRTARSceneNavigator)) {
+                        promise.resolve("{\"available\":false,\"error\":\"AR navigator is not mounted yet\"}");
+                        return;
+                    }
+                    ((VRTARSceneNavigator) view).rvGetScanJson(diagnostics, json -> promise.resolve(json));
+                } catch (Exception e) {
+                    promise.resolve("{\"available\":false,\"error\":\"" + String.valueOf(e.getMessage()) + "\"}");
+                }
+            }
+        });
+    }
+
     @ReactMethod
     public void rvSnapshotWorldMeshToFile(final int sceneNavTag, final String locationTransform, final Promise promise) {
         UIManager uiManager = UIManagerHelper.getUIManager(getReactApplicationContext(), sceneNavTag);
@@ -1921,14 +2033,16 @@ public class ARSceneNavigatorModule extends ReactContextBaseJavaModule {
                 try {
                     View view = viewResolver.resolveView(sceneNavTag);
                     if (!(view instanceof VRTARSceneNavigator)) { WritableMap r = Arguments.createMap(); r.putBoolean("success", false); r.putString("error", "Invalid view type"); promise.resolve(r); return; }
-                    String filePath = ((VRTARSceneNavigator) view).rvSnapshotWorldMeshToFile(locationTransform);
+                    String[] reason = new String[1];
+                    String filePath = ((VRTARSceneNavigator) view).rvSnapshotWorldMeshToFile(locationTransform, reason);
                     WritableMap r = Arguments.createMap();
                     if (filePath != null) {
                         r.putBoolean("success", true);
                         r.putString("filePath", filePath);
                     } else {
                         r.putBoolean("success", false);
-                        r.putString("error", "No world mesh available to snapshot");
+                        r.putString("error", reason[0] != null ? reason[0]
+                                : "No world mesh available to snapshot");
                     }
                     promise.resolve(r);
                 } catch (Exception e) { WritableMap r = Arguments.createMap(); r.putBoolean("success", false); r.putString("error", e.getMessage()); promise.resolve(r); }

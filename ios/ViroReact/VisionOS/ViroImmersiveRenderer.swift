@@ -611,3 +611,4 @@ public final class ViroImmersiveRenderer: @unchecked Sendable {
     }
 }
 #endif  // os(visionOS)
+

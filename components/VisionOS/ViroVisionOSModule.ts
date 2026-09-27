@@ -212,3 +212,4 @@ export async function sharedSpacePushIncoming(base64: string): Promise<boolean> 
   if (!VRTVisionOSModule?.sharedSpacePushIncoming) return false;
   return VRTVisionOSModule.sharedSpacePushIncoming(base64);
 }
+

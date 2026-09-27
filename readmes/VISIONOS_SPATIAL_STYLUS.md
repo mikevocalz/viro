@@ -94,3 +94,4 @@ can pass `{ applyCompatibilityPatches: false }` to disable the SDK 57 patch-pack
 copies and postinstall mutation. Audit their installed native module versions separately.
 
 Run `node --test scripts/visionos-plugin.test.cjs` after building the plugin.
+

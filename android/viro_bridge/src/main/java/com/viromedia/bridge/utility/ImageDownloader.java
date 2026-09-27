@@ -32,7 +32,8 @@ import com.facebook.datasource.BaseDataSubscriber;
 import com.facebook.datasource.DataSource;
 import com.facebook.datasource.DataSubscriber;
 import com.facebook.drawee.backends.pipeline.Fresco;
-import com.facebook.imagepipeline.core.DefaultExecutorSupplier;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import com.facebook.imagepipeline.core.ImagePipeline;
 import com.facebook.imagepipeline.image.BaseCloseableStaticBitmap;
 import com.facebook.imagepipeline.image.CloseableImage;
@@ -53,7 +54,14 @@ public class ImageDownloader {
     private static final String URI_KEY = "uri";
     private final Context mContext;
     private final ConcurrentHashMap<CountDownLatch, Bitmap> mImageMap;
-    private final DefaultExecutorSupplier mExecutorSupplier;
+    // Shared process-lifetime callback executor. Fresco 3.7 removed the single-argument
+    // DefaultExecutorSupplier constructor; avoid a version-specific private thread pool
+    // for every downloader. Callbacks must stay off the UI thread (getImageSync waits).
+    private static final Executor IMAGE_CALLBACKS = Executors.newSingleThreadExecutor(task -> {
+        Thread thread = new Thread(task, "ViroImageCallbacks");
+        thread.setDaemon(true);
+        return thread;
+    });
     private Bitmap.Config mConfig = Bitmap.Config.ARGB_8888;
 
     public static void evictFromCache(ReadableMap map, Context context) {
@@ -71,7 +79,7 @@ public class ImageDownloader {
     public ImageDownloader(Context context) {
         mContext = context;
         mImageMap = new ConcurrentHashMap<>();
-        mExecutorSupplier = new DefaultExecutorSupplier(1);
+
 
     }
 
@@ -185,7 +193,7 @@ public class ImageDownloader {
                     }
                 };
 
-        dataSource.subscribe(dataSubscriber, mExecutorSupplier.forBackgroundTasks());
+        dataSource.subscribe(dataSubscriber, IMAGE_CALLBACKS);
     }
 
     public void setTextureFormat(Texture.Format format) {

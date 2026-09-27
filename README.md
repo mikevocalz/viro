@@ -24,11 +24,13 @@ ViroReact is MIT licensed and free forever.
 
 ## Supported Platforms
 
-| Platform         | Support      |
-| ---------------- | ------------ |
-| iOS (ARKit)      | ✅ Supported |
-| Android (ARCore) | ✅ Supported |
-| Meta Horizon OS  | ✅ Supported |
+| Platform             | Support      | Notes |
+| -------------------- | ------------ | ----- |
+| iOS (ARKit)          | ✅ | Deployment target 15.1 |
+| Android (ARCore)     | ✅ | |
+| Meta Horizon OS      | ✅ | Quest 3 / 3S mixed reality through OpenXR |
+| Apple visionOS       | ✅ | |
+| Web (WebGL2 / WASM)  | ✅ | Needs the optional `@reactvision/viro-web-renderer` peer |
 
 ViroReact works with both **React Native CLI** and **Expo** projects.
 
@@ -63,6 +65,8 @@ ViroReact ships with a complete spatial computing toolkit out of the box — no 
 - Image and object recognition triggers
 - Cloud Anchors for persistent, multi-user shared AR content _(Platform feature)_
 - Geospatial Anchors that pin content to real-world latitude, longitude, and altitude _(Platform feature)_
+- Co-location: two devices in the same room agreeing on where the scene is, with replicated state on top
+- VPS: scan a whole room to define its own persistent coordinate frame, then localise back into it later or from another device, with an optional world mesh for occlusion and physics _(Platform feature)_
 
 **Rendering**
 
@@ -123,6 +127,13 @@ Full walkthrough — including Studio setup, exporting a scene, and wiring `Stud
 
 - Full API reference and guides: <https://viro-community.readme.io/docs/overview>
 - Getting started tutorial: <https://updates.reactvision.xyz/get-started-with-the-viroreact-and-expo-starter-kit-a9ca88803e5a>
+
+Guides that ship in this repository:
+
+- [`CHANGELOG.md`](./CHANGELOG.md) — what changed, by release
+
+Feature guides for VPS, visionOS, Quest, the web renderer, platform extensions, shaders, object
+detection, camera texture and session recording are on the documentation site above.
 
 ## Community
 

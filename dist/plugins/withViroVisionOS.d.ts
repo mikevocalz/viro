@@ -37,3 +37,4 @@ export declare const withViroVisionOS: ConfigPlugin<{
     applyCompatibilityPatches?: boolean;
 } | void>;
 export default withViroVisionOS;
+

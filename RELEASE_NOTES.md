@@ -1,92 +1,39 @@
 # Release Notes
 
-## Unreleased
+## v3.0.1
 
-### Added
+**Shared coordinate frames on Meta Quest.** Two headsets can now agree on where the room is, so a co-located session on Quest places content in the same spot for everyone in it.
 
-- **Replicated room state**: `useViroReplicatedState` and `ViroReplicationClient`. Ordered, conflict-resolved, authoritative application state for co-located sessions — what moved, who is holding it — on a separate socket from the pose channel and the same room id. Entities are claimed before they are changed, so two people grabbing the same object resolves instead of racing: the first `claim` wins and the second is refused with the current owner attached. `expectVersion` opts a write into optimistic concurrency; unowned entities are last-writer-wins; a peer that disconnects releases whatever it held. A delta whose sequence skips ahead triggers a resync rather than leaving a hole in local state, and a reconnect resumes from the last applied sequence. Optimistic writes are opt-in per call and roll back to the server's value if refused.
+Quest uses Meta's spatial anchors rather than a ReactVision cloud anchor: the OpenXR session produces no camera image for the SIFT localiser, and Meta's anchors already solve the problem sensor-fused. `create` publishes an anchor to a group uuid and `join` recovers it, both through OpenXR alone. Verified on a Quest 3.
 
-  Two constraints worth reading before building on it. **There is no persistence** — state lives as long as the room has occupants, and restarting the server loses it. And the reference server keeps rooms in one process's memory, so replicated state must not run on more than one instance, or behind anything that can restart it, until that is solved. Both are in `reactvisioncca/server/README.md`.
-- **`<ViroARCloudAnchor>` — co-located AR.** Renders its children in a resolved cloud anchor's *location frame*, which is the shared coordinate frame two devices in the same space can agree on. Mount it with the same `cloudAnchorId` on both devices and a child at `[0, 0, -1]` is the same physical metre on each, with no coordinate maths in app code — previously `resolveCloudAnchor()` returned position/rotation/scale and no scene node, leaving every app to redo the frame arithmetic itself. Fires `onLocalized` once the frame exists, and `onLocalizeError` when localisation fails or times out.
-- **Location-frame conversion helpers**: `parseLocationTransform`, `locationToWorld`, `worldToLocation`, `invertTransform`. World coordinates are per-session — each AR session picks its origin wherever tracking started — so anything two devices exchange has to travel as location-frame coordinates and be converted on arrival. **Send frame coordinates, never world coordinates.**
+The other half of co-location — the channel and replicated state — already ran on Quest, and phone sessions are unchanged. This completes the headset path; `metaSpatialAnchorFrameSource` did not reach the runtime in 3.0.0.
 
-### Fixed
+### Using it
 
-- **Quest builds failed Meta Horizon Store validation on Expo projects.** The plugin's targetSdk cap never applied on Expo's template and the GLES declaration was optional, which the store reads as missing. With `"QUEST"` in `xRMode` the plugin now sets `android.targetSdkVersion=34` in `gradle.properties` and requires GLES 3.0.
+```tsx
+import { ViroSharedFrame, metaSpatialAnchorFrameSource } from "@reactvision/react-viro";
 
-### Added
+// The headset that publishes the room:
+<ViroSharedFrame source={metaSpatialAnchorFrameSource(roomUuid, "create")} />
 
-- **Quest Store packaging defaults**: arm64-only builds (`android.questArm64Only`, default true) and a `com.oculus.supportedDevices` manifest entry (`android.questSupportedDevices`, default `quest2|questpro|quest3|quest3s`).
+// Every other headset joining it:
+<ViroSharedFrame source={metaSpatialAnchorFrameSource(roomUuid, "join")} />
+```
 
-## v2.58.1
+Two requirements, both of which report themselves rather than failing quietly:
 
-### Fixed
+**Your scene must be rooted in `ViroARScene`.** Co-location means agreeing on a room, and a fully virtual scene has no room to agree on — no AR session, no anchor to share. Under a `ViroScene` root the call answers *"Co-location needs a mixed-reality scene"*.
 
-- **AR session recordings played sideways (iOS and Android).** Video captured by `ViroARSceneNavigator.startRecording()` carried no rotation, so it played in the camera sensor's landscape orientation however the phone was held. Both platforms now tag the file so players show it upright.
-- **AR session recordings were unusable for analysis on iOS.** The IMU was written in G while Android wrote m/s² — the same `session.jsonl` field meaning two things, off by 9.81×. iOS now writes m/s². Against tinyvio on a real recording this moved tracking from 0% of frames to 96%. A second iOS fix keeps the sidecar and the video in step: duplicate ARKit frames are dropped whole, and a pose is only written once its frame has reached the encoder.
-- **AR session recordings had scrambled colour (Android).** The same video came out sharp and correctly framed but under large green/magenta blocks — the encoder was fed a pixel layout it did not actually use. Frames are now handed to it through its real per-plane strides.
+**Your app needs the config plugin**, which now declares `horizonos.permission.IMPORT_EXPORT_IOT_MAP_DATA`. Run `expo prebuild` after upgrading so the manifest picks it up.
 
-All fixed in `@reactvision/virocore` 2.58.1. None of them affect `startVideoRecording()`, which records the rendered screen and was never involved.
+Co-location remains same-family: a Quest on a Meta anchor and a phone on a cloud anchor are in unrelated frames, and nothing has ever observed both. That is a scope decision rather than a gap. Full API in `docs/CO_LOCATION.md`, Quest specifics in `docs/QUEST_SETUP.md` §7d.
 
-### Migration
+### Also in this release
 
-- **No breaking changes.**
-- iOS `imu.accel`/`pose.gravity` are now m/s² rather than G, matching Android; the format only shipped in 2.58.0, so there is effectively no earlier data to reconcile.
-- Tooling that decodes a recording's `video.mp4` for tracking should pass ffmpeg `-noautorotate`: the new rotation is container metadata only, so the frames still match `session.jsonl`'s intrinsics, but ffmpeg rotates by default and would leave the geometry wrong without erroring. Older recordings are unaffected by the flag.
-- Pairs with `@reactvision/virocore` 2.58.1.
+The renderer changes this depends on are in `@reactvision/virocore` 3.0.1, which ships inside this package as prebuilt binaries — there is nothing to install separately.
 
-See [`CHANGELOG.md`](./CHANGELOG.md) for full detail.
+**`onCloudAnchorStateChange` was removed from `ViroARSceneNavigator`.** The prop was declared but never wired to anything on either platform, so setting it did nothing. Cloud anchor state was and remains available three ways, depending on what you are asking: `hostCloudAnchor()` and `resolveCloudAnchor()` resolve with `state`; `getCloudAnchorStatus()` reports progress while a resolve is running, with a `message` that separates downloading from searching from waiting on a second match; and `rvGetCloudAnchor(anchorId)` gives the current state of an anchor you did not just touch. See `docs/VPS_LITE.md`.
 
----
+`ViroCloudAnchorStateChangeEvent` stays exported and deprecated, so an existing import still compiles.
 
-## v2.58.0
-
-### Highlights
-
-**AR Session Recording**
-
-- `startRecording()`/`stopRecording()`/`getRecordingStatus()` on `ViroARSceneNavigator` capture video + raw IMU + ground-truth pose to local storage, for offline analysis via `tinyvio` — distinct from `ViroCameraTexture`'s screen-only recording.
-
-### Fixed
-
-- The package could crash immediately when bundled with `react-native-web` — ten native-only components had no `.web.tsx` variant and crashed the shared import barrel regardless of what an app actually used. Fixed with stub implementations for all ten.
-- GLB/glTF models with sparse accessors or non-indexed primitives now load correctly (previously failed) — fixed in `@reactvision/virocore` 2.58.0.
-
-### Changed
-
-- Android alert dialogs now follow Material 3 instead of the Material 2 look inherited from the RN/Expo template theme (#508). Only the `alertDialogTheme` attribute is overlaid, so the rest of your app's theme is untouched. *(Shipped in 2.58.0; documented retroactively.)*
-
-### Migration
-
-- **No breaking changes.** Everything in this release is additive or a bug fix.
-- `docs/` no longer ships in this package — see the CHANGELOG's Changed section if you had bookmarked a `docs/*.md` path.
-- Pairs with `@reactvision/virocore` 2.58.0.
-
-See [`CHANGELOG.md`](./CHANGELOG.md) for full detail.
-
----
-
-## v2.57.5
-
-### Highlights
-
-**Stability / crashes**
-
-- **Scene-open freeze fixed (Android).** Opening an AR scene with heavier content (3D models / video) could freeze the app for ~5 s (ANR) on some devices. An interim camera-background workaround was replaying `pause → resume` on the UI thread, which blocked the main thread in `GLSurfaceView.onPause()` waiting on the GL thread. The workaround was removed now that the renderer handles camera-texture binding natively; the black-passthrough issue it guarded against stays fixed.
-- **Animated glTF model crash fixed.** Loading an animated model whose rig has a zero-duration animation channel (a single keyframe / all-zero times — legal glTF) crashed with a native `SIGSEGV` (divide-by-zero → `NaN` keyframe times → corrupted sort in the renderer's skeletal-animation resampler). Guarded in the renderer.
-- **Anchor-retry crash fixed (Android, SIGSEGV).** Leaving/switching an AR scene while a node's anchor retry was pending could crash in `nativeCreateAnchoredNode`; the retry now bails when the parent scene is torn down (plus a native null-ref guard in the renderer).
-- **`getTransformAsync` / `getBoundingBoxAsync` / `getMorphTargets` no longer redbox or hang** when the node isn't registered yet (a normal mount race hit by `onProximity`). They now reject with `view_not_ready` so callers can retry/ignore quietly (iOS + Android).
-
-**Features**
-
-- **`onGaze` — eye-gaze hover on Meta Quest Pro.** New optional event on every Viro node that fires when the node is hovered by the user's eye-gaze ray (renderer support via `XR_EXT_eye_gaze_interaction`, Quest Pro). `onHover` still fires for all input sources; `onGaze` is eye-gaze-only, and setting it alone enables hover on the node. No-op on headsets without eye tracking (Quest 2 / 3 / 3S).
-- **Free-tier watermark now burned into recorded video on Android** (previously photo-only), composited natively per frame in the renderer — at parity with iOS.
-
-**Media**
-
-- **Android media files are now reliably written (API 29+).** Screenshots and video recordings were silently failing under scoped storage (raw write to public `Pictures/` → `EACCES`), or landing in app-private storage invisible to the gallery. Media now writes to app-specific storage (always succeeds) and is published to the gallery via `MediaStore` when `saveToCameraRoll` is set. Permission gate corrected (`RECORD_AUDIO`; `WRITE_EXTERNAL_STORAGE` only on API ≤ 28).
-
-### Migration
-
-- **No breaking changes.** `onGaze` is additive; everything else is a bug/stability fix.
-
+Nothing else changed.
