@@ -37,7 +37,7 @@ Pod::Spec.new do |s|
   # by the host app without use_frameworks!.
   s.source_files = ['ViroReact/VisionOS/*.swift']
 
-  s.visionos.frameworks = ['Metal', 'MetalKit', 'CompositorServices', 'ARKit']
+  s.visionos.frameworks = ['Metal', 'MetalKit', 'CompositorServices', 'ARKit', 'GameController']
 
   # VRORendererBridge (ObjC) lives in ViroReact; ViroKit provides the renderer xcframework.
   s.dependency 'ViroReact'
