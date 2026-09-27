@@ -603,6 +603,10 @@ const withVisionOSInfoPlist: ConfigPlugin = (config) =>
           "NSHandsTrackingUsageDescription",
           "Lets you point at and select objects in your scene with your hands.",
         ],
+        [
+          "NSAccessoryTrackingUsageDescription",
+          "Tracks a connected spatial stylus so you can point and draw in your scene.",
+        ],
       ];
       for (const [key, description] of usageKeys) {
         if (withUsage.includes(`<key>${key}</key>`)) continue;
