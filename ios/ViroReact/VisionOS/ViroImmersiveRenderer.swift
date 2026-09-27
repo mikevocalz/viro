@@ -110,7 +110,6 @@ public final class ViroImmersiveRenderer: @unchecked Sendable {
     }
 
     public func stopRenderLoop() {
-        clearStylusTracking()
         sharedSpace.stop()
         renderTask?.cancel()
         renderTask = nil
