@@ -39,7 +39,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import { NativeModules, Platform } from "react-native";
+import { NativeEventEmitter, NativeModules, Platform } from "react-native";
 
 /**
  * Immersion styles Viro can present.
@@ -125,10 +125,34 @@ export function setInputTuning(tuning: ViroInputTuning): void {
   VRTVisionOSModule?.setInputTuning?.(tuning);
 }
 
+/**
+ * A spatial stylus tip in Viro's immersive world coordinates. A disconnected or
+ * untracked pen produces one tracked:false sample, so a board can cancel its stroke.
+ */
+export type ViroSpatialStylusSample = {
+  tracked: boolean;
+  position: readonly [number, number, number] | null;
+  tipPressed: boolean;
+  primaryPressed: boolean;
+  secondaryPressed: boolean;
+  pressure: number;
+};
+
+/** Subscribe to spatial-stylus frames; returns an idempotent unsubscribe function. */
+export function subscribeSpatialStylus(
+  listener: (sample: ViroSpatialStylusSample) => void
+): () => void {
+  if (!isVisionOS() || !VRTVisionOSModule) return () => undefined;
+  const subscription = new NativeEventEmitter(VRTVisionOSModule)
+    .addListener("onSpatialStylus", listener);
+  return () => subscription.remove();
+}
+
 export const ViroVisionOSModule = {
   isVisionOS,
   enterImmersiveSpace,
   exitImmersiveSpace,
+  subscribeSpatialStylus,
 } as const;
 
 // ─── Shared coordinate space (CL-I) ──────────────────────────────────────────
