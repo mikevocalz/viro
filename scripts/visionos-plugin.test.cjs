@@ -38,11 +38,12 @@ test('visionOS setup preserves a wrapped Metro resolver and resolves hoisted pod
     assert.match(before[2], /ViroImmersiveSpaceView/);
     assert.match(before[3], /NSAccessoryTrackingUsageDescription/);
     const calls=[];
-    const sandbox={module:{exports:{}},prior:(_c,n,p)=>{calls.push([n,p]);return n},wrap:c=>c};
+    const sandbox={require,__dirname:root,module:{exports:{}},prior:(_c,n,p)=>{if(n.startsWith("@/"))throw new Error("alias unresolved");calls.push([n,p]);return n},wrap:c=>c};
     vm.runInNewContext(before[0],sandbox);
     sandbox.module.exports.resolver.resolveRequest({},'react-native/View','visionos');
     sandbox.module.exports.resolver.resolveRequest({},'react-native','android');
     assert.deepEqual(calls,[['@reactvision/react-native-visionos/View','visionos'],['react-native','android']]);
+    assert.equal(sandbox.module.exports.resolver.resolveRequest({}, '@/test', 'visionos'),path.join(root,'test'));
     assert.equal(fs.existsSync(path.join(root,'patches')), false);
   } finally { fs.rmSync(root,{recursive:true,force:true}); }
 });

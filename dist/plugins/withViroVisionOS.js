@@ -137,6 +137,7 @@ for (const ext of VIRO_ASSET_EXTS) {
   }
 }
 
+const viroNodePath = require('path');
 const viroPreviousResolver = config.resolver.resolveRequest;
 config.resolver.resolveRequest = (context, moduleName, platform) => {
   const visionOS = platform === 'visionos' || context.customResolverOptions?.platformExtension === 'visionos';
@@ -144,9 +145,15 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (visionOS && (name === 'react-native' || name.startsWith('react-native/'))) {
     name = '${rnVisionSpecifier}' + name.slice('react-native'.length);
   }
-  return viroPreviousResolver
-    ? viroPreviousResolver(context, name, platform)
-    : context.resolveRequest(context, name, platform);
+  const resolve = (requestedName) => viroPreviousResolver
+    ? viroPreviousResolver(context, requestedName, platform)
+    : context.resolveRequest(context, requestedName, platform);
+  try {
+    return resolve(name);
+  } catch (error) {
+    if (!name.startsWith('@/')) throw error;
+    return resolve(viroNodePath.resolve(__dirname, name.slice(2)));
+  }
 };
 `;
 const withVisionOSMetroConfig = (config) => (0, config_plugins_1.withDangerousMod)(config, [
