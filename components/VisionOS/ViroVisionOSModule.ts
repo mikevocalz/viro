@@ -145,7 +145,9 @@ export function subscribeSpatialStylus(
 ): () => void {
   if (!isVisionOS() || !VRTVisionOSModule) return () => undefined;
   const subscription = new NativeEventEmitter(VRTVisionOSModule)
-    .addListener("onSpatialStylus", listener);
+    .addListener("onSpatialStylus", (event: object) => {
+      listener(event as ViroSpatialStylusSample);
+    });
   let subscribed = true;
   return () => {
     if (!subscribed) return;
