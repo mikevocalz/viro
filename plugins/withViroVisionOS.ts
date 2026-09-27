@@ -132,25 +132,16 @@ for (const ext of VIRO_ASSET_EXTS) {
   }
 }
 
-const path = require('path');
-const { getPlatformResolver } = require('${RNVISION_PLATFORMS_PKG}');
-const viroPlatformResolver = getPlatformResolver({
-  platformNameMap: { visionos: '${RNVISION_PKG}' },
-});
-
-// Device builds run their own Metro from the Xcode build phase, which reads this file and
-// nothing else — tsconfig \`paths\` are applied by the Expo dev server, not by that instance.
-// A project using the \`@/\` alias therefore builds in the Simulator and fails on device with
-// "Unable to resolve module @/...". Resolving it here covers both.
+const viroPreviousResolver = config.resolver.resolveRequest;
 config.resolver.resolveRequest = (context, moduleName, platform) => {
-  if (moduleName.startsWith('@/')) {
-    return viroPlatformResolver(
-      context,
-      path.resolve(__dirname, moduleName.slice(2)),
-      platform
-    );
+  const visionOS = platform === 'visionos' || context.customResolverOptions?.platformExtension === 'visionos';
+  let name = moduleName;
+  if (visionOS && (name === 'react-native' || name.startsWith('react-native/'))) {
+    name = '${RNVISION_PKG}' + name.slice('react-native'.length);
   }
-  return viroPlatformResolver(context, moduleName, platform);
+  return viroPreviousResolver
+    ? viroPreviousResolver(context, name, platform)
+    : context.resolveRequest(context, name, platform);
 };
 `;
 
@@ -173,8 +164,8 @@ const withVisionOSMetroConfig: ConfigPlugin = (config) =>
       if (metro.includes(METRO_MARKER)) return newConfig; // idempotent
 
       metro = metro.replace(
-        "module.exports = config;",
-        METRO_PATCH + "\nmodule.exports = config;"
+        /module\.exports\s*=/,
+        METRO_PATCH + "\nmodule.exports ="
       );
 
       fs.writeFileSync(metroPath, metro, "utf-8");
@@ -186,9 +177,10 @@ const withVisionOSMetroConfig: ConfigPlugin = (config) =>
 
 const VIRO_PODS = `
   ${PODFILE_MARKER}
-  pod 'ViroKit',     :path => '../node_modules/@reactvision/react-viro/ios/dist/ViroRendererVisionOS/'
-  pod 'ViroReact',   :path => '../node_modules/@reactvision/react-viro/ios', :modular_headers => true
-  pod 'ViroReactUI', :path => '../node_modules/@reactvision/react-viro/ios'`;
+  viro_root = File.dirname(Pod::Executable.execute_command('node', ['-p', 'require.resolve("@reactvision/react-viro/package.json", {paths: [process.argv[1]]})', __dir__]).strip)
+  pod 'ViroKit',     :path => "#{viro_root}/ios/dist/ViroRendererVisionOS/"
+  pod 'ViroReact',   :path => "#{viro_root}/ios", :modular_headers => true
+  pod 'ViroReactUI', :path => "#{viro_root}/ios"`;
 
 // These lines are injected INSIDE the existing post_install block (before the closing `end`).
 // If no post_install block exists they are injected as a new one.
@@ -307,12 +299,12 @@ const withVisionOSPodfile: ConfigPlugin = (config) =>
         `"${RNVISION_PKG}/scripts/react_native_pods.rb"`
       );
 
-      // ── 3b. Ensure config[:reactNativePath] is set correctly ──
-      if (!podfile.includes("config[:reactNativePath]")) {
-        podfile = podfile.replace(
-          /(config = use_native_modules!\n)/,
-          `$1  config[:reactNativePath] = '../node_modules/${RNVISION_PKG}'\n`
-        );
+      // Resolve hoisted packages from the Podfile, including an existing template assignment.
+      const rnPath = `File.dirname(Pod::Executable.execute_command('node', ['-p', 'require.resolve("${RNVISION_PKG}/package.json", {paths: [process.argv[1]]})', __dir__]).strip)`;
+      if (/config\[:reactNativePath\] = [^\n]+/.test(podfile)) {
+        podfile = podfile.replace(/config\[:reactNativePath\] = [^\n]+/, `config[:reactNativePath] = ${rnPath}`);
+      } else {
+        podfile = podfile.replace(/(config = use_native_modules!\n)/, `$1  config[:reactNativePath] = ${rnPath}\n`);
       }
 
       // ── 3c. Inject post_install content ──
@@ -783,13 +775,13 @@ const withVisionOSBundlePhase: ConfigPlugin = (config) =>
     },
   ]);
 
-export const withViroVisionOS: ConfigPlugin = (config) =>
+export const withViroVisionOS: ConfigPlugin<{ applyCompatibilityPatches?: boolean } | void> = (config, options) =>
   withPlugins(config, [
     withVisionOSSetup,         // 1. verify visionos/ folder + deps
     withVisionOSMetroConfig,   // 2. metro.config.js visionOS resolver
     withVisionOSPodfile,       // 3. Podfile: Viro pods + post_install hooks
     withVisionOSAppSwift,      // 4. App.swift: moduleName "main" + ImmersiveSpace
-    withVisionOSPatches,       // 5. patches/ + postinstall: patch-package
+    ...(options?.applyCompatibilityPatches === false ? [] : [withVisionOSPatches]),
     withVisionOSCompatShims,   // 6. components/compat/ BlurView + LinearGradient
     withVisionOSInfoPlist,     // 7. Info.plist: allow multiple scenes (ImmersiveSpace)
     withVisionOSAppDelegate,   // 8. AppDelegate.swift: Expo entry point + imports
@@ -797,3 +789,4 @@ export const withViroVisionOS: ConfigPlugin = (config) =>
   ]);
 
 export default withViroVisionOS;
+

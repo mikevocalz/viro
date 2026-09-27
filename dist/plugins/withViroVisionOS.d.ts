@@ -31,5 +31,7 @@
  *     --directory visionos --skip-install
  */
 import { ConfigPlugin } from "@expo/config-plugins";
-export declare const withViroVisionOS: ConfigPlugin;
+export declare const withViroVisionOS: ConfigPlugin<{
+    applyCompatibilityPatches?: boolean;
+} | void>;
 export default withViroVisionOS;

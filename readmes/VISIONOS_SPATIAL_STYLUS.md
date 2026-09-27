@@ -82,6 +82,15 @@ Muse in this environment. Verify connection, event focus during immersion,
 tracking loss, reconnection, tip position, pressure, release, and exit/reentry.
 
 The official guide lists a Metal shader limitation affecting `ViroPolyline`.
-MoyoBoard's current live ink overlay uses that component; its rendering must be
-verified or replaced before calling the headset drawing experience complete.
+MoyoBoard PR #73 replaces its visionOS live ink overlay with ViroGeometry triangle
+meshes. The workaround still needs visual verification on the headset.
 Passing JavaScript tests does not verify native ink rendering.
+
+## Monorepo setup
+
+The plugin resolves pods through Node instead of assuming app-local node_modules,
+and preserves existing Metro resolvers and wrapped exports. Apps using pnpm patches
+can pass `{ applyCompatibilityPatches: false }` to disable the SDK 57 patch-package
+copies and postinstall mutation. Audit their installed native module versions separately.
+
+Run `node --test scripts/visionos-plugin.test.cjs` after building the plugin.

@@ -93,10 +93,26 @@ export type ViroInputTuning = {
  * headset on, and a native rebuild is ten minutes. No-op on every other platform.
  */
 export declare function setInputTuning(tuning: ViroInputTuning): void;
+/**
+ * A spatial stylus tip in Viro's immersive world coordinates. A disconnected or
+ * untracked pen produces one tracked:false sample, so a board can cancel its stroke.
+ */
+export type ViroSpatialStylusSample = {
+    tracked: boolean;
+    position: readonly [number, number, number] | null;
+    headPosition: readonly [number, number, number] | null;
+    tipPressed: boolean;
+    primaryPressed: boolean;
+    secondaryPressed: boolean;
+    pressure: number;
+};
+/** Subscribe to spatial-stylus frames; returns an idempotent unsubscribe function. */
+export declare function subscribeSpatialStylus(listener: (sample: ViroSpatialStylusSample) => void): () => void;
 export declare const ViroVisionOSModule: {
     readonly isVisionOS: typeof isVisionOS;
     readonly enterImmersiveSpace: typeof enterImmersiveSpace;
     readonly exitImmersiveSpace: typeof exitImmersiveSpace;
+    readonly subscribeSpatialStylus: typeof subscribeSpatialStylus;
 };
 /** State of the visionOS shared coordinate space. */
 export type ViroSharedSpaceState = {

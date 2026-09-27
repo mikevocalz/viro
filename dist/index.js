@@ -223,3 +223,5 @@ const react_native_1 = require("react-native");
 react_native_1.AppRegistry.registerComponent("VRQuestScene", () => ViroQuestEntryPoint_1.ViroQuestEntryPoint);
 var Studio_2 = require("./components/Studio");
 Object.defineProperty(exports, "isStudioApiError", { enumerable: true, get: function () { return Studio_2.isStudioApiError; } });
+
+Object.defineProperty(exports, "subscribeSpatialStylus", { enumerable: true, get: function () { return require("./components/VisionOS/ViroVisionOSModule").subscribeSpatialStylus; } });
