@@ -65,6 +65,14 @@ export function ViroQuestEntryPoint() {
     return () => sub.remove();
   }, []);
 
+  // A stopped surface means VRActivity is gone even if the "vrDestroyed"
+  // emit never reached JS — clear the flag so the panel-side AppState
+  // relaunch can't resurrect VR after an OS-level quit.
+  React.useEffect(
+    () => () => VRQuestNavigatorBridge.setVRActive(false),
+    []
+  );
+
   // Forward bridge ops (push/pop/etc.) to the live navigator.
   React.useEffect(() => {
     if (!intent) return;
