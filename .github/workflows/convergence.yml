@@ -1,0 +1,61 @@
+name: Viro convergence
+
+on:
+  push:
+    branches:
+      - upgrade/viro-3.0.1
+      - decax9-three-panel
+  pull_request:
+    branches:
+      - decax9-three-panel
+
+permissions:
+  contents: read
+
+jobs:
+  javascript:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install public dependencies
+        run: npm install
+
+      - name: Reject workspace-only renderer assumptions
+        run: |
+          ! grep -R '"file:../viro-web-renderer"' package.json package-lock.json
+          ! grep -R '<rootDir>/../viro-web-renderer' jest.config.ts
+
+      - name: Test
+        run: npm test -- --runInBand
+
+      - name: Build TypeScript and declarations
+        run: npm run build
+
+      - name: Verify generated public surface
+        run: |
+          test -f dist/components/Spatial/ViroSpatialLayout.js
+          test -f dist/components/Spatial/ViroSpatialLayout.d.ts
+          grep -q 'ViroSpatialWindow' dist/index.js
+          grep -q 'metaSpatialLayout' dist/plugins/withViro.d.ts
+          grep -q 'layout-window-react-compat' dist/plugins/withViroAndroid.js
+
+      - name: Pack smoke test
+        run: npm pack --dry-run
+
+      - name: Upload generated dist and normalized lock
+        uses: actions/upload-artifact@v4
+        with:
+          name: viro-generated
+          if-no-files-found: error
+          retention-days: 7
+          path: |
+            dist/
+            package-lock.json
