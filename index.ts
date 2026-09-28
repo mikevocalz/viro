@@ -237,9 +237,6 @@ import {
   isPico,
   isWeb,
   isXRHeadset,
-  isPico,
-  isWeb,
-  isXRHeadset,
 } from "./components/Utilities/ViroPlatform";
 import {
   ViroSpatialSceneProvider,
@@ -514,6 +511,9 @@ export {
   // Utilities
   hasOpenXRSupport,
   isQuest,
+  isPico,
+  isWeb,
+  isXRHeadset,
   useAnySourceHover,
   useAnySourcePressed,
   ViroARTrackingReasonConstants,
