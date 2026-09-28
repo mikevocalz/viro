@@ -453,8 +453,17 @@ const withViroManifest = (config: ExpoConfig) =>
       }
 
       if (usesArcore) {
-        contents.manifest.queries = [
-          {
+        // Preserve query entries contributed by other platform plugins (notably
+        // @expo-pico/core's OpenXR broker query). Replacing the whole array made
+        // Quest/AR + PICO multi-platform prebuilds depend on plugin ordering.
+        const queries = contents.manifest.queries ?? [];
+        const hasArCoreQuery = queries.some((query: any) =>
+          query.package?.some(
+            (pkg: any) => pkg.$?.["android:name"] === "com.google.ar.core"
+          )
+        );
+        if (!hasArCoreQuery) {
+          queries.push({
             package: [
               {
                 $: {
@@ -462,8 +471,9 @@ const withViroManifest = (config: ExpoConfig) =>
                 },
               },
             ],
-          },
-        ];
+          });
+        }
+        contents.manifest.queries = queries;
       }
 
       contents.manifest["uses-feature"] = [];
