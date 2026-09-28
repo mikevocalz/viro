@@ -2,7 +2,7 @@ import * as React from "react";
 import { useStore } from "zustand";
 import { createStore } from "zustand/vanilla";
 import { AppState } from "react-native";
-import type { CanvasProducer, CanvasSurface } from "nitro-canvas-in-Vision";
+import type { CanvasProducer, CanvasSurface } from "./nitroCanvas";
 import { requireNitroCanvas } from "./nitroCanvas";
 import { ViroMaterials } from "../Material/ViroMaterials";
 

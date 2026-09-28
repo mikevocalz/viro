@@ -44,11 +44,7 @@
  * mount finds an initialized WebGPU runtime.
  */
 import * as React from "react";
-import type {
-  CanvasSurface,
-  GLES3Producer,
-  GLES3ProducerInit,
-} from "nitro-canvas-in-Vision";
+import type { CanvasSurface, GLES3Producer, GLES3ProducerInit } from "./CanvasPanel/nitroCanvas";
 import { requireNitroCanvas } from "./CanvasPanel/nitroCanvas";
 import { ViroNode } from "./ViroNode";
 import { ViroQuad } from "./ViroQuad";

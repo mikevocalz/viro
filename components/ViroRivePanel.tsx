@@ -1,14 +1,6 @@
 /** Native Rive panel. Its runtime owns the idle-aware frame clock. */
 import * as React from "react";
-import type {
-  CanvasSurface,
-  RiveProducer,
-  RiveProducerInit,
-  RiveCanvasOptions,
-  RivePanel,
-  CanvasInViroInputOptions,
-  CanvasInViroInputProps,
-} from "nitro-canvas-in-Vision";
+import type { CanvasSurface, RiveProducer, RiveProducerInit, RiveCanvasOptions, RivePanel, CanvasInViroInputOptions, CanvasInViroInputProps } from "./CanvasPanel/nitroCanvas";
 import { requireNitroCanvas } from "./CanvasPanel/nitroCanvas";
 import { ViroNode } from "./ViroNode";
 import { ViroQuad } from "./ViroQuad";

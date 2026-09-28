@@ -100,7 +100,7 @@ const config: Config = {
   // in step with VROMaterial.h.
   moduleNameMapper: {
     "^@reactvision/viro-web-renderer$":
-      "<rootDir>/../viro-web-renderer/dist/sceneApi.js",
+      "<rootDir>/node_modules/@reactvision/viro-web-renderer/dist/sceneApi.js",
   },
 
   // An array of regexp pattern strings, matched against all module paths before considered 'visible' to the module loader
