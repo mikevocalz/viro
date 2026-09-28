@@ -66,6 +66,7 @@ export interface CanvasInViroInputProps {
   dragPlane: {
     planePoint: [number, number, number];
     planeNormal: [number, number, number];
+    maxDistance: number;
     [key: string]: unknown;
   };
   [key: string]: any;
