@@ -179,8 +179,56 @@ const withViroProjectBuildGradle = (config: ExpoConfig) =>
     return newConfig;
   });
 
-const withViroAppBuildGradle = (config: ExpoConfig) =>
+function assertDirectAppDependency(projectRoot: string, packageName: string): void {
+  const packageJsonPath = path.join(projectRoot, "package.json");
+  let appPackage: any;
+  try {
+    appPackage = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
+  } catch {
+    throw new Error(
+      `[Viro] metaSpatialLayout requires a readable app package.json at ${packageJsonPath}.`
+    );
+  }
+  const sections = [
+    appPackage.dependencies,
+    appPackage.optionalDependencies,
+    appPackage.devDependencies,
+  ];
+  if (!sections.some((section) => section?.[packageName])) {
+    throw new Error(
+      `[Viro] metaSpatialLayout requires ${packageName} as a direct app dependency. ` +
+        "Install both @metavr/layout-compat and @metavr/layout-window-compat before expo prebuild."
+    );
+  }
+}
+
+const withViroAppBuildGradle = (
+  config: ExpoConfig,
+  props?: ViroConfigurationOptions
+) =>
   withAppBuildGradle(config, async (config) => {
+    let metaSpatialDependencies = "";
+    if (props?.android?.metaSpatialLayout) {
+      const configuredModes = props.android.xRMode ?? [];
+      const modes = Array.isArray(configuredModes)
+        ? configuredModes
+        : [configuredModes as XrMode];
+      if (!modes.includes("QUEST")) {
+        throw new Error(
+          '[Viro] android.metaSpatialLayout requires android.xRMode to include "QUEST".'
+        );
+      }
+      assertDirectAppDependency(config.modRequest.projectRoot, "@metavr/layout-compat");
+      assertDirectAppDependency(config.modRequest.projectRoot, "@metavr/layout-window-compat");
+      const bomVersion =
+        props.android.metaSpatialLayoutBomVersion ?? "1.2026.0.0";
+      metaSpatialDependencies = `
+    // Meta VR Layout SDK (React Native spatial windows)
+    implementation platform('com.meta.metavrx:metavrx-bom:${bomVersion}')
+    implementation 'com.meta.metavrx.layout:layout-react-compat'
+    implementation 'com.meta.metavrx.layout:layout-window-react-compat'`;
+    }
+
     // ViroReact New Architecture (Fabric) Dependencies
     const viroNewArchDependencies = `
     // ========================================================================
@@ -196,7 +244,7 @@ const withViroAppBuildGradle = (config: ExpoConfig) =>
     implementation 'androidx.media3:media3-exoplayer-smoothstreaming:1.1.1'
     implementation 'com.google.protobuf.nano:protobuf-javanano:3.1.0'
     // Required for ARCore Geospatial API
-    implementation 'com.google.android.gms:play-services-location:21.0.1'
+    implementation 'com.google.android.gms:play-services-location:21.0.1'${metaSpatialDependencies}
     // ========================================================================`;
 
     // Add Viro dependencies for legacy architecture (fallback)
@@ -913,7 +961,7 @@ export const withViroAndroid: ConfigPlugin<ViroConfigurationOptions> = (
   config = withViroProjectBuildGradle(config) as typeof config;
   config = withViroManifest(config) as typeof config;
   config = withViroSettingsGradle(config) as typeof config;
-  config = withViroAppBuildGradle(config) as typeof config;
+  config = withViroAppBuildGradle(config, props) as typeof config;
   config = withViroQuestActivity(config, props) as typeof config;
   return config;
 };

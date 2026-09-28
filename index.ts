@@ -231,7 +231,27 @@ import { ViroVideo } from "./components/ViroVideo";
 import { ViroVRSceneNavigator } from "./components/ViroVRSceneNavigator";
 import { ViroXRSceneNavigator } from "./components/ViroXRSceneNavigator";
 import { Viro3DSceneNavigator } from "./components/Viro3DSceneNavigator";
-import { hasOpenXRSupport, isQuest } from "./components/Utilities/ViroPlatform";
+import {
+  hasOpenXRSupport,
+  isQuest,
+  isPico,
+  isWeb,
+  isXRHeadset,
+  isPico,
+  isWeb,
+  isXRHeadset,
+} from "./components/Utilities/ViroPlatform";
+import {
+  ViroSpatialSceneProvider,
+  ViroSpatialWindow,
+  getViroSpatialLayoutSupport,
+} from "./components/Spatial/ViroSpatialLayout";
+export type {
+  ViroSpatialFallback,
+  ViroSpatialSceneProviderProps,
+  ViroSpatialWindowProps,
+  ViroSpatialLayoutSupport,
+} from "./components/Spatial/ViroSpatialLayout";
 import { useAnySourceHover } from "./components/Utilities/useAnySourceHover";
 import { useAnySourcePressed } from "./components/Utilities/useAnySourcePressed";
 import { ViroTextStyle } from "./components/Styles/ViroTextStyle";
@@ -371,6 +391,9 @@ import { AppRegistry } from "react-native";
 AppRegistry.registerComponent("VRQuestScene", () => ViroQuestEntryPoint);
 
 export {
+  ViroSpatialSceneProvider,
+  ViroSpatialWindow,
+  getViroSpatialLayoutSupport,
   ViroARCloudAnchor,
   ViroSharedFrame,
   cloudAnchorFrameSource,
