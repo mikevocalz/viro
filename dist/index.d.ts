@@ -104,3 +104,15 @@ export type { VRModuleOpenXRType, ViroPassthroughStyle, ViroHapticHand, ViroTrac
 export type { ImmersiveSpaceStyle, ViroInputTuning, ViroSharedSpaceState } from "./components/VisionOS/ViroVisionOSModule";
 export type { StudioSceneResponse, StudioAsset, StudioAnimation, StudioCollisionBinding, StudioSceneFunction, StudioSceneMeta, StudioProjectMeta, StudioSceneNavigatorHandle, StudioSceneNavigatorProps, StudioApiError, StudioApiErrorFields, } from "./components/Studio";
 export { isStudioApiError } from "./components/Studio";
+
+export { ViroGpuPanel } from "./components/ViroGpuPanel";
+export type { ViroGpuPanelProps, ViroGpuPanelHandle } from "./components/ViroGpuPanel";
+export { ViroThreeJSPanel } from "./components/ViroThreeJSPanel";
+export type { ViroThreeJSPanelProps, ViroThreeJSPanelHandle } from "./components/ViroThreeJSPanel";
+export { ViroRivePanel } from "./components/ViroRivePanel";
+export type { ViroRivePanelProps, ViroRivePanelHandle } from "./components/ViroRivePanel";
+export { ViroCanvasPanel } from "./components/CanvasPanel/ViroCanvasPanel";
+export type { ViroCanvasPanelProps, ViroCanvasPanelHandle, ViroCanvasPanelSurfaceProps } from "./components/CanvasPanel/ViroCanvasPanel";
+export { ViroSpatialSceneProvider, ViroSpatialWindow, isMetaSpatialLayoutAvailable } from "./components/Meta/ViroSpatialLayout";
+export type { ViroSpatialSceneProviderProps, ViroSpatialWindowProps, ViroSpatialWindowFallback } from "./components/Meta/ViroSpatialLayout";
+export { isWeb, isPico, isXRHeadset } from "./components/Utilities/ViroPlatform";

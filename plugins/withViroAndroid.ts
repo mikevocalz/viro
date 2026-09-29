@@ -14,6 +14,8 @@ import fs from "fs";
 import path from "path";
 import { insertLinesHelper } from "./util/insertLinesHelper";
 import type { ViroConfigurationOptions, XrMode } from "./withViro";
+
+const DEFAULT_META_LAYOUT_BOM_VERSION = "1.2026.0.0";
 function getViroOptions(
   config: ExpoConfig,
   props?: ViroConfigurationOptions
@@ -43,6 +45,26 @@ export function resolveViroXrModes(
       )
     ),
   ];
+}
+
+export function resolveMetaLayoutGradleDependencies(
+  config: ExpoConfig,
+  props?: ViroConfigurationOptions
+): string {
+  const option = getViroOptions(config, props).android?.metaLayout;
+  if (!option) return "";
+
+  const bomVersion =
+    typeof option === "object" && option.bomVersion
+      ? option.bomVersion
+      : DEFAULT_META_LAYOUT_BOM_VERSION;
+
+  return [
+    "    // Meta VR Layout SDK — Standard Android spatial windows",
+    `    implementation platform(\'com.meta.metavrx:metavrx-bom:${bomVersion}\')`,
+    "    implementation \'com.meta.metavrx.layout:layout-react-compat\'",
+    "    implementation \'com.meta.metavrx.layout:layout-window-react-compat\'",
+  ].join("\n");
 }
 
 const withBranchAndroid: ConfigPlugin<ViroConfigurationOptions> = (
@@ -189,8 +211,16 @@ const withViroProjectBuildGradle = (config: ExpoConfig) =>
     return newConfig;
   });
 
-const withViroAppBuildGradle = (config: ExpoConfig) =>
+const withViroAppBuildGradle = (
+  config: ExpoConfig,
+  props?: ViroConfigurationOptions
+) =>
   withAppBuildGradle(config, async (config) => {
+    const metaLayoutDependencies = resolveMetaLayoutGradleDependencies(
+      config,
+      props
+    );
+
     // ViroReact New Architecture (Fabric) Dependencies
     const viroNewArchDependencies = `
     // ========================================================================
@@ -207,6 +237,7 @@ const withViroAppBuildGradle = (config: ExpoConfig) =>
     implementation 'com.google.protobuf.nano:protobuf-javanano:3.1.0'
     // Required for ARCore Geospatial API
     implementation 'com.google.android.gms:play-services-location:21.0.1'
+${metaLayoutDependencies}
     // ========================================================================`;
 
     // Add Viro dependencies for legacy architecture (fallback)
@@ -862,7 +893,7 @@ export const withViroAndroid: ConfigPlugin<ViroConfigurationOptions> = (
   config = withViroProjectBuildGradle(config) as typeof config;
   config = withViroManifest(config, props) as typeof config;
   config = withViroSettingsGradle(config) as typeof config;
-  config = withViroAppBuildGradle(config) as typeof config;
+  config = withViroAppBuildGradle(config, props) as typeof config;
   config = withViroOpenXRActivity(config, props) as typeof config;
   return config;
 };

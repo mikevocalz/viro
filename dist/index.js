@@ -238,3 +238,20 @@ var useOpenXRCapabilities_1 = require("./components/Utilities/useOpenXRCapabilit
 Object.defineProperty(exports, "useOpenXRCapabilities", { enumerable: true, get: function () { return useOpenXRCapabilities_1.useOpenXRCapabilities; } });
 var Studio_2 = require("./components/Studio");
 Object.defineProperty(exports, "isStudioApiError", { enumerable: true, get: function () { return Studio_2.isStudioApiError; } });
+
+const ViroGpuPanelSpatial_1 = require("./components/ViroGpuPanel");
+Object.defineProperty(exports, "ViroGpuPanel", { enumerable: true, get: function () { return ViroGpuPanelSpatial_1.ViroGpuPanel; } });
+const ViroThreeJSPanelSpatial_1 = require("./components/ViroThreeJSPanel");
+Object.defineProperty(exports, "ViroThreeJSPanel", { enumerable: true, get: function () { return ViroThreeJSPanelSpatial_1.ViroThreeJSPanel; } });
+const ViroRivePanelSpatial_1 = require("./components/ViroRivePanel");
+Object.defineProperty(exports, "ViroRivePanel", { enumerable: true, get: function () { return ViroRivePanelSpatial_1.ViroRivePanel; } });
+const ViroCanvasPanelSpatial_1 = require("./components/CanvasPanel/ViroCanvasPanel");
+Object.defineProperty(exports, "ViroCanvasPanel", { enumerable: true, get: function () { return ViroCanvasPanelSpatial_1.ViroCanvasPanel; } });
+const ViroSpatialLayout_1 = require("./components/Meta/ViroSpatialLayout");
+Object.defineProperty(exports, "ViroSpatialSceneProvider", { enumerable: true, get: function () { return ViroSpatialLayout_1.ViroSpatialSceneProvider; } });
+Object.defineProperty(exports, "ViroSpatialWindow", { enumerable: true, get: function () { return ViroSpatialLayout_1.ViroSpatialWindow; } });
+Object.defineProperty(exports, "isMetaSpatialLayoutAvailable", { enumerable: true, get: function () { return ViroSpatialLayout_1.isMetaSpatialLayoutAvailable; } });
+const ViroPlatformSpatial_1 = require("./components/Utilities/ViroPlatform");
+Object.defineProperty(exports, "isWeb", { enumerable: true, get: function () { return ViroPlatformSpatial_1.isWeb; } });
+Object.defineProperty(exports, "isPico", { enumerable: true, get: function () { return ViroPlatformSpatial_1.isPico; } });
+Object.defineProperty(exports, "isXRHeadset", { enumerable: true, get: function () { return ViroPlatformSpatial_1.isXRHeadset; } });

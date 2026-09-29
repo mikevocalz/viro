@@ -2,6 +2,7 @@ import { ConfigPlugin } from "@expo/config-plugins";
 import type { ExpoConfig } from "@expo/config-types";
 import type { ViroConfigurationOptions, XrMode } from "./withViro";
 export declare function resolveViroXrModes(config: ExpoConfig, props?: ViroConfigurationOptions): XrMode[];
+export declare function resolveMetaLayoutGradleDependencies(config: ExpoConfig, props?: ViroConfigurationOptions): string;
 /**
  * Shared OpenXR activity for Quest and PICO. The component name stays
  * VRQuestScene for compatibility. Expo-PICO supplies the PICO flavor's

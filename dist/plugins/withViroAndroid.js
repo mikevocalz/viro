@@ -5,10 +5,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.withViroAndroid = exports.withViroOpenXRActivity = void 0;
 exports.resolveViroXrModes = resolveViroXrModes;
+exports.resolveMetaLayoutGradleDependencies = resolveMetaLayoutGradleDependencies;
 const config_plugins_1 = require("@expo/config-plugins");
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const insertLinesHelper_1 = require("./util/insertLinesHelper");
+const DEFAULT_META_LAYOUT_BOM_VERSION = "1.2026.0.0";
 function getViroOptions(config, props) {
     if (props)
         return props;
@@ -22,6 +24,20 @@ function resolveViroXrModes(config, props) {
     return [
         ...new Set(modes.filter((mode) => ["AR", "GVR", "OVR_MOBILE", "QUEST", "PICO"].includes(mode))),
     ];
+}
+function resolveMetaLayoutGradleDependencies(config, props) {
+    const option = getViroOptions(config, props).android?.metaLayout;
+    if (!option)
+        return "";
+    const bomVersion = typeof option === "object" && option.bomVersion
+        ? option.bomVersion
+        : DEFAULT_META_LAYOUT_BOM_VERSION;
+    return [
+        "    // Meta VR Layout SDK — Standard Android spatial windows",
+        `    implementation platform(\'com.meta.metavrx:metavrx-bom:${bomVersion}\')`,
+        "    implementation \'com.meta.metavrx.layout:layout-react-compat\'",
+        "    implementation \'com.meta.metavrx.layout:layout-window-react-compat\'",
+    ].join("\n");
 }
 const withBranchAndroid = (config, props) => {
     // Directly edit MainApplication.java
@@ -113,7 +129,8 @@ const withViroProjectBuildGradle = (config) => (0, config_plugins_1.withProjectB
     // Forcing AGP 4.1.1 breaks modern native and flavor packaging APIs.
     return newConfig;
 });
-const withViroAppBuildGradle = (config) => (0, config_plugins_1.withAppBuildGradle)(config, async (config) => {
+const withViroAppBuildGradle = (config, props) => (0, config_plugins_1.withAppBuildGradle)(config, async (config) => {
+    const metaLayoutDependencies = resolveMetaLayoutGradleDependencies(config, props);
     // ViroReact New Architecture (Fabric) Dependencies
     const viroNewArchDependencies = `
     // ========================================================================
@@ -130,6 +147,7 @@ const withViroAppBuildGradle = (config) => (0, config_plugins_1.withAppBuildGrad
     implementation 'com.google.protobuf.nano:protobuf-javanano:3.1.0'
     // Required for ARCore Geospatial API
     implementation 'com.google.android.gms:play-services-location:21.0.1'
+${metaLayoutDependencies}
     // ========================================================================`;
     // Add Viro dependencies for legacy architecture (fallback)
     config.modResults.contents = config.modResults.contents.replace(/implementation "com.facebook.react:react-native:\+"  \/\/ From node_modules/, `implementation "com.facebook.react:react-native:+"  // From node_modules${viroNewArchDependencies}`);
@@ -673,7 +691,7 @@ const withViroAndroid = (config, props) => {
     config = withViroProjectBuildGradle(config);
     config = withViroManifest(config, props);
     config = withViroSettingsGradle(config);
-    config = withViroAppBuildGradle(config);
+    config = withViroAppBuildGradle(config, props);
     config = (0, exports.withViroOpenXRActivity)(config, props);
     return config;
 };

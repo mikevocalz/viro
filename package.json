@@ -19,7 +19,7 @@
     "tsc": "tsc",
     "harness": "vite",
     "prebuild": "node -p \"'export const VIRO_VERSION = ' + JSON.stringify(require('./package.json').version) + ';'\" > components/Utilities/ViroVersion.ts",
-    "build": "tsc && npm run copy-files",
+    "build": "node scripts/typecheck-gate.js && npm run copy-files",
     "bundle": "./prepare_release.sh",
     "copy-files": "cp -r ./components/Resources/ ./dist/components/Resources/",
     "clean": "rm -rf ./dist/ *.tgz node_modules/",
@@ -31,11 +31,13 @@
   },
   "peerDependencies": {
     "@reactvision/react-native-visionos": ">=0.86.0 <0.87.0",
-    "@reactvision/viro-web-renderer": ">=0.0.1",
+    "@reactvision/viro-web-renderer": "^1.0.0",
     "expo": ">=57.0.0 <58.0.0",
     "react": ">=19.0.0",
     "react-native": ">=0.86.0 <0.87.0",
-    "react-native-web": ">=0.19.0"
+    "react-native-web": ">=0.19.0",
+    "@metavr/layout-compat": "*",
+    "@metavr/layout-window-compat": "*"
   },
   "engines": {
     "react-native": ">=0.86.0 <0.87.0"
@@ -51,6 +53,12 @@
       "optional": true
     },
     "react-native-web": {
+      "optional": true
+    },
+    "@metavr/layout-compat": {
+      "optional": true
+    },
+    "@metavr/layout-window-compat": {
       "optional": true
     }
   },
@@ -111,7 +119,8 @@
     "release-it": "^17.1.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.0",
-    "vite": "^8.1.4"
+    "vite": "^8.1.4",
+    "@babel/plugin-transform-react-jsx": "^7.29.7"
   },
   "bugs": {
     "url": "https://github.com/ReactVision/viro/issues"

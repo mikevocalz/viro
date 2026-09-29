@@ -1,5 +1,9 @@
 import { ConfigPlugin } from "@expo/config-plugins";
 export type XrMode = "GVR" | "AR" | "OVR_MOBILE" | "QUEST" | "PICO";
+export interface MetaLayoutOptions {
+    /** MetaVRX BOM version used by the Android Layout SDK. */
+    bomVersion?: string;
+}
 /**
  * Anchor provider type.
  * - "none": Disabled
@@ -139,6 +143,8 @@ export interface ViroConfigurationOptions {
     };
     android?: {
         xRMode?: XrMode[];
+        /** Enable Meta VR Layout SDK native dependencies for spatial windows. */
+        metaLayout?: boolean | MetaLayoutOptions;
         /**
          * Meta Developer Portal App ID (numeric string).
          * Written to AndroidManifest as com.oculus.app_id meta-data.
