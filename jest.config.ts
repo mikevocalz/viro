@@ -188,11 +188,13 @@ const config: Config = {
   // A map from regular expressions to paths to transformers
   // transform: undefined,
 
-  // An array of regexp pattern strings that are matched against all source file paths, matched files will skip transformation
-  // transformIgnorePatterns: [
-  //   "/node_modules/",
-  //   "\\.pnp\\.[^\\/]+$"
-  // ],
+  // The public web renderer ships as ESM. Jest 29 executes this suite in
+  // CommonJS mode, so let babel-jest transpile that one dependency instead of
+  // trying to execute its `export` syntax directly from node_modules.
+  transformIgnorePatterns: [
+    "/node_modules/(?!@reactvision/viro-web-renderer/)",
+    "\\.pnp\\.[^\\/]+$",
+  ],
 
   // An array of regexp pattern strings that are matched against all modules before the module loader will automatically return a mock for them
   // unmockedModulePathPatterns: undefined,
