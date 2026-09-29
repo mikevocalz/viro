@@ -41,6 +41,7 @@ const ViroARScene_1 = require("../AR/ViroARScene");
 const ViroScene_1 = require("../ViroScene");
 const ViroXRSceneNavigator_1 = require("../ViroXRSceneNavigator");
 const ViroPlatform_1 = require("../Utilities/ViroPlatform");
+const VRQuestNavigatorBridge_1 = require("../Utilities/VRQuestNavigatorBridge");
 const StudioRecordingIndicator_1 = require("./StudioRecordingIndicator");
 const StudioPlacementIndicator_1 = require("./StudioPlacementIndicator");
 const placementBannerStore_1 = require("./domain/placementBannerStore");
@@ -218,6 +219,12 @@ exports.StudioSceneNavigator = (0, react_1.forwardRef)(function StudioSceneNavig
     onPlaneDetectedRef.current = onPlaneDetected;
     onPlaneSelectedRef.current = onPlaneSelected;
     noAssetsMessageRef.current = noAssetsMessage;
+    // VRActivity is a separate React root — its own error boundary
+    // (ViroQuestEntryPoint) can't reach this component's onError prop directly,
+    // so it relays crashes through VRQuestNavigatorBridge instead. Forwarding
+    // here means a host's existing onError → Sentry wiring for phone-AR errors
+    // picks up Quest scene crashes too, with no changes needed on the host side.
+    React.useEffect(() => VRQuestNavigatorBridge_1.VRQuestNavigatorBridge.onQuestError((error) => onErrorRef.current?.(error)), []);
     // Stable so passProps stays referentially steady across renders. Idempotent,
     // so StrictMode's dev double-invoke of StudioARScene's onReady effect is safe.
     const handleSceneReady = (0, react_1.useCallback)(() => {
@@ -300,7 +307,7 @@ exports.StudioSceneNavigator = (0, react_1.forwardRef)(function StudioSceneNavig
         // mounts; otherwise registerAnimations/createMaterials races the Fabric
         // commit that creates those components. visionOS is the same shape of
         // problem: the ImmersiveSpace renderer starts outside this commit.
-        if (ViroPlatform_1.isQuest || ViroPlatform_1.isVisionOS) {
+        if (ViroPlatform_1.isXRHeadset || ViroPlatform_1.isVisionOS) {
             (0, animationRegistry_1.registerSceneAnimations)(sceneData.animations);
             (0, studioMaterials_1.registerStudioMaterialsForAssets)(sceneData.assets);
         }
@@ -318,7 +325,7 @@ exports.StudioSceneNavigator = (0, react_1.forwardRef)(function StudioSceneNavig
                 placementApiRef,
             },
         };
-        if (ViroPlatform_1.isQuest || ViroPlatform_1.isVisionOS) {
+        if (ViroPlatform_1.isXRHeadset || ViroPlatform_1.isVisionOS) {
             // Setting vrSceneEntry mounts ViroXRSceneNavigator with StudioARScene as
             // vrInitialScene, so VRActivity launches straight into content. visionOS reads the
             // same prop — its ImmersiveSpace cannot host a ViroARScene either — so it takes this
@@ -353,15 +360,19 @@ exports.StudioSceneNavigator = (0, react_1.forwardRef)(function StudioSceneNavig
     // that never opted in keep exactly their previous behaviour.
     const loadErrorView = loadError ? renderError?.(loadError, retryLoad) : null;
     const overlay = isSceneReady ? null : (loadErrorView ?? loadingView ?? null);
-    // Quest has no camera passthrough, so during load it always needs something
-    // on screen: the caller's loadingView, else a built-in spinner. (AR shows the
-    // live camera, so its overlay stays opt-in.) This branch sits above the error
-    // boundary, which is why it has to handle loadError itself.
+    // Before vrSceneEntry resolves, VRActivity hasn't been launched yet (Quest)
+    // or the ImmersiveSpace hasn't opened yet (visionOS), so this window has
+    // nothing of its own to show — it always needs something on screen: the
+    // caller's loadingView, else a built-in spinner. (Phone AR shows the live
+    // camera during load, so its overlay stays opt-in.) This branch sits above
+    // the error boundary, which is why it has to handle loadError itself.
+    // (Quest 3/3S do have colour passthrough once the scene mounts — this branch
+    // is about the pre-launch panel window, not about passthrough support.)
     //
     // visionOS needs the same treatment for a different reason: its passthrough lives in
     // the ImmersiveSpace, not in this window, so the window would otherwise sit blank
     // while the scene loads.
-    if ((ViroPlatform_1.isQuest || ViroPlatform_1.isVisionOS) && !vrSceneEntry) {
+    if ((ViroPlatform_1.isXRHeadset || ViroPlatform_1.isVisionOS) && !vrSceneEntry) {
         return (<react_native_1.View style={styles.loader}>
         {overlay ?? <react_native_1.ActivityIndicator size="large" color="#ffffff"/>}
       </react_native_1.View>);
@@ -383,11 +394,20 @@ exports.StudioSceneNavigator = (0, react_1.forwardRef)(function StudioSceneNavig
     // Blinn. The tone curve is switched off per scene instead, which is what
     // `toneMappingEnabled` on StudioARScene does — on its Quest/visionOS
     // ViroScene branch as well as the mobile ViroARScene one, and on the two
-    // loading scenes above — so the headset path gets the untouched curve
-    // without losing PBR either. Passed explicitly rather than left to the
-    // native default, so this cannot be switched off again without meeting
-    // the reason it is on.
-    hdrEnabled bloomEnabled={false} onExitViro={onExitViro} style={react_native_1.StyleSheet.absoluteFill}/>
+    // loading scenes above — so the path gets the untouched curve without
+    // losing PBR either.
+    //
+    // Off on Quest, and only there: the HDR composite occludes the
+    // passthrough layer on that compositor, which costs the whole mixed
+    // reality scene rather than just a tone curve. Upstream documents it as
+    // a requirement, not a preference — docs/QUEST_SETUP.md:381 and the
+    // Quest row of the platform matrix both say to set it false for MR
+    // scenes, and all eight Quest/AR showcase examples do. PICO is not
+    // covered by that guidance and is deliberately left on until case K07
+    // in docs/pico/g5-runbook.md establishes which way its compositor
+    // behaves; widening this to `!isXRHeadset` without that observation
+    // would be a guess.
+    hdrEnabled={!ViroPlatform_1.isQuest} bloomEnabled={false} onExitViro={onExitViro} passthroughEnabled={ViroPlatform_1.isXRHeadset ? true : undefined} handTrackingEnabled={ViroPlatform_1.isXRHeadset ? true : undefined} style={react_native_1.StyleSheet.absoluteFill}/>
         {/* Absolutely filled so the overlay covers the navigator instead of
             taking flow space beneath it. Swapping the overlay's content, rather
             than replacing this subtree, keeps the AR session and its camera
@@ -396,7 +416,7 @@ exports.StudioSceneNavigator = (0, react_1.forwardRef)(function StudioSceneNavig
         {recordingIndicator && (<react_native_1.View pointerEvents="box-none" style={[styles.recordingOverlay, { top: DEFAULT_RECORDING_TOP }]}>
             <StudioRecordingIndicator_1.StudioRecordingIndicator />
           </react_native_1.View>)}
-        {!ViroPlatform_1.isQuest && placementStoreRef.current && (<StudioPlacementOverlay store={placementStoreRef.current} apiRef={placementApiRef} getName={getPlacementName}/>)}
+        {!ViroPlatform_1.isXRHeadset && placementStoreRef.current && (<StudioPlacementOverlay store={placementStoreRef.current} apiRef={placementApiRef} getName={getPlacementName}/>)}
         {placementIndicator && (<react_native_1.View pointerEvents="none" style={[styles.placementBanner, { top: PLACEMENT_BANNER_TOP }]}>
             <StudioPlacementIndicator_1.StudioPlacementIndicator />
           </react_native_1.View>)}

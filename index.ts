@@ -125,25 +125,27 @@ import { ViroPolyline } from "./components/ViroPolyline";
 import { ViroPortal } from "./components/ViroPortal";
 import { ViroPortalScene } from "./components/ViroPortalScene";
 import { ViroQuad } from "./components/ViroQuad";
-import {
-  ViroGpuPanel,
-  ViroGpuPanelHandle,
-  ViroGpuPanelProps,
-} from "./components/ViroGpuPanel";
-import {
-  ViroThreeJSPanel,
-  ViroThreeJSPanelHandle,
-  ViroThreeJSPanelProps,
-} from "./components/ViroThreeJSPanel";
-import {
-  ViroRivePanel,
-  ViroRivePanelHandle,
-  ViroRivePanelProps,
-} from "./components/ViroRivePanel";
-import {
-  useEnsureWgpuAdapter,
-  UseEnsureWgpuAdapterOptions,
-} from "./components/CanvasPanel/useEnsureWgpuAdapter";
+// STRUCK FROM THE ENTRY 2026-09-18 — ViroGpuPanel, ViroThreeJSPanel,
+// ViroRivePanel, ViroCanvasPanel and useEnsureWgpuAdapter.
+//
+// They are not deleted. Import them by path:
+//   import { ViroGpuPanel } from "@reactvision/react-viro/dist/components/ViroGpuPanel";
+// and install nitro-canvas-in-Vision plus its peers (expo-gl, three,
+// react-native-wgpu) in the consuming app.
+//
+// Why they cannot be re-exported here: they require nitro-canvas-in-Vision at
+// runtime, and importing anything at all from this package pulls the entry, so
+// every consumer inherits that requirement. The module is not on npm, is
+// declared in no dependency section, and cannot be published under its current
+// name — npm rejects uppercase letters and it is spelled with a capital V. The
+// result is that `import { ViroText } from "@reactvision/react-viro"` fails
+// Metro resolution in an app that has never heard of a canvas panel.
+//
+// Nothing was lost by striking them: no source file in any consuming project
+// imports these four symbols today.
+//
+// Returns to the entry when the module is renamed lowercase, published, and
+// declared here as an optional peer.
 import { ViroScene } from "./components/ViroScene";
 import { ViroSkyBox } from "./components/ViroSkyBox";
 import { ViroSound } from "./components/ViroSound";
@@ -341,17 +343,6 @@ export {
   ViroPortal,
   ViroPortalScene,
   ViroQuad,
-  ViroGpuPanel,
-  ViroGpuPanelHandle,
-  ViroGpuPanelProps,
-  ViroThreeJSPanel,
-  ViroThreeJSPanelHandle,
-  ViroThreeJSPanelProps,
-  ViroRivePanel,
-  ViroRivePanelHandle,
-  ViroRivePanelProps,
-  useEnsureWgpuAdapter,
-  UseEnsureWgpuAdapterOptions,
   ViroScene,
   ViroSurface,
   ViroSceneNavigator,
@@ -517,6 +508,9 @@ export {
   exitImmersiveSpace,
   setInputTuning,
 };
+
+export { useOpenXRCapabilities } from "./components/Utilities/useOpenXRCapabilities";
+export type { ViroOpenXRCapabilities } from "./components/Utilities/useOpenXRCapabilities";
 
 export type { VRModuleOpenXRType, ViroPassthroughStyle, ViroHapticHand, ViroTrackingOrigin };
 export type { ImmersiveSpaceStyle, ViroInputTuning, ViroSharedSpaceState } from "./components/VisionOS/ViroVisionOSModule";

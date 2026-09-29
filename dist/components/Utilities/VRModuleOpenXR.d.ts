@@ -6,6 +6,7 @@ export declare function exitVRScene(): void;
 /** Vertical tracking origin: "eye" = head-height (default), "floor" = physical floor. */
 export type ViroTrackingOrigin = "eye" | "floor";
 export type VRModuleOpenXRType = {
+    getCapabilities?: (viewTag: number) => Promise<import("./useOpenXRCapabilities").ViroOpenXRCapabilities>;
     recenterTracking?: (viewTag: number) => void;
     setPassthroughEnabled?: (viewTag: number, enabled: boolean) => void;
     setTrackingOrigin?: (viewTag: number, origin: ViroTrackingOrigin) => void;

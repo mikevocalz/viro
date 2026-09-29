@@ -45,7 +45,7 @@ function detectPico() {
     const { manufacturer, brand, model } = readBuildInfo();
     if (manufacturer === "pico" || brand === "pico")
         return true;
-    if (model === "a9210" || model === "a92y0" || model === "sparrow")
+    if (model === "a9210" || model === "a92y0" || model === "b3110" || model === "sparrow")
         return true;
     return /\bpico\b/.test(model);
 }
@@ -54,9 +54,8 @@ exports.isQuest = detectQuest();
 /**
  * True iff the device is a PICO standalone headset (Neo / 4 / 4 Ultra).
  * Re-exported here because viro's `ViroXRSceneNavigator` consumes the
- * flag to take a PICO-specific routing branch (render
- * `ViroVRSceneNavigator` inline since on PICO the MainActivity is
- * itself the immersive Activity — no separate VRActivity needed).
+ * flag to route through the shared VRActivity bridge. MainActivity
+ * remains the 2D panel surface on both PICO and Quest.
  * `@expo-pico/core` still owns app-level PICO config (manifest,
  * launcher intent-filters, etc.).
  */

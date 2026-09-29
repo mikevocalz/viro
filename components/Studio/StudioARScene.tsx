@@ -14,9 +14,14 @@ import { ViroARPlane } from "../AR/ViroARPlane";
 import { ViroARPlaneSelector } from "../AR/ViroARPlaneSelector";
 import { ViroARScene } from "../AR/ViroARScene";
 import { ViroScene } from "../ViroScene";
+import { useOpenXRCapabilities } from "../Utilities/useOpenXRCapabilities";
+import { questAlertStore } from "./domain/questAlertStore";
+import type { CameraPose } from "./domain/questHeadLockedTransform";
+import { StudioQuestAlertOverlay } from "./StudioQuestAlertOverlay";
+import { StudioQuestSceneHudOverlay } from "./StudioQuestSceneHudOverlay";
 import { ViroText } from "../ViroText";
 import { ViroController } from "../ViroController";
-import { isQuest } from "../Utilities/ViroPlatform";
+import { isXRHeadset, isVisionOS } from "../Utilities/ViroPlatform";
 import { ViroTrackingStateConstants } from "../ViroConstants";
 import type {
   ViroAmbientLightInfo,
@@ -83,6 +88,10 @@ import {
 // The native camera-transform event can fire per frame; throttle the proximity
 // distance sweep to this cadence.
 const PROXIMITY_EVAL_INTERVAL_MS = 100;
+
+// Throttle the headset HUD pose updates. This follows the user's head in
+// world space; comfort and motion lag require validation on each headset.
+const HEAD_LOCKED_EVAL_INTERVAL_MS = 150;
 
 // Headset placement has no surface hit-test, so a triggered tap-to-place asset
 // lands this far along the aim ray when no controller hit point is available.
@@ -185,7 +194,7 @@ interface StudioARSceneProps {
  */
 export const StudioARScene: React.FC<StudioARSceneProps> = (props) => {
   if (!props.sceneData) {
-    return isQuest ? (
+    return isVisionOS ? (
       <ViroScene toneMappingEnabled={false} />
     ) : (
       <ViroARScene toneMappingEnabled={false} />
@@ -257,6 +266,9 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
       // Clear a dangling video-recording flag so leaving the experience mid-
       // recording can't block the next session's RECORD_VIDEO toggle.
       resetVideoRecordingState();
+      // Dismiss any Quest in-scene alert so a torn-down scene can't leave one
+      // stuck on screen for the next scene.
+      questAlertStore.reset();
     };
   }, []);
 
@@ -708,7 +720,7 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
 
   const getGazeHandler = useCallback(
     (assetId: string) => {
-      if (!isQuest) return undefined;
+      if (!isXRHeadset) return undefined;
       const bindings = gazeBindingsByAsset.get(assetId);
       if (!bindings?.length) return undefined;
       return createGazeHandler(
@@ -813,6 +825,13 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
     up: [number, number, number];
   } | null>(null);
 
+  // Throttled *state* mirror of cameraPoseRef, on OpenXR headsets: head-locked UI
+  // (StudioQuestAlertOverlay) needs to re-render as the head moves, which a
+  // ref alone can't trigger.
+  const [questHeadLockedPose, setQuestHeadLockedPose] =
+    useState<CameraPose | null>(null);
+  const lastHeadLockedEvalRef = useRef(0);
+
   // Which tap-to-place asset the guided queue is waiting on (drives the prompt).
   const [activePlacementId, setActivePlacementId] = useState<string | null>(
     () => placementStoreRef.current?.activeAssetId() ?? null
@@ -840,6 +859,17 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
         forward: t.forward,
         up: t.up,
       };
+      if (isXRHeadset) {
+        const nowHL = Date.now();
+        if (nowHL - lastHeadLockedEvalRef.current >= HEAD_LOCKED_EVAL_INTERVAL_MS) {
+          lastHeadLockedEvalRef.current = nowHL;
+          setQuestHeadLockedPose({
+            position: t.position,
+            forward: t.forward,
+            up: t.up,
+          });
+        }
+      }
       if (!proximityBindings.length) return;
       const now = Date.now();
       if (now - lastProximityEvalRef.current < PROXIMITY_EVAL_INTERVAL_MS)
@@ -939,7 +969,7 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
   const prevTargetNamesRef = useRef<string[]>([]);
 
   useEffect(() => {
-    if (isQuest) {
+    if (isXRHeadset) {
       if (imageTriggeredAssets.length > 0) {
         console.warn(
           "[Studio] Image-triggered assets are not supported on Quest — skipping."
@@ -980,7 +1010,7 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
   // plane-anchored modes (AUTOMATIC/MANUAL) are drift-immune, so they start ready.
   const [trackingReady, setTrackingReady] = useState(
     () =>
-      isQuest ||
+      isXRHeadset || isVisionOS ||
       ((scene.plane_detection as string) ?? "NONE").toUpperCase() !== "NONE"
   );
 
@@ -1142,7 +1172,7 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
   // attaches a detected anchor to a single marker node, so a second marker on
   // the same target stays detached and its assets never appear.
   const renderedImageTriggeredAssets = useMemo(() => {
-    if (isQuest) return [];
+    if (isXRHeadset || isVisionOS) return [];
     const nodesByTarget = new Map<string, React.ReactElement[]>();
     for (const asset of imageTriggeredAssets) {
       const targetName = targetNameByAssetId.get(asset.id);
@@ -1205,6 +1235,9 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
   ]);
 
   // ─── Plane detection (AR only) ────────────────────────────────────────────
+  const xrCapabilities = useOpenXRCapabilities();
+  const planeDetectionAvailable = !isVisionOS &&
+    (!isXRHeadset || xrCapabilities?.planeDetection === true);
   const planeDetectionMode = (
     (scene.plane_detection as string) ?? "NONE"
   ).toUpperCase();
@@ -1217,6 +1250,7 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
   // plane results while detection is off — keep the native default on when the
   // scene has any tap-to-place asset.
   const anchorDetectionTypes = useMemo((): string[] => {
+    if (!planeDetectionAvailable) return [];
     if (planeDetectionMode !== "AUTOMATIC" && planeDetectionMode !== "MANUAL") {
       return tapToPlaceAssets.length
         ? ["planesHorizontal", "planesVertical"]
@@ -1226,7 +1260,7 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
     if (dir === "vertical") return ["planesVertical"];
     if (dir.includes("horizontal")) return ["planesHorizontal"];
     return ["planesHorizontal", "planesVertical"];
-  }, [planeDetectionMode, scene.plane_direction, tapToPlaceAssets]);
+  }, [planeDetectionAvailable, planeDetectionMode, scene.plane_direction, tapToPlaceAssets]);
 
   // ViroARPlaneSelector (react-viro 2.54+) no longer receives scene anchors
   // automatically; ViroARScene forwards them here via ref. Also surfaces
@@ -1234,6 +1268,11 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
   const planeSelectorRef = useRef<InstanceType<
     typeof ViroARPlaneSelector
   > | null>(null);
+
+  // Quest HUD status ("Scanning for planes…" vs "Plane found") — a coarse
+  // found/not-found flag, not a count; the HUD only needs to tell the user
+  // scanning is working, not exactly how many planes exist.
+  const [hasFoundPlane, setHasFoundPlane] = useState(false);
 
   const handleAnchorFound = useCallback(
     (anchor: ViroAnchor) => {
@@ -1243,6 +1282,9 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
         }
         if (planeDetectionMode === "AUTOMATIC" && anchor?.type === "plane") {
           onPlaneDetected?.();
+        }
+        if (anchor?.type === "plane") {
+          setHasFoundPlane(true);
         }
         // Anchoring places content in world space — refresh cached target
         // positions so proximity metres stay correct once the anchor lands.
@@ -1300,14 +1342,9 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
   }, [onPlaneDetected]);
 
   const renderAssets = () => {
-    if (isQuest) {
-      if (planeDetectionMode !== "NONE") {
-        console.warn(
-          `[Studio] Plane detection (${planeDetectionMode}) is not supported on Quest — rendering assets without plane anchor.`
-        );
-      }
-      return <>{renderedPlaneAssets}</>;
-    }
+    // A missing/denied plane source must not hide every asset behind an
+    // anchor wrapper. Controller placement remains available on PICO/Quest.
+    if (!planeDetectionAvailable) return <>{renderedPlaneAssets}</>;
 
     if (planeDetectionMode === "AUTOMATIC") {
       return (
@@ -1354,7 +1391,7 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
   // ─── Render ───────────────────────────────────────────────────────────────
   const children = (
     <>
-      {isQuest && (
+      {isXRHeadset && (
         <ViroController
           controllerVisibility
           reticleVisibility
@@ -1370,7 +1407,7 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
       {trackingReady && renderAssets()}
       {renderedTapToPlaceAssets}
       {renderedImageTriggeredAssets}
-      {isQuest && activePlacementId && (
+      {isXRHeadset && activePlacementId && (
         <ViroText
           text={`Point and pull the trigger to place: ${
             activePlacementName ?? "object"
@@ -1384,6 +1421,16 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
             color: "#FFFFFF",
             textAlign: "center",
           }}
+        />
+      )}
+      {isXRHeadset && <StudioQuestAlertOverlay cameraPose={questHeadLockedPose} />}
+      {isXRHeadset && (
+        <StudioQuestSceneHudOverlay
+          cameraPose={questHeadLockedPose}
+          sceneName={scene.name}
+          planeDetectionMode={planeDetectionMode}
+          hasFoundPlane={hasFoundPlane}
+          planeDetectionAvailable={planeDetectionAvailable}
         />
       )}
       <StudioSounds manager={soundManagerRef.current!} />
@@ -1406,11 +1453,11 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
   // the cached camera pose for headset placement — native gates the per-frame
   // transform stream on this prop being present.
   const cameraTransformProp =
-    proximityBindings.length || tapToPlaceAssets.length
+    isXRHeadset || proximityBindings.length || tapToPlaceAssets.length
       ? { onCameraTransformUpdate: handleCameraTransformUpdate }
       : {};
 
-  if (isQuest) {
+  if (isVisionOS) {
     return (
       <ViroScene
         {...physicsProps}

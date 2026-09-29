@@ -1,5 +1,5 @@
 import * as React from "react";
-import { AppState, NativeModules, StyleSheet, View, ViewProps } from "react-native";
+import { AppState, NativeModules, PermissionsAndroid, StyleSheet, View, ViewProps } from "react-native";
 import { ViroARSceneNavigator } from "./AR/ViroARSceneNavigator";
 import { ViroSceneNavigator } from "./ViroSceneNavigator";
 import { isPico, isQuest, isVisionOS } from "./Utilities/ViroPlatform";
@@ -9,6 +9,8 @@ import {
   ImmersiveSpaceStyle,
 } from "./VisionOS/ViroVisionOSModule";
 import { VRQuestNavigatorBridge } from "./Utilities/VRQuestNavigatorBridge";
+import { exitVRScene } from "./Utilities/VRModuleOpenXR";
+import { createXRNavigatorProxy } from "./Utilities/XRNavigatorProxy";
 
 const VRLauncher = NativeModules.VRLauncher as
   | { launchVRScene?: () => void }
@@ -23,6 +25,19 @@ const VRLauncher = NativeModules.VRLauncher as
 // AR continues to work on RN >= 0.81 (Expo 54+) — only the Quest VR launch
 // is gated.
 const MIN_RN_FOR_VR = { major: 0, minor: 83 };
+
+// Declared in the manifest by withViroAndroid.ts, but Horizon OS treats these
+// as dangerous runtime permissions — the manifest entry alone doesn't grant
+// them. USE_ANCHOR_API/USE_SCENE gate plane & anchor data (needed now that the
+// ViroARScene root mounts on Quest too); HEADSET_CAMERA gates the passthrough
+// Camera2 feed ViroObjectDetector reads. Requested once before the first VR
+// launch; denial degrades gracefully elsewhere (no planes / no passthrough
+// feed, see QuestPassthroughCamera) rather than blocking VR.
+const QUEST_RUNTIME_PERMISSIONS = [
+  "horizonos.permission.USE_ANCHOR_API",
+  "com.oculus.permission.USE_SCENE",
+  "horizonos.permission.HEADSET_CAMERA",
+];
 
 function checkRNVersionForVR(): void {
   let version = "unknown";
@@ -166,6 +181,9 @@ export const ViroXRSceneNavigator = React.forwardRef<unknown, Props>(
       ...rest
     } = props;
 
+    const onExitRef = React.useRef(onExitViro);
+    onExitRef.current = onExitViro;
+
     // Inner refs — one per backend so the exposed handle can target the
     // right underlying navigator instance.
     const arRef = React.useRef<ViroARSceneNavigator>(null);
@@ -174,21 +192,11 @@ export const ViroXRSceneNavigator = React.forwardRef<unknown, Props>(
 
     // Expose navigator interface on the ref.
     // Quest: proxy push/pop/etc. through VRQuestNavigatorBridge to VRActivity.
-    // PICO:  expose the inline ViroVRSceneNavigator instance directly
-    //        (MainActivity is itself the immersive Activity on PICO).
+    // PICO:  use the same VRActivity bridge while MainActivity stays 2D.
     // AR:    expose the underlying ViroARSceneNavigator instance directly.
     React.useImperativeHandle(ref, () => {
       if (isQuest || isPico) {
-        // PICO now follows Quest: navigator ops cross the activity boundary
-        // through the same bridge — VRActivity owns the ViroVRSceneNavigator
-        // instance.
-        const bridgeNav = {
-          push:    (scene: any) => VRQuestNavigatorBridge.dispatchOp({ type: "push",    scene }),
-          replace: (scene: any) => VRQuestNavigatorBridge.dispatchOp({ type: "replace", scene }),
-          jump:    (scene: any) => VRQuestNavigatorBridge.dispatchOp({ type: "jump",    scene }),
-          pop:     ()           => VRQuestNavigatorBridge.dispatchOp({ type: "pop"              }),
-          popN:    (n: number)  => VRQuestNavigatorBridge.dispatchOp({ type: "popN",   n       }),
-        };
+        const bridgeNav = createXRNavigatorProxy();
         return { sceneNavigator: bridgeNav, arSceneNavigator: bridgeNav };
       }
       if (isVisionOS) {
@@ -245,23 +253,40 @@ export const ViroXRSceneNavigator = React.forwardRef<unknown, Props>(
       if (!isQuest && !isPico) return;
       checkRNVersionForVR();
       const scene = vrInitialScene ?? initialScene;
-      if (scene) {
-        VRQuestNavigatorBridge.setIntent(scene, {
-          hdrEnabled,
-          pbrEnabled,
-          bloomEnabled,
-          shadowsEnabled,
-          multisamplingEnabled,
-          vrModeEnabled,
-          passthroughEnabled,
-          handTrackingEnabled,
-          trackingOrigin,
-          onExitViro,
-          debug,
-        });
+      if (!scene) {
+        console.warn("[Viro] OpenXR requires vrInitialScene or initialScene.");
+        return;
       }
-      VRQuestNavigatorBridge.setVRActive(true);
-      VRLauncher?.launchVRScene?.();
+      if (!VRLauncher?.launchVRScene) {
+        throw new Error("[Viro] OpenXR launcher is missing. Rebuild the native development client.");
+      }
+      let cancelled = false;
+      let intentKey: string | undefined;
+      const launch = async () => {
+        // Horizon permissions do not exist on PICO. Its runtime and app
+        // config own PICO permissions independently.
+        if (isQuest) {
+          await PermissionsAndroid.requestMultiple(QUEST_RUNTIME_PERMISSIONS as any)
+            .catch(() => undefined);
+        }
+        if (cancelled) return;
+        intentKey = VRQuestNavigatorBridge.setIntent(scene, {
+          hdrEnabled, pbrEnabled, bloomEnabled, shadowsEnabled,
+          multisamplingEnabled, vrModeEnabled, passthroughEnabled,
+          handTrackingEnabled, trackingOrigin,
+          onExitViro: () => onExitRef.current?.(), debug,
+        });
+        VRQuestNavigatorBridge.setVRActive(true);
+        VRLauncher.launchVRScene!();
+      };
+      void launch().catch((error: unknown) => {
+        if (!cancelled) {
+          VRQuestNavigatorBridge.setVRActive(false);
+          VRQuestNavigatorBridge.reportQuestError(
+            error instanceof Error ? error : new Error(String(error))
+          );
+        }
+      });
 
       const sub = AppState.addEventListener("change", (nextState) => {
         const prev = appStateRef.current;
@@ -282,7 +307,14 @@ export const ViroXRSceneNavigator = React.forwardRef<unknown, Props>(
           VRLauncher?.launchVRScene?.();
         }
       });
-      return () => sub.remove();
+      return () => {
+        cancelled = true;
+        sub.remove();
+        if (intentKey && VRQuestNavigatorBridge.getIntent()?.intentKey === intentKey) {
+          exitVRScene();
+          VRQuestNavigatorBridge.setViewTag(null);
+        }
+      };
     }, []);
 
     // Quest AND PICO render nothing here — VRActivity owns the display.

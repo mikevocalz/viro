@@ -13,10 +13,42 @@ import type { ExpoConfig } from "@expo/config-types";
 import fs from "fs";
 import path from "path";
 import { insertLinesHelper } from "./util/insertLinesHelper";
-import { ViroConfigurationOptions, XrMode } from "./withViro";
-let viroPluginConfig = ["AR", "GVR"];
+import type { ViroConfigurationOptions, XrMode } from "./withViro";
+function getViroOptions(
+  config: ExpoConfig,
+  props?: ViroConfigurationOptions
+): ViroConfigurationOptions {
+  if (props) return props;
+  const entry = config.plugins?.find(
+    (plugin) =>
+      Array.isArray(plugin) &&
+      ["@reactvision/react-viro", "@mikevocalz/react-viro"].includes(
+        plugin[0] ?? ""
+      )
+  );
+  return Array.isArray(entry) ? (entry[1] ?? {}) : {};
+}
 
-const withBranchAndroid: ConfigPlugin<ViroConfigurationOptions> = (config) => {
+export function resolveViroXrModes(
+  config: ExpoConfig,
+  props?: ViroConfigurationOptions
+): XrMode[] {
+  const value = getViroOptions(config, props).android?.xRMode;
+  const modes =
+    value == null ? ["AR", "GVR"] : Array.isArray(value) ? value : [value];
+  return [
+    ...new Set(
+      modes.filter((mode): mode is XrMode =>
+        ["AR", "GVR", "OVR_MOBILE", "QUEST", "PICO"].includes(mode)
+      )
+    ),
+  ];
+}
+
+const withBranchAndroid: ConfigPlugin<ViroConfigurationOptions> = (
+  config,
+  props
+) => {
   // Directly edit MainApplication.java
   return withDangerousMod(config, [
     "android",
@@ -51,109 +83,89 @@ const withBranchAndroid: ConfigPlugin<ViroConfigurationOptions> = (config) => {
         );
       }
 
-      fs.readFile(mainApplicationPath, "utf-8", (err, data) => {
-        const packageName = config?.android?.package;
-        if (isJava) {
-          data = insertLinesHelper(
-            "import com.viromedia.bridge.ReactViroPackage;",
-            `package ${packageName};`,
-            data
-          );
-        } else {
-          // Handle Backticks in package names for Kotlin
-          const packageMatch = data.match(/package\s+[\w.`]+/);
-          if (!packageMatch) {
-            throw new Error(
-              "Package declaration not found in MainApplication.kt"
-            );
-          }
-          data = insertLinesHelper(
-            "import com.viromedia.bridge.ReactViroPackage",
-            packageMatch[0],
-            data
-          );
-        }
-
-        const viroPlugin = config?.plugins?.find(
-          (plugin) =>
-            Array.isArray(plugin) && plugin[0] === "@reactvision/react-viro"
+      let data = await fs.promises.readFile(mainApplicationPath, "utf-8");
+      const packageName = config?.android?.package;
+      if (isJava) {
+        data = insertLinesHelper(
+          "import com.viromedia.bridge.ReactViroPackage;",
+          `package ${packageName};`,
+          data
         );
-
-        if (Array.isArray(viroPlugin)) {
-          if (Array.isArray(viroPlugin[1].android?.xRMode)) {
-            viroPluginConfig = (
-              viroPlugin[1].android?.xRMode as XrMode[]
-            ).filter((mode) => ["AR", "GVR", "OVR_MOBILE", "QUEST", "PICO"].includes(mode));
-          } else if (
-            ["AR", "GVR", "OVR_MOBILE", "QUEST", "PICO"].includes(viroPlugin[1]?.android?.xRMode)
-          ) {
-            viroPluginConfig = [viroPlugin[1]?.android.xRMode];
-          }
+      } else {
+        // Handle Backticks in package names for Kotlin
+        const packageMatch = data.match(/package\s+[\w.`]+/);
+        if (!packageMatch) {
+          throw new Error(
+            "Package declaration not found in MainApplication.kt"
+          );
         }
+        data = insertLinesHelper(
+          "import com.viromedia.bridge.ReactViroPackage",
+          packageMatch[0],
+          data
+        );
+      }
 
-        let target = "";
-        for (const viroConfig of viroPluginConfig) {
-          if (isJava) {
-            target =
-              target +
-              `      packages.add(new ReactViroPackage(ReactViroPackage.ViroPlatform.${viroConfig}))\n`;
-          } else {
-            // Use proper Kotlin syntax for newer formats
-            target =
-              target +
-              `            add(ReactViroPackage(ReactViroPackage.ViroPlatform.${viroConfig}))\n`;
-          }
-        }
+      const viroPluginConfig = resolveViroXrModes(config, props);
 
+      let target = "";
+      for (const viroConfig of viroPluginConfig) {
         if (isJava) {
+          target =
+            target +
+            `      packages.add(new ReactViroPackage(ReactViroPackage.ViroPlatform.${viroConfig}));\n`;
+        } else {
+          // Use proper Kotlin syntax for newer formats
+          target =
+            target +
+            `            add(ReactViroPackage(ReactViroPackage.ViroPlatform.${viroConfig}))\n`;
+        }
+      }
+
+      if (isJava) {
+        data = insertLinesHelper(
+          target,
+          "List<ReactPackage> packages = new PackageList(this).getPackages();",
+          data
+        );
+      } else {
+        // Handle various MainApplication.kt formats
+        if (data.includes("// packages.add(new MyReactNativePackage());")) {
           data = insertLinesHelper(
             target,
-            "List<ReactPackage> packages = new PackageList(this).getPackages();",
+            "// packages.add(new MyReactNativePackage());",
+            data
+          );
+        } else if (data.includes("// add(MyReactNativePackage())")) {
+          data = insertLinesHelper(
+            target,
+            "// add(MyReactNativePackage())",
+            data
+          );
+        } else if (data.includes("// packages.add(MyReactNativePackage())")) {
+          // Handle newer Expo format: // packages.add(MyReactNativePackage())
+          data = insertLinesHelper(
+            target,
+            "// packages.add(MyReactNativePackage())",
+            data
+          );
+        } else if (data.includes("val packages = PackageList(this).packages")) {
+          // Handle newer format where packages is declared as val
+          data = insertLinesHelper(
+            target,
+            "val packages = PackageList(this).packages",
             data
           );
         } else {
-          // Handle various MainApplication.kt formats
-          if (data.includes("// packages.add(new MyReactNativePackage());")) {
-            data = insertLinesHelper(
-              target,
-              "// packages.add(new MyReactNativePackage());",
-              data
-            );
-          } else if (data.includes("// add(MyReactNativePackage())")) {
-            data = insertLinesHelper(
-              target,
-              "// add(MyReactNativePackage())",
-              data
-            );
-          } else if (data.includes("// packages.add(MyReactNativePackage())")) {
-            // Handle newer Expo format: // packages.add(MyReactNativePackage())
-            data = insertLinesHelper(
-              target,
-              "// packages.add(MyReactNativePackage())",
-              data
-            );
-          } else if (
-            data.includes("val packages = PackageList(this).packages")
-          ) {
-            // Handle newer format where packages is declared as val
-            data = insertLinesHelper(
-              target,
-              "val packages = PackageList(this).packages",
-              data
-            );
-          } else {
-            throw new Error(
-              "Unable to insert Android packages into package list. Please create a new issue on GitHub and reference this message! " +
-                "Expected to find one of: '// packages.add(new MyReactNativePackage());', '// add(MyReactNativePackage())', " +
-                "'// packages.add(MyReactNativePackage())', or 'val packages = PackageList(this).packages'"
-            );
-          }
+          throw new Error(
+            "Unable to insert Android packages into package list. Please create a new issue on GitHub and reference this message! " +
+              "Expected to find one of: '// packages.add(new MyReactNativePackage());', '// add(MyReactNativePackage())', " +
+              "'// packages.add(MyReactNativePackage())', or 'val packages = PackageList(this).packages'"
+          );
         }
+      }
 
-        fs.writeFile(mainApplicationPath, data, "utf-8", function (err) {
-          if (err) console.log("Error writing MainApplication.java");
-        });
-      });
+      await fs.promises.writeFile(mainApplicationPath, data, "utf-8");
       return config;
     },
   ]);
@@ -172,10 +184,8 @@ const withViroProjectBuildGradle = (config: ExpoConfig) =>
     //    "\n// ViroReact requires New Architecture\nnewArchEnabled=true\n";
     //}
 
-    newConfig.modResults.contents = newConfig.modResults.contents.replace(
-      /classpath\("com.android.tools.build:gradle.*/,
-      `classpath('com.android.tools.build:gradle:4.1.1')`
-    );
+    // Keep the consuming Expo/RN project's Android Gradle Plugin version.
+    // Forcing AGP 4.1.1 breaks modern native and flavor packaging APIs.
     return newConfig;
   });
 
@@ -225,11 +235,14 @@ project(':react_viro').projectDir = new File('../node_modules/@reactvision/react
     return config;
   });
 
-const withViroManifest = (config: ExpoConfig) =>
+const withViroManifest: ConfigPlugin<ViroConfigurationOptions> = (
+  config,
+  props
+) =>
   withAndroidManifest(
     config,
     async (newConfig: ExportedConfigWithProps<any>) => {
-      // TODO(pico): PICO manifest block + activity registration — see docs/pico, gated on device facts
+      // Expo-PICO owns PICO-specific metadata in the PICO flavor manifest.
       const contents = newConfig.modResults;
       contents.manifest.$["xmlns:tools"] = "http://schemas.android.com/tools";
 
@@ -243,19 +256,8 @@ const withViroManifest = (config: ExpoConfig) =>
       // OpenXR — declaring ARCore there causes the SDK to launch the
       // Google Play Services for AR install activity at runtime even
       // though value="optional".
-      const viroPlugin = config?.plugins?.find(
-        (plugin) =>
-          Array.isArray(plugin) && plugin[0] === "@reactvision/react-viro"
-      );
-      const xrModeRaw =
-        Array.isArray(viroPlugin) && viroPlugin.length > 1
-          ? (viroPlugin[1] as any)?.android?.xRMode
-          : undefined;
-      const xrModes: string[] = Array.isArray(xrModeRaw)
-        ? (xrModeRaw as string[])
-        : xrModeRaw
-          ? [xrModeRaw as string]
-          : ["AR", "GVR"];
+      const pluginOptions = getViroOptions(config, props);
+      const xrModes = resolveViroXrModes(config, props);
       const usesArcore = xrModes.includes("AR");
 
       if (usesArcore) {
@@ -269,16 +271,17 @@ const withViroManifest = (config: ExpoConfig) =>
 
       // Add Google Cloud API key for ARCore Cloud Anchors and Geospatial API if configured
 
-      if (Array.isArray(viroPlugin) && viroPlugin.length > 1) {
-        const pluginOptions = viroPlugin[1] as ViroConfigurationOptions;
-
+      {
         // Resolve unified provider prop; old geospatialAnchorProvider overrides for backward compat.
         // Default to "reactvision" only when rvApiKey is present (implies RV intent) but provider
         // is not explicitly set — avoids injecting location permissions for apps with no credentials.
-        const legacyOpts = pluginOptions as { geospatialAnchorProvider?: string };
-        const geospatialAnchorProvider = legacyOpts.geospatialAnchorProvider
-          ?? pluginOptions.provider
-          ?? (pluginOptions.rvApiKey ? "reactvision" : undefined);
+        const legacyOpts = pluginOptions as {
+          geospatialAnchorProvider?: string;
+        };
+        const geospatialAnchorProvider =
+          legacyOpts.geospatialAnchorProvider ??
+          pluginOptions.provider ??
+          (pluginOptions.rvApiKey ? "reactvision" : undefined);
 
         if (pluginOptions.googleCloudApiKey) {
           contents?.manifest?.application?.[0]["meta-data"]?.push({
@@ -314,37 +317,37 @@ const withViroManifest = (config: ExpoConfig) =>
         }
 
         // Add location permissions when geospatial provider is active
-        if (geospatialAnchorProvider === "arcore" || geospatialAnchorProvider === "reactvision") {
-          const existingPermissions: string[] = (contents.manifest["uses-permission"] || [])
-            .map((p: any) => p.$?.["android:name"]);
-          if (!existingPermissions.includes("android.permission.ACCESS_FINE_LOCATION")) {
+        if (
+          geospatialAnchorProvider === "arcore" ||
+          geospatialAnchorProvider === "reactvision"
+        ) {
+          const existingPermissions: string[] = (
+            contents.manifest["uses-permission"] || []
+          ).map((p: any) => p.$?.["android:name"]);
+          if (
+            !existingPermissions.includes(
+              "android.permission.ACCESS_FINE_LOCATION"
+            )
+          ) {
             contents.manifest["uses-permission"].push({
               $: { "android:name": "android.permission.ACCESS_FINE_LOCATION" },
             });
           }
-          if (!existingPermissions.includes("android.permission.ACCESS_COARSE_LOCATION")) {
+          if (
+            !existingPermissions.includes(
+              "android.permission.ACCESS_COARSE_LOCATION"
+            )
+          ) {
             contents.manifest["uses-permission"].push({
-              $: { "android:name": "android.permission.ACCESS_COARSE_LOCATION" },
+              $: {
+                "android:name": "android.permission.ACCESS_COARSE_LOCATION",
+              },
             });
           }
         }
       }
 
-      // Derive active XR modes from the config at apply-time.
-      // `viroPluginConfig` (module-level) is updated by withBranchAndroid's
-      // withDangerousMod callback, which runs *after* withAndroidManifest
-      // callbacks — so it is still ["AR","GVR"] here. Read from config.plugins
-      // directly instead.
-      const activeXrModes = (() => {
-        const p = (newConfig.plugins ?? []).find(
-          (plugin: any) => Array.isArray(plugin) && plugin[0] === "@reactvision/react-viro"
-        );
-        if (Array.isArray(p) && p[1]?.android?.xRMode) {
-          const xrMode = p[1].android.xRMode;
-          return Array.isArray(xrMode) ? (xrMode as string[]) : [xrMode as string];
-        }
-        return viroPluginConfig;
-      })();
+      const activeXrModes = xrModes;
 
       if (
         activeXrModes.includes("GVR") ||
@@ -369,8 +372,11 @@ const withViroManifest = (config: ExpoConfig) =>
       // android.permission.SYSTEM_ALERT_WINDOW is merged in from React Native's
       // debug manifest and is rejected by the Meta Quest Store.
       if (contents.manifest["uses-permission"]) {
-        contents.manifest["uses-permission"] = contents.manifest["uses-permission"].filter(
-          (p: any) => p.$?.["android:name"] !== "android.permission.SYSTEM_ALERT_WINDOW"
+        contents.manifest["uses-permission"] = contents.manifest[
+          "uses-permission"
+        ].filter(
+          (p: any) =>
+            p.$?.["android:name"] !== "android.permission.SYSTEM_ALERT_WINDOW"
         );
       }
 
@@ -414,7 +420,9 @@ const withViroManifest = (config: ExpoConfig) =>
       contents.manifest["uses-feature"].push({
         $: {
           "android:glEsVersion": "0x00030000",
-          "android:required": activeXrModes.includes("QUEST") ? "true" : "false",
+          "android:required": activeXrModes.includes("QUEST")
+            ? "true"
+            : "false",
           "tools:replace": "required",
         },
       });
@@ -464,14 +472,19 @@ const withViroManifest = (config: ExpoConfig) =>
             "android:required": "false",
           },
         });
-        const existingPermissions: string[] = (contents.manifest["uses-permission"] || [])
-          .map((p: any) => p.$?.["android:name"]);
-        if (!existingPermissions.includes("com.oculus.permission.HAND_TRACKING")) {
+        const existingPermissions: string[] = (
+          contents.manifest["uses-permission"] || []
+        ).map((p: any) => p.$?.["android:name"]);
+        if (
+          !existingPermissions.includes("com.oculus.permission.HAND_TRACKING")
+        ) {
           contents.manifest["uses-permission"].push({
             $: { "android:name": "com.oculus.permission.HAND_TRACKING" },
           });
         }
-        if (!existingPermissions.includes("com.oculus.permission.EYE_TRACKING")) {
+        if (
+          !existingPermissions.includes("com.oculus.permission.EYE_TRACKING")
+        ) {
           contents.manifest["uses-permission"].push({
             $: { "android:name": "com.oculus.permission.EYE_TRACKING" },
           });
@@ -482,8 +495,8 @@ const withViroManifest = (config: ExpoConfig) =>
         // runtime skips those extensions, so plane / anchor data is unavailable on
         // Quest. These are runtime permissions — also require a grant at runtime.
         const sceneAnchorPerms = [
-          "horizonos.permission.USE_ANCHOR_API",  // gates XR_FB_scene / XR_FB_spatial_entity on current Horizon OS
-          "com.oculus.permission.USE_SCENE",      // legacy Scene permission (older OS)
+          "horizonos.permission.USE_ANCHOR_API", // gates XR_FB_scene / XR_FB_spatial_entity on current Horizon OS
+          "com.oculus.permission.USE_SCENE", // legacy Scene permission (older OS)
           // Meta Passthrough Camera API (Quest 3 / 3S, Horizon OS v74+): grants the
           // app the headset RGB cameras via Camera2, used by ViroObjectDetector to
           // run on-device object detection over passthrough. Runtime-granted.
@@ -491,7 +504,9 @@ const withViroManifest = (config: ExpoConfig) =>
         ];
         for (const perm of sceneAnchorPerms) {
           if (!existingPermissions.includes(perm)) {
-            contents.manifest["uses-permission"].push({ $: { "android:name": perm } });
+            contents.manifest["uses-permission"].push({
+              $: { "android:name": perm },
+            });
           }
         }
       }
@@ -500,48 +515,18 @@ const withViroManifest = (config: ExpoConfig) =>
     }
   );
 
-// ── Quest VRActivity generation ────────────────────────────────────────────────
-
 /**
- * When QUEST mode is active, generate VRActivity.kt in the app's android source
- * and register it in AndroidManifest with com.oculus.intent.category.VR.
- *
- * VRActivity is a ReactActivity that mounts "VRQuestScene" — a root component
- * the app must register via AppRegistry. Running in a separate Activity with the
- * VR intent category causes Horizon OS to grant exclusive OpenXR display access.
+ * Shared OpenXR activity for Quest and PICO. The component name stays
+ * VRQuestScene for compatibility. Expo-PICO supplies the PICO flavor's
+ * launcher contract; Quest metadata is only added when QUEST is requested.
  */
-const withViroQuestActivity: ConfigPlugin<ViroConfigurationOptions> = (config, props) => {
-  // Read xRMode directly from config.plugins. We cannot rely on the
-  // module-level `viroPluginConfig` here: that variable is only updated
-  // when `withBranchAndroid`'s withDangerousMod callback runs (mod-apply
-  // time), which is *after* this chain-time check executes. On the first
-  // prebuild of a new project, viroPluginConfig still holds the default
-  // ["AR", "GVR"] when this plugin is composed, and QUEST mods would be
-  // silently skipped — no VRActivity.kt and no manifest entry.
-  const viroPluginEntry = config?.plugins?.find(
-    (plugin) =>
-      Array.isArray(plugin) && plugin[0] === "@reactvision/react-viro"
-  );
-  let xrModes: string[] = ["AR", "GVR"];
-  if (Array.isArray(viroPluginEntry)) {
-    const xrMode = viroPluginEntry[1]?.android?.xRMode;
-    if (Array.isArray(xrMode)) {
-      xrModes = xrMode.filter((m: string) =>
-        ["AR", "GVR", "OVR_MOBILE", "QUEST", "PICO"].includes(m)
-      );
-    } else if (
-      typeof xrMode === "string" &&
-      ["AR", "GVR", "OVR_MOBILE", "QUEST", "PICO"].includes(xrMode)
-    ) {
-      xrModes = [xrMode];
-    }
-  }
-  // QUEST-only (not widened to PICO): the VRActivity.kt template itself is
-  // Android-generic, but this same function (step 3 below) registers the
-  // activity with com.oculus.intent.category.VR + com.oculus.vr.focusaware —
-  // Quest-specific. PICO uses pvr.app.type=vr and no oculus categories, an
-  // unresolved PICO-vs-Quest manifest difference — see TODO(pico) above.
-  if (!xrModes.includes("QUEST")) return config;
+export const withViroOpenXRActivity: ConfigPlugin<ViroConfigurationOptions> = (
+  config,
+  props
+) => {
+  const xrModes = resolveViroXrModes(config, props);
+  const quest = xrModes.includes("QUEST");
+  if (!quest && !xrModes.includes("PICO")) return config;
 
   // 1. Generate VRActivity.kt
   config = withDangerousMod(config, [
@@ -551,7 +536,10 @@ const withViroQuestActivity: ConfigPlugin<ViroConfigurationOptions> = (config, p
       const packagePath = packageName.split(".");
       const activityDir = path.join(
         config.modRequest.platformProjectRoot,
-        "app", "src", "main", "java",
+        "app",
+        "src",
+        "main",
+        "java",
         ...packagePath
       );
 
@@ -578,8 +566,8 @@ import com.facebook.react.runtime.ReactHostImpl
 
 /**
  * VRActivity — generated by @reactvision/react-viro Expo plugin.
- * Carries com.oculus.intent.category.VR so Horizon OS grants exclusive
- * OpenXR display access. Mounts the "VRQuestScene" React root component.
+ * Mounts the shared "VRQuestScene" React root on Quest and PICO.
+ * Platform config plugins supply each flavor's immersive launcher contract.
  * Launch via NativeModules.VRLauncher.launchVRScene().
  *
  * Lifecycle (requires React Native >= 0.83 / Expo >= 55):
@@ -739,30 +727,33 @@ class VRActivity : ReactActivity() {
   // rewrite of app/build.gradle never matched anything. Only ever lower it.
   // Quest hardware is arm64-only; the other ABIs roughly double the APK and the
   // store warns on 32-bit libraries.
-  const questTargetSdk = props?.android?.questTargetSdkVersion ?? 34;
-  const questArm64Only = props?.android?.questArm64Only ?? true;
-  config = withGradleProperties(config, (config) => {
-    const current = config.modResults.find(
-      (item) => item.type === "property" && item.key === "android.targetSdkVersion"
-    );
-    const currentSdk =
-      current?.type === "property" ? parseInt(current.value, 10) : NaN;
-    if (Number.isNaN(currentSdk) || currentSdk > questTargetSdk) {
-      AndroidConfig.BuildProperties.updateAndroidBuildProperty(
-        config.modResults,
-        "android.targetSdkVersion",
-        String(questTargetSdk)
+  if (quest) {
+    const questTargetSdk = props?.android?.questTargetSdkVersion ?? 34;
+    const questArm64Only = props?.android?.questArm64Only ?? true;
+    config = withGradleProperties(config, (config) => {
+      const current = config.modResults.find(
+        (item) =>
+          item.type === "property" && item.key === "android.targetSdkVersion"
       );
-    }
-    if (questArm64Only) {
-      AndroidConfig.BuildProperties.updateAndroidBuildProperty(
-        config.modResults,
-        "reactNativeArchitectures",
-        "arm64-v8a"
-      );
-    }
-    return config;
-  });
+      const currentSdk =
+        current?.type === "property" ? parseInt(current.value, 10) : NaN;
+      if (Number.isNaN(currentSdk) || currentSdk > questTargetSdk) {
+        AndroidConfig.BuildProperties.updateAndroidBuildProperty(
+          config.modResults,
+          "android.targetSdkVersion",
+          String(questTargetSdk)
+        );
+      }
+      if (questArm64Only) {
+        AndroidConfig.BuildProperties.updateAndroidBuildProperty(
+          config.modResults,
+          "reactNativeArchitectures",
+          "arm64-v8a"
+        );
+      }
+      return config;
+    });
+  }
 
   // 3. Add VRActivity to AndroidManifest
   config = withAndroidManifest(config, async (config) => {
@@ -785,30 +776,42 @@ class VRActivity : ReactActivity() {
             "keyboard|keyboardHidden|orientation|screenSize|uiMode",
           "android:launchMode": "singleTask",
         },
-        "intent-filter": [
-          {
-            action: [{ $: { "android:name": "android.intent.action.MAIN" } }],
-            category: [
-              { $: { "android:name": "com.oculus.intent.category.VR" } },
-            ],
-          },
-        ],
-        "meta-data": [
-          {
-            $: {
-              "android:name": "com.oculus.vr.focusaware",
-              "android:value": "true",
-            },
-          },
-        ],
+        ...(quest
+          ? {
+              "intent-filter": [
+                {
+                  action: [
+                    { $: { "android:name": "android.intent.action.MAIN" } },
+                  ],
+                  category: [
+                    { $: { "android:name": "com.oculus.intent.category.VR" } },
+                  ],
+                },
+              ],
+              "meta-data": [
+                {
+                  $: {
+                    "android:name": "com.oculus.vr.focusaware",
+                    "android:value": "true",
+                  },
+                },
+              ],
+            }
+          : {}),
       });
     }
+
+    if (!quest) return config;
 
     // Quest store validator requires all activities to be landscape.
     // Only apply when targeting Quest (questAppId present); AR/phone apps use portrait.
     const questAppId = props?.android?.questAppId;
     const mainActivity = app.activity?.[0];
-    if (questAppId && mainActivity?.$ && mainActivity.$["android:name"] !== ".VRActivity") {
+    if (
+      questAppId &&
+      mainActivity?.$ &&
+      mainActivity.$["android:name"] !== ".VRActivity"
+    ) {
       mainActivity.$["android:screenOrientation"] = "landscape";
     }
 
@@ -857,9 +860,9 @@ export const withViroAndroid: ConfigPlugin<ViroConfigurationOptions> = (
 ) => {
   config = withBranchAndroid(config, props) as typeof config;
   config = withViroProjectBuildGradle(config) as typeof config;
-  config = withViroManifest(config) as typeof config;
+  config = withViroManifest(config, props) as typeof config;
   config = withViroSettingsGradle(config) as typeof config;
   config = withViroAppBuildGradle(config) as typeof config;
-  config = withViroQuestActivity(config, props) as typeof config;
+  config = withViroOpenXRActivity(config, props) as typeof config;
   return config;
 };

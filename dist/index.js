@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ViroNode = exports.ViroObjectDetector = exports.ViroExternalVideo = exports.ViroCameraTexture = exports.ViroMaterialVideo = exports.ViroARCamera = exports.ViroMaterials = exports.ViroImage = exports.ViroLightingEnvironment = exports.ViroGeometry = exports.ViroFlexView = exports.ViroDirectionalLight = exports.useFixedUpdate = exports.useLateUpdate = exports.useGameLoop = exports.viroMapCameraTransform = exports.useViroMapCamera = exports.invertTransform = exports.worldToLocation = exports.locationToWorld = exports.parseLocationTransform = exports.ViroGameLoopUtils = exports.ViroGameLoop = exports.ViroVirtualButton = exports.ViroVirtualJoystick = exports.ViroController = exports.ViroCamera = exports.ViroButton = exports.ViroBox = exports.ViroARSceneNavigator = exports.ViroARScene = exports.ViroARPlaneSelector = exports.ViroARPlane = exports.ViroARTrackingTargets = exports.ViroARObjectMarker = exports.ViroARImageMarker = exports.useViroReplicatedState = exports.ViroReplicationClient = exports.useViroColocation = exports.getColocationPeers = exports.getColocationState = exports.setColocationLocalPose = exports.leaveColocation = exports.joinColocation = exports.isColocationAvailable = exports.visionOSSharedSpaceFrameSource = exports.metaSpatialAnchorFrameSource = exports.cloudAnchorFrameSource = exports.ViroSharedFrame = exports.ViroARCloudAnchor = void 0;
-exports.polarToCartesian = exports.ViroTrackingStateConstants = exports.ViroRecordingErrorConstants = exports.ViroARTrackingReasonConstants = exports.useAnySourcePressed = exports.useAnySourceHover = exports.isQuest = exports.hasOpenXRSupport = exports.StreamingAudioManager = exports.Viro3DSceneNavigator = exports.triggerHaptic = exports.setPassthroughStyle = exports.exitVRScene = exports.useVRViewTag = exports.VRModuleOpenXR = exports.VRQuestNavigatorBridge = exports.ViroQuestEntryPoint = exports.ViroXRSceneNavigator = exports.ViroVRSceneNavigator = exports.ViroVideo = exports.ViroText = exports.ViroSpotLight = exports.ViroSpinner = exports.ViroSphere = exports.ViroSpatialSound = exports.ViroSoundField = exports.ViroSound = exports.ViroAnimatedComponent = exports.ViroAmbientLight = exports.ViroAnimatedImage = exports.Viro360Video = exports.Viro360Image = exports.Viro3DObject = exports.ViroAnimations = exports.ViroSkyBox = exports.ViroSceneNavigator = exports.ViroSurface = exports.ViroScene = exports.useEnsureWgpuAdapter = exports.ViroRivePanel = exports.ViroThreeJSPanel = exports.ViroGpuPanel = exports.ViroQuad = exports.ViroPortalScene = exports.ViroPortal = exports.ViroPolyline = exports.ViroPolygon = exports.ViroParticleEmitter = exports.ViroOrbitCamera = exports.ViroOmniLight = void 0;
-exports.isStudioApiError = exports.setInputTuning = exports.exitImmersiveSpace = exports.sharedSpacePushIncoming = exports.sharedSpaceNextOutgoing = exports.sharedSpaceState = exports.enterImmersiveSpace = exports.isVisionOS = exports.ViroVisionOSModule = exports.useStudioPlacement = exports.useStudioRecording = exports.StudioPlacementIndicator = exports.StudioRecordingIndicator = exports.StudioARScene = exports.StudioSceneNavigator = exports.VIRO_VERSION = exports.ViroRotateStateTypes = exports.ViroPinchStateTypes = exports.ViroClickStateTypes = exports.gpsToArWorld = exports.latLngToMercator = exports.checkPermissions = exports.requestRequiredPermissions = exports.isARSupportedOnDevice = exports.polarToCartesianActual = void 0;
+exports.checkPermissions = exports.requestRequiredPermissions = exports.isARSupportedOnDevice = exports.polarToCartesianActual = exports.polarToCartesian = exports.ViroTrackingStateConstants = exports.ViroRecordingErrorConstants = exports.ViroARTrackingReasonConstants = exports.useAnySourcePressed = exports.useAnySourceHover = exports.isQuest = exports.hasOpenXRSupport = exports.StreamingAudioManager = exports.Viro3DSceneNavigator = exports.triggerHaptic = exports.setPassthroughStyle = exports.exitVRScene = exports.useVRViewTag = exports.VRModuleOpenXR = exports.VRQuestNavigatorBridge = exports.ViroQuestEntryPoint = exports.ViroXRSceneNavigator = exports.ViroVRSceneNavigator = exports.ViroVideo = exports.ViroText = exports.ViroSpotLight = exports.ViroSpinner = exports.ViroSphere = exports.ViroSpatialSound = exports.ViroSoundField = exports.ViroSound = exports.ViroAnimatedComponent = exports.ViroAmbientLight = exports.ViroAnimatedImage = exports.Viro360Video = exports.Viro360Image = exports.Viro3DObject = exports.ViroAnimations = exports.ViroSkyBox = exports.ViroSceneNavigator = exports.ViroSurface = exports.ViroScene = exports.ViroQuad = exports.ViroPortalScene = exports.ViroPortal = exports.ViroPolyline = exports.ViroPolygon = exports.ViroParticleEmitter = exports.ViroOrbitCamera = exports.ViroOmniLight = void 0;
+exports.isStudioApiError = exports.useOpenXRCapabilities = exports.setInputTuning = exports.exitImmersiveSpace = exports.sharedSpacePushIncoming = exports.sharedSpaceNextOutgoing = exports.sharedSpaceState = exports.enterImmersiveSpace = exports.isVisionOS = exports.ViroVisionOSModule = exports.useStudioPlacement = exports.useStudioRecording = exports.StudioPlacementIndicator = exports.StudioRecordingIndicator = exports.StudioARScene = exports.StudioSceneNavigator = exports.VIRO_VERSION = exports.ViroRotateStateTypes = exports.ViroPinchStateTypes = exports.ViroClickStateTypes = exports.gpsToArWorld = exports.latLngToMercator = void 0;
 /**
  * Copyright (c) 2016-present, Viro Media, Inc.
  * All rights reserved.
@@ -143,14 +143,27 @@ const ViroPortalScene_1 = require("./components/ViroPortalScene");
 Object.defineProperty(exports, "ViroPortalScene", { enumerable: true, get: function () { return ViroPortalScene_1.ViroPortalScene; } });
 const ViroQuad_1 = require("./components/ViroQuad");
 Object.defineProperty(exports, "ViroQuad", { enumerable: true, get: function () { return ViroQuad_1.ViroQuad; } });
-const ViroGpuPanel_1 = require("./components/ViroGpuPanel");
-Object.defineProperty(exports, "ViroGpuPanel", { enumerable: true, get: function () { return ViroGpuPanel_1.ViroGpuPanel; } });
-const ViroThreeJSPanel_1 = require("./components/ViroThreeJSPanel");
-Object.defineProperty(exports, "ViroThreeJSPanel", { enumerable: true, get: function () { return ViroThreeJSPanel_1.ViroThreeJSPanel; } });
-const ViroRivePanel_1 = require("./components/ViroRivePanel");
-Object.defineProperty(exports, "ViroRivePanel", { enumerable: true, get: function () { return ViroRivePanel_1.ViroRivePanel; } });
-const useEnsureWgpuAdapter_1 = require("./components/CanvasPanel/useEnsureWgpuAdapter");
-Object.defineProperty(exports, "useEnsureWgpuAdapter", { enumerable: true, get: function () { return useEnsureWgpuAdapter_1.useEnsureWgpuAdapter; } });
+// STRUCK FROM THE ENTRY 2026-09-18 — ViroGpuPanel, ViroThreeJSPanel,
+// ViroRivePanel, ViroCanvasPanel and useEnsureWgpuAdapter.
+//
+// They are not deleted. Import them by path:
+//   import { ViroGpuPanel } from "@reactvision/react-viro/dist/components/ViroGpuPanel";
+// and install nitro-canvas-in-Vision plus its peers (expo-gl, three,
+// react-native-wgpu) in the consuming app.
+//
+// Why they cannot be re-exported here: they require nitro-canvas-in-Vision at
+// runtime, and importing anything at all from this package pulls the entry, so
+// every consumer inherits that requirement. The module is not on npm, is
+// declared in no dependency section, and cannot be published under its current
+// name — npm rejects uppercase letters and it is spelled with a capital V. The
+// result is that `import { ViroText } from "@reactvision/react-viro"` fails
+// Metro resolution in an app that has never heard of a canvas panel.
+//
+// Nothing was lost by striking them: no source file in any consuming project
+// imports these four symbols today.
+//
+// Returns to the entry when the module is renamed lowercase, published, and
+// declared here as an optional peer.
 const ViroScene_1 = require("./components/ViroScene");
 Object.defineProperty(exports, "ViroScene", { enumerable: true, get: function () { return ViroScene_1.ViroScene; } });
 const ViroSkyBox_1 = require("./components/ViroSkyBox");
@@ -221,5 +234,7 @@ const react_native_1 = require("react-native");
 // as 'VRQuestScene'. Registering here means apps need no manual setup.
 // Apps that need a custom VR root can re-register after importing this package.
 react_native_1.AppRegistry.registerComponent("VRQuestScene", () => ViroQuestEntryPoint_1.ViroQuestEntryPoint);
+var useOpenXRCapabilities_1 = require("./components/Utilities/useOpenXRCapabilities");
+Object.defineProperty(exports, "useOpenXRCapabilities", { enumerable: true, get: function () { return useOpenXRCapabilities_1.useOpenXRCapabilities; } });
 var Studio_2 = require("./components/Studio");
 Object.defineProperty(exports, "isStudioApiError", { enumerable: true, get: function () { return Studio_2.isStudioApiError; } });
