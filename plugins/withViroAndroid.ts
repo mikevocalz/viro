@@ -179,8 +179,56 @@ const withViroProjectBuildGradle = (config: ExpoConfig) =>
     return newConfig;
   });
 
-const withViroAppBuildGradle = (config: ExpoConfig) =>
+function assertDirectAppDependency(projectRoot: string, packageName: string): void {
+  const packageJsonPath = path.join(projectRoot, "package.json");
+  let appPackage: any;
+  try {
+    appPackage = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
+  } catch {
+    throw new Error(
+      `[Viro] metaSpatialLayout requires a readable app package.json at ${packageJsonPath}.`
+    );
+  }
+  const sections = [
+    appPackage.dependencies,
+    appPackage.optionalDependencies,
+    appPackage.devDependencies,
+  ];
+  if (!sections.some((section) => section?.[packageName])) {
+    throw new Error(
+      `[Viro] metaSpatialLayout requires ${packageName} as a direct app dependency. ` +
+        "Install both @metavr/layout-compat and @metavr/layout-window-compat before expo prebuild."
+    );
+  }
+}
+
+const withViroAppBuildGradle = (
+  config: ExpoConfig,
+  props?: ViroConfigurationOptions
+) =>
   withAppBuildGradle(config, async (config) => {
+    let metaSpatialDependencies = "";
+    if (props?.android?.metaSpatialLayout) {
+      const configuredModes = props.android.xRMode ?? [];
+      const modes = Array.isArray(configuredModes)
+        ? configuredModes
+        : [configuredModes as XrMode];
+      if (!modes.includes("QUEST")) {
+        throw new Error(
+          '[Viro] android.metaSpatialLayout requires android.xRMode to include "QUEST".'
+        );
+      }
+      assertDirectAppDependency(config.modRequest.projectRoot, "@metavr/layout-compat");
+      assertDirectAppDependency(config.modRequest.projectRoot, "@metavr/layout-window-compat");
+      const bomVersion =
+        props.android.metaSpatialLayoutBomVersion ?? "1.2026.0.0";
+      metaSpatialDependencies = `
+    // Meta VR Layout SDK (React Native spatial windows)
+    implementation platform('com.meta.metavrx:metavrx-bom:${bomVersion}')
+    implementation 'com.meta.metavrx.layout:layout-react-compat'
+    implementation 'com.meta.metavrx.layout:layout-window-react-compat'`;
+    }
+
     // ViroReact New Architecture (Fabric) Dependencies
     const viroNewArchDependencies = `
     // ========================================================================
@@ -196,7 +244,7 @@ const withViroAppBuildGradle = (config: ExpoConfig) =>
     implementation 'androidx.media3:media3-exoplayer-smoothstreaming:1.1.1'
     implementation 'com.google.protobuf.nano:protobuf-javanano:3.1.0'
     // Required for ARCore Geospatial API
-    implementation 'com.google.android.gms:play-services-location:21.0.1'
+    implementation 'com.google.android.gms:play-services-location:21.0.1'${metaSpatialDependencies}
     // ========================================================================`;
 
     // Add Viro dependencies for legacy architecture (fallback)
@@ -213,14 +261,44 @@ const withViroAppBuildGradle = (config: ExpoConfig) =>
     return config;
   });
 
+/**
+ * Resolve the on-disk `@reactvision/react-viro/android` directory as a path
+ * relative to the Android project root (where `settings.gradle` lives).
+ *
+ * Hardcoding `../node_modules/...` assumes react-viro is installed in the app's
+ * own `node_modules`. That is false under pnpm/yarn workspaces (and npm
+ * workspaces), where the package is hoisted to the monorepo root or nested
+ * under `.pnpm`, so Gradle fails with "Configuring project ':gvr_common'
+ * without an existing directory is not allowed". Resolving via Node follows
+ * symlinks/hoisting and works in both flat and workspace layouts.
+ */
+export function resolveViroAndroidRelativePath(projectRoot: string, androidRoot: string): string {
+  const fallback = "../node_modules/@reactvision/react-viro/android";
+  try {
+    const pkgJson = require.resolve("@reactvision/react-viro/package.json", {
+      paths: [projectRoot],
+    });
+    const viroAndroidDir = path.join(path.dirname(pkgJson), "android");
+    // Gradle resolves relative File(...) against the settings.gradle dir (androidRoot).
+    // Always emit POSIX separators — Gradle accepts them on every platform.
+    return path.relative(androidRoot, viroAndroidDir).split(path.sep).join("/");
+  } catch {
+    return fallback;
+  }
+}
+
 const withViroSettingsGradle = (config: ExpoConfig) =>
   withSettingsGradle(config, async (config) => {
+    const viroAndroidRoot = resolveViroAndroidRelativePath(
+      config.modRequest.projectRoot,
+      config.modRequest.platformProjectRoot
+    );
     config.modResults.contents += `
 include ':react_viro', ':arcore_client', ':gvr_common', ':viro_renderer'
-project(':arcore_client').projectDir = new File('../node_modules/@reactvision/react-viro/android/arcore_client')
-project(':gvr_common').projectDir = new File('../node_modules/@reactvision/react-viro/android/gvr_common')
-project(':viro_renderer').projectDir = new File('../node_modules/@reactvision/react-viro/android/viro_renderer')
-project(':react_viro').projectDir = new File('../node_modules/@reactvision/react-viro/android/react_viro')
+project(':arcore_client').projectDir = new File('${viroAndroidRoot}/arcore_client')
+project(':gvr_common').projectDir = new File('${viroAndroidRoot}/gvr_common')
+project(':viro_renderer').projectDir = new File('${viroAndroidRoot}/viro_renderer')
+project(':react_viro').projectDir = new File('${viroAndroidRoot}/react_viro')
     `;
     return config;
   });
@@ -375,8 +453,17 @@ const withViroManifest = (config: ExpoConfig) =>
       }
 
       if (usesArcore) {
-        contents.manifest.queries = [
-          {
+        // Preserve query entries contributed by other platform plugins (notably
+        // @expo-pico/core's OpenXR broker query). Replacing the whole array made
+        // Quest/AR + PICO multi-platform prebuilds depend on plugin ordering.
+        const queries = contents.manifest.queries ?? [];
+        const hasArCoreQuery = queries.some((query: any) =>
+          query.package?.some(
+            (pkg: any) => pkg.$?.["android:name"] === "com.google.ar.core"
+          )
+        );
+        if (!hasArCoreQuery) {
+          queries.push({
             package: [
               {
                 $: {
@@ -384,8 +471,9 @@ const withViroManifest = (config: ExpoConfig) =>
                 },
               },
             ],
-          },
-        ];
+          });
+        }
+        contents.manifest.queries = queries;
       }
 
       contents.manifest["uses-feature"] = [];
@@ -488,6 +576,14 @@ const withViroManifest = (config: ExpoConfig) =>
           // app the headset RGB cameras via Camera2, used by ViroObjectDetector to
           // run on-device object detection over passthrough. Runtime-granted.
           "horizonos.permission.HEADSET_CAMERA",
+          // Co-location (CL-H). Without this the Meta runtime does not merely
+          // refuse the calls — it hides the extension from
+          // xrEnumerateInstanceExtensionProperties entirely, logging
+          // "skipping extension=XR_META_spatial_entity_group_sharing due to:
+          // missing uses-permission string ...". So the app sees a headset that
+          // does not support shared anchors, which is indistinguishable from an
+          // older device. Found on a Quest 3; it is not visible from the code.
+          "horizonos.permission.IMPORT_EXPORT_IOT_MAP_DATA",
         ];
         for (const perm of sceneAnchorPerms) {
           if (!existingPermissions.includes(perm)) {
@@ -574,6 +670,7 @@ import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
 import com.facebook.react.defaults.DefaultReactActivityDelegate
+import com.facebook.react.modules.core.DeviceEventManagerModule
 import com.facebook.react.runtime.ReactHostImpl
 
 /**
@@ -715,6 +812,21 @@ class VRActivity : ReactActivity() {
         // each VR session piles up across re-entries and stale VRTComponents
         // intercept hit-tested viewTags with dead ReactContexts, breaking
         // onClick / onHover until you press dozens of times.
+        //
+        // Tell JS the immersive activity is gone before unloading the
+        // surface. Horizon can finish VRActivity directly (Meta-button quit
+        // confirm, OS reclaim) without exitVRScene() running, so this emit
+        // is the only signal that clears VRQuestNavigatorBridge's vrActive
+        // flag on that path — without it the AppState relaunch resurrects
+        // VR on the next foreground edge and the user has to quit
+        // repeatedly.
+        try {
+            reactHost?.currentReactContext
+                ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+                ?.emit("VRLauncher.vrDestroyed", null)
+        } catch (t: Throwable) {
+            android.util.Log.w("VRActivity", "emit VRLauncher.vrDestroyed failed", t)
+        }
         try {
             reactDelegate?.unloadApp()
         } catch (t: Throwable) {
@@ -859,7 +971,7 @@ export const withViroAndroid: ConfigPlugin<ViroConfigurationOptions> = (
   config = withViroProjectBuildGradle(config) as typeof config;
   config = withViroManifest(config) as typeof config;
   config = withViroSettingsGradle(config) as typeof config;
-  config = withViroAppBuildGradle(config) as typeof config;
+  config = withViroAppBuildGradle(config, props) as typeof config;
   config = withViroQuestActivity(config, props) as typeof config;
   return config;
 };

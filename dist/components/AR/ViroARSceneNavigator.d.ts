@@ -11,9 +11,9 @@
  */
 import * as React from "react";
 import { ViewProps } from "react-native";
-import { ViroWorldOrigin, ViroProvider, ViroCloudAnchorStateChangeEvent, ViroHostCloudAnchorResult, ViroSharedFrameResult, ViroResolveCloudAnchorResult, ViroFinishScanResult, ViroWorldMeshSnapshotResult, ViroWorldMeshLoadResult, ViroGeospatialSupportResult, ViroLocationAccuracyResult, ViroEarthTrackingStateResult, ViroGeospatialPoseResult, ViroVPSAvailabilityResult, ViroCreateGeospatialAnchorResult, ViroQuaternion, ViroSemanticSupportResult, ViroSemanticLabelFractionsResult, ViroSemanticLabelFractionResult, ViroSemanticLabel, ViroMonocularDepthPreferenceResult, ViroDepthOcclusionSupportResult, ViroGeospatialSetupStatusResult } from "../Types/ViroEvents";
+import { ViroWorldOrigin, ViroProvider, ViroHostCloudAnchorResult, ViroSharedFrameResult, ViroCloudAnchorStatus, ViroResolveCloudAnchorResult, ViroFinishScanResult, ViroScanDiagnostics, ViroScanStatus, ViroWorldMeshSnapshotResult, ViroWorldMeshLoadResult, ViroGeospatialSupportResult, ViroLocationAccuracyResult, ViroEarthTrackingStateResult, ViroGeospatialPoseResult, ViroVPSAvailabilityResult, ViroCreateGeospatialAnchorResult, ViroQuaternion, ViroSemanticSupportResult, ViroSemanticLabelFractionsResult, ViroSemanticLabelFractionResult, ViroSemanticLabel, ViroMonocularDepthPreferenceResult, ViroDepthOcclusionSupportResult, ViroGeospatialSetupStatusResult } from "../Types/ViroEvents";
 import { Viro3DPoint, ViroNativeRef, ViroScene, ViroSceneDictionary } from "../Types/ViroUtils";
-import { ViroWorldMeshConfig, ViroWorldMeshStats } from "../Types/ViroWorldMesh";
+import { ViroWorldMeshConfig, ViroWorldMeshStats, ViroWorldMeshStatsResult } from "../Types/ViroWorldMesh";
 /**
  * Occlusion mode determines how virtual content is occluded by real-world objects.
  */
@@ -36,6 +36,12 @@ type Props = ViewProps & {
      * is rendered. Pass `null` to render nothing.
      */
     questFallback?: React.ReactNode;
+    /**
+     * Optional fallback rendered when this navigator is mounted on Apple Vision Pro, where the AR
+     * subsystem is not part of the visionOS renderer. When omitted, a default message view is
+     * rendered. Pass `null` to render nothing.
+     */
+    visionOSFallback?: React.ReactNode;
     autofocus?: boolean;
     /**
      * iOS only props! Note: these props may change as the underlying platforms coalesce in features.
@@ -178,11 +184,6 @@ type Props = ViewProps & {
      */
     provider?: ViroProvider;
     /**
-     * Callback fired when a cloud anchor state changes.
-     * This includes progress updates during hosting/resolving operations.
-     */
-    onCloudAnchorStateChange?: (event: ViroCloudAnchorStateChangeEvent) => void;
-    /**
      * Enable world mesh for physics collision with real-world surfaces.
      * When enabled, virtual physics objects will collide with detected
      * real-world geometry (floors, walls, tables, etc.).
@@ -201,8 +202,16 @@ type Props = ViewProps & {
      */
     worldMeshConfig?: ViroWorldMeshConfig;
     /**
-     * Callback fired when the world mesh is updated.
-     * Provides statistics about the current mesh state.
+     * Statistics about the world mesh, delivered on every update.
+     *
+     * @deprecated This event has never fired, and does not fire in 3.0.0. `VROARScene` calls its
+     * delegate on every mesh update, but neither the iOS nor the Android bridge forwards that call,
+     * so nothing reaches JS. Poll {@link ViroARSceneNavigatorMethods.getWorldMeshStats} instead — it
+     * returns the same numbers plus whether capture is on at all.
+     *
+     * It is kept here rather than deleted so existing code keeps compiling, and marked so that no
+     * new code is written against it. Wiring it is tracked for a later release, and will also decide
+     * where it belongs: the renderer emits it from the scene, while this prop sits on the navigator.
      */
     onWorldMeshUpdated?: (stats: ViroWorldMeshStats) => void;
 };
@@ -217,6 +226,7 @@ type State = {
  */
 export declare class ViroARSceneNavigator extends React.Component<Props, State> {
     static _questWarningLogged: boolean;
+    static _visionOSWarningLogged: boolean;
     _component: ViroNativeRef;
     constructor(props: Props);
     componentDidMount(): void;
@@ -437,6 +447,16 @@ export declare class ViroARSceneNavigator extends React.Component<Props, State> 
      */
     _resolveCloudAnchor: (cloudAnchorId: string) => Promise<ViroResolveCloudAnchorResult>;
     /**
+     * Progress of a resolve in flight. `active` is false when none is running.
+     *
+     * Poll it: resolving a cloud anchor is multi-frame SIFT matching over a 30
+     * second window, and `resolveCloudAnchor()` says nothing until it ends. The
+     * `message` distinguishes the states that matter — downloading the anchor,
+     * looking for it, and having seen it once while it waits for a second
+     * consistent match.
+     */
+    _getCloudAnchorStatus: () => Promise<ViroCloudAnchorStatus>;
+    /**
      * Cancel all pending cloud anchor operations.
      * Use this when exiting a scene or when cloud operations are no longer needed.
      */
@@ -457,6 +477,24 @@ export declare class ViroARSceneNavigator extends React.Component<Props, State> 
      * @returns Promise resolving to the hosting result with cloudAnchorId
      */
     _finishScan: (ttlDays?: number) => Promise<ViroFinishScanResult>;
+    /**
+     * How the scan in progress is doing.
+     *
+     * Cheap enough to poll on a timer while someone walks a room: the renderer reads the keyframe
+     * buffer's camera poses and triangulates nothing.
+     */
+    _getScanStatus: () => Promise<ViroScanStatus>;
+    /**
+     * Whether a world mesh exists and how big it is.
+     *
+     * Poll this rather than relying on the `onWorldMeshUpdated` prop, which never fires — see
+     * {@link ViroWorldMeshStatsResult}. `snapshotWorldMeshToFile()` needs a non-zero `vertexCount`,
+     * the mesh takes a few seconds of looking around to accumulate after `worldMeshEnabled` goes
+     * true, so this is how a caller knows when the snapshot is worth attempting.
+     */
+    _getWorldMeshStats: () => Promise<ViroWorldMeshStatsResult>;
+    /** The measurements behind the last scan-based host, pass or fail. */
+    _getScanDiagnostics: () => Promise<ViroScanDiagnostics>;
     /**
      * CL-H: establish a platform-native shared coordinate frame and publish it to
      * `groupId` for other devices in the room to join. Quest only.
@@ -725,9 +763,13 @@ export declare class ViroARSceneNavigator extends React.Component<Props, State> 
         unproject: (point: Viro3DPoint) => Promise<any>;
         hostCloudAnchor: (anchorId: string, ttlDays?: number) => Promise<ViroHostCloudAnchorResult>;
         resolveCloudAnchor: (cloudAnchorId: string) => Promise<ViroResolveCloudAnchorResult>;
+        getCloudAnchorStatus: () => Promise<ViroCloudAnchorStatus>;
         cancelCloudAnchorOperations: () => void;
         startScan: () => void;
         finishScan: (ttlDays?: number) => Promise<ViroFinishScanResult>;
+        getScanStatus: () => Promise<ViroScanStatus>;
+        getWorldMeshStats: () => Promise<ViroWorldMeshStatsResult>;
+        getScanDiagnostics: () => Promise<ViroScanDiagnostics>;
         rvCreateSharedFrame: (groupId: string) => Promise<ViroSharedFrameResult>;
         rvJoinSharedFrame: (groupId: string) => Promise<ViroSharedFrameResult>;
         snapshotWorldMeshToFile: (locationTransform: string) => Promise<ViroWorldMeshSnapshotResult>;
@@ -789,9 +831,13 @@ export declare class ViroARSceneNavigator extends React.Component<Props, State> 
         unproject: (point: Viro3DPoint) => Promise<any>;
         hostCloudAnchor: (anchorId: string, ttlDays?: number) => Promise<ViroHostCloudAnchorResult>;
         resolveCloudAnchor: (cloudAnchorId: string) => Promise<ViroResolveCloudAnchorResult>;
+        getCloudAnchorStatus: () => Promise<ViroCloudAnchorStatus>;
         cancelCloudAnchorOperations: () => void;
         startScan: () => void;
         finishScan: (ttlDays?: number) => Promise<ViroFinishScanResult>;
+        getScanStatus: () => Promise<ViroScanStatus>;
+        getWorldMeshStats: () => Promise<ViroWorldMeshStatsResult>;
+        getScanDiagnostics: () => Promise<ViroScanDiagnostics>;
         rvCreateSharedFrame: (groupId: string) => Promise<ViroSharedFrameResult>;
         rvJoinSharedFrame: (groupId: string) => Promise<ViroSharedFrameResult>;
         snapshotWorldMeshToFile: (locationTransform: string) => Promise<ViroWorldMeshSnapshotResult>;

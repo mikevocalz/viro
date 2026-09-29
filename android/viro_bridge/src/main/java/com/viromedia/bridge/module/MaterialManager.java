@@ -37,6 +37,7 @@ import com.facebook.react.bridge.ReadableMapKeySetIterator;
 import com.facebook.react.bridge.ReadableType;
 import com.facebook.react.module.annotations.ReactModule;
 import com.viro.core.VideoTexture;
+import com.viro.core.ViroContext;
 import com.viro.core.internal.Image;
 import com.viro.core.Material;
 import com.viro.core.Texture;
@@ -69,6 +70,9 @@ public class MaterialManager extends ReactContextBaseJavaModule {
     private static Map<String, Image> sImageMap;
     private static Map<String, WeakReference<MaterialChangeListener>> sMaterialChangeListeners;
     public void clearMaterials() {
+        if (sMaterialsMap != null) {
+            for (MaterialWrapper material : sMaterialsMap.values()) material.dispose();
+        }
         sMaterialsMap = new HashMap<>();
         sImageMap = new HashMap<>();
         sMaterialChangeListeners = new HashMap<>();
@@ -157,7 +161,7 @@ public class MaterialManager extends ReactContextBaseJavaModule {
             String materialName = materials.getString(i);
             if (sMaterialsMap.containsKey(materialName)) {
                 // we need to delete the native ref before we remove the material
-                sMaterialsMap.get(materialName).getNativeMaterial().dispose();
+                sMaterialsMap.get(materialName).dispose();
                 sMaterialsMap.remove(materialName);
             }
         }
@@ -247,7 +251,8 @@ public class MaterialManager extends ReactContextBaseJavaModule {
             String key = iter.nextKey();
             ReadableMap material = newMaterials.getMap(key);
             MaterialWrapper materialWrapper = createMaterial(key, material);
-            sMaterialsMap.put(key, materialWrapper);
+            MaterialWrapper previous = sMaterialsMap.put(key, materialWrapper);
+            if (previous != null) previous.dispose();
         }
     }
 
@@ -255,7 +260,7 @@ public class MaterialManager extends ReactContextBaseJavaModule {
         return createMaterial(materialName, materialMap, null);
     }
 
-    private MaterialWrapper createMaterial(String materialName, ReadableMap materialMap, VideoTexture videoTexture) {
+    private MaterialWrapper createMaterial(String materialName, ReadableMap materialMap, Texture contextTexture) {
         MaterialWrapper materialWrapper = new MaterialWrapper(materialName, materialMap);
 
         // These defaults match those in the JNI's Material.java
@@ -301,6 +306,18 @@ public class MaterialManager extends ReactContextBaseJavaModule {
                     continue;
                 }
 
+                if (materialMap.getType(materialPropertyName) == ReadableType.Map) {
+                    ReadableMap source = materialMap.getMap(materialPropertyName);
+                    if (CanvasSourceBridge.isSource(source)) {
+                        if (!materialPropertyName.equals("diffuseTexture")) {
+                            throw new IllegalArgumentException("canvasSource supports diffuseTexture only");
+                        }
+                        materialWrapper.mCanvasSource = source;
+                        diffuseTexture = contextTexture;
+                        continue;
+                    }
+                }
+
                 String path = parseImagePath(materialMap, materialPropertyName);
                 String type = parseAssetType(materialMap, materialPropertyName);
                 Texture.Format format = parseImageFormat(materialMap, materialPropertyName);
@@ -315,7 +332,7 @@ public class MaterialManager extends ReactContextBaseJavaModule {
                 if (path != null) {
                     if (isVideoTexture(path, type)) {
                         materialWrapper.addVideoTexturePath(materialPropertyName, uri);
-                        diffuseTexture = videoTexture;
+                        diffuseTexture = contextTexture;
                     } else {
                         if (sImageMap.get(materialPropertyName) != null) {
                             Texture texture = parseTexture(sImageMap.get(materialPropertyName), sRGB, mipmap,
@@ -452,8 +469,8 @@ public class MaterialManager extends ReactContextBaseJavaModule {
         }
 
         // We don't need to hold a Java texture reference after assigning the texture to the material.
-        // Make an exception for the videoTexture as we use the nativeref to play,pause, loop the video.
-        if (diffuseTexture != null && videoTexture == null) {
+        // Context-owned textures retain their Java handle for playback or Surface teardown.
+        if (diffuseTexture != null && contextTexture == null) {
             diffuseTexture.dispose();
         }
         if (specularTexture != null) {
@@ -867,6 +884,9 @@ public class MaterialManager extends ReactContextBaseJavaModule {
         // the source map that specified this material.
         private final ReadableMap mMaterialSource;
         private Map<String, Uri> mVideoTextures;
+        private ReadableMap mCanvasSource;
+        private CanvasSourceBridge mCanvasBridge;
+        private ViroContext mTextureContext;
 
         public MaterialWrapper(String materialName, ReadableMap source) {
             mVideoTextures = new HashMap<String, Uri>();
@@ -906,12 +926,50 @@ public class MaterialManager extends ReactContextBaseJavaModule {
             return mVideoTextures.get("diffuseTexture");
         }
 
+        /** Resolves context-owned diffuse textures once the node has a renderer. */
+        public boolean ensureContextTexture(ViroContext context) {
+            if (context == null) return false;
+            if (mCanvasSource != null) {
+                if (mTextureContext == context && mCanvasBridge != null) return false;
+                CanvasSourceBridge next = new CanvasSourceBridge(mCanvasSource);
+                try {
+                    Texture texture = next.create(context);
+                    if (mCanvasBridge != null) mCanvasBridge.dispose();
+                    recreate(texture);
+                    mCanvasBridge = next;
+                    mTextureContext = context;
+                    return true;
+                } catch (RuntimeException error) {
+                    next.dispose();
+                    throw error;
+                }
+            }
+            if (hasVideoTextures() && !(mNativeMaterial.getDiffuseTexture() instanceof VideoTexture)) {
+                recreate(new VideoTexture(context, getVideoTextureURI()));
+                return true;
+            }
+            return false;
+        }
+
+        public void dispose() {
+            if (mCanvasBridge != null) mCanvasBridge.dispose();
+            mCanvasBridge = null;
+            mTextureContext = null;
+            if (mNativeMaterial != null) mNativeMaterial.dispose();
+        }
+
+        // Keep the existing descriptor for consumers compiled against earlier bridge AARs.
         public void recreate(VideoTexture videoTexture) {
+            recreate((Texture) videoTexture);
+        }
+
+        public void recreate(Texture contextTexture) {
             if (mMaterialSource != null) {
-                MaterialWrapper other = createMaterial(mMaterialName, mMaterialSource, videoTexture);
+                MaterialWrapper other = createMaterial(mMaterialName, mMaterialSource, contextTexture);
                 mNativeMaterial.dispose();
                 mNativeMaterial = other.mNativeMaterial;
                 mVideoTextures = other.mVideoTextures;
+                mCanvasSource = other.mCanvasSource;
                 if (sMaterialChangeListeners.get(mMaterialName) != null &&
                         sMaterialChangeListeners.get(mMaterialName).get() != null) {
                     MaterialChangeListener listener = sMaterialChangeListeners.get(mMaterialName).get();
@@ -921,11 +979,15 @@ public class MaterialManager extends ReactContextBaseJavaModule {
         }
 
         public void recreate() {
+            if (mCanvasBridge != null) mCanvasBridge.dispose();
+            mCanvasBridge = null;
+            mTextureContext = null;
             if (mMaterialSource != null) {
                 MaterialWrapper other = createMaterial(mMaterialName, mMaterialSource);
                 mNativeMaterial.dispose();
                 mNativeMaterial = other.mNativeMaterial;
                 mVideoTextures = other.mVideoTextures;
+                mCanvasSource = other.mCanvasSource;
             }
         }
     }

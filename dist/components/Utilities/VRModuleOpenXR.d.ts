@@ -5,8 +5,20 @@
 export declare function exitVRScene(): void;
 /** Vertical tracking origin: "eye" = head-height (default), "floor" = physical floor. */
 export type ViroTrackingOrigin = "eye" | "floor";
+/** What the native shared-frame calls resolve to. Never rejects — see the module. */
+export type VRSharedFrameResult = {
+    success: boolean;
+    frameId?: string;
+    /** Row-major 4x4 as CSV, the pose of the shared anchor in this device's space. */
+    transform?: string;
+    error?: string;
+};
 export type VRModuleOpenXRType = {
     recenterTracking?: (viewTag: number) => void;
+    /** CL-H: publish this headset's frame to a Meta spatial anchor group. */
+    rvCreateSharedFrame?: (viewTag: number, groupId: string) => Promise<VRSharedFrameResult>;
+    /** CL-H: recover the frame another headset published to that group. */
+    rvJoinSharedFrame?: (viewTag: number, groupId: string) => Promise<VRSharedFrameResult>;
     setPassthroughEnabled?: (viewTag: number, enabled: boolean) => void;
     setTrackingOrigin?: (viewTag: number, origin: ViroTrackingOrigin) => void;
     setPassthroughStyle?: (viewTag: number, opacity: number, edgeR: number, edgeG: number, edgeB: number, edgeA: number) => void;

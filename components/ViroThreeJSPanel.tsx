@@ -25,11 +25,7 @@
  * the upgrade is native EGL/IOSurface binding — same JS API, faster path.
  */
 import * as React from "react";
-import type {
-  CanvasSurface,
-  GLES3Producer,
-  GLES3ProducerInit,
-} from "nitro-canvas-in-Vision";
+import type { CanvasSurface, GLES3Producer, GLES3ProducerInit } from "./CanvasPanel/nitroCanvas";
 import { requireNitroCanvas } from "./CanvasPanel/nitroCanvas";
 import { ViroNode } from "./ViroNode";
 import { ViroQuad } from "./ViroQuad";
@@ -107,12 +103,14 @@ export const ViroThreeJSPanel = React.forwardRef<
   React.useImperativeHandle(
     ref,
     () => ({
-      surface: state.surface,
-      producer: state.producer,
-      materialName: state.materialName,
+      surface: state?.surface ?? null,
+      producer: state?.producer ?? null,
+      materialName: state?.materialName ?? "",
     }),
-    [state.surface, state.producer, state.materialName]
+    [state]
   );
+
+  if (!state) return null;
 
   return (
     <ViroNode position={position} rotation={rotation}>

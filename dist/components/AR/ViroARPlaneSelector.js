@@ -166,9 +166,9 @@ class ViroARPlaneSelector extends React.Component {
             const next = new Map(prev.planes);
             next.set(anchor.anchorId, anchor);
             if (shouldAutoSelect && prev.selectedPlaneId == null) {
-                return { planes: next, selectedPlaneId: anchor.anchorId, tapLocalPosition: null };
+                return { ...prev, planes: next, selectedPlaneId: anchor.anchorId, tapLocalPosition: null };
             }
-            return { planes: next };
+            return { ...prev, planes: next };
         }, () => {
             if (shouldAutoSelect && this.state.selectedPlaneId === anchor.anchorId) {
                 this.props.onPlaneSelected?.(anchor, anchor.position);

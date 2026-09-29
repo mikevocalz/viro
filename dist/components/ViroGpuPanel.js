@@ -87,7 +87,7 @@ const useCanvasPanel_1 = require("./CanvasPanel/useCanvasPanel");
 exports.ViroGpuPanel = React.forwardRef(function ViroGpuPanel(props, ref) {
     const { init, width, height, position = [0, 1.45, -2.0], rotation, resolution = { width: 1024, height: 1024 }, sRGB, androidRoute, lightingModel, fallbackColor, materialName, onReady, onError, autoTick, } = props;
     const state = (0, useCanvasPanel_1.useCanvasPanel)({
-        producerFactory: () => new ((0, nitroCanvas_1.requireNitroCanvas)().GpuProducer)(init),
+        producerFactory: () => new ((0, nitroCanvas_1.requireNitroCanvas)().GLES3Producer)(init),
         resolution,
         sRGB,
         androidRoute,
@@ -99,10 +99,12 @@ exports.ViroGpuPanel = React.forwardRef(function ViroGpuPanel(props, ref) {
         autoTick,
     });
     React.useImperativeHandle(ref, () => ({
-        surface: state.surface,
-        producer: state.producer,
-        materialName: state.materialName,
-    }), [state.surface, state.producer, state.materialName]);
+        surface: state?.surface ?? null,
+        producer: state?.producer ?? null,
+        materialName: state?.materialName ?? "",
+    }), [state]);
+    if (!state)
+        return null;
     return (<ViroNode_1.ViroNode position={position} rotation={rotation}>
       <ViroQuad_1.ViroQuad width={width} height={height} materials={[state.materialName]}/>
     </ViroNode_1.ViroNode>);

@@ -99,6 +99,16 @@ public final class ViroEventEmitter {
             return mEventName;
         }
 
+        // ClickUp and Clicked are dispatched consecutively. Coalescing them
+        // drops ClickUp, leaving pointer capture and consumer drag state held.
+        // Hover is also source-specific: merging both controllers can discard
+        // an enter/exit edge from one hand.
+        @Override
+        public boolean canCoalesce() {
+            return !ViroEvents.ON_CLICK.equals(mEventName)
+                    && !ViroEvents.ON_HOVER.equals(mEventName);
+        }
+
         @Override
         protected WritableMap getEventData() {
             return mPayload;

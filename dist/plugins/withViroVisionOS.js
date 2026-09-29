@@ -26,10 +26,12 @@
  *   cd visionos && pod install
  *   Open visionos/{AppName}.xcworkspace in Xcode → build for xros Simulator
  *
- * Manual step (one-time, before prebuild):
+ * Manual step (one-time, before prebuild). The template is a whole React Native project whose
+ * visionOS folder is one directory inside it, so it is generated aside and that folder lifted out:
  *   npx @react-native-community/cli@latest init MyApp \
  *     --template github:ReactVision/visionos-template \
- *     --directory visionos --skip-install
+ *     --directory .visionos-template --skip-install
+ *   mv .visionos-template/visionos ./visionos && rm -rf .visionos-template
  */
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
@@ -67,14 +69,35 @@ function isPkgInstalled(projectRoot, pkg) {
         return false;
     }
 }
+// The fork can be installed under its own name, or aliased as `react-native` — an app that builds
+// iOS and Android from the same package installs it that way, so there is one copy of React Native
+// and one set of pods instead of two that collide. Everything that points at the fork by path has
+// to follow whichever name it actually arrived under.
+function resolveRNVisionSpecifier(projectRoot) {
+    for (const name of [RNVISION_PKG, "react-native"]) {
+        const pkgJsonPath = path_1.default.join(projectRoot, "node_modules", ...name.split("/"), "package.json");
+        try {
+            const pkgJson = JSON.parse(fs_1.default.readFileSync(pkgJsonPath, "utf-8"));
+            if (pkgJson.name === RNVISION_PKG)
+                return name;
+        }
+        catch {
+            // not installed under this name
+        }
+    }
+    return RNVISION_PKG;
+}
 // ─── 1. Verify visionos/ folder exists ───────────────────────────────────────
 const withVisionOSSetup = (config) => (0, config_plugins_1.withDangerousMod)(config, [
     "ios",
     async (newConfig) => {
         const projectRoot = newConfig.modRequest.projectRoot;
         const visionosDir = path_1.default.join(projectRoot, "visionos");
-        // Warn if missing deps
+        // Warn if missing deps. The fork counts as installed under either name.
+        const rnVisionSpecifier = resolveRNVisionSpecifier(projectRoot);
         for (const pkg of [RNVISION_PKG, RNVISION_PLATFORMS_PKG, RN_COMMUNITY_CLI_PKG]) {
+            if (pkg === RNVISION_PKG && rnVisionSpecifier !== RNVISION_PKG)
+                continue;
             if (!isPkgInstalled(projectRoot, pkg)) {
                 config_plugins_1.WarningAggregator.addWarningIOS("withViroVisionOS", `${pkg} is not installed. Add it to devDependencies:\n` +
                     `  npm install --save-dev ${pkg}`);
@@ -85,14 +108,17 @@ const withVisionOSSetup = (config) => (0, config_plugins_1.withDangerousMod)(con
             config_plugins_1.WarningAggregator.addWarningIOS("withViroVisionOS", `visionos/ folder not found. Create it once before running expo prebuild:\n\n` +
                 `  npx @react-native-community/cli@latest init "${appName}" \\\n` +
                 `    --template github:ReactVision/visionos-template \\\n` +
-                `    --directory visionos --skip-install\n\n` +
+                `    --directory .visionos-template --skip-install\n` +
+                `  mv .visionos-template/visionos ./visionos && rm -rf .visionos-template\n\n` +
+                `The template is a whole React Native project — only its visionos/ folder belongs in ` +
+                `an Expo app, the rest would collide with what prebuild generates.\n\n` +
                 `Then re-run: expo prebuild`);
         }
         return newConfig;
     },
 ]);
 // ─── 2. metro.config.js — visionOS platform resolver ─────────────────────────
-const METRO_PATCH = `
+const metroPatch = (rnVisionSpecifier) => `
 ${METRO_MARKER} — visionOS platform resolver
 
 // Viro loads these through \`require()\`, and Metro treats anything not in assetExts as source.
@@ -112,25 +138,36 @@ for (const ext of VIRO_ASSET_EXTS) {
   }
 }
 
-const path = require('path');
-const { getPlatformResolver } = require('${RNVISION_PLATFORMS_PKG}');
-const viroPlatformResolver = getPlatformResolver({
-  platformNameMap: { visionos: '${RNVISION_PKG}' },
+// Prefixed, all of it: this block is appended to a config file that was written without knowing
+// about it, and \`const path = require('path')\` at the top of a Metro config is close to
+// universal. A second \`const path\` in the same scope is a SyntaxError that nothing catches until
+// the bundler runs — which no native build does, so it survives every compile and fails on launch.
+const viroNodePath = require('path');
+const { getPlatformResolver: viroGetPlatformResolver } = require('${RNVISION_PLATFORMS_PKG}');
+const viroPlatformResolver = viroGetPlatformResolver({
+  platformNameMap: { visionos: '${rnVisionSpecifier}' },
 });
 
 // Device builds run their own Metro from the Xcode build phase, which reads this file and
 // nothing else — tsconfig \`paths\` are applied by the Expo dev server, not by that instance.
 // A project using the \`@/\` alias therefore builds in the Simulator and fails on device with
 // "Unable to resolve module @/...". Resolving it here covers both.
+// The rewrite is a fallback, not the first thing tried. Resolving \`@/x\` to an absolute path
+// takes it out of Metro's ordinary path and an asset reached that way loses the treatment that
+// gives it a server location — fonts arrive as bytes CoreText rejects ("CTFontManagerError 104")
+// and images as an empty \`source.uri\`. Where the alias already resolves, which is everywhere the
+// Expo dev server applies tsconfig paths, nothing is rewritten at all.
 config.resolver.resolveRequest = (context, moduleName, platform) => {
-  if (moduleName.startsWith('@/')) {
+  try {
+    return viroPlatformResolver(context, moduleName, platform);
+  } catch (error) {
+    if (!moduleName.startsWith('@/')) throw error;
     return viroPlatformResolver(
       context,
-      path.resolve(__dirname, moduleName.slice(2)),
+      viroNodePath.resolve(__dirname, moduleName.slice(2)),
       platform
     );
   }
-  return viroPlatformResolver(context, moduleName, platform);
 };
 `;
 const withVisionOSMetroConfig = (config) => (0, config_plugins_1.withDangerousMod)(config, [
@@ -143,9 +180,23 @@ const withVisionOSMetroConfig = (config) => (0, config_plugins_1.withDangerousMo
             return newConfig;
         }
         let metro = fs_1.default.readFileSync(metroPath, "utf-8");
-        if (metro.includes(METRO_MARKER))
-            return newConfig; // idempotent
-        metro = metro.replace("module.exports = config;", METRO_PATCH + "\nmodule.exports = config;");
+        const patch = metroPatch(resolveRNVisionSpecifier(projectRoot));
+        if (metro.includes(METRO_MARKER)) {
+            // Replaced rather than skipped. Skipping is the obvious reading of "idempotent" and it is
+            // wrong here: a config patched by an older version of this plugin keeps whatever that
+            // version got wrong forever, and the block is ours to own from the marker to the export.
+            const start = metro.indexOf(METRO_MARKER);
+            const end = metro.indexOf("module.exports = config;", start);
+            if (end === -1) {
+                config_plugins_1.WarningAggregator.addWarningIOS("withViroVisionOS", "metro.config.js carries the visionOS block but no `module.exports = config;` after " +
+                    "it — left as is, so nothing is cut in half. Re-add the export and prebuild again.");
+                return newConfig;
+            }
+            metro = metro.slice(0, start) + patch.replace(/^\n/, "") + "\n" + metro.slice(end);
+        }
+        else {
+            metro = metro.replace("module.exports = config;", patch + "\nmodule.exports = config;");
+        }
         fs_1.default.writeFileSync(metroPath, metro, "utf-8");
         return newConfig;
     },
@@ -245,10 +296,20 @@ const withVisionOSPodfile = (config) => (0, config_plugins_1.withDangerousMod)(c
         // with "Cannot find module '<other-scope>/react-native-visionos/scripts/react_native_pods.rb'"
         // before a single pod is written — a confusing first failure, and one no amount of
         // reactNativePath configuration fixes, because it happens while the Podfile is being read.
-        podfile = podfile.replace(/"@[a-z0-9-]+\/react-native-visionos\/scripts\/react_native_pods\.rb"/g, `"${RNVISION_PKG}/scripts/react_native_pods.rb"`);
-        // ── 3b. Ensure config[:reactNativePath] is set correctly ──
-        if (!podfile.includes("config[:reactNativePath]")) {
-            podfile = podfile.replace(/(config = use_native_modules!\n)/, `$1  config[:reactNativePath] = '../node_modules/${RNVISION_PKG}'\n`);
+        const rnVisionSpecifier = resolveRNVisionSpecifier(projectRoot);
+        podfile = podfile.replace(/"@[a-z0-9-]+\/react-native-visionos\/scripts\/react_native_pods\.rb"/g, `"${rnVisionSpecifier}/scripts/react_native_pods.rb"`);
+        // ── 3b. Point config[:reactNativePath] at where the fork actually is ──
+        //
+        // Rewritten rather than only added when absent: the template ships the line already, spelled
+        // with the package's own name. An app that installs the fork under the `react-native` alias
+        // has no such directory, and CocoaPods then reads a Podfile that autolinks against a path
+        // that is not there.
+        const reactNativePathLine = `config[:reactNativePath] = '../node_modules/${rnVisionSpecifier}'`;
+        if (podfile.includes("config[:reactNativePath]")) {
+            podfile = podfile.replace(/config\[:reactNativePath\] = '[^']*'/g, reactNativePathLine);
+        }
+        else {
+            podfile = podfile.replace(/(config = use_native_modules!\n)/, `$1  ${reactNativePathLine}\n`);
         }
         // ── 3c. Inject post_install content ──
         if (!podfile.includes(`# ${PODFILE_MARKER}: fmt consteval fix`)) {
@@ -375,6 +436,8 @@ const withVisionOSPatches = (config) => (0, config_plugins_1.withDangerousMod)(c
 const SHIM_FILES = [
     { file: "BlurView.tsx", requires: "expo-blur" },
     { file: "LinearGradient.tsx", requires: "expo-linear-gradient" },
+    { file: "Haptics.ts", requires: "expo-haptics" },
+    { file: "IconSymbol.tsx", requires: "expo-symbols" },
 ];
 const withVisionOSCompatShims = (config) => (0, config_plugins_1.withDangerousMod)(config, [
     "ios",
@@ -408,7 +471,9 @@ const withVisionOSCompatShims = (config) => (0, config_plugins_1.withDangerousMo
             config_plugins_1.WarningAggregator.addWarningIOS("withViroVisionOS", "visionOS compat shims installed at components/compat/.\n" +
                 "Replace these imports in any file that uses them:\n" +
                 "  expo-blur            → @/components/compat/BlurView\n" +
-                "  expo-linear-gradient → @/components/compat/LinearGradient");
+                "  expo-linear-gradient → @/components/compat/LinearGradient\n" +
+                "  expo-haptics         → @/components/compat/Haptics\n" +
+                "  expo-symbols         → @/components/compat/IconSymbol");
         }
         return newConfig;
     },
@@ -549,7 +614,7 @@ const withVisionOSBundlePhase = (config) => (0, config_plugins_1.withDangerousMo
         //
         // The pattern matches this package's own scope too, where the replacement is a no-op.
         const stalePackagePath = /@[a-z0-9-]+\/react-native-visionos\//g;
-        const repointed = pbx.replace(stalePackagePath, `${RNVISION_PKG}/`);
+        const repointed = pbx.replace(stalePackagePath, `${resolveRNVisionSpecifier(projectRoot)}/`);
         if (repointed !== pbx) {
             pbx = repointed;
             fs_1.default.writeFileSync(pbxPath, pbx, "utf-8");
@@ -579,6 +644,134 @@ const withVisionOSBundlePhase = (config) => (0, config_plugins_1.withDangerousMo
         return newConfig;
     },
 ]);
+// ─── 10. visionos/{App}/Fonts — icon fonts the app draws with ────────────────
+//
+// `@expo/vector-icons` draws a glyph as <Text> in a font it asks expo-font to register at
+// runtime. The visionOS target has no Expo modules — its Podfile installs React Native and Viro,
+// nothing else — so that registration is a no-op stub and every icon renders as a blank box. The
+// platform has a second way in, which needs no native module: a font listed in UIAppFonts and
+// present in the bundle is registered by the system before any JS runs.
+//
+// Only the families the project actually imports are copied. The full set is 3.9 MB and an app
+// typically draws from one or two of them.
+const VECTOR_ICON_FAMILIES = [
+    "AntDesign", "Entypo", "EvilIcons", "Feather", "FontAwesome", "FontAwesome5_Brands",
+    "FontAwesome5_Regular", "FontAwesome5_Solid", "FontAwesome6_Brands", "FontAwesome6_Regular",
+    "FontAwesome6_Solid", "Fontisto", "Foundation", "Ionicons", "MaterialCommunityIcons",
+    "MaterialIcons", "Octicons", "SimpleLineIcons", "Zocial",
+];
+function collectSourceText(dir, acc, depth = 0) {
+    if (depth > 6 || !fs_1.default.existsSync(dir))
+        return;
+    for (const entry of fs_1.default.readdirSync(dir, { withFileTypes: true })) {
+        if (entry.name === "node_modules" || entry.name.startsWith("."))
+            continue;
+        const full = path_1.default.join(dir, entry.name);
+        if (entry.isDirectory()) {
+            collectSourceText(full, acc, depth + 1);
+        }
+        else if (/\.(t|j)sx?$/.test(entry.name)) {
+            try {
+                acc.push(fs_1.default.readFileSync(full, "utf-8"));
+            }
+            catch {
+                // unreadable file; nothing to scan
+            }
+        }
+    }
+}
+const withVisionOSIconFonts = (config) => (0, config_plugins_1.withDangerousMod)(config, [
+    "ios",
+    async (newConfig) => {
+        const projectRoot = newConfig.modRequest.projectRoot;
+        const projectName = config.name.replace(/[^a-zA-Z0-9]/g, "");
+        const visionosDir = path_1.default.join(projectRoot, "visionos");
+        if (!fs_1.default.existsSync(visionosDir))
+            return newConfig;
+        let fontsSource;
+        try {
+            fontsSource = path_1.default.join(path_1.default.dirname(require.resolve("@expo/vector-icons/package.json", {
+                paths: [projectRoot],
+            })), "build", "vendor", "react-native-vector-icons", "Fonts");
+        }
+        catch {
+            return newConfig; // the app does not use vector icons
+        }
+        if (!fs_1.default.existsSync(fontsSource))
+            return newConfig;
+        const sources = [];
+        for (const dir of ["app", "components", "src"]) {
+            collectSourceText(path_1.default.join(projectRoot, dir), sources);
+        }
+        const text = sources.join("\n");
+        const used = VECTOR_ICON_FAMILIES.filter((family) => text.includes(`@expo/vector-icons/${family}`) ||
+            new RegExp(`\\b${family}\\b`).test(text));
+        if (used.length === 0)
+            return newConfig;
+        const fontsTarget = path_1.default.join(visionosDir, projectName, "Fonts");
+        fs_1.default.mkdirSync(fontsTarget, { recursive: true });
+        const copied = [];
+        for (const family of used) {
+            const from = path_1.default.join(fontsSource, `${family}.ttf`);
+            if (!fs_1.default.existsSync(from))
+                continue;
+            fs_1.default.copyFileSync(from, path_1.default.join(fontsTarget, `${family}.ttf`));
+            copied.push(`${family}.ttf`);
+        }
+        // Fonts the app ships itself, which expo-font would have embedded on iOS.
+        const appFonts = path_1.default.join(projectRoot, "assets", "fonts");
+        if (fs_1.default.existsSync(appFonts)) {
+            for (const name of fs_1.default.readdirSync(appFonts)) {
+                if (!/\.(ttf|otf)$/i.test(name))
+                    continue;
+                fs_1.default.copyFileSync(path_1.default.join(appFonts, name), path_1.default.join(fontsTarget, name));
+                copied.push(name);
+            }
+        }
+        if (copied.length === 0)
+            return newConfig;
+        // ── the Xcode target has to copy them ──
+        //
+        // Added as a folder reference rather than one entry per file: the folder's contents are
+        // copied whole, so a family added later needs no second edit here.
+        const pbxPath = path_1.default.join(visionosDir, `${projectName}.xcodeproj`, "project.pbxproj");
+        if (fs_1.default.existsSync(pbxPath)) {
+            let pbx = fs_1.default.readFileSync(pbxPath, "utf-8");
+            if (!pbx.includes("/* Fonts */")) {
+                const fileRefId = "VIR0F0NT5000000000000001";
+                const buildFileId = "VIR0F0NT5000000000000002";
+                pbx = pbx.replace(/(\/\* Begin PBXFileReference section \*\/\n)/, `$1\t\t${fileRefId} /* Fonts */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Fonts; path = ${projectName}/Fonts; sourceTree = "<group>"; };\n`);
+                pbx = pbx.replace(/(\/\* Begin PBXBuildFile section \*\/\n)/, `$1\t\t${buildFileId} /* Fonts in Resources */ = {isa = PBXBuildFile; fileRef = ${fileRefId} /* Fonts */; };\n`);
+                // Into the app target's Resources phase, found by the asset catalog it already copies.
+                pbx = pbx.replace(/(\n\t\t\t\t[A-Z0-9]+ \/\* Images\.xcassets in Resources \*\/,)/, `$1\n\t\t\t\t${buildFileId} /* Fonts in Resources */,`);
+                // And into the group beside the asset catalog, so it is visible in Xcode.
+                pbx = pbx.replace(/(\n\t\t\t\t[A-Z0-9]+ \/\* Images\.xcassets \*\/,)/, `$1\n\t\t\t\t${fileRefId} /* Fonts */,`);
+                if (pbx.includes("Fonts in Resources")) {
+                    fs_1.default.writeFileSync(pbxPath, pbx, "utf-8");
+                    console.log(`[withViroVisionOS] Bundled the icon fonts with the visionOS target: ${copied.join(", ")}`);
+                }
+                else {
+                    config_plugins_1.WarningAggregator.addWarningIOS("withViroVisionOS", "Could not add visionos/Fonts to the Xcode target's Resources phase. Drag the " +
+                        "Fonts folder into the target in Xcode, or icons will render as blank boxes.");
+                }
+            }
+        }
+        // ── and the system has to be told which files they are ──
+        const plistPath = path_1.default.join(visionosDir, projectName, "Info.plist");
+        if (fs_1.default.existsSync(plistPath)) {
+            const plist = fs_1.default.readFileSync(plistPath, "utf-8");
+            if (!plist.includes("<key>UIAppFonts</key>")) {
+                const entries = copied
+                    .map((name) => `\t\t<string>Fonts/${name}</string>`)
+                    .join("\n");
+                const updated = plist.replace(/<dict>/, `<dict>\n\t<key>UIAppFonts</key>\n\t<array>\n${entries}\n\t</array>`);
+                if (updated !== plist)
+                    fs_1.default.writeFileSync(plistPath, updated, "utf-8");
+            }
+        }
+        return newConfig;
+    },
+]);
 const withViroVisionOS = (config) => (0, config_plugins_1.withPlugins)(config, [
     withVisionOSSetup, // 1. verify visionos/ folder + deps
     withVisionOSMetroConfig, // 2. metro.config.js visionOS resolver
@@ -589,6 +782,7 @@ const withViroVisionOS = (config) => (0, config_plugins_1.withPlugins)(config, [
     withVisionOSInfoPlist, // 7. Info.plist: allow multiple scenes (ImmersiveSpace)
     withVisionOSAppDelegate, // 8. AppDelegate.swift: Expo entry point + imports
     withVisionOSBundlePhase, // 9. Xcode bundling phase: Expo entry + skip bundling in Debug
+    withVisionOSIconFonts, // 10. Fonts/: icon fonts in the bundle + UIAppFonts
 ]);
 exports.withViroVisionOS = withViroVisionOS;
 exports.default = exports.withViroVisionOS;

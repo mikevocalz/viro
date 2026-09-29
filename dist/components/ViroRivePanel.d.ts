@@ -1,38 +1,12 @@
-/**
- * ViroRivePanel
- *
- * The native Rive bridge. Sister panel to ViroGpuPanel — different runtime
- * (no GPUCanvasContext), same lifecycle. Consumers supply a Rive runtime
- * adapter that knows how to draw into the CanvasSurface's backing buffer
- * (AHardwareBuffer on Android, IOSurface on Apple).
- *
- *   <ViroRivePanel
- *     width={1.2} height={0.8}
- *     position={[0, 1.45, -2.0]}
- *     init={{
- *       createRuntime: async (surface) => {
- *         // attach a Rive runtime to the surface's backing buffer here
- *         return {
- *           advance(dt) { stateMachine.advance(dt) },
- *           draw()      { riveRenderer.draw(skSurface.getCanvas()) },
- *           release()   { riveRenderer.release() },
- *         };
- *       },
- *     }}
- *   />
- *
- * Note: the native shim that bridges @rive-app/react-native's runtime to a
- * Viro material is the missing piece — `@rive-app/react-native` ships a
- * `<RiveView>` for screen rendering but does not expose its renderer for
- * off-screen targeting today. Until that native bridge lands the producer
- * is dormant; the JS surface is here so plug-in is one render-runtime
- * change once it does.
- */
+/** Native Rive panel. Its runtime owns the idle-aware frame clock. */
 import * as React from "react";
-import type { CanvasSurface, RiveProducer, RiveProducerInit } from "nitro-canvas-in-Vision";
+import type { CanvasSurface, RiveProducer, RiveProducerInit, RiveCanvasOptions, RivePanel, CanvasInViroInputOptions } from "nitro-canvas-in-Vision";
 type Vec3 = [number, number, number];
-export type ViroRivePanelProps = {
-    init: RiveProducerInit;
+type ViroRivePanelCommonProps = {
+    /** Current world transform and optional live ray. Grip movement belongs to the parent. */
+    input?: Omit<CanvasInViroInputOptions, "size" | "onPointer">;
+    /** The native file is loaded. Surface attachment and frames are available on this handle. */
+    onRuntimeReady?: (panel: RivePanel) => void;
     width: number;
     height: number;
     position?: Vec3;
@@ -50,10 +24,19 @@ export type ViroRivePanelProps = {
     onError?: (error: Error) => void;
     autoTick?: boolean;
 };
+/** A native source or a custom adapter. Replacing either object reloads the producer. */
+export type ViroRivePanelProps = ViroRivePanelCommonProps & ({
+    source: RiveCanvasOptions;
+    init?: never;
+} | {
+    init: RiveProducerInit;
+    source?: never;
+});
 export type ViroRivePanelHandle = {
     surface: CanvasSurface | null;
     producer: RiveProducer | null;
     materialName: string;
+    runtime: RivePanel | null;
 };
 export declare const ViroRivePanel: React.ForwardRefExoticComponent<ViroRivePanelProps & React.RefAttributes<ViroRivePanelHandle>>;
 export {};

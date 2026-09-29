@@ -190,6 +190,24 @@ export interface ViroConfigurationOptions {
      * DEFAULTS TO: true
      */
     questArm64Only?: boolean;
+    /**
+     * Enable Meta VR Layout SDK native dependencies for React Native spatial
+     * windows. The app must install both @metavr/layout-compat and
+     * @metavr/layout-window-compat as direct dependencies.
+     *
+     * This is intended for builds whose xRMode includes "QUEST". The Layout
+     * SDK is a Standard Android panel/window feature; Viro's immersive OpenXR
+     * scene path remains separate.
+     *
+     * DEFAULTS TO: false
+     */
+    metaSpatialLayout?: boolean;
+    /**
+     * MetaVRX BOM version used when metaSpatialLayout is enabled.
+     *
+     * DEFAULTS TO: "1.2026.0.0"
+     */
+    metaSpatialLayoutBomVersion?: string;
   };
 }
 

@@ -30,7 +30,7 @@ import {
   ViroSwipeEvent,
   ViroTouchEvent,
 } from "./Types/ViroEvents";
-import { ViroNativeRef, ViroSource } from "./Types/ViroUtils";
+import { ViroNativeRef } from "./Types/ViroUtils";
 
 const ViroControllerModule = NativeModules.VRTControllerModule;
 
@@ -39,7 +39,7 @@ type Props = ViroCommonProps &
     onSwipe?: () => void;
     onControllerStatus?: (
       status: ViroControllerStatus,
-      source: ViroSource
+      source: number
     ) => void;
     reticleVisibility?: boolean;
     controllerVisibility?: boolean;
