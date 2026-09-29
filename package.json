@@ -32,17 +32,17 @@
     "audit:events": "node scripts/audit-events.cjs"
   },
   "peerDependencies": {
-    "@reactvision/react-native-visionos": ">=0.86.0 <0.87.0",
+    "@reactvision/react-native-visionos": ">=0.86.0 <0.89.0",
     "@reactvision/viro-web-renderer": "^1.0.0",
-    "expo": ">=57.0.0 <58.0.0",
+    "expo": ">=57.0.0 <59.0.0",
     "react": ">=19.0.0",
-    "react-native": ">=0.86.0 <0.87.0",
+    "react-native": ">=0.86.0 <0.89.0",
     "react-native-web": ">=0.19.0",
     "@metavr/layout-compat": "^1.0.0",
     "@metavr/layout-window-compat": "^1.0.0"
   },
   "engines": {
-    "react-native": ">=0.86.0 <0.87.0"
+    "react-native": ">=0.86.0 <0.89.0"
   },
   "peerDependenciesMeta": {
     "@reactvision/react-native-visionos": {
