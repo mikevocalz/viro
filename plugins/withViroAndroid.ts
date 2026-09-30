@@ -526,7 +526,9 @@ const withViroManifest = (config: ExpoConfig) =>
         contents.manifest["uses-feature"].push({
           $: {
             "android:name": "android.hardware.vr.headtracking",
-            "android:required": "true",
+            // A combined ["AR", "QUEST"] APK must remain installable on phones.
+            // Quest-only binaries can require head tracking for store targeting.
+            "android:required": activeXrModes.includes("AR") ? "false" : "true",
             "android:version": "1",
           },
         });
