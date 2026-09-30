@@ -35,8 +35,16 @@ import { isVisionOS } from "./Utilities/ViroPlatform";
 import { warnUnsupported } from "./Utilities/ViroUnsupported";
 const ViroSceneNavigatorModule = NativeModules.VRTSceneNavigatorModule;
 const VRModuleOpenXR = NativeModules.VRModuleOpenXR as {
-  recenterTracking: (viewTag: number) => void;
-  setPassthroughEnabled: (viewTag: number, enabled: boolean) => void;
+  recenterTracking?: (viewTag: number) => void;
+  setPassthroughEnabled?: (viewTag: number, enabled: boolean) => void;
+  rvCreateSharedFrame?: (
+    viewTag: number,
+    groupId: string,
+  ) => Promise<{ success: boolean; frameId?: string; transform?: string; error?: string }>;
+  rvJoinSharedFrame?: (
+    viewTag: number,
+    groupId: string,
+  ) => Promise<{ success: boolean; frameId?: string; transform?: string; error?: string }>;
 } | undefined;
 
 type State = {
@@ -471,6 +479,36 @@ export class ViroVRSceneNavigator extends React.Component<Props, State> {
     ViroSceneNavigatorModule.recenterTracking(findNodeHandle(this));
   };
 
+  /**
+   * Quest co-location bridge used by ViroSharedFrame inside VRActivity.
+   * ViroXRSceneNavigator already exposed these calls to the panel-side ref, but
+   * the actual immersive scene is mounted by ViroVRSceneNavigator in a second
+   * React root. Expose the same API here so scene code receives a usable
+   * arSceneNavigator instead of losing shared-frame support at the activity
+   * boundary.
+   */
+  _rvCreateSharedFrame = async (groupId: string) => {
+    const viewTag = findNodeHandle(this);
+    if (viewTag == null || !VRModuleOpenXR?.rvCreateSharedFrame) {
+      return {
+        success: false,
+        error: "Quest shared-frame creation is unavailable in this runtime.",
+      };
+    }
+    return await VRModuleOpenXR.rvCreateSharedFrame(viewTag, groupId);
+  };
+
+  _rvJoinSharedFrame = async (groupId: string) => {
+    const viewTag = findNodeHandle(this);
+    if (viewTag == null || !VRModuleOpenXR?.rvJoinSharedFrame) {
+      return {
+        success: false,
+        error: "Quest shared-frame join is unavailable in this runtime.",
+      };
+    }
+    return await VRModuleOpenXR.rvJoinSharedFrame(viewTag, groupId);
+  };
+
   _project = async (point: Viro3DPoint) => {
     return await ViroSceneNavigatorModule.project(findNodeHandle(this), point);
   };
@@ -493,6 +531,7 @@ export class ViroVRSceneNavigator extends React.Component<Props, State> {
         <Scene
           key={"scene" + i}
           sceneNavigator={this.sceneNavigator}
+          arSceneNavigator={this.sceneNavigator}
           {...props}
         />
       );
@@ -511,6 +550,8 @@ export class ViroVRSceneNavigator extends React.Component<Props, State> {
     project: this._project,
     unproject: this._unproject,
     recenterTracking: this._recenterTracking,
+    rvCreateSharedFrame: this._rvCreateSharedFrame,
+    rvJoinSharedFrame: this._rvJoinSharedFrame,
     viroAppProps: {} as any,
   };
 
