@@ -45,9 +45,20 @@ export interface GLES3Producer extends CanvasProducer {}
 export interface RivePanel {
   readonly artboardWidth: number;
   readonly artboardHeight: number;
+  readonly managesOwnFrames?: boolean;
+  setActive?(active: boolean): void;
+  setString?(path: string, value: string): void;
+  setNumber?(path: string, value: number): void;
+  setBoolean?(path: string, value: boolean): void;
+  setEnum?(path: string, value: string): void;
+  setColor?(path: string, value: number): void;
+  fireTrigger?(path: string): void;
   [key: string]: unknown;
 }
 export interface RiveCanvasOptions {
+  rivBytes: ArrayBuffer;
+  artboard?: string;
+  stateMachine?: string;
   fit?: RiveFit;
   [key: string]: unknown;
 }
@@ -56,7 +67,13 @@ export interface RiveProducerInit {
   [key: string]: unknown;
 }
 export interface RiveProducer extends CanvasProducer {
-  readonly runtime: any;
+  readonly runtime: RivePanel | null;
+  setString?(path: string, value: string): void;
+  setNumber?(path: string, value: number): void;
+  setBoolean?(path: string, value: boolean): void;
+  setEnum?(path: string, value: string): void;
+  setColor?(path: string, value: number): void;
+  fireTrigger?(path: string): void;
   onPointer(phase: CanvasPointerPhase, x: number, y: number): void;
 }
 export interface CanvasInViroInputOptions {
