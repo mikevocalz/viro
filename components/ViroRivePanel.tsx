@@ -1,5 +1,6 @@
 /** Native Rive panel. Its runtime owns the idle-aware frame clock. */
 import * as React from "react";
+import { Platform } from "react-native";
 import type { CanvasSurface, RiveProducer, RiveProducerInit, RiveCanvasOptions, RivePanel, CanvasInViroInputOptions, CanvasInViroInputProps } from "./CanvasPanel/nitroCanvas";
 import { requireNitroCanvas } from "./CanvasPanel/nitroCanvas";
 import { ViroNode } from "./ViroNode";
@@ -73,7 +74,7 @@ export const ViroRivePanel = React.forwardRef<
     rotation,
     resolution = { width: 1024, height: 1024 },
     sRGB,
-    androidRoute = "surface-texture",
+    androidRoute = Platform.OS === "android" ? "ahb" : "surface-texture",
     lightingModel,
     fallbackColor,
     materialName,
