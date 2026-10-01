@@ -20,7 +20,7 @@ import com.facebook.react.bridge.WritableMap;
 import com.viro.core.ARScene;
 
 /**
- * React Native native module for Meta Quest / OpenXR-specific operations.
+ * React Native native module for Android OpenXR operations on Meta Horizon and PICO.
  * Registered automatically when {@link com.viromedia.bridge.ReactViroPackage} is
  * initialised with {@code ViroPlatform.QUEST}.
  *
@@ -212,6 +212,47 @@ public class VRModuleOpenXR extends ReactContextBaseJavaModule {
      * -1 = whichever controller last pressed its trigger. amplitude ∈ [0,1],
      * durationSec is the pulse length in seconds (e.g. 0.02–0.06 for a UI tick).
      */
+    /**
+     * Return negotiated OpenXR capability facts as a named JS object.
+     *
+     * The renderer keeps a separate native String[10] capability ABI so the
+     * older expo-pico runtime-info String[10] contract is not changed.
+     */
+    @ReactMethod
+    public void getRuntimeCapabilities(final int sceneNavTag, final Promise promise) {
+        UIManager uiManager = UIManagerHelper.getUIManager(getReactApplicationContext(), sceneNavTag);
+        if (uiManager == null) {
+            promise.resolve(null);
+            return;
+        }
+        ((FabricUIManager) uiManager).addUIBlock(new com.facebook.react.fabric.interop.UIBlock() {
+            @Override
+            public void execute(com.facebook.react.fabric.interop.UIBlockViewResolver viewResolver) {
+                View view = viewResolver.resolveView(sceneNavTag);
+                if (!(view instanceof VRTVRSceneNavigator)) {
+                    promise.resolve(null);
+                    return;
+                }
+                String[] caps = ((VRTVRSceneNavigator) view).getRuntimeCapabilities();
+                if (caps == null || caps.length < 10) {
+                    promise.resolve(null);
+                    return;
+                }
+                WritableMap result = Arguments.createMap();
+                result.putBoolean("eyeGazeExtensionAvailable", "1".equals(caps[0]));
+                result.putBoolean("eyeGazeSupported", "1".equals(caps[1]));
+                result.putBoolean("handTrackingAvailable", "1".equals(caps[2]));
+                result.putBoolean("handAimAvailable", "1".equals(caps[3]));
+                result.putBoolean("passthroughAvailable", "1".equals(caps[4]));
+                result.putBoolean("planeDetectionAvailable", "1".equals(caps[5]));
+                result.putBoolean("sceneUnderstandingAvailable", "1".equals(caps[6]));
+                result.putBoolean("foveationAvailable", "1".equals(caps[7]));
+                result.putBoolean("eyeTrackedFoveationAvailable", "1".equals(caps[8]));
+                result.putBoolean("localFloorAvailable", "1".equals(caps[9]));
+                promise.resolve(result);
+            }
+        });
+    }
     @ReactMethod
     public void triggerHaptic(final int sceneNavTag, final int hand,
                               final float amplitude, final float durationSec) {
