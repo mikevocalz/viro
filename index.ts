@@ -232,7 +232,27 @@ import { ViroVideo } from "./components/ViroVideo";
 import { ViroVRSceneNavigator } from "./components/ViroVRSceneNavigator";
 import { ViroXRSceneNavigator } from "./components/ViroXRSceneNavigator";
 import { Viro3DSceneNavigator } from "./components/Viro3DSceneNavigator";
-import { hasOpenXRSupport, isQuest } from "./components/Utilities/ViroPlatform";
+import {
+  hasOpenXRSupport,
+  isQuest,
+  isKnownQuest,
+  isMetaHorizonXR,
+  metaHorizonFormFactor,
+  isPico,
+  isWeb,
+  isXRHeadset,
+} from "./components/Utilities/ViroPlatform";
+import {
+  ViroSpatialSceneProvider,
+  ViroSpatialWindow,
+  getViroSpatialLayoutSupport,
+} from "./components/Spatial/ViroSpatialLayout";
+export type {
+  ViroSpatialFallback,
+  ViroSpatialSceneProviderProps,
+  ViroSpatialWindowProps,
+  ViroSpatialLayoutSupport,
+} from "./components/Spatial/ViroSpatialLayout";
 import { useAnySourceHover } from "./components/Utilities/useAnySourceHover";
 import { useAnySourcePressed } from "./components/Utilities/useAnySourcePressed";
 import { ViroTextStyle } from "./components/Styles/ViroTextStyle";
@@ -356,12 +376,14 @@ import {
   exitVRScene,
   setPassthroughStyle,
   triggerHaptic,
+  getOpenXRRuntimeCapabilities,
 } from "./components/Utilities/VRModuleOpenXR";
 import type {
   VRModuleOpenXRType,
   ViroPassthroughStyle,
   ViroHapticHand,
   ViroTrackingOrigin,
+  ViroOpenXRRuntimeCapabilities,
 } from "./components/Utilities/VRModuleOpenXR";
 import { StreamingAudioManager } from "./components/Utilities/StreamingAudioManager";
 import { AppRegistry } from "react-native";
@@ -372,6 +394,9 @@ import { AppRegistry } from "react-native";
 AppRegistry.registerComponent("VRQuestScene", () => ViroQuestEntryPoint);
 
 export {
+  ViroSpatialSceneProvider,
+  ViroSpatialWindow,
+  getViroSpatialLayoutSupport,
   ViroARCloudAnchor,
   ViroSharedFrame,
   cloudAnchorFrameSource,
@@ -486,12 +511,19 @@ export {
   exitVRScene,
   setPassthroughStyle,
   triggerHaptic,
+  getOpenXRRuntimeCapabilities,
   Viro3DSceneNavigator,
   // Streaming audio
   StreamingAudioManager,
   // Utilities
   hasOpenXRSupport,
   isQuest,
+  isKnownQuest,
+  isMetaHorizonXR,
+  metaHorizonFormFactor,
+  isPico,
+  isWeb,
+  isXRHeadset,
   useAnySourceHover,
   useAnySourcePressed,
   ViroARTrackingReasonConstants,
@@ -632,6 +664,7 @@ export type {
   ViroPassthroughStyle,
   ViroHapticHand,
   ViroTrackingOrigin,
+  ViroOpenXRRuntimeCapabilities,
 };
 export type {
   ImmersiveSpaceStyle,

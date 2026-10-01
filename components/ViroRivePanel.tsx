@@ -1,14 +1,7 @@
 /** Native Rive panel. Its runtime owns the idle-aware frame clock. */
 import * as React from "react";
-import type {
-  CanvasSurface,
-  RiveProducer,
-  RiveProducerInit,
-  RiveCanvasOptions,
-  RivePanel,
-  CanvasInViroInputOptions,
-  CanvasInViroInputProps,
-} from "nitro-canvas-in-Vision";
+import { Platform } from "react-native";
+import type { CanvasSurface, RiveProducer, RiveProducerInit, RiveCanvasOptions, RivePanel, CanvasInViroInputOptions, CanvasInViroInputProps } from "./CanvasPanel/nitroCanvas";
 import { requireNitroCanvas } from "./CanvasPanel/nitroCanvas";
 import { ViroNode } from "./ViroNode";
 import { ViroQuad } from "./ViroQuad";
@@ -16,7 +9,24 @@ import { useCanvasPanel } from "./CanvasPanel/useCanvasPanel";
 
 type Vec3 = [number, number, number];
 
+export type ViroRiveBindingValue =
+  | string
+  | number
+  | boolean
+  | { kind: "enum"; value: string }
+  | { kind: "color"; value: number }
+  | { kind: "trigger"; serial: number };
+
+export type ViroRiveBindings = Record<string, ViroRiveBindingValue>;
+
 type ViroRivePanelCommonProps = {
+  /**
+   * Rive Data Binding values keyed by View Model property path.
+   *
+   * Primitive strings/numbers/booleans map directly. Enum/color bindings use
+   * typed wrappers. Trigger bindings fire only when their serial changes.
+   */
+  bindings?: ViroRiveBindings;
   /** Current world transform and optional live ray. Grip movement belongs to the parent. */
   input?: Omit<CanvasInViroInputOptions, "size" | "onPointer">;
   /** The native file is loaded. Surface attachment and frames are available on this handle. */
@@ -64,16 +74,20 @@ export const ViroRivePanel = React.forwardRef<
     rotation,
     resolution = { width: 1024, height: 1024 },
     sRGB,
-    androidRoute = "surface-texture",
+    androidRoute = Platform.OS === "android" ? "ahb" : "surface-texture",
     lightingModel,
     fallbackColor,
     materialName,
     onReady,
     onError,
     autoTick,
+    bindings,
   } = props;
 
   const runtime = React.useRef<RivePanel | null>(null);
+  const latestBindings = React.useRef<ViroRiveBindings | undefined>(bindings);
+  latestBindings.current = bindings;
+  const appliedBindings = React.useRef(new Map<string, string>());
   React.useEffect(() => () => { runtime.current = null; }, [source, init]);
   const ready = React.useRef(onRuntimeReady);
   ready.current = onRuntimeReady;
@@ -96,13 +110,24 @@ export const ViroRivePanel = React.forwardRef<
     materialName,
     onReady: ({ producer }) => {
       const value = producer.runtime;
-      runtime.current = value && "panel" in value ? value.panel as RivePanel : null;
-      if (runtime.current) ready.current?.(runtime.current);
+      runtime.current =
+        value && typeof value === "object" && "panel" in value
+          ? (value.panel as RivePanel)
+          : (value as RivePanel | null);
+      if (runtime.current) {
+        applyBindings(runtime.current, latestBindings.current, appliedBindings.current);
+        ready.current?.(runtime.current);
+      }
       onReady?.();
     },
     onError,
     autoTick,
   });
+
+  React.useEffect(() => {
+    if (!runtime.current) return;
+    applyBindings(runtime.current, bindings, appliedBindings.current);
+  }, [bindings]);
 
   React.useImperativeHandle(
     ref,
@@ -152,4 +177,41 @@ function InteractiveRiveQuad({ width, height, materialName, input, producer, run
     highAccuracyEvents
     dragPlane={{ ...handlers.dragPlane, planePoint: [...handlers.dragPlane.planePoint],
       planeNormal: [...handlers.dragPlane.planeNormal] }} />;
+}
+
+
+function bindingFingerprint(value: ViroRiveBindingValue): string {
+  if (typeof value === "object") {
+    return value.kind + ":" + String(value.kind === "trigger" ? value.serial : value.value);
+  }
+  return typeof value + ":" + String(value);
+}
+
+function applyBindings(
+  panel: RivePanel,
+  bindings: ViroRiveBindings | undefined,
+  applied: Map<string, string>
+) {
+  if (!bindings) return;
+
+  for (const [path, value] of Object.entries(bindings)) {
+    const fingerprint = bindingFingerprint(value);
+    if (applied.get(path) === fingerprint) continue;
+
+    if (typeof value === "string") {
+      panel.setString?.(path, value);
+    } else if (typeof value === "number") {
+      panel.setNumber?.(path, value);
+    } else if (typeof value === "boolean") {
+      panel.setBoolean?.(path, value);
+    } else if (value.kind === "enum") {
+      panel.setEnum?.(path, value.value);
+    } else if (value.kind === "color") {
+      panel.setColor?.(path, value.value);
+    } else if (value.kind === "trigger") {
+      panel.fireTrigger?.(path);
+    }
+
+    applied.set(path, fingerprint);
+  }
 }

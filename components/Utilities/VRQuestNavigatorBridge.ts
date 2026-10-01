@@ -24,6 +24,8 @@
  * stack whenever a different panel screen activates VR.
  */
 
+import { DeviceEventEmitter } from "react-native";
+
 export type VRNavigatorOp =
   | { type: "push"; scene: any }
   | { type: "pop" }
@@ -69,8 +71,18 @@ let _opCounter = 0;
 // set to false by exitVRScene(). The AppState-based relaunch in
 // ViroXRSceneNavigator checks this so it only fires for system-level
 // backgrounding (Quest menu / home), not for explicit exits.
+//
+// Horizon can also finish VRActivity itself — Meta-button quit confirm, OS
+// reclaim — without exitVRScene() ever running. VRActivity.onDestroy emits
+// "VRLauncher.vrDestroyed" for exactly that path; without this subscription
+// the flag stayed true, the AppState relaunch resurrected VRActivity on the
+// next foreground edge, and the user had to quit the OS dialog repeatedly.
 
 let _vrActive = false;
+
+DeviceEventEmitter?.addListener?.("VRLauncher.vrDestroyed", () => {
+  _vrActive = false;
+});
 
 // ── ViewTag store ─────────────────────────────────────────────────────────────
 // ViroQuestEntryPoint populates this after ViroVRSceneNavigator mounts.

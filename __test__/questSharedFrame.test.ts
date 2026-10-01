@@ -157,3 +157,23 @@ describe("the Quest navigator exposes the shared-frame methods", () => {
     expect(view).toContain("getCurrentARScene");
   });
 });
+
+
+describe("the VRActivity scene receives shared-frame navigation", () => {
+  const root = path.resolve(__dirname, "..");
+  const vrNavigator = fs.readFileSync(
+    path.join(root, "components", "ViroVRSceneNavigator.tsx"),
+    "utf-8"
+  );
+
+  it("passes the immersive scene an arSceneNavigator alias", () => {
+    expect(vrNavigator).toContain("arSceneNavigator={this.sceneNavigator}");
+  });
+
+  it("exposes create/join shared-frame methods from the immersive navigator", () => {
+    expect(vrNavigator).toContain("rvCreateSharedFrame: this._rvCreateSharedFrame");
+    expect(vrNavigator).toContain("rvJoinSharedFrame: this._rvJoinSharedFrame");
+    expect(vrNavigator).toMatch(/VRModuleOpenXR\.rvCreateSharedFrame\(viewTag, groupId\)/);
+    expect(vrNavigator).toMatch(/VRModuleOpenXR\.rvJoinSharedFrame\(viewTag, groupId\)/);
+  });
+});

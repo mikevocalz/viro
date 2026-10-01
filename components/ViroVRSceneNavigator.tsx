@@ -33,10 +33,19 @@ import {
 } from "./Types/ViroUtils";
 import { isVisionOS } from "./Utilities/ViroPlatform";
 import { warnUnsupported } from "./Utilities/ViroUnsupported";
+import { VRCapture } from "./Utilities/VRModuleOpenXR";
 const ViroSceneNavigatorModule = NativeModules.VRTSceneNavigatorModule;
 const VRModuleOpenXR = NativeModules.VRModuleOpenXR as {
-  recenterTracking: (viewTag: number) => void;
-  setPassthroughEnabled: (viewTag: number, enabled: boolean) => void;
+  recenterTracking?: (viewTag: number) => void;
+  setPassthroughEnabled?: (viewTag: number, enabled: boolean) => void;
+  rvCreateSharedFrame?: (
+    viewTag: number,
+    groupId: string,
+  ) => Promise<{ success: boolean; frameId?: string; transform?: string; error?: string }>;
+  rvJoinSharedFrame?: (
+    viewTag: number,
+    groupId: string,
+  ) => Promise<{ success: boolean; frameId?: string; transform?: string; error?: string }>;
 } | undefined;
 
 type State = {
@@ -471,6 +480,36 @@ export class ViroVRSceneNavigator extends React.Component<Props, State> {
     ViroSceneNavigatorModule.recenterTracking(findNodeHandle(this));
   };
 
+  /**
+   * Quest co-location bridge used by ViroSharedFrame inside VRActivity.
+   * ViroXRSceneNavigator already exposed these calls to the panel-side ref, but
+   * the actual immersive scene is mounted by ViroVRSceneNavigator in a second
+   * React root. Expose the same API here so scene code receives a usable
+   * arSceneNavigator instead of losing shared-frame support at the activity
+   * boundary.
+   */
+  _rvCreateSharedFrame = async (groupId: string) => {
+    const viewTag = findNodeHandle(this);
+    if (viewTag == null || !VRModuleOpenXR?.rvCreateSharedFrame) {
+      return {
+        success: false,
+        error: "Quest shared-frame creation is unavailable in this runtime.",
+      };
+    }
+    return await VRModuleOpenXR.rvCreateSharedFrame(viewTag, groupId);
+  };
+
+  _rvJoinSharedFrame = async (groupId: string) => {
+    const viewTag = findNodeHandle(this);
+    if (viewTag == null || !VRModuleOpenXR?.rvJoinSharedFrame) {
+      return {
+        success: false,
+        error: "Quest shared-frame join is unavailable in this runtime.",
+      };
+    }
+    return await VRModuleOpenXR.rvJoinSharedFrame(viewTag, groupId);
+  };
+
   _project = async (point: Viro3DPoint) => {
     return await ViroSceneNavigatorModule.project(findNodeHandle(this), point);
   };
@@ -480,6 +519,48 @@ export class ViroVRSceneNavigator extends React.Component<Props, State> {
       findNodeHandle(this),
       point
     );
+  };
+
+  /**
+   * Takes a screenshot of the rendered scene, as ViroARSceneNavigator does.
+   *
+   * Meta Quest only: the left eye of the next frame, saved as `fileName`.jpg in
+   * app storage and also to the gallery when `saveToCameraRoll`. Resolves
+   * `{ success, url, errorCode }` and never rejects. Elsewhere it resolves with
+   * `RECORD_ERROR_UNSUPPORTED_PLATFORM`, and on Quest with
+   * `RECORD_ERROR_NOT_READY` until the XR session is rendering. A capture of a
+   * passthrough scene holds the virtual content only.
+   */
+  _takeScreenshot = async (fileName: string, saveToCameraRoll: boolean) => {
+    return await VRCapture.takeScreenshot(
+      findNodeHandle(this),
+      fileName,
+      saveToCameraRoll
+    );
+  };
+
+  /**
+   * Starts recording the rendered scene (left eye) and the microphone, as
+   * ViroARSceneNavigator does. Meta Quest only; `onError` receives a
+   * ViroRecordingErrorConstants code, `RECORD_ERROR_UNSUPPORTED_PLATFORM`
+   * elsewhere.
+   */
+  _startVideoRecording = (
+    fileName: string,
+    saveToCameraRoll: boolean,
+    onError: (errorCode: number) => void
+  ) => {
+    VRCapture.startVideoRecording(
+      findNodeHandle(this),
+      fileName,
+      saveToCameraRoll,
+      onError
+    );
+  };
+
+  /** Stops the recording. Resolves `{ success, url, errorCode }`. */
+  _stopVideoRecording = async () => {
+    return await VRCapture.stopVideoRecording(findNodeHandle(this));
   };
 
   _renderSceneStackItems() {
@@ -493,6 +574,7 @@ export class ViroVRSceneNavigator extends React.Component<Props, State> {
         <Scene
           key={"scene" + i}
           sceneNavigator={this.sceneNavigator}
+          arSceneNavigator={this.sceneNavigator}
           {...props}
         />
       );
@@ -511,6 +593,14 @@ export class ViroVRSceneNavigator extends React.Component<Props, State> {
     project: this._project,
     unproject: this._unproject,
     recenterTracking: this._recenterTracking,
+    rvCreateSharedFrame: this._rvCreateSharedFrame,
+    rvJoinSharedFrame: this._rvJoinSharedFrame,
+    // Screen capture, with ViroARSceneNavigator's signatures and results, so a
+    // scene captures through `sceneNavigator` on any platform. Meta Quest only;
+    // elsewhere they report RECORD_ERROR_UNSUPPORTED_PLATFORM.
+    takeScreenshot: this._takeScreenshot,
+    startVideoRecording: this._startVideoRecording,
+    stopVideoRecording: this._stopVideoRecording,
     viroAppProps: {} as any,
   };
 

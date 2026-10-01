@@ -75,3 +75,31 @@ observing that stale aggregate alone could never update the host label. Rive
 continues to own click/selection behavior. The helper hydrates current values and
 retires queued callbacks on cleanup; no polling is used for selection. Native
 renderer/bridge AARs are unchanged from rive.9.
+
+## 2026-09-26 audit addendum — landed on fork main
+
+The `codex/rive-viro-panel` rive.5–10 input series was merged into
+`upgrade/viro-3.0.1` (this worktree's branch), which was fast-forwarded onto
+`mikevocalz/viro` `main` at `019ec2e` and pushed. Tags are pushed and the
+upstream GitHub releases are mirrored 48/48 with `Latest` pointing at v3.0.1.
+Moyo consumes the post-merge stack through the vendored
+`reactvision-react-viro-3.0.1-moyo.0` tarball, repacked with the post-merge
+`viroreact` AAR (`fbbd4cb15e9fc761a9b9b5866e52cda49ef4d3e51c9ccf265ff325e4e4e30b62`).
+
+Device side: the Quest 3S accepted selection and the Zustand-derived count on
+2026-09-25, and the three-slot `moyo://xr-layout-probe` composition (Rive
+panel left, digital board centre, Natalie right) verified on the merged
+3.0.1 stack. Still open post-rebuild in Moyo `8ebdf4a`: ink rendering,
+board-drag persistence and Natalie speech — not yet exercised on device.
+Details in the rolling Moyo handoff
+(`moyo-rive-panel:docs/handoffs/2026-09-25-rive-viro-panel.md` — committed on
+`codex/rive-viro-panel`, now also on `main` via the merge below).
+
+Moyo side, same day: `f428379` merged the whole XR/quest line — including
+this vendored `3.0.1-moyo.0` package — onto `moyolearn` `main` (the root
+`pnpm.overrides` maps `@reactvision/react-viro` to
+`file:./vendors/reactvision-react-viro-3.0.1-moyo.0.tgz`; `apps/mobile`
+declares `3.0.1-moyo.0`). That merge is local only (`origin/main` is 215
+commits behind) and its merged-main Quest evidence
+(`quest-3s-merged-main.png`/`.log`) was **pending capture** at this audit.
+The three device gaps above are unchanged.
