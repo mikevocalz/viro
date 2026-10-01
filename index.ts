@@ -375,12 +375,14 @@ import {
   exitVRScene,
   setPassthroughStyle,
   triggerHaptic,
+  getOpenXRRuntimeCapabilities,
 } from "./components/Utilities/VRModuleOpenXR";
 import type {
   VRModuleOpenXRType,
   ViroPassthroughStyle,
   ViroHapticHand,
   ViroTrackingOrigin,
+  ViroOpenXRRuntimeCapabilities,
 } from "./components/Utilities/VRModuleOpenXR";
 import { StreamingAudioManager } from "./components/Utilities/StreamingAudioManager";
 import { AppRegistry } from "react-native";
@@ -508,6 +510,7 @@ export {
   exitVRScene,
   setPassthroughStyle,
   triggerHaptic,
+  getOpenXRRuntimeCapabilities,
   Viro3DSceneNavigator,
   // Streaming audio
   StreamingAudioManager,
@@ -659,6 +662,7 @@ export type {
   ViroPassthroughStyle,
   ViroHapticHand,
   ViroTrackingOrigin,
+  ViroOpenXRRuntimeCapabilities,
 };
 export type {
   ImmersiveSpaceStyle,

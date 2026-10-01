@@ -80,7 +80,35 @@ ViroCore's current Android OpenXR path already contains:
 - `XR_EXT_eye_gaze_interaction` gaze pose support;
 - controller action bindings as a fallback when controllers are present.
 
-The companion ViroCore PR must make those negotiated capabilities observable to JavaScript and verify gaze-target + pinch-commit behavior end to end before this target is considered interaction-complete.
+The companion ViroCore PR makes those negotiated capabilities observable to JavaScript through a new non-breaking probe. Once the matching renderer AAR is staged, app code can query the active immersive view instead of inferring features from hardware names:
+
+```tsx
+import {
+  getOpenXRRuntimeCapabilities,
+  useVRViewTag,
+} from "@reactvision/react-viro";
+
+function CapabilityAwareScene() {
+  const viewTag = useVRViewTag();
+
+  async function inspectRuntime() {
+    if (viewTag == null) return;
+    const caps = await getOpenXRRuntimeCapabilities(viewTag);
+
+    if (caps?.eyeGazeSupported && caps.handTrackingAvailable) {
+      // Prefer gaze targeting + hand/pinch commit.
+    }
+
+    if (!caps?.passthroughAvailable) {
+      // Keep the experience fully virtual.
+    }
+  }
+
+  return <ViroScene>{/* content */}</ViroScene>;
+}
+```
+
+The old expo-pico `getRuntimeInfo()` String[10] contract is unchanged; the new capability probe is separate.
 
 ## Standard Android panels vs immersive Viro
 
