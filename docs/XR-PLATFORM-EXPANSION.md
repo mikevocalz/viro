@@ -379,6 +379,8 @@ The platform API should expose capability and current source separately. A devic
 
 - prevent Meta Layout from loading on PICO just because both are Android
 - document Meta native layout + PICO native seam + PICO WebSpatial
+- make Moyo Learn's window-contract, AdaptivePanes, fold geometry, Inspector,
+  world-slot and settled-pose implementations explicit prior art
 - establish the shared layout-intent rules and examples
 
 ### PR 03 - Meta VR Glasses build target
@@ -387,10 +389,13 @@ The platform API should expose capability and current source separately. A devic
 
 Repo: `viro`
 
-- add explicit `META_HORIZON` / glasses-aware Expo configuration without breaking `QUEST`
-- update store/device targeting from Quest-only metadata to Meta VR device-family targeting
-- rename generated activity/component internals that are falsely Quest-specific where safe
-- add v207 build/simulator lane
+- keep the existing `QUEST` enum as Viro's Meta Horizon/OpenXR build selector
+  rather than inventing a second renderer enum
+- add `metaVrGlassesCompatible` and optional `metaDefaultDeviceTargets`
+- default glasses-ready Store targeting to Meta's documented `quest3+`
+- keep the current `com.oculus.supportedDevices` Quest list because Meta VR
+  Glasses have no public identifier there
+- document Meta XR Simulator v207 as the first controllerless validation lane
 - preserve standard Android panel mode and immersive OpenXR mode as distinct presentations
 
 ### PR 04 - Meta VR Glasses input + capabilities
@@ -399,11 +404,14 @@ Repo: `viro`
 
 Repos: `virocore` + `viro`
 
-- stop hardcoding the OpenXR headset identity to `quest`
-- return negotiated runtime/device capabilities
-- formalize gaze + pinch selection and controller fallback
-- make eye gaze/hands availability observable to JS
-- verify controllerless operation
+- return negotiated runtime/device capabilities without changing expo-pico's
+  existing String[10] runtime-info ABI
+- make eye gaze/hands/passthrough/planes/scene/foveation/local-floor facts
+  observable to JS
+- treat ViroCore's legacy `getHeadset() === "quest"` string as compatibility
+  metadata only; do not use it for feature gating
+- preserve the existing hand/pinch/controller fallback path
+- verify controllerless gaze-target + pinch-commit behavior in Simulator/device
 
 ### PR 05 - WebSpatial adapter
 
@@ -424,9 +432,10 @@ Repo: `viro-external`
 Repo: `viro-external`
 
 - add `@viro-external/meta-wearables`
-- wrap Device Access Toolkit capability discovery and event/session lifecycle
-- expose camera/audio/display capability without pretending all glasses have a display
-- add a separate Meta Display Web helper if useful
+- wire the official DAT 1.0 Android Maven artifacts and required app metadata
+- define a capability-first injectable transport boundary
+- expose display vs displayless behavior without pretending all glasses have a display
+- follow with a separate native React Native session/Mock Device transport PR
 
 ### PR 07 - Snap Specs adapter
 
@@ -434,10 +443,12 @@ Repo: `viro-external`
 
 Repo: `viro-external`
 
-- add `@viro-external/specs` portable scene/input contract
-- Lens Studio/Snap OS adapter
+- add `@viro-external/specs` portable scene/input compiler
+- define a Lens Studio/Snap OS runtime transport boundary
 - map common text/image/model/panel transforms and interaction events
+- reuse Moyo's engine-independent `worldSlot` placement as reference math
 - keep unsupported Viro features explicit rather than silently degrading
+- follow with a concrete Lens Studio bridge/template PR
 
 ### PR 08 - Platform Lab + CI matrix
 
