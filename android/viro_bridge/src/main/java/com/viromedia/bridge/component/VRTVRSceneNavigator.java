@@ -289,6 +289,19 @@ public class VRTVRSceneNavigator extends VRT3DSceneNavigator {
         }
     }
 
+    /**
+     * Negotiated OpenXR capability facts from the active renderer.
+     *
+     * Kept as the native String[10] shape here; VRModuleOpenXR converts it to a
+     * named JS map so the array layout never escapes the bridge.
+     */
+    public String[] getRuntimeCapabilities() {
+        if (mViroView instanceof ViroViewOpenXR) {
+            return ((ViroViewOpenXR) mViroView).getRuntimeCapabilities();
+        }
+        return null;
+    }
+
     @Override
     public void onPropsSet() {
         if (mNeedsSetVrMode) {
