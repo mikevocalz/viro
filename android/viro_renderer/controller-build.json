@@ -1,0 +1,8 @@
+{
+  "sourceRepository": "mikevocalz/virocore",
+  "sourceCommit": "034d3b977754c94c23fa12d3a7e8c24d26f56b41",
+  "workflowRun": 36354633068,
+  "sha256": "08c22843d1311cbc52ae973b8a97dd8186a86c72d3682312a50a00c198506a3b",
+  "packaging": "Lossless standard ZIP deflate recompression; every decompressed member verified byte-identical to CI artifact.",
+  "validation": "C++ sample policy replay; Android release build and 16KB native alignment; no headset latency measurement."
+}

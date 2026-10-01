@@ -39,6 +39,7 @@
 #if os(visionOS)
 import SwiftUI
 import CompositorServices
+import GameController
 
 // MARK: - Public constants
 
@@ -171,8 +172,16 @@ private struct ViroImmersiveSpaceControllerModifier: ViewModifier {
 public extension View {
     /// Wires up the Viro ImmersiveSpace open/dismiss actions.
     /// Call on the root view of your app's WindowGroup.
+    @ViewBuilder
     func viroImmersiveSpaceController() -> some View {
-        modifier(ViroImmersiveSpaceControllerModifier())
+        // visionOS 26.2 routes Muse input to SwiftUI unless a focused view opts in
+        // to Game Controller stylus events. Apply this at the host app's root view.
+        if #available(visionOS 26.2, *) {
+            modifier(ViroImmersiveSpaceControllerModifier())
+                .handlesGameControllerEvents(matching: .stylus)
+        } else {
+            modifier(ViroImmersiveSpaceControllerModifier())
+        }
     }
 }
 
@@ -184,3 +193,4 @@ extension Notification.Name {
 }
 
 #endif  // os(visionOS)
+

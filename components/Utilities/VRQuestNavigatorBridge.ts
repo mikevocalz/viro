@@ -80,7 +80,7 @@ let _opCounter = 0;
 
 let _vrActive = false;
 
-DeviceEventEmitter.addListener("VRLauncher.vrDestroyed", () => {
+DeviceEventEmitter?.addListener?.("VRLauncher.vrDestroyed", () => {
   _vrActive = false;
 });
 

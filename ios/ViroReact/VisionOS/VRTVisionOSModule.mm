@@ -16,6 +16,35 @@ static NSString *const kVRTExitImmersiveSpace  = @"VRTExitImmersiveSpace";
 
 @implementation VRTVisionOSModule
 
+// Swift posts one world-space tip sample per rendered frame. Only forward samples
+// while JavaScript is listening; stopping observation also releases the native observer.
+- (NSArray<NSString *> *)supportedEvents {
+    return @[ @"onSpatialStylus" ];
+}
+
+- (void)startObserving {
+    [[NSNotificationCenter defaultCenter]
+        addObserver:self
+           selector:@selector(onSpatialStylus:)
+               name:@"ViroSpatialStylus"
+             object:nil];
+}
+
+- (void)stopObserving {
+    [[NSNotificationCenter defaultCenter]
+        removeObserver:self name:@"ViroSpatialStylus" object:nil];
+}
+
+- (void)onSpatialStylus:(NSNotification *)notification {
+    if (notification.userInfo != nil) {
+        [self sendEventWithName:@"onSpatialStylus" body:notification.userInfo];
+    }
+}
+
+- (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
 RCT_EXPORT_MODULE(VRTVisionOSModule)
 
 + (BOOL)requiresMainQueueSetup {
@@ -134,3 +163,4 @@ RCT_EXPORT_METHOD(exitImmersiveSpace:(RCTPromiseResolveBlock)resolve
 }
 
 @end
+

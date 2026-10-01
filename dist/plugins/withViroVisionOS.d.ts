@@ -33,5 +33,8 @@
  *   mv .visionos-template/visionos ./visionos && rm -rf .visionos-template
  */
 import { ConfigPlugin } from "@expo/config-plugins";
-export declare const withViroVisionOS: ConfigPlugin;
+export declare const withViroVisionOS: ConfigPlugin<{
+    applyCompatibilityPatches?: boolean;
+} | void>;
 export default withViroVisionOS;
+
