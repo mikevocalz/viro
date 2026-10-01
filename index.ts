@@ -234,6 +234,9 @@ import { Viro3DSceneNavigator } from "./components/Viro3DSceneNavigator";
 import {
   hasOpenXRSupport,
   isQuest,
+  isKnownQuest,
+  isMetaHorizonXR,
+  metaHorizonFormFactor,
   isPico,
   isWeb,
   isXRHeadset,
@@ -511,6 +514,9 @@ export {
   // Utilities
   hasOpenXRSupport,
   isQuest,
+  isKnownQuest,
+  isMetaHorizonXR,
+  metaHorizonFormFactor,
   isPico,
   isWeb,
   isXRHeadset,
