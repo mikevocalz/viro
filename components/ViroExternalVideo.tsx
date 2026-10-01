@@ -110,15 +110,22 @@ export class ViroExternalVideo extends React.PureComponent<ViroExternalVideoProp
   render() {
     // Web has its own .web.tsx implementation. On React Native, visionOS is
     // reported as Platform.OS === "ios", so do NOT gate it away here.
+    const appleProps =
+      Platform.OS === "android"
+        ? {}
+        : {
+            resizeMode: this.props.resizeMode ?? "cover",
+            mirror: this.props.mirror ?? false,
+            flipY: this.props.flipY ?? false,
+          };
+
     return (
       <VRTExternalVideo
         material={this.props.material}
         sourceKey={this.props.sourceKey}
         sourceClass={resolveProvider(this.props.sourceClass)}
         pixelSize={this.props.pixelSize}
-        resizeMode={this.props.resizeMode ?? "cover"}
-        mirror={this.props.mirror ?? false}
-        flipY={this.props.flipY ?? false}
+        {...appleProps}
         onCameraReadyViro={this._onSurfaceReady}
         onErrorViro={this._onError}
         ref={(component: ViroNativeRef) => {
