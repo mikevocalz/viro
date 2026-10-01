@@ -2,10 +2,6 @@
  * Copyright (c) 2026-present, ReactVision, Inc.
  * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
- *
  * @providesModule ViroExternalVideo
  */
 import * as React from "react";
@@ -17,104 +13,112 @@ import {
 import { ViroErrorEvent } from "./Types/ViroEvents";
 import { ViroNativeRef } from "./Types/ViroUtils";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+export type ViroExternalVideoProvider =
+  | string
+  | {
+      android?: string;
+      apple?: string;
+    };
 
-type Props = {
-  /**
-   * Name of the material (created via ViroMaterials.createMaterials) to bind
-   * the externally-produced video to as its diffuse texture. The material only
-   * needs a lightingModel (typically "Constant").
-   */
+export type ViroExternalVideoProps = {
+  /** Material whose diffuse texture receives the live external video. */
   material: string;
 
   /**
-   * Key identifying the producer's video source — for the default WebRTC
-   * producer this is the RN-webrtc stream tag (`mediaStream.toURL()`), i.e.
-   * "which remote track should render into this material".
+   * Producer-defined source identifier. For Fishjam/react-native-webrtc this is
+   * MediaStream.toURL().
    */
   sourceKey: string;
 
   /**
-   * Fully-qualified Java class of the producer registry. Defaults to the
-   * patched react-native-webrtc bridge
-   * ("com.oney.WebRTCModule.ExternalVideoSurfaces"). Override to feed the
-   * texture from a different producer library.
+   * Native producer adapter.
+   *
+   * Android providers expose:
+   *   provideSurface(sourceKey, Surface, width, height)
+   *   revokeSurface(sourceKey)
+   *
+   * Apple providers expose class methods:
+   *   provideVideoFramesForSourceKey:consumer:width:height:
+   *   revokeVideoFramesForSourceKey:consumer:
+   *
+   * A string applies to the current platform. The object form lets one call
+   * site describe both native class names.
    */
-  sourceClass?: string;
+  sourceClass?: ViroExternalVideoProvider;
 
-  /**
-   * Pixel resolution of the texture the producer renders into.
-   * Defaults to 1280x720.
-   */
+  /** Render-target size owned by Viro. Defaults to 1280x720. */
   pixelSize?: { width: number; height: number };
 
+  /** Apple frame fitting policy. Android producers size directly to the Surface. */
+  resizeMode?: "cover" | "contain" | "stretch";
+
+  /** Additional horizontal mirror after producer metadata is applied. */
+  mirror?: boolean;
+
+  /** Explicit vertical flip for producer coordinate systems that need it. */
+  flipY?: boolean;
+
   /**
-   * Called once when the GL texture and its producer Surface exist and the
-   * Surface has been offered to the producer.
+   * Android: producer Surface exists and is connected.
+   * Apple/visionOS: the first converted frame has been bound to the material.
    */
   onSurfaceReady?: () => void;
 
-  /**
-   * Called when binding fails (unknown material, producer class missing —
-   * i.e. the producer library is not installed/patched — or renderer error).
-   */
   onError?: (event: NativeSyntheticEvent<ViroErrorEvent>) => void;
 };
 
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
+const DEFAULT_ANDROID_PROVIDER =
+  "com.oney.WebRTCModule.ExternalVideoSurfaces";
+const DEFAULT_APPLE_PROVIDER = "ViroExternalWebRTCFrames";
+
+function resolveProvider(
+  sourceClass: ViroExternalVideoProvider | undefined,
+): string {
+  if (typeof sourceClass === "string") {
+    return sourceClass;
+  }
+
+  if (Platform.OS === "android") {
+    return sourceClass?.android ?? DEFAULT_ANDROID_PROVIDER;
+  }
+
+  return sourceClass?.apple ?? DEFAULT_APPLE_PROVIDER;
+}
 
 /**
- * ViroExternalVideo binds an app-fed video stream to a named material texture —
- * the live-video analog of ViroCameraTexture for sources that are NOT the
- * device camera: a remote WebRTC track (video conferencing), a MediaCodec
- * decoder, or anything else that can render into an Android Surface.
+ * Bind externally-produced live video to a Viro material.
  *
- * Under the hood it creates a virocore ExternalSurfaceTexture (an OES texture
- * with a raw producer Surface) and offers the Surface to the producer library
- * named by `sourceClass` under `sourceKey`. Android-only.
+ * Android uses a renderer-owned SurfaceTexture/Surface. Apple uses a generic
+ * CVPixelBuffer producer and a Metal/Core Image conversion path. This avoids
+ * the legacy VROVideoTexture stack, which remains unavailable on visionOS.
  *
- * **Usage (Fishjam / react-native-webrtc remote peer):**
- * ```tsx
- * ViroMaterials.createMaterials({ peerScreen: { lightingModel: "Constant" } });
- *
- * <ViroARScene>
- *   <ViroQuad position={[0, 1, -2]} width={1.6} height={0.9} materials={["peerScreen"]} />
- *   {hostStream && (
- *     <ViroExternalVideo
- *       material="peerScreen"
- *       sourceKey={hostStream.toURL()}
- *       pixelSize={{ width: 1280, height: 720 }}
- *     />
- *   )}
- * </ViroARScene>
- * ```
+ * The component is producer-agnostic: Viro owns the renderer/material side,
+ * while packages such as viro-external provide Fishjam/WebRTC, Mux, decoder,
+ * camera, or custom GPU producer adapters.
  */
-export class ViroExternalVideo extends React.Component<Props> {
+export class ViroExternalVideo extends React.PureComponent<ViroExternalVideoProps> {
   _component: ViroNativeRef = null;
 
   _onSurfaceReady = () => {
-    this.props.onSurfaceReady && this.props.onSurfaceReady();
+    this.props.onSurfaceReady?.();
   };
 
   _onError = (event: NativeSyntheticEvent<ViroErrorEvent>) => {
-    this.props.onError && this.props.onError(event);
+    this.props.onError?.(event);
   };
 
   render() {
-    if (Platform.OS !== "android") {
-      // iOS producers would need a CVPixelBuffer path — not implemented.
-      return null;
-    }
+    // Web has its own .web.tsx implementation. On React Native, visionOS is
+    // reported as Platform.OS === "ios", so do NOT gate it away here.
     return (
       <VRTExternalVideo
         material={this.props.material}
         sourceKey={this.props.sourceKey}
-        sourceClass={this.props.sourceClass}
+        sourceClass={resolveProvider(this.props.sourceClass)}
         pixelSize={this.props.pixelSize}
+        resizeMode={this.props.resizeMode ?? "cover"}
+        mirror={this.props.mirror ?? false}
+        flipY={this.props.flipY ?? false}
         onCameraReadyViro={this._onSurfaceReady}
         onErrorViro={this._onError}
         ref={(component: ViroNativeRef) => {
@@ -125,18 +129,14 @@ export class ViroExternalVideo extends React.Component<Props> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Native component binding
-// ---------------------------------------------------------------------------
-
 const VRTExternalVideo = requireNativeComponent<any>(
   "VRTExternalVideo",
-  // @ts-ignore
+  // @ts-ignore legacy requireNativeComponent hostClass argument
   ViroExternalVideo,
   {
     nativeOnly: {
       onCameraReadyViro: true,
       onErrorViro: true,
     },
-  }
+  },
 );
