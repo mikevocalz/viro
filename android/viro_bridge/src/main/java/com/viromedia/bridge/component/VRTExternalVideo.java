@@ -71,6 +71,7 @@ public class VRTExternalVideo extends VRTComponent {
             "com.oney.WebRTCModule.ExternalVideoSurfaces";
 
     private ExternalSurfaceTexture mTexture = null;
+    private Material mBoundMaterial = null;
     private String mMaterialName = null;
     private String mSourceKey = null;
     private String mSourceClass = DEFAULT_SOURCE_CLASS;
@@ -99,19 +100,34 @@ public class VRTExternalVideo extends VRTComponent {
     // -----------------------------------------------------------------------
 
     public void setMaterial(String materialName) {
+        if (materialName == null ? mMaterialName == null : materialName.equals(mMaterialName)) {
+            return;
+        }
+        unbindMaterial();
         mMaterialName = materialName;
         bindToMaterial();
     }
 
     public void setSourceKey(String sourceKey) {
-        if (sourceKey == null || sourceKey.equals(mSourceKey)) return;
+        if (sourceKey == null ? mSourceKey == null : sourceKey.equals(mSourceKey)) {
+            return;
+        }
         revokeFromProducer();
         mSourceKey = sourceKey;
         offerToProducer();
     }
 
     public void setSourceClass(String sourceClass) {
-        mSourceClass = (sourceClass != null) ? sourceClass : DEFAULT_SOURCE_CLASS;
+        String next = (sourceClass != null) ? sourceClass : DEFAULT_SOURCE_CLASS;
+        if (next.equals(mSourceClass)) {
+            return;
+        }
+
+        // Revoke through the OLD class before switching provider. Otherwise a
+        // live renderer remains attached to the old producer forever.
+        revokeFromProducer();
+        mSourceClass = next;
+        offerToProducer();
     }
 
     /** Producer pixel size. Recreates the texture if it already exists. */
@@ -161,9 +177,21 @@ public class VRTExternalVideo extends VRTComponent {
 
         Material material = materialManager.getMaterial(mMaterialName);
         if (material != null) {
+            mBoundMaterial = material;
             material.setDiffuseTexture(mTexture);
         } else {
             emitError("Material '" + mMaterialName + "' not found");
+        }
+    }
+
+    private void unbindMaterial() {
+        if (mBoundMaterial != null) {
+            try {
+                mBoundMaterial.setDiffuseTexture(null);
+            } catch (Exception ignored) {
+                // Material may already be disposed during scene teardown.
+            }
+            mBoundMaterial = null;
         }
     }
 
@@ -212,6 +240,7 @@ public class VRTExternalVideo extends VRTComponent {
     @Override
     public void onTearDown() {
         revokeFromProducer();
+        unbindMaterial();
         if (mTexture != null) {
             mTexture.dispose();
             mTexture = null;
