@@ -24,8 +24,21 @@ export type VRSharedFrameResult = {
   error?: string;
 };
 
+export type ViroOpenXRRuntimeCapabilities = {
+  eyeGazeExtensionAvailable: boolean;
+  eyeGazeSupported: boolean;
+  handTrackingAvailable: boolean;
+  handAimAvailable: boolean;
+  passthroughAvailable: boolean;
+  planeDetectionAvailable: boolean;
+  sceneUnderstandingAvailable: boolean;
+  foveationAvailable: boolean;
+  eyeTrackedFoveationAvailable: boolean;
+  localFloorAvailable: boolean;
+};
 export type VRModuleOpenXRType = {
   recenterTracking?: (viewTag: number) => void;
+  getRuntimeCapabilities?: (viewTag: number) => Promise<ViroOpenXRRuntimeCapabilities | null>;
   /** CL-H: publish this headset's frame to a Meta spatial anchor group. */
   rvCreateSharedFrame?: (viewTag: number, groupId: string) => Promise<VRSharedFrameResult>;
   /** CL-H: recover the frame another headset published to that group. */
@@ -48,6 +61,16 @@ export type VRModuleOpenXRType = {
   ) => void;
 };
 
+/**
+ * Query the active Android OpenXR renderer instead of inferring features from
+ * the headset model. Returns null until the immersive view has initialized or
+ * when the current backend is not ViroViewOpenXR.
+ */
+export async function getOpenXRRuntimeCapabilities(
+  viewTag: number
+): Promise<ViroOpenXRRuntimeCapabilities | null> {
+  return VRModuleOpenXR?.getRuntimeCapabilities?.(viewTag) ?? null;
+}
 /**
  * Which controller to buzz. "active" (default) targets whichever controller
  * last pressed its trigger — so a UI press buzzes the hand that pressed it,
@@ -113,7 +136,7 @@ export function setPassthroughStyle(
 
 /**
  * Typed reference to the VRModuleOpenXR native module.
- * undefined when not running on Meta Quest (no-op calls are safe via optional chaining).
+ * undefined when this build does not include the Android OpenXR module (no-op calls are safe via optional chaining).
  */
 export const VRModuleOpenXR =
   (NativeModules.VRModuleOpenXR as VRModuleOpenXRType | undefined) ?? undefined;
