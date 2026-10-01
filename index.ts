@@ -383,7 +383,6 @@ import type {
   ViroHapticHand,
   ViroTrackingOrigin,
   ViroOpenXRRuntimeCapabilities,
-  ViroOpenXRRuntimeCapabilities,
 } from "./components/Utilities/VRModuleOpenXR";
 import { StreamingAudioManager } from "./components/Utilities/StreamingAudioManager";
 import { AppRegistry } from "react-native";
@@ -663,6 +662,7 @@ export type {
   ViroPassthroughStyle,
   ViroHapticHand,
   ViroTrackingOrigin,
+  ViroOpenXRRuntimeCapabilities,
 };
 export type {
   ImmersiveSpaceStyle,
