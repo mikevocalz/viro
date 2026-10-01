@@ -102,8 +102,12 @@ export function XRRoot() {
 }
 
 console.log({ isMetaHorizonXR, metaHorizonFormFactor });
-// Quest that is positively identified: { true, "quest" }
-// Future Meta Horizon hardware:       { true, "unknown" }
+// Android-reported Quest-compatible identity: { true, "quest" }
+// Unrecognized Meta Horizon identity:          { true, "unknown" }
+//
+// IMPORTANT: Horizon compatibility mode can intentionally report a Quest
+// identity on newer Meta VR hardware. Treat form factor/model strings as
+// diagnostics only; use OpenXR capability negotiation for feature gating.
 ```
 
 Do not branch core interaction on the model name. The OpenXR runtime should report which capabilities are present: hands, eye gaze, passthrough, planes, anchors, foveation and controllers.
@@ -334,7 +338,7 @@ The platform API should expose capability and current source separately. A devic
 
 ### PR 01 - XR platform foundation
 
-`viro#7`
+`viro PR #7`
 
 - separate Meta Horizon family from known Quest product identity
 - keep `isQuest` compatibility
@@ -343,13 +347,15 @@ The platform API should expose capability and current source separately. A devic
 
 ### PR 02 - Cross-platform spatial layout
 
-This PR.
+`viro PR #8` — this PR.
 
 - prevent Meta Layout from loading on PICO just because both are Android
 - document Meta native layout + PICO native seam + PICO WebSpatial
 - establish the shared layout-intent rules and examples
 
 ### PR 03 - Meta VR Glasses build target
+
+`viro PR #9`
 
 Repo: `viro`
 
@@ -361,6 +367,8 @@ Repo: `viro`
 
 ### PR 04 - Meta VR Glasses input + capabilities
 
+`virocore PR #3` + `viro PR #10`
+
 Repos: `virocore` + `viro`
 
 - stop hardcoding the OpenXR headset identity to `quest`
@@ -370,6 +378,8 @@ Repos: `virocore` + `viro`
 - verify controllerless operation
 
 ### PR 05 - WebSpatial adapter
+
+`viro-external PR #2` (depends on `viro-external PR #1`)
 
 Repo: `viro-external`
 
@@ -381,6 +391,8 @@ Repo: `viro-external`
 
 ### PR 06 - Meta Wearables adapter
 
+`viro-external PR #3` (depends on `viro-external PR #1`)
+
 Repo: `viro-external`
 
 - add `@viro-external/meta-wearables`
@@ -390,6 +402,8 @@ Repo: `viro-external`
 
 ### PR 07 - Snap Specs adapter
 
+`viro-external PR #4` (depends on `viro-external PR #1`)
+
 Repo: `viro-external`
 
 - add `@viro-external/specs` portable scene/input contract
@@ -398,6 +412,8 @@ Repo: `viro-external`
 - keep unsupported Viro features explicit rather than silently degrading
 
 ### PR 08 - Platform Lab + CI matrix
+
+**Not opened yet** — this should land only after the adapter/runtime contracts above stabilize.
 
 Repos: `viro`, `virocore`, `viro-external`
 
