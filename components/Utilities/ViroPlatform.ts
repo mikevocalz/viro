@@ -30,17 +30,26 @@ const androidXR =
 /** True for Android XR devices in the Meta Horizon OS / OpenXR family. */
 export const isMetaHorizonXR: boolean = androidXR.vendor === "meta-horizon";
 
-/** Best-effort Meta form factor. Unknown is preferred over guessing. */
+/**
+ * Best-effort *reported* Meta form factor. Horizon compatibility mode can make
+ * newer hardware report an older Quest identity, so never use this value as a
+ * physical-device or feature-capability guarantee.
+ */
 export const metaHorizonFormFactor: MetaHorizonFormFactor | null =
   androidXR.vendor === "meta-horizon" ? androidXR.metaFormFactor : null;
 
-/** True only for Meta hardware we can positively identify as Quest. */
+/**
+ * True when Android reports a Quest-compatible identity. Meta VR Glasses may
+ * also report a Quest model while Horizon compatibility mode is active.
+ * Do not use this flag for feature gating; query the needed capability instead.
+ */
 export const isKnownQuest: boolean =
   isMetaHorizonXR && metaHorizonFormFactor === "quest";
 
 /**
- * @deprecated Use isMetaHorizonXR for immersive routing or isKnownQuest when
- * product-line identity matters. Kept broad for backwards compatibility.
+ * @deprecated Use isMetaHorizonXR for immersive routing. `isKnownQuest` and
+ * model strings are diagnostic only because Horizon compatibility mode can
+ * report a Quest identity on newer devices. Kept broad for backwards compatibility.
  */
 export const isQuest: boolean = isMetaHorizonXR;
 

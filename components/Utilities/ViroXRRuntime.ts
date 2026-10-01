@@ -17,9 +17,9 @@ export type AndroidXRClassification = {
  * to a single product generation.
  *
  * Meta VR Glasses belong to the Meta Horizon/OpenXR runtime family even though
- * they are not Quest. Until stable model identifiers are available for every
- * Meta form factor, unknown Meta hardware deliberately reports
- * metaFormFactor="unknown" and relies on runtime capability negotiation.
+ * they are not Quest. Horizon compatibility mode can intentionally report a
+ * Quest-compatible Android identity on newer hardware, so this classifier is
+ * only for routing/diagnostics; runtime capabilities remain authoritative.
  */
 export function classifyAndroidXRBuild(
   info: AndroidXRBuildInfo
