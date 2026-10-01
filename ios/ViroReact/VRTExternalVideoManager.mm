@@ -3,22 +3,16 @@
 //  ViroReact
 //
 
-#import "VRTExternalVideo.h"
-#import "VRTViroViewGroupManager.h"
-
-#import <React/RCTConvert.h>
 #import <React/RCTUIManager.h>
+#import "ViroViewManager.h"
+#import "VRTExternalVideo.h"
 
-@interface VRTExternalVideoManager : VRTViroViewGroupManager<VRTExternalVideo *>
+@interface VRTExternalVideoManager : ViroViewManager
 @end
 
 @implementation VRTExternalVideoManager
 
-RCT_EXPORT_MODULE(VRTExternalVideo)
-
-- (VRTView *)view {
-    return [[VRTExternalVideo alloc] initWithBridge:self.bridge];
-}
+RCT_EXPORT_MODULE()
 
 RCT_EXPORT_VIEW_PROPERTY(material, NSString)
 RCT_EXPORT_VIEW_PROPERTY(sourceKey, NSString)
@@ -39,6 +33,10 @@ RCT_CUSTOM_VIEW_PROPERTY(pixelSize, NSDictionary *, VRTExternalVideo) {
         [view setPixelSizeWidth:width.integerValue
                          height:height.integerValue];
     }
+}
+
+- (VRTView *)view {
+    return [[VRTExternalVideo alloc] initWithBridge:self.bridge];
 }
 
 @end
