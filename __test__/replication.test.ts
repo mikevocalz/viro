@@ -148,7 +148,7 @@ describe("header providers", () => {
       Authorization: "Bearer t1",
       "x-project-id": "p",
       // The app tag stays in front of the build tag, as on the pose channel.
-      "x-rv-client": expect.stringMatching(/^app viro\/\d+\.\d+\.\d+ \(\w+\)$/),
+      "x-rv-client": expect.stringMatching(/^app viro\/\d+\.\d+\.\d+(-[\w.]+)? \(\w+\)$/),
     });
   });
 
