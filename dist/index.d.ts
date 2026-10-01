@@ -116,3 +116,6 @@ export type { VRModuleOpenXRType, ViroPassthroughStyle, ViroHapticHand, ViroTrac
 export type { ImmersiveSpaceStyle, ViroInputTuning, ViroSharedSpaceState, } from "./components/VisionOS/ViroVisionOSModule";
 export type { StudioSceneResponse, StudioAsset, StudioAnimation, StudioCollisionBinding, StudioSceneFunction, StudioSceneMeta, StudioProjectMeta, StudioSceneNavigatorHandle, StudioSceneNavigatorProps, StudioApiError, StudioApiErrorFields, } from "./components/Studio";
 export { isStudioApiError } from "./components/Studio";
+
+export { subscribeSpatialStylus, type ViroSpatialStylusSample } from "./components/VisionOS/ViroVisionOSModule";
+

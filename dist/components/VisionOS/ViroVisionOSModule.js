@@ -45,6 +45,7 @@ exports.isVisionOS = isVisionOS;
 exports.enterImmersiveSpace = enterImmersiveSpace;
 exports.exitImmersiveSpace = exitImmersiveSpace;
 exports.setInputTuning = setInputTuning;
+exports.subscribeSpatialStylus = subscribeSpatialStylus;
 exports.sharedSpaceState = sharedSpaceState;
 exports.sharedSpaceNextOutgoing = sharedSpaceNextOutgoing;
 exports.sharedSpacePushIncoming = sharedSpacePushIncoming;
@@ -95,10 +96,27 @@ async function exitImmersiveSpace() {
 function setInputTuning(tuning) {
     VRTVisionOSModule?.setInputTuning?.(tuning);
 }
+/** Subscribe to spatial-stylus frames; returns an idempotent unsubscribe function. */
+function subscribeSpatialStylus(listener) {
+    if (!isVisionOS() || !VRTVisionOSModule)
+        return () => undefined;
+    const subscription = new react_native_1.NativeEventEmitter(VRTVisionOSModule)
+        .addListener("onSpatialStylus", (event) => {
+        listener(event);
+    });
+    let subscribed = true;
+    return () => {
+        if (!subscribed)
+            return;
+        subscribed = false;
+        subscription.remove();
+    };
+}
 exports.ViroVisionOSModule = {
     isVisionOS,
     enterImmersiveSpace,
     exitImmersiveSpace,
+    subscribeSpatialStylus,
 };
 const NOT_SUPPORTED = {
     supported: false,
@@ -137,3 +155,4 @@ async function sharedSpacePushIncoming(base64) {
         return false;
     return VRTVisionOSModule.sharedSpacePushIncoming(base64);
 }
+
