@@ -36,6 +36,34 @@ shared intent -> Snap Specs / Lens Studio adapter
 
 ViroCore remains the renderer for Viro scenes. Platform window systems and wearable SDKs sit beside it.
 
+### Moyo Learn is the reference implementation
+
+Do not redesign the shared layout mechanics from scratch. Moyo Learn already has production-oriented implementations for:
+
+- a Meta/PICO **system-window contract** that survives Expo prebuild;
+- one cross-platform **AdaptivePanes** renderer driven by current window width;
+- UIKit + Android FoldingFeature normalization into one physical-region type;
+- single-hinge and trifold pane placement;
+- trailing Inspector overlay semantics;
+- per-instance Zustand state that survives fold/resize/remount;
+- meter-based XR spatial tokens;
+- a head-relative three-slot comfort arc;
+- a settled-head-pose placement gate;
+- one carrier transform shared by visible panel + input surface + chrome.
+
+See [`MOYO-CROSS-PLATFORM-LAYOUT-REFERENCE.md`](./MOYO-CROSS-PLATFORM-LAYOUT-REFERENCE.md) for the concrete Moyo file map and copyable examples.
+
+The architectural rule coming from Moyo is:
+
+```text
+window size       -> which authored surfaces may be visible
+physical regions  -> where their boundaries may safely land
+presentation SDK  -> how that surface is hosted on this platform
+application store -> what the surface is showing
+```
+
+Those four responsibilities stay separate across Horizon OS, PICO, visionOS, WebSpatial, Meta Wearables and Specs.
+
 ## 2. Platform map
 
 | Target | Rendering / host | Layout surface | Primary input | Viro relationship |
