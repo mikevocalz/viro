@@ -7,7 +7,7 @@ describe("classifyAndroidXRBuild", () => {
     ).toEqual({ vendor: "meta-horizon", metaFormFactor: "quest" });
   });
 
-  it("keeps future Meta Horizon hardware in the OpenXR family without calling it Quest", () => {
+  it("keeps an unrecognized Meta build identity in the Horizon OpenXR family", () => {
     expect(
       classifyAndroidXRBuild({ manufacturer: "Meta", brand: "meta", model: "Future Glasses" })
     ).toEqual({ vendor: "meta-horizon", metaFormFactor: "unknown" });
