@@ -5,6 +5,10 @@ on:
     branches:
       - upgrade/viro-3.0.1
       - decax9-three-panel
+      - feat/xr-platform-foundation
+      - feat/cross-platform-spatial-layout
+      - feat/meta-vr-glasses-target
+      - feat/meta-vr-glasses-capabilities
   pull_request:
     branches:
       - decax9-three-panel
