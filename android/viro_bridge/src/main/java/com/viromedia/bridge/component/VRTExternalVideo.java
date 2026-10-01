@@ -39,6 +39,7 @@ import com.viromedia.bridge.utility.ViroEventEmitter;
 import com.viromedia.bridge.utility.ViroEvents;
 
 import java.lang.reflect.Method;
+import java.util.UUID;
 
 /**
  * VRTExternalVideo binds an app-fed video producer to a Viro material.
@@ -78,8 +79,13 @@ public class VRTExternalVideo extends VRTComponent {
     private int mPxWidth = 1280;
     private int mPxHeight = 720;
 
-    // The key currently provided to the producer, so prop changes revoke cleanly.
+    // Unique consumer identity lets one stream feed multiple Viro surfaces
+    // without one component revoking another.
+    private final String mConsumerId = UUID.randomUUID().toString();
+
+    // The key/class currently provided to the producer, so prop changes revoke cleanly.
     private String mProvidedKey = null;
+    private String mProvidedClass = null;
 
     public VRTExternalVideo(ReactContext reactContext) {
         super(reactContext.getBaseContext(), null, -1, -1, reactContext);
@@ -202,13 +208,22 @@ public class VRTExternalVideo extends VRTComponent {
 
         try {
             Class<?> cls = Class.forName(mSourceClass);
-            Method provide = cls.getMethod("provideSurface",
-                    String.class, Surface.class, int.class, int.class);
-            provide.invoke(null, mSourceKey, surface, mPxWidth, mPxHeight);
+            try {
+                // v2 contract: source + consumer identity supports fan-out.
+                Method provide = cls.getMethod("provideSurface",
+                        String.class, String.class, Surface.class, int.class, int.class);
+                provide.invoke(null, mSourceKey, mConsumerId, surface, mPxWidth, mPxHeight);
+            } catch (NoSuchMethodException legacy) {
+                // Backward compatibility with the original Danger Room provider.
+                Method provide = cls.getMethod("provideSurface",
+                        String.class, Surface.class, int.class, int.class);
+                provide.invoke(null, mSourceKey, surface, mPxWidth, mPxHeight);
+            }
             mProvidedKey = mSourceKey;
+            mProvidedClass = mSourceClass;
         } catch (ClassNotFoundException e) {
             emitError("Producer class not found: " + mSourceClass
-                    + " (is the producer library installed/patched?)");
+                    + " (is the producer adapter installed?)");
         } catch (Exception e) {
             Log.e(TAG, "provideSurface failed", e);
             emitError("provideSurface failed: " + e.getMessage());
@@ -218,13 +233,21 @@ public class VRTExternalVideo extends VRTComponent {
     private void revokeFromProducer() {
         if (mProvidedKey == null) return;
         try {
-            Class<?> cls = Class.forName(mSourceClass);
-            Method revoke = cls.getMethod("revokeSurface", String.class);
-            revoke.invoke(null, mProvidedKey);
+            String providerClass = mProvidedClass != null ? mProvidedClass : mSourceClass;
+            Class<?> cls = Class.forName(providerClass);
+            try {
+                Method revoke = cls.getMethod(
+                        "revokeSurface", String.class, String.class);
+                revoke.invoke(null, mProvidedKey, mConsumerId);
+            } catch (NoSuchMethodException legacy) {
+                Method revoke = cls.getMethod("revokeSurface", String.class);
+                revoke.invoke(null, mProvidedKey);
+            }
         } catch (Exception e) {
             Log.w(TAG, "revokeSurface failed (producer gone?)", e);
         }
         mProvidedKey = null;
+        mProvidedClass = null;
     }
 
     private void emitError(String message) {
