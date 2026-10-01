@@ -14,6 +14,7 @@ import fs from "fs";
 import path from "path";
 import { insertLinesHelper } from "./util/insertLinesHelper";
 import { ViroConfigurationOptions, XrMode } from "./withViro";
+import { assertMetaVrGlassesXrMode, resolveMetaDefaultDeviceTargets } from "./metaTargeting";
 let viroPluginConfig = ["AR", "GVR"];
 
 const withBranchAndroid: ConfigPlugin<ViroConfigurationOptions> = (config) => {
@@ -634,11 +635,10 @@ const withViroQuestActivity: ConfigPlugin<ViroConfigurationOptions> = (config, p
       xrModes = [xrMode];
     }
   }
-  // QUEST-only (not widened to PICO): the VRActivity.kt template itself is
-  // Android-generic, but this same function (step 3 below) registers the
-  // activity with com.oculus.intent.category.VR + com.oculus.vr.focusaware —
-  // Quest-specific. PICO uses pvr.app.type=vr and no oculus categories, an
-  // unresolved PICO-vs-Quest manifest difference — see TODO(pico) above.
+  // Meta Horizon immersive mode still uses the historical QUEST enum because
+  // it selects Viro's Android OpenXR + Horizon launch path. Meta VR Glasses run
+  // the same OS/SDK family; do not add a fake device id to supportedDevices.
+  assertMetaVrGlassesXrMode(xrModes, props?.android);
   if (!xrModes.includes("QUEST")) return config;
 
   // 1. Generate VRActivity.kt
@@ -957,6 +957,25 @@ class VRActivity : ReactActivity() {
           "android:value": supportedDevices,
         },
       });
+    }
+
+    // Store delivery targeting is separate from compatibility-mode identity.
+    // Meta VR Glasses do not currently have a public com.oculus.supportedDevices
+    // identifier. Meta documents "quest3+" as including Quest 3 family,
+    // Meta VR Glasses, and future devices.
+    const metaDefaultDeviceTargets = resolveMetaDefaultDeviceTargets(props?.android);
+    if (metaDefaultDeviceTargets) {
+      const alreadyHasDefaultTargets = (app["meta-data"] as any[]).some(
+        (m: any) => m.$?.["android:name"] === "com.meta.store.defaultDeviceTargets"
+      );
+      if (!alreadyHasDefaultTargets) {
+        (app["meta-data"] as any[]).push({
+          $: {
+            "android:name": "com.meta.store.defaultDeviceTargets",
+            "android:value": metaDefaultDeviceTargets,
+          },
+        });
+      }
     }
 
     return config;
