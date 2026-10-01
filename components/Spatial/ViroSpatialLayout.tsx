@@ -9,6 +9,7 @@
  */
 import * as React from "react";
 import { Platform } from "react-native";
+import { isMetaHorizonXR } from "../Utilities/ViroPlatform";
 
 export type ViroSpatialFallback = "inline" | "drop";
 
@@ -55,7 +56,7 @@ function loadMetaSpatialModules():
   | { layout: MetaLayoutModule; window: MetaWindowModule }
   | null {
   if (modules !== undefined) return modules;
-  if (Platform.OS !== "android") {
+  if (Platform.OS !== "android" || !isMetaHorizonXR) {
     modules = null;
     return modules;
   }
@@ -86,6 +87,7 @@ export function getViroSpatialLayoutSupport(): ViroSpatialLayoutSupport {
     windowPackageAvailable: !!resolved?.window?.SpatialWindow,
     nativeSpatialLayoutAvailable:
       Platform.OS === "android" &&
+      isMetaHorizonXR &&
       !!resolved?.layout?.SpatialSceneProvider &&
       !!resolved?.window?.SpatialWindow,
   };
@@ -116,7 +118,7 @@ export function ViroSpatialWindow(
   const resolved = loadMetaSpatialModules();
 
   if (!resolved?.window?.SpatialWindow) {
-    if (Platform.OS === "android" && !warned) {
+    if (Platform.OS === "android" && isMetaHorizonXR && !warned) {
       warned = true;
       console.warn(
         "[Viro] Meta spatial windows requested without the optional Meta VR Layout SDK. " +

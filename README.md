@@ -34,6 +34,8 @@ ViroReact is MIT licensed and free forever.
 
 ViroReact works with both **React Native CLI** and **Expo** projects.
 
+> **XR platform expansion:** the staged architecture for Meta VR Glasses, PICO OS 6/WebSpatial, Meta AI glasses, and Snap Specs — including code examples and live PR ownership — is documented in [`docs/XR-PLATFORM-EXPANSION.md`](docs/XR-PLATFORM-EXPANSION.md).
+
 ## Installation
 
 ```bash

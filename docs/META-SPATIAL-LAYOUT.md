@@ -1,12 +1,15 @@
 # Meta VR Layout SDK + Viro
 
+> For the full Meta VR Glasses, PICO OS 6/WebSpatial, Meta AI glasses and Snap Specs platform map, see [`XR-PLATFORM-EXPANSION.md`](./XR-PLATFORM-EXPANSION.md).
+
 Viro's immersive renderer and Meta's Layout SDK solve different spatial UI
 problems and should coexist instead of being folded into one runtime:
 
 - **Viro / OpenXR** owns immersive 3D scenes, passthrough, controllers, anchors,
   and the shared Quest/PICO renderer path.
 - **Meta VR Layout SDK** owns additional system-managed spatial windows around a
-  Standard Android app's main panel on Meta VR devices.
+  Standard Android app's main panel on Meta Horizon devices, including the new
+  Meta VR Glasses family where supported.
 - **Web** continues through `@reactvision/viro-web-renderer` (WebGL2/WASM).
 - **PICO** continues through `@expo-pico/core` for flavor/launcher ownership
   and Viro's OpenXR renderer for the immersive scene.
@@ -79,7 +82,7 @@ export function Workspace() {
 }
 ```
 
-On Android with the Meta packages installed this delegates to Meta's
+On Meta Horizon Android with the Meta packages installed this delegates to Meta's
 `SpatialSceneProvider` and `SpatialWindow`. On iOS, visionOS, web, or when
 the optional peers are absent, Viro applies the requested inline/drop fallback.
 
@@ -121,3 +124,17 @@ Do not add PICO launcher/activity metadata here. `@expo-pico/core` owns the
 PICO build flavor, launcher contract, loader overlay, and device tooling.
 Viro owns the shared React/OpenXR scene path. Keeping that boundary avoids
 Quest-specific manifest metadata leaking into PICO variants.
+
+## PICO and WebSpatial are separate layout backends
+
+PICO is also Android, but that does **not** make Meta Layout its spatial-window
+runtime. Viro now gates the Meta compatibility packages to Meta Horizon hardware.
+
+For PICO OS 6 spatial web surfaces, use WebSpatial. PICO's Web App Runtime
+includes the WebSpatial Runtime, so a React web UI can spatialize selected DOM
+content while retaining an ordinary-browser fallback. Keep that presentation
+layer separate from Viro's native OpenXR renderer and Viro's web/WebXR renderer.
+
+The typed `@expo-pico/spatial` WindowContainer/Shared Space API remains the
+native PICO layout seam. Feature-gate it using its runtime capability result
+until the native Spatial SDK implementation is verified on the target build.
