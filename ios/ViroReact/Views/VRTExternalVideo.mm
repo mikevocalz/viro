@@ -14,6 +14,7 @@
 #import "VRTMaterialManager.h"
 
 #import <CoreImage/CoreImage.h>
+#import <ImageIO/CGImageProperties.h>
 #import <Metal/Metal.h>
 #import <objc/message.h>
 
@@ -376,7 +377,7 @@ static CIImage *FitImage(CIImage *image,
 - (void)dealloc {
     [self _detachProvider];
 
-    if (_boundMaterial && _boundMaterial->getDiffuse().getTexture() == _boundTexture) {
+    if (_boundMaterial) {
         _boundMaterial->getDiffuse().setTexture(nullptr);
     }
 
