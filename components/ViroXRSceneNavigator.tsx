@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { ViroARSceneNavigator } from "./AR/ViroARSceneNavigator";
 import { ViroSceneNavigator } from "./ViroSceneNavigator";
-import { isPico, isQuest, isVisionOS } from "./Utilities/ViroPlatform";
+import { isMetaHorizonXR, isPico, isVisionOS } from "./Utilities/ViroPlatform";
 import {
   beginSceneRootScan,
   claimImmersiveSpace,
@@ -219,7 +219,7 @@ export const ViroXRSceneNavigator = React.forwardRef<unknown, Props>(
     //        (MainActivity is itself the immersive Activity on PICO).
     // AR:    expose the underlying ViroARSceneNavigator instance directly.
     React.useImperativeHandle(ref, () => {
-      if (isQuest || isPico) {
+      if (isMetaHorizonXR || isPico) {
         // PICO follows Quest: navigator ops cross the activity boundary through
         // the same bridge — VRActivity owns the ViroVRSceneNavigator instance.
         // project/unproject/recenterTracking can't go through dispatchOp — that
@@ -363,7 +363,7 @@ export const ViroXRSceneNavigator = React.forwardRef<unknown, Props>(
     // a 2D RN UI never bleeds into the XR scene). VRActivity auto-finishes
     // when MainActivity resumes, so we re-launch on background→active.
     React.useEffect(() => {
-      if (!isQuest && !isPico) return;
+      if (!isMetaHorizonXR && !isPico) return;
       checkRNVersionForVR();
 
       const registerIntentAndLaunch = () => {
@@ -419,7 +419,7 @@ export const ViroXRSceneNavigator = React.forwardRef<unknown, Props>(
     // Quest AND PICO render nothing here — VRActivity owns the display.
     // The XR scene runs in a dedicated immersive activity so MainActivity
     // can stay a 2D panel (no React Native UI bleed into the XR scene).
-    if (isQuest || isPico) return null;
+    if (isMetaHorizonXR || isPico) return null;
 
     if (isVisionOS) {
       // The visionOS renderer has no AR subsystem — every VROAR* class is excluded from the
