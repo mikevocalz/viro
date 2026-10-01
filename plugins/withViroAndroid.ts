@@ -14,6 +14,7 @@ import fs from "fs";
 import path from "path";
 import { insertLinesHelper } from "./util/insertLinesHelper";
 import { ViroConfigurationOptions, XrMode } from "./withViro";
+import { assertMetaVrGlassesXrMode, resolveMetaDefaultDeviceTargets } from "./metaTargeting";
 let viroPluginConfig = ["AR", "GVR"];
 
 const withBranchAndroid: ConfigPlugin<ViroConfigurationOptions> = (config) => {
@@ -637,12 +638,7 @@ const withViroQuestActivity: ConfigPlugin<ViroConfigurationOptions> = (config, p
   // Meta Horizon immersive mode still uses the historical QUEST enum because
   // it selects Viro's Android OpenXR + Horizon launch path. Meta VR Glasses run
   // the same OS/SDK family; do not add a fake device id to supportedDevices.
-  if (props?.android?.metaVrGlassesCompatible && !xrModes.includes("QUEST")) {
-    throw new Error(
-      '[Viro] android.metaVrGlassesCompatible requires android.xRMode to include "QUEST" ' +
-        '(the existing Meta Horizon/OpenXR build path).'
-    );
-  }
+  assertMetaVrGlassesXrMode(xrModes, props?.android);
   if (!xrModes.includes("QUEST")) return config;
 
   // 1. Generate VRActivity.kt
@@ -967,9 +963,7 @@ class VRActivity : ReactActivity() {
     // Meta VR Glasses do not currently have a public com.oculus.supportedDevices
     // identifier. Meta documents "quest3+" as including Quest 3 family,
     // Meta VR Glasses, and future devices.
-    const metaDefaultDeviceTargets =
-      props?.android?.metaDefaultDeviceTargets ??
-      (props?.android?.metaVrGlassesCompatible ? "quest3+" : undefined);
+    const metaDefaultDeviceTargets = resolveMetaDefaultDeviceTargets(props?.android);
     if (metaDefaultDeviceTargets) {
       const alreadyHasDefaultTargets = (app["meta-data"] as any[]).some(
         (m: any) => m.$?.["android:name"] === "com.meta.store.defaultDeviceTargets"
