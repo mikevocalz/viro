@@ -1,4 +1,13 @@
 import * as React from "react";
+
+jest.mock("react-native", () => ({
+  NativeModules: {},
+  Platform: { OS: "android", constants: {} },
+  Image: { resolveAssetSource: (source: unknown) => source },
+  findNodeHandle: () => null,
+  processColor: (value: unknown) => value,
+  requireNativeComponent: () => () => null,
+}));
 import {
   compileViroSpecsChildren,
   dispatchViroSpecsInteraction,
