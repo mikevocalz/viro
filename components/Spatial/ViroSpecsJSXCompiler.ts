@@ -92,10 +92,20 @@ type HandlerProps = {
   onDrag?: (position: [number, number, number], source: number) => void;
 };
 
+export interface ViroSpecsAnimationBinding {
+  nodeId: string;
+  name?: string;
+  run: boolean;
+  loop?: boolean;
+  delayMs?: number;
+  onFinish?: () => void;
+}
+
 export interface ViroSpecsJSXCompilation {
   scene: ViroSpecsPortableSceneSnapshot;
   polylines: ViroSpecsPortablePolyline[];
   bindings: ViroSpecsInteractionBinding[];
+  animations: ViroSpecsAnimationBinding[];
   diagnostics: string[];
   /**
    * Runtime-only callback table. This is intentionally excluded from
@@ -204,6 +214,7 @@ export function compileViroSpecsJSX(
   const nodes: ViroSpecsPortableNode[] = [];
   const polylines: ViroSpecsPortablePolyline[] = [];
   const bindings: ViroSpecsInteractionBinding[] = [];
+  const animations: ViroSpecsAnimationBinding[] = [];
   const diagnostics: string[] = [];
   const handlers = new Map<string, HandlerProps>();
   const usedIds = new Set<string>();
@@ -396,6 +407,26 @@ export function compileViroSpecsJSX(
 
       nodes.push(node);
 
+      if (props.animation && typeof props.animation === "object") {
+        animations.push({
+          nodeId: id,
+          name:
+            typeof props.animation.name === "string"
+              ? props.animation.name
+              : undefined,
+          run: props.animation.run !== false,
+          ...(typeof props.animation.loop === "boolean"
+            ? { loop: props.animation.loop }
+            : {}),
+          ...(typeof props.animation.delay === "number"
+            ? { delayMs: props.animation.delay }
+            : {}),
+          ...(typeof props.animation.onFinish === "function"
+            ? { onFinish: props.animation.onFinish }
+            : {}),
+        });
+      }
+
       registerHandlers(id, props);
       visit(props.children, id, childPath);
     });
@@ -407,6 +438,7 @@ export function compileViroSpecsJSX(
     scene: { version: 1, nodes },
     polylines,
     bindings,
+    animations,
     diagnostics,
     handlers,
   };
@@ -457,6 +489,9 @@ export function serializeViroSpecsCompilation(
       scene: compilation.scene,
       polylines: compilation.polylines,
       bindings: compilation.bindings,
+      animations: compilation.animations.map(
+        ({ onFinish: _onFinish, ...animation }) => animation
+      ),
       diagnostics: compilation.diagnostics,
     },
     null,
