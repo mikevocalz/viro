@@ -395,8 +395,6 @@ import type {
   ViroEngineContractInfo,
   ViroEngineDomain,
   ViroEngineBackendPreference,
-  ViroEngineDomain,
-  ViroEngineBackendPreference,
 } from "./components/Engine/ViroEngineContract";
 import {
   getViroEngineContractInfo,
