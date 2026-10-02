@@ -1,6 +1,6 @@
 # Eskiu-ready Viro extension program
 
-Status: Phase 0 / Phase 1 architecture
+Status: Phase 3 repository implementation complete; production promotion evidence-gated
 Branch: `plan/eskiu-extension-architecture`
 Paired repository: `mikevocalz/virocore`
 
@@ -73,10 +73,16 @@ The public Eskiu v0.9.2 roadmap matters to our rollout order.
 - Linux/native benchmark fixtures;
 - renderer-adjacent helper modules behind the C++ reference path.
 
-### Not production-ready in our fork yet
-- Android NDK/JNI integration: Eskiu's own roadmap still lists `aarch64-linux-android`, JNI `.so`, and Gradle/NDK packaging as unfinished.
-- Therefore Quest/PICO/OpenXR Android renderer migration is **blocked** on an Android-target enablement track, even though generic AArch64 C ABI support exists.
-- Web/WASM must be verified separately; LLVM lowering alone is not proof that the current Eskiu driver/runtime supports our Emscripten/WASM packaging needs.
+### Fork-validated target readiness
+The upstream Eskiu v0.9.2 roadmap originally listed Android NDK/JNI packaging as unfinished. This fork has now closed the repository-side tooling gap with validated probes for:
+- Android AArch64 object generation;
+- JNI shared-library packaging;
+- Gradle/AAR integration;
+- 16 KB alignment;
+- Apple object targets;
+- WebAssembly object/link flow.
+
+These build/toolchain proofs do not by themselves authorize a production renderer swap. Quest/PICO, visionOS/iOS, Web/WASM, and other domains still require the Phase 3 per-domain promotion evidence: native implementation mapping, same-device A/B measurements, parity, soak, and rollback.
 
 ### Production renderer swap gate
 A production ViroCore module may only move to Eskiu after:
@@ -380,9 +386,10 @@ F2. Web/WASM contract parity.
 F3. OpenXR backend parity across Quest/PICO.
 F4. visionOS/Metal parity.
 F5. Eskiu ABI/toolchain smoke backend using public v0.9.2 on host platforms.
-F6. Android target enablement: prove `aarch64-linux-android` object emission, bionic compatibility, JNI `.so`, Gradle/NDK packaging, and 16 KB alignment.
-F7. Web/WASM target feasibility and packaging proof.
-F8. Production Eskiu renderer backend(s) only after platform readiness + native-MCP module verification.
+F6. Android target enablement: **complete at repository/build-probe level** — AArch64 object, JNI, Gradle/AAR and 16 KB packaging validated.
+F7. Web/WASM target feasibility: **object/link proof complete**; production renderer integration remains promotion-gated.
+F8. Apple target feasibility: **object-target proof complete**; device runtime promotion remains evidence-gated.
+F9. Production Eskiu renderer backend(s): selective, domain-scoped promotion only after native-MCP mapping + same-device A/B + parity + soak.
 
 ### Track G — validation
 
@@ -420,8 +427,10 @@ For each ReactVision release:
 
 ## Definition of done
 
-The program is complete when:
-- all current custom features are mapped to a stable domain;
+The repository implementation program is complete. Production promotion remains intentionally per-domain and evidence-gated.
+
+Repository completion now includes:
+- all current custom features mapped to a stable domain;
 - public JSX no longer relies on renderer implementation class names;
 - native ownership/threading is documented and tested;
 - C++ reference backend passes the full contract suite;
