@@ -395,6 +395,11 @@ import type {
   ViroEngineContractInfo,
 } from "./components/Engine/ViroEngineContract";
 import { getViroEngineContractInfo } from "./components/Engine/ViroEngineContractNative";
+import {
+  getViroXRRuntime,
+  hasViroXRRuntimeCapability,
+  isViroSpecsRuntime,
+} from "./components/Specs/ViroSpecsRuntime";
 import { AppRegistry } from "react-native";
 
 // Auto-register the Quest VR entry point. VRActivity launches this component
@@ -527,6 +532,10 @@ export {
   // Engine contract
   getViroEngineContractInfo,
   hasViroEngineCapability,
+  // Specs / universal XR runtime
+  getViroXRRuntime,
+  hasViroXRRuntimeCapability,
+  isViroSpecsRuntime,
   // Utilities
   hasOpenXRSupport,
   isQuest,
@@ -701,3 +710,11 @@ export type {
 
 export { isStudioApiError } from "./components/Studio";
 
+
+
+export type {
+  ViroXRRuntimeKind,
+  ViroXRRuntimeCapability,
+  ViroXRRuntimeCapabilityState,
+  ViroXRRuntimeInfo,
+} from "./components/Specs/ViroSpecsRuntime";
