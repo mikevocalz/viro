@@ -1,3 +1,5 @@
+import { NativeModules, Platform } from "react-native";
+
 export type ViroXRRuntimeKind =
   | "virocore"
   | "specs"
@@ -58,6 +60,19 @@ export function getViroXRRuntime(): ViroXRRuntimeInfo {
       capabilities: {
         ...(readSpecsGlobal().__VIRO_SPECS_CAPABILITIES__ ?? {}),
       },
+    };
+  }
+
+  const visionOS =
+    (Platform as unknown as { isVision?: boolean }).isVision === true ||
+    NativeModules.VRTVisionOSModule?.isVisionOS === true;
+
+  if (visionOS) {
+    return {
+      kind: "visionos",
+      isSpecs: false,
+      isViroCore: true,
+      capabilities: {},
     };
   }
 
