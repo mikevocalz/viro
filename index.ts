@@ -247,6 +247,21 @@ import {
   ViroSpatialWindow,
   getViroSpatialLayoutSupport,
 } from "./components/Spatial/ViroSpatialLayout";
+import {
+  getXRRuntime,
+  useXRRuntime,
+  hasXRCapability,
+  isSpecsBuild,
+  registerViroXRRuntimeProvider,
+} from "./components/Spatial/ViroXRRuntime";
+export type {
+  ViroXRPlatform,
+  ViroXRCapability,
+  ViroXRCapabilityState,
+  ViroXRCapabilities,
+  ViroXRRuntimeSnapshot,
+  ViroXRRuntimeProvider,
+} from "./components/Spatial/ViroXRRuntime";
 export type {
   ViroSpatialFallback,
   ViroSpatialSceneProviderProps,
@@ -403,6 +418,11 @@ import { AppRegistry } from "react-native";
 AppRegistry.registerComponent("VRQuestScene", () => ViroQuestEntryPoint);
 
 export {
+  getXRRuntime,
+  useXRRuntime,
+  hasXRCapability,
+  isSpecsBuild,
+  registerViroXRRuntimeProvider,
   ViroSpatialSceneProvider,
   ViroSpatialWindow,
   getViroSpatialLayoutSupport,
