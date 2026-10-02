@@ -8,20 +8,53 @@ Paired repository: `mikevocalz/virocore`
 
 ReactVision has announced Eskiu as a systems language being introduced into memory-sensitive ViroCore modules. Our fork already carries substantial cross-platform XR work, so the safe long-term strategy is not to bind new features more tightly to individual `VRO*` C++ classes. It is to make the public React/TypeScript API stable while allowing the renderer implementation underneath it to evolve from C++ to mixed C++/Eskiu.
 
-This document is the contract for that work. It intentionally does **not** invent Eskiu syntax, compiler flags, calling conventions, or runtime behavior that ReactVision has not published.
+This document is the contract for that work. It is grounded in the public Eskiu v0.9.2 compiler, ABI reference, language specification, and ReactVision/Viro case study.
+
+## Verified Eskiu baseline
+
+The public Eskiu toolchain gives us enough information to build and test the language boundary now:
+
+- repository: `doranteseduardo/eskiu`;
+- pinned initial toolchain: `v0.9.2`;
+- compiler: `eskiuc`;
+- source extension: `.esk`;
+- backend: LLVM 21+;
+- memory model: explicit allocation, no garbage collector;
+- ABI: the platform's native C ABI, with no separate Eskiu calling convention;
+- output: plain native object files via `-c` or an `.o` output name;
+- C → Eskiu: non-template top-level functions retain source symbol names;
+- Eskiu → C: `extern` uses exact C symbol names;
+- callbacks: C-compatible thunks are emitted when aggregate ABI lowering requires them;
+- supported ABI documentation includes AArch64, x86-64 SysV, Windows x64, ARM32/AAPCS, and 32-bit x86.
+
+This validates the C-facing extension seam and lets us add ABI smoke tests immediately.
 
 ## Evidence gate
 
-Before any code is described as an Eskiu backend:
+Two different gates apply.
+
+### Toolchain/ABI gate — satisfied for scaffolding
+
+The public v0.9.2 compiler and ABI docs are sufficient to:
+- pin and install `eskiuc`;
+- emit object files;
+- link Eskiu and C++ in both directions;
+- define POD C-facing structures;
+- build conformance/smoke tests;
+- begin isolated, non-production experiments.
+
+### Production ViroCore migration gate — still required
+
+Before replacing a real ViroCore subsystem:
 
 1. Query the official ViroReact MCP for the public API and current platform matrix.
 2. Use `reactviro_find_native_bridge` for each affected JS prop/method/event.
-3. Query the ReactVision native/platform MCP for the corresponding ViroCore/JNI/iOS/SLAM implementation.
-4. Record the actual Eskiu/C ABI, ownership rules, allocator expectations, compiler target, and build integration returned by ReactVision.
-5. Compare that result with upstream `ReactVision/viro` and `ReactVision/virocore` branches.
-6. Only then implement an Eskiu backend.
+3. Query the ReactVision native/platform MCP for the corresponding ViroCore/JNI/iOS/SLAM implementation and any internal Eskiu conventions.
+4. Compare that result with upstream `ReactVision/viro` and `ReactVision/virocore` branches.
+5. Record ownership, allocator, threading, target, and build rules for that exact module.
+6. Benchmark the C++ reference path before swapping the implementation.
 
-Until that gate is satisfied, this fork may add **language-neutral boundaries**, tests, benchmarks, manifests, and adapters, but must keep C++ as the reference renderer implementation.
+Until that second gate is satisfied, C++ remains the reference renderer backend, while Eskiu may be used for isolated ABI probes and experimental extension-owned modules.
 
 ## Non-negotiable invariants
 
@@ -316,7 +349,8 @@ F1. C++ reference backend behind the contract.
 F2. Web/WASM contract parity.
 F3. OpenXR backend parity across Quest/PICO.
 F4. visionOS/Metal parity.
-F5. Eskiu backend(s) only after MCP verification.
+F5. Eskiu ABI/toolchain smoke backend using public v0.9.2.
+F6. Production Eskiu renderer backend(s) only after native-MCP module verification.
 
 ### Track G — validation
 
@@ -360,6 +394,7 @@ The program is complete when:
 - native ownership/threading is documented and tested;
 - C++ reference backend passes the full contract suite;
 - Web/OpenXR/visionOS paths pass capability parity tests;
-- MCP/native-MCP Eskiu details are recorded;
+- public Eskiu v0.9.2 ABI/toolchain conformance is green;
+- MCP/native-MCP production ViroCore conventions are recorded;
 - Eskiu modules can replace eligible C++ hot paths without public API changes;
 - performance claims are supported by repeatable measurements.
