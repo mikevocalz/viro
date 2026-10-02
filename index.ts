@@ -259,7 +259,13 @@ import {
   dispatchViroSpecsInteraction,
   serializeViroSpecsCompilation,
   viroEulerDegreesToQuaternion,
+  compileRegisteredViroAnimationForSpecs,
+  mountViroSpecsCompilation,
 } from "./components/Spatial/ViroSpecsJSXCompiler";
+import {
+  compileRegisteredViroAnimationForSpecs,
+  mountViroSpecsCompilation,
+} from "./components/Spatial/ViroSpecsRuntimeBridge";
 export type {
   ViroSpecsPortableNodeKind,
   ViroSpecsPortableNode,
@@ -271,7 +277,27 @@ export type {
   ViroSpecsInteractionBinding,
   ViroSpecsJSXCompilation,
   ViroSpecsJSXCompilerOptions,
+  ViroSpecsAnimationBinding,
 } from "./components/Spatial/ViroSpecsJSXCompiler";
+export type {
+  ViroSpecsBackendCapabilityReport,
+  ViroSpecsNativeAnimationPlan,
+  ViroSpecsAnimationRuntime,
+  ViroSpecsWorldQueryRequest,
+  ViroSpecsHitTestResult,
+  ViroSpecsSurfacePlacementMode,
+  ViroSpecsPlacementPose,
+  ViroSpecsWorldRuntime,
+  ViroSpecsGeoCoordinate,
+  ViroSpecsNavigationRoute,
+  ViroSpecsNavigationPlan,
+  ViroSpecsVolumetricLinePlan,
+  ViroSpecsNavigationRuntime,
+  ViroSpecsSceneRuntime,
+  ViroSpecsBackendRuntime,
+  ViroSpecsMountOptions,
+  ViroSpecsMountedScene,
+} from "./components/Spatial/ViroSpecsRuntimeBridge";
 export type {
   ViroXRPlatform,
   ViroXRCapability,
