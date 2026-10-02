@@ -2,6 +2,7 @@ import {
   decodeViroEngineCapabilities,
   normalizeViroEngineAbiInfo,
   queryViroEngineContract,
+  hasViroEngineCapability,
 } from "../components/Engine/ViroEngineContract";
 
 describe("ViroEngineContract", () => {
