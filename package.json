@@ -39,7 +39,8 @@
     "react-native": ">=0.86.0 <0.89.0",
     "react-native-web": ">=0.19.0",
     "@metavr/layout-compat": "^1.0.0",
-    "@metavr/layout-window-compat": "^1.0.0"
+    "@metavr/layout-window-compat": "^1.0.0",
+    "@viro-external/specs": ">=0.1.0"
   },
   "engines": {
     "react-native": ">=0.86.0 <0.89.0"
@@ -61,6 +62,9 @@
       "optional": true
     },
     "@metavr/layout-window-compat": {
+      "optional": true
+    },
+    "@viro-external/specs": {
       "optional": true
     }
   },
@@ -132,5 +136,8 @@
   "dependencies": {
     "react": ">=19.0.0",
     "zustand": "5.0.15"
+  },
+  "bin": {
+    "viro-specs": "bin/viro-specs.cjs"
   }
 }
