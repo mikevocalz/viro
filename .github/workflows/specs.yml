@@ -34,7 +34,15 @@ jobs:
         run: npm install
 
       - name: SPECS Jest regressions
-        run: npm test -- --runInBand --runTestsByPath __test__/ViroSpecsJSXCompiler.test.tsx __test__/ViroSpecsRuntimeBridge.test.ts --passWithNoTests
+        run: |
+          tests=()
+          test -f __test__/ViroSpecsJSXCompiler.test.tsx && tests+=(__test__/ViroSpecsJSXCompiler.test.tsx)
+          test -f __test__/ViroSpecsRuntimeBridge.test.ts && tests+=(__test__/ViroSpecsRuntimeBridge.test.ts)
+          if [ "${#tests[@]}" -gt 0 ]; then
+            npm test -- --runInBand --runTestsByPath "${tests[@]}"
+          else
+            echo "No SPECS Jest layer in this stack level yet."
+          fi
 
       - name: Build TypeScript and declarations
         run: npm run build
