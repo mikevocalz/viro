@@ -393,8 +393,16 @@ import type {
   ViroEngineBackend,
   ViroEngineCapability,
   ViroEngineContractInfo,
+  ViroEngineDomain,
+  ViroEngineBackendPreference,
+  ViroEngineDomain,
+  ViroEngineBackendPreference,
 } from "./components/Engine/ViroEngineContract";
-import { getViroEngineContractInfo } from "./components/Engine/ViroEngineContractNative";
+import {
+  getViroEngineContractInfo,
+  setViroEngineBackendPreference,
+  getViroEngineBackendPreference,
+} from "./components/Engine/ViroEngineContractNative";
 import {
   getViroXRRuntime,
   hasViroXRRuntimeCapability,
@@ -534,6 +542,8 @@ export {
   // Engine contract
   getViroEngineContractInfo,
   hasViroEngineCapability,
+  setViroEngineBackendPreference,
+  getViroEngineBackendPreference,
   // Specs / universal XR runtime
   getViroXRRuntime,
   hasViroXRRuntimeCapability,
