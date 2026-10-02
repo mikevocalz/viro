@@ -70,13 +70,16 @@ export interface ViroXRRuntimeProvider {
   subscribe?(listener: () => void): () => void;
 }
 
-type RuntimeStore = ViroXRRuntimeSnapshot & {
-  __providerVersion: number;
+type RuntimeStore = {
+  snapshot: ViroXRRuntimeSnapshot;
+  providerVersion: number;
 };
 
 type ViroBuildGlobals = typeof globalThis & {
   __VIRO_SPECS_BUILD__?: boolean;
   __VIRO_XR_TARGET__?: string;
+  __VIRO_SIMULATOR__?: boolean;
+  __VIRO_PHYSICAL_DEVICE__?: boolean;
 };
 
 function specsBuildMarker(): boolean {
@@ -89,6 +92,49 @@ function specsBuildMarker(): boolean {
     if (target === "specs") return true;
   }
   return false;
+}
+
+function explicitDeviceKind(): "simulator" | "physical" | "unknown" {
+  const globals = globalThis as ViroBuildGlobals;
+  if (globals.__VIRO_SIMULATOR__ === true) return "simulator";
+  if (globals.__VIRO_PHYSICAL_DEVICE__ === true) return "physical";
+
+  if (typeof process !== "undefined") {
+    if (
+      process.env?.SIMULATOR_UDID ||
+      process.env?.SIMULATOR_DEVICE_NAME ||
+      process.env?.ANDROID_EMULATOR === "true" ||
+      process.env?.ROBOLECTRIC === "true"
+    ) {
+      return "simulator";
+    }
+  }
+
+  const constants = Platform.constants as Record<string, unknown> | undefined;
+  const fingerprint = String(constants?.Fingerprint ?? "").toLowerCase();
+  const model = String(constants?.Model ?? "").toLowerCase();
+  const brand = String(constants?.Brand ?? "").toLowerCase();
+  const manufacturer = String(constants?.Manufacturer ?? "").toLowerCase();
+
+  if (
+    Platform.OS === "android" &&
+    (
+      fingerprint.includes("generic") ||
+      fingerprint.includes("emulator") ||
+      model.includes("sdk_gphone") ||
+      model.includes("emulator") ||
+      model.includes("android sdk built for") ||
+      brand === "generic" ||
+      manufacturer.includes("genymotion")
+    )
+  ) {
+    return "simulator";
+  }
+
+  // React Native does not expose a guaranteed iOS simulator flag. Do not
+  // manufacture a "physical" answer for generic iOS/Android fallbacks; an
+  // exact platform adapter can register that identity when it matters.
+  return "unknown";
 }
 
 function initialRuntime(): ViroXRRuntimeSnapshot {
@@ -185,6 +231,8 @@ function initialRuntime(): ViroXRRuntimeSnapshot {
     };
   }
 
+  const deviceKind = explicitDeviceKind();
+
   return {
     platform:
       Platform.OS === "android"
@@ -198,8 +246,8 @@ function initialRuntime(): ViroXRRuntimeSnapshot {
     isPico: false,
     isVisionOS: false,
     isWeb: false,
-    isPhysicalDevice: true,
-    isSimulator: false,
+    isPhysicalDevice: deviceKind === "physical",
+    isSimulator: deviceKind === "simulator",
     isEditor: false,
     capabilities: {},
   };
@@ -208,18 +256,22 @@ function initialRuntime(): ViroXRRuntimeSnapshot {
 const initial = initialRuntime();
 
 const useViroXRRuntimeStore = create<RuntimeStore>(() => ({
-  ...initial,
-  __providerVersion: 0,
+  snapshot: initial,
+  providerVersion: 0,
 }));
 
 let provider: ViroXRRuntimeProvider | null = null;
 let providerUnsubscribe: (() => void) | null = null;
 
 function publishSnapshot(snapshot: ViroXRRuntimeSnapshot): void {
-  useViroXRRuntimeStore.setState((state) => ({
-    ...snapshot,
-    __providerVersion: state.__providerVersion + 1,
-  }));
+  const state = useViroXRRuntimeStore.getState();
+  // Snapshot is a complete value: replacing this nested object guarantees that
+  // optional properties from a previous provider cannot survive a provider
+  // switch simply because Zustand merges top-level store state by default.
+  useViroXRRuntimeStore.setState({
+    snapshot,
+    providerVersion: state.providerVersion + 1,
+  });
 }
 
 export function registerViroXRRuntimeProvider(
@@ -246,16 +298,14 @@ export function registerViroXRRuntimeProvider(
 }
 
 export function getXRRuntime(): ViroXRRuntimeSnapshot {
-  const state = useViroXRRuntimeStore.getState();
-  const { __providerVersion: _ignored, ...snapshot } = state;
-  return snapshot;
+  return useViroXRRuntimeStore.getState().snapshot;
 }
 
 export function useXRRuntime(): ViroXRRuntimeSnapshot {
-  return useViroXRRuntimeStore((state) => {
-    const { __providerVersion: _ignored, ...snapshot } = state;
-    return snapshot;
-  });
+  // Select the already-stable snapshot object. Constructing a fresh object in
+  // this selector breaks useSyncExternalStore's snapshot identity contract and
+  // can cause React 19/Zustand 5 render loops.
+  return useViroXRRuntimeStore((state) => state.snapshot);
 }
 
 export function hasXRCapability(
