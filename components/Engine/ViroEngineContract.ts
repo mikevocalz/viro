@@ -156,3 +156,15 @@ export async function queryViroEngineContract(
 
   return normalizeViroEngineAbiInfo(await nativeModule.queryAbi());
 }
+
+
+/**
+ * Capability helper for app/runtime feature gates.
+ * Only compatible contract snapshots are considered usable.
+ */
+export function hasViroEngineCapability(
+  info: ViroEngineContractInfo | null | undefined,
+  capability: ViroEngineCapability
+): boolean {
+  return !!info?.compatible && info.capabilities.has(capability);
+}

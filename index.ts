@@ -386,6 +386,15 @@ import type {
   ViroOpenXRRuntimeCapabilities,
 } from "./components/Utilities/VRModuleOpenXR";
 import { StreamingAudioManager } from "./components/Utilities/StreamingAudioManager";
+import {
+  hasViroEngineCapability,
+} from "./components/Engine/ViroEngineContract";
+import type {
+  ViroEngineBackend,
+  ViroEngineCapability,
+  ViroEngineContractInfo,
+} from "./components/Engine/ViroEngineContract";
+import { getViroEngineContractInfo } from "./components/Engine/ViroEngineContractNative";
 import { AppRegistry } from "react-native";
 
 // Auto-register the Quest VR entry point. VRActivity launches this component
@@ -515,6 +524,9 @@ export {
   Viro3DSceneNavigator,
   // Streaming audio
   StreamingAudioManager,
+  // Engine contract
+  getViroEngineContractInfo,
+  hasViroEngineCapability,
   // Utilities
   hasOpenXRSupport,
   isQuest,
