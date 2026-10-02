@@ -99,6 +99,7 @@ import com.viromedia.bridge.module.ViroSplatPassModule;
 import com.viromedia.bridge.module.ViroOrbPassModule;
 import com.viromedia.bridge.module.StreamingAudioModule;
 import com.viromedia.bridge.module.VRLauncherModule;
+import com.viromedia.bridge.module.ViroEngineContractModule;
 import com.viromedia.bridge.module.VRModuleOpenXR;
 import com.viromedia.bridge.module.VRTImageModule;
 
@@ -158,6 +159,7 @@ public class ReactViroPackage implements ReactPackage {
                 new VRT3DSceneNavigatorModule(reactContext),
                 new VRTStudioModule(reactContext),
                 new StreamingAudioModule(reactContext),
+                new ViroEngineContractModule(reactContext),
                 new ViroSplatPassModule(reactContext),
                 new ViroOrbPassModule(reactContext),
                 new com.viromedia.bridge.component.ViroDetectorModule(reactContext)
