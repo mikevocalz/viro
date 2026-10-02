@@ -101,7 +101,16 @@ switch (command) {
   case "test": {
     const first = runScript(root, "validate-lens-runtime.mjs", []);
     if (first !== 0) break;
-    runScript(root, "go-clad.test.mjs", []);
+
+    const second = runScript(root, "go-clad.test.mjs", []);
+    if (second !== 0) break;
+
+    // Static backend regressions are project-independent. When a Lens project
+    // is supplied, honor it by validating the concrete project as the final
+    // test stage instead of silently discarding the caller's arguments.
+    if (args.length > 0) {
+      runScript(root, "doctor-lens-project.mjs", args);
+    }
     break;
   }
   default:
