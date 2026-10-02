@@ -29,7 +29,8 @@
     "prepare": "npm run build",
     "harness:assets": "bash scripts/sync-harness-assets.sh",
     "preharness": "npm run harness:assets",
-    "audit:events": "node scripts/audit-events.cjs"
+    "audit:events": "node scripts/audit-events.cjs",
+    "test:specs-compiler": "node scripts/test-viro-specs-compiler.cjs"
   },
   "peerDependencies": {
     "@reactvision/react-native-visionos": ">=0.86.0 <0.89.0",
@@ -135,9 +136,12 @@
   "author": "ReactVision, Inc",
   "dependencies": {
     "react": ">=19.0.0",
-    "zustand": "5.0.15"
+    "zustand": "5.0.15",
+    "@babel/parser": "^7.28.4",
+    "@babel/traverse": "^7.28.4"
   },
   "bin": {
-    "viro-specs": "bin/viro-specs.cjs"
+    "viro-specs": "bin/viro-specs.cjs",
+    "viro-specs-compile": "bin/viro-specs-compile.cjs"
   }
 }
