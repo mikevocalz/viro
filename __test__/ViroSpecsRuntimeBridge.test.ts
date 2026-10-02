@@ -1,3 +1,8 @@
+jest.mock("react-native", () => ({
+  NativeModules: {},
+  processColor: (value: unknown) => value,
+}));
+
 import {
   compileRegisteredViroAnimationForSpecs,
   mountViroSpecsCompilation,
