@@ -5,6 +5,16 @@ const path = require("node:path");
 
 const requireFromCwd = createRequire(path.join(process.cwd(), "package.json"));
 const command = process.argv[2];
+
+if (command === "compile") {
+  const compiler = path.join(__dirname, "viro-specs-compile.cjs");
+  const result = spawnSync(process.execPath, [compiler, ...process.argv.slice(3)], {
+    cwd: process.cwd(),
+    stdio: "inherit",
+    env: process.env,
+  });
+  process.exit(result.status ?? 1);
+}
 const args = process.argv.slice(3);
 
 const scriptByCommand = {
@@ -18,7 +28,7 @@ const scriptByCommand = {
 if (!command || !scriptByCommand[command]) {
   console.error(
     [
-      "Usage: viro-specs <init|sync|doctor|test|go> [args]",
+      "Usage: viro-specs <compile|init|sync|doctor|test|go> [args]",
       "",
       "Examples:",
       '  viro-specs doctor --project "/path/to/LensProject"',
