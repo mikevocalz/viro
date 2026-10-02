@@ -1,7 +1,10 @@
 import * as React from "react";
 import {
   compileViroSpecsChildren,
+  dispatchViroSpecsAnimationEvent,
   dispatchViroSpecsInteraction,
+  type ViroSpecsAnimationEvent,
+  type ViroSpecsAnimationPlan,
   type ViroSpecsCompiledScene,
   type ViroSpecsInteractionEvent,
   type ViroSpecsPortablePolyline,
@@ -14,8 +17,15 @@ export type ViroSpecsSceneTransport = {
   applyScene(scene: ViroSpecsSceneSnapshot): Promise<void> | void;
   presentPolyline?(polyline: ViroSpecsPortablePolyline): Promise<void> | void;
   clearPolylines?(): Promise<void> | void;
+  playAnimation?(
+    animation: Extract<ViroSpecsAnimationPlan, { action: "play" }>
+  ): Promise<void> | void;
+  stopAnimation?(nodeId: string, name: string): Promise<void> | void;
   onInteraction?(
     listener: (event: ViroSpecsInteractionEvent) => void
+  ): () => void;
+  onAnimationEvent?(
+    listener: (event: ViroSpecsAnimationEvent) => void
   ): () => void;
 };
 
@@ -31,6 +41,7 @@ function emptyCompiled(): ViroSpecsCompiledScene {
   return {
     scene: { version: 1, nodes: [] },
     polylines: [],
+    animations: [],
     callbacks: new Map(),
     diagnostics: [],
   };
@@ -87,6 +98,36 @@ export function ViroSpecsScene({
           await transport.presentPolyline?.(polyline);
           if (revisionRef.current !== revision) return;
         }
+
+        for (const animation of compiled.animations) {
+          if (revisionRef.current !== revision) return;
+
+          if (animation.action === "stop") {
+            if (!transport.stopAnimation) {
+              onDiagnostic?.(
+                "Specs transport cannot stop animation " +
+                  animation.name +
+                  " on " +
+                  animation.nodeId +
+                  "."
+              );
+              continue;
+            }
+            await transport.stopAnimation(animation.nodeId, animation.name);
+          } else {
+            if (!transport.playAnimation) {
+              onDiagnostic?.(
+                "Specs transport cannot play animation " +
+                  animation.name +
+                  " on " +
+                  animation.nodeId +
+                  "."
+              );
+              continue;
+            }
+            await transport.playAnimation(animation);
+          }
+        }
       })
       .catch((error) => {
         onDiagnostic?.(
@@ -106,6 +147,13 @@ export function ViroSpecsScene({
     if (!specsRuntime || !transport.onInteraction) return;
     return transport.onInteraction((event) =>
       dispatchViroSpecsInteraction(event, callbacksRef.current)
+    );
+  }, [specsRuntime, transport]);
+
+  React.useEffect(() => {
+    if (!specsRuntime || !transport.onAnimationEvent) return;
+    return transport.onAnimationEvent((event) =>
+      dispatchViroSpecsAnimationEvent(event, callbacksRef.current)
     );
   }, [specsRuntime, transport]);
 
