@@ -56,6 +56,36 @@ Before replacing a real ViroCore subsystem:
 
 Until that second gate is satisfied, C++ remains the reference renderer backend, while Eskiu may be used for isolated ABI probes and experimental extension-owned modules.
 
+## Platform readiness ladder
+
+The public Eskiu v0.9.2 roadmap matters to our rollout order.
+
+### Ready enough for immediate ABI proof
+- macOS arm64 host object generation/linking;
+- Linux x86-64/arm64 host object generation/linking;
+- C ABI calls in both directions;
+- POD structs and callbacks;
+- explicit allocation experiments;
+- freestanding object generation where appropriate.
+
+### Ready for controlled native pilots after local build validation
+- Apple native extension-owned modules that do not depend on unpublished Viro internals;
+- Linux/native benchmark fixtures;
+- renderer-adjacent helper modules behind the C++ reference path.
+
+### Not production-ready in our fork yet
+- Android NDK/JNI integration: Eskiu's own roadmap still lists `aarch64-linux-android`, JNI `.so`, and Gradle/NDK packaging as unfinished.
+- Therefore Quest/PICO/OpenXR Android renderer migration is **blocked** on an Android-target enablement track, even though generic AArch64 C ABI support exists.
+- Web/WASM must be verified separately; LLVM lowering alone is not proof that the current Eskiu driver/runtime supports our Emscripten/WASM packaging needs.
+
+### Production renderer swap gate
+A production ViroCore module may only move to Eskiu after:
+1. platform toolchain support is verified for that target;
+2. the ReactVision native/platform MCP mapping is recorded;
+3. the C++ baseline benchmark exists;
+4. the Eskiu implementation passes contract conformance;
+5. old/new paths can be compared behind a feature flag.
+
 ## Non-negotiable invariants
 
 - Existing ViroReact JSX must continue to work.
@@ -349,8 +379,10 @@ F1. C++ reference backend behind the contract.
 F2. Web/WASM contract parity.
 F3. OpenXR backend parity across Quest/PICO.
 F4. visionOS/Metal parity.
-F5. Eskiu ABI/toolchain smoke backend using public v0.9.2.
-F6. Production Eskiu renderer backend(s) only after native-MCP module verification.
+F5. Eskiu ABI/toolchain smoke backend using public v0.9.2 on host platforms.
+F6. Android target enablement: prove `aarch64-linux-android` object emission, bionic compatibility, JNI `.so`, Gradle/NDK packaging, and 16 KB alignment.
+F7. Web/WASM target feasibility and packaging proof.
+F8. Production Eskiu renderer backend(s) only after platform readiness + native-MCP module verification.
 
 ### Track G — validation
 
