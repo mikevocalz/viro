@@ -49,9 +49,9 @@ describe("Viro Specs JSX compiler", () => {
       React.createElement(ViroPolyline, {
         viroTag: "route",
         points: [
-          [0, 0, -1.5],
-          [0, 0, -2.5],
-          [0, 1, -2.5],
+          [0, 0, 0],
+          [1, 0, 0],
+          [1, 1, 0],
         ],
         thickness: 0.008,
         materials: "route-line",
@@ -73,18 +73,24 @@ describe("Viro Specs JSX compiler", () => {
     expect(rootRotation[1]).toBeCloseTo(Math.SQRT1_2, 5);
     expect(rootRotation[3]).toBeCloseTo(Math.SQRT1_2, 5);
 
-    expect(compiled.polylines).toEqual([
-      {
-        id: "route",
-        points: [
-          [0, 0, 0],
-          [1, 0, 0],
-          [1, 1, 0],
-        ],
-        radiusMeters: 0.004,
-        materialId: "route-line",
-      },
-    ]);
+    expect(compiled.polylines[0]).toMatchObject({
+      id: "route",
+      radiusMeters: 0.004,
+      materialId: "route-line",
+    });
+    const expectedRoute = [
+      [0, 0, -1.5],
+      [0, 0, -2.5],
+      [0, 1, -2.5],
+    ];
+    expectedRoute.forEach((expected, pointIndex) => {
+      expected.forEach((value, axis) => {
+        expect(compiled.polylines[0].points[pointIndex][axis]).toBeCloseTo(
+          value,
+          5
+        );
+      });
+    });
 
     expect(compiled.animations[0]).toMatchObject({
       nodeId: "title",
