@@ -61,6 +61,8 @@ export type ViroAnimation = {
   interruptible?: boolean;
 };
 
+const registeredAnimations: ViroAnimationDict = {};
+
 export class ViroAnimations {
   static registerAnimations(animations: ViroAnimationDict) {
     for (var key in animations) {
@@ -72,8 +74,19 @@ export class ViroAnimations {
         }
       }
     }
+    Object.assign(registeredAnimations, animations);
     if (AnimationManager) {
       AnimationManager.setJSAnimations(animations);
     }
+  }
+
+  static getRegisteredAnimation(
+    name: string
+  ): ViroRegisterableAnimation | ViroRegisterableAnimation[] | undefined {
+    return registeredAnimations[name];
+  }
+
+  static getRegisteredAnimations(): Readonly<ViroAnimationDict> {
+    return registeredAnimations;
   }
 }
