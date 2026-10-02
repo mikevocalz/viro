@@ -1,14 +1,20 @@
 import * as React from "react";
 import {
-  ViroARScene,
-  Viro3DObject,
-  ViroNode,
-  ViroPolyline,
-  ViroText,
   compileViroSpecsJSX,
   dispatchViroSpecsInteraction,
   viroEulerDegreesToQuaternion,
-} from "../index";
+} from "../components/Spatial/ViroSpecsJSXCompiler";
+
+type PortableTestProps = {
+  children?: React.ReactNode;
+  [key: string]: unknown;
+};
+
+function ViroARScene(_props: PortableTestProps) { return null; }
+function ViroNode(_props: PortableTestProps) { return null; }
+function ViroText(_props: PortableTestProps) { return null; }
+function Viro3DObject(_props: PortableTestProps) { return null; }
+function ViroPolyline(_props: PortableTestProps) { return null; }
 
 describe("Viro Specs JSX compiler", () => {
   test("matches ViroCore Euler composition for mixed-axis rotation", () => {
