@@ -254,6 +254,24 @@ import {
   isSpecsBuild,
   registerViroXRRuntimeProvider,
 } from "./components/Spatial/ViroXRRuntime";
+import {
+  compileViroSpecsJSX,
+  dispatchViroSpecsInteraction,
+  serializeViroSpecsCompilation,
+  viroEulerDegreesToQuaternion,
+} from "./components/Spatial/ViroSpecsJSXCompiler";
+export type {
+  ViroSpecsPortableNodeKind,
+  ViroSpecsPortableNode,
+  ViroSpecsPortablePolyline,
+  ViroSpecsPortableSceneSnapshot,
+  ViroSpecsPortableInteraction,
+  ViroSpecsPortableInteractionSource,
+  ViroSpecsPortableInteractionPhase,
+  ViroSpecsInteractionBinding,
+  ViroSpecsJSXCompilation,
+  ViroSpecsJSXCompilerOptions,
+} from "./components/Spatial/ViroSpecsJSXCompiler";
 export type {
   ViroXRPlatform,
   ViroXRCapability,
@@ -418,6 +436,10 @@ import { AppRegistry } from "react-native";
 AppRegistry.registerComponent("VRQuestScene", () => ViroQuestEntryPoint);
 
 export {
+  compileViroSpecsJSX,
+  dispatchViroSpecsInteraction,
+  serializeViroSpecsCompilation,
+  viroEulerDegreesToQuaternion,
   getXRRuntime,
   useXRRuntime,
   hasXRCapability,
