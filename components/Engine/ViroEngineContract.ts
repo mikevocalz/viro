@@ -45,8 +45,59 @@ export interface ViroEngineContractInfo {
   reason: "ok" | "native-module-missing" | "abi-major-mismatch" | "abi-too-old";
 }
 
+export type ViroEngineDomain =
+  | "input"
+  | "spatial"
+  | "surface"
+  | "media"
+  | "geometry"
+  | "world-mesh"
+  | "asset-loading";
+
+export type ViroEngineBackendPreference = "auto" | "cpp" | "eskiu";
+
 export interface ViroEngineContractNativeModule {
   queryAbi(): Promise<ViroEngineNativeAbiInfo>;
+  setBackendPreference?(domain: number, preference: number): Promise<number>;
+  getBackendPreference?(domain: number): Promise<number>;
+}
+
+const DOMAIN_CODE: Record<ViroEngineDomain, number> = {
+  input: 0,
+  spatial: 1,
+  surface: 2,
+  media: 3,
+  geometry: 4,
+  "world-mesh": 5,
+  "asset-loading": 6,
+};
+
+const PREFERENCE_CODE: Record<ViroEngineBackendPreference, number> = {
+  auto: 0,
+  cpp: 1,
+  eskiu: 2,
+};
+
+const CODE_PREFERENCE: Record<number, ViroEngineBackendPreference> = {
+  0: "auto",
+  1: "cpp",
+  2: "eskiu",
+};
+
+export function viroEngineDomainCode(domain: ViroEngineDomain): number {
+  return DOMAIN_CODE[domain];
+}
+
+export function viroEnginePreferenceCode(
+  preference: ViroEngineBackendPreference
+): number {
+  return PREFERENCE_CODE[preference];
+}
+
+export function viroEnginePreferenceFromCode(
+  code: number
+): ViroEngineBackendPreference {
+  return CODE_PREFERENCE[code] ?? "auto";
 }
 
 const CAPABILITY_BITS: readonly [ViroEngineCapability, number][] = [

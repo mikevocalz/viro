@@ -31,6 +31,48 @@ public class ViroEngineContractModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
+    public void setBackendPreference(int domain, int preference, Promise promise) {
+        try {
+            Method set = Renderer.class.getMethod(
+                    "setEngineBackendPreference", int.class, int.class);
+            Object raw = set.invoke(null, domain, preference);
+            if (!(raw instanceof Integer)) {
+                promise.reject("E_ENGINE_BACKEND_SELECTOR_INVALID",
+                        "Renderer.setEngineBackendPreference() returned no status");
+                return;
+            }
+            promise.resolve((Integer) raw);
+        } catch (NoSuchMethodException e) {
+            promise.reject("E_ENGINE_BACKEND_SELECTOR_UNAVAILABLE",
+                    "Bundled ViroCore does not expose backend selection yet", e);
+        } catch (Throwable t) {
+            promise.reject("E_ENGINE_BACKEND_SELECTOR_SET",
+                    "Unable to set ViroCore backend preference", t);
+        }
+    }
+
+    @ReactMethod
+    public void getBackendPreference(int domain, Promise promise) {
+        try {
+            Method get = Renderer.class.getMethod(
+                    "getEngineBackendPreference", int.class);
+            Object raw = get.invoke(null, domain);
+            if (!(raw instanceof Integer)) {
+                promise.reject("E_ENGINE_BACKEND_SELECTOR_INVALID",
+                        "Renderer.getEngineBackendPreference() returned no preference");
+                return;
+            }
+            promise.resolve((Integer) raw);
+        } catch (NoSuchMethodException e) {
+            promise.reject("E_ENGINE_BACKEND_SELECTOR_UNAVAILABLE",
+                    "Bundled ViroCore does not expose backend selection yet", e);
+        } catch (Throwable t) {
+            promise.reject("E_ENGINE_BACKEND_SELECTOR_GET",
+                    "Unable to query ViroCore backend preference", t);
+        }
+    }
+
+    @ReactMethod
     public void queryAbi(Promise promise) {
         try {
             Method query = Renderer.class.getMethod("queryEngineAbi");
