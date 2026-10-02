@@ -6,6 +6,7 @@ import { requireNitroCanvas } from "./CanvasPanel/nitroCanvas";
 import { ViroNode } from "./ViroNode";
 import { ViroQuad } from "./ViroQuad";
 import { useCanvasPanel } from "./CanvasPanel/useCanvasPanel";
+import { describeCanvasSurface, type ViroPanelSurfaceSnapshot } from "./CanvasPanel/engineSurfaceAdapter";
 
 type Vec3 = [number, number, number];
 
@@ -57,6 +58,8 @@ export type ViroRivePanelHandle = {
   producer: RiveProducer | null;
   materialName: string;
   runtime: RivePanel | null;
+  /** Backend-neutral surface metadata; never a native GPU pointer. */
+  engineSurface: ViroPanelSurfaceSnapshot | null;
 };
 
 export const ViroRivePanel = React.forwardRef<
@@ -136,6 +139,7 @@ export const ViroRivePanel = React.forwardRef<
       surface: state?.surface ?? null,
       producer: state?.producer ?? null,
       materialName: state?.materialName ?? "",
+      engineSurface: describeCanvasSurface(state?.surface, "rive"),
     }),
     [state]
   );
