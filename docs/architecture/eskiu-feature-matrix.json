@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "program": "eskiu-extension-architecture",
-  "status": "phase-0",
+  "status": "phase-2-validated-boundaries",
   "evidenceGate": {
     "requiredBeforeEskiuBackend": true,
     "sources": [
@@ -21,7 +21,8 @@
       "action": "keep",
       "domains": [
         "capabilities"
-      ]
+      ],
+      "status": "keep-typescript-policy-stable"
     },
     {
       "id": "runtime-capabilities",
@@ -32,7 +33,8 @@
       "domains": [
         "capabilities",
         "diagnostics"
-      ]
+      ],
+      "status": "typed-contract-and-native-bridge-landed"
     },
     {
       "id": "meta-glasses-targeting",
@@ -42,7 +44,8 @@
       "action": "keep",
       "domains": [
         "capabilities"
-      ]
+      ],
+      "status": "keep-typescript-config-stable"
     },
     {
       "id": "pico-openxr",
@@ -55,7 +58,8 @@
         "frames",
         "input",
         "spatial"
-      ]
+      ],
+      "status": "semantic-contract-ready-production-swap-gated"
     },
     {
       "id": "quest-openxr",
@@ -68,7 +72,8 @@
         "frames",
         "input",
         "spatial"
-      ]
+      ],
+      "status": "semantic-contract-ready-production-swap-gated"
     },
     {
       "id": "visionos",
@@ -81,7 +86,8 @@
         "input",
         "spatial",
         "surfaces"
-      ]
+      ],
+      "status": "object-target-proven-public-api-stable"
     },
     {
       "id": "stylus",
@@ -92,7 +98,8 @@
       "domains": [
         "input",
         "frames"
-      ]
+      ],
+      "status": "input-abi-ready-eskiu-shadow-parity-green"
     },
     {
       "id": "controller-precision",
@@ -103,7 +110,8 @@
       "domains": [
         "input",
         "frames"
-      ]
+      ],
+      "status": "input-abi-ready-eskiu-shadow-parity-green"
     },
     {
       "id": "hands-gaze",
@@ -114,7 +122,8 @@
       "domains": [
         "input",
         "frames"
-      ]
+      ],
+      "status": "input-abi-ready-eskiu-shadow-parity-green"
     },
     {
       "id": "colocation",
@@ -126,7 +135,8 @@
         "spatial",
         "frames",
         "diagnostics"
-      ]
+      ],
+      "status": "spatial-frame-contract-ready-public-orchestration-stays-typescript"
     },
     {
       "id": "shared-frames",
@@ -137,7 +147,8 @@
       "domains": [
         "spatial",
         "frames"
-      ]
+      ],
+      "status": "spatial-frame-abi-ready"
     },
     {
       "id": "world-mesh",
@@ -149,7 +160,8 @@
         "geometry",
         "buffers",
         "spatial"
-      ]
+      ],
+      "status": "world-mesh-abi-and-metrics-ready"
     },
     {
       "id": "dynamic-geometry",
@@ -161,7 +173,8 @@
         "geometry",
         "buffers",
         "resources"
-      ]
+      ],
+      "status": "geometry-abi-and-eskiu-differential-pilot-green"
     },
     {
       "id": "mapbox-ar",
@@ -172,7 +185,8 @@
       "domains": [
         "geometry",
         "buffers"
-      ]
+      ],
+      "status": "geometry-buffer-contract-ready-public-api-stable"
     },
     {
       "id": "gpu-panel",
@@ -184,7 +198,8 @@
         "surfaces",
         "resources",
         "buffers"
-      ]
+      ],
+      "status": "generic-surface-contract-adapted"
     },
     {
       "id": "rive-panel",
@@ -195,7 +210,8 @@
       "domains": [
         "surfaces",
         "resources"
-      ]
+      ],
+      "status": "generic-surface-contract-adapted"
     },
     {
       "id": "three-panel",
@@ -206,7 +222,8 @@
       "domains": [
         "surfaces",
         "resources"
-      ]
+      ],
+      "status": "generic-surface-contract-adapted"
     },
     {
       "id": "camera-texture",
@@ -218,7 +235,8 @@
         "media",
         "surfaces",
         "buffers"
-      ]
+      ],
+      "status": "media-frame-contract-ready"
     },
     {
       "id": "recording-video",
@@ -229,7 +247,8 @@
       "domains": [
         "media",
         "surfaces"
-      ]
+      ],
+      "status": "media-frame-contract-ready"
     },
     {
       "id": "gltf-loading",
@@ -241,7 +260,8 @@
         "resources",
         "buffers",
         "geometry"
-      ]
+      ],
+      "status": "transient-memory-instrumented"
     },
     {
       "id": "particles",
@@ -252,7 +272,8 @@
       "domains": [
         "buffers",
         "resources"
-      ]
+      ],
+      "status": "named-profile-gate-ready"
     },
     {
       "id": "physics",
@@ -263,7 +284,8 @@
       "domains": [
         "buffers",
         "resources"
-      ]
+      ],
+      "status": "named-profile-gate-ready"
     },
     {
       "id": "web-wasm",
@@ -277,7 +299,35 @@
         "buffers",
         "surfaces",
         "geometry"
-      ]
+      ],
+      "status": "wasm-object-link-proven"
     }
-  ]
+  ],
+  "coreRepositoryStatus": "mikevocalz/virocore phase-2-validated-boundaries",
+  "platformReadiness": {
+    "host": "c-abi-proven",
+    "iosVisionos": "object-target-proven-runtime-device-validation-required",
+    "android": "jni-gradle-aar-16kb-build-path-proven",
+    "questPico": "android-build-path-ready-production-openxr-swap-gated",
+    "webWasm": "object-link-proven-production-web-renderer-integration-gated"
+  },
+  "validation": {
+    "publicApiBreaks": 0,
+    "panelSurfaceAdapters": [
+      "ViroGpuPanel",
+      "ViroRivePanel",
+      "ViroThreeJSPanel"
+    ],
+    "inputShadowBackend": "green",
+    "geometryDifferentialPilot": "green",
+    "portableXrSemantics": "green",
+    "benchmarkHarness": "green"
+  },
+  "productionSwapPolicy": {
+    "publicReactApiMustRemainStable": true,
+    "cppReferenceBackendRetained": true,
+    "requireNativeMcpPerModule": true,
+    "requireDeviceABBenchmark": true,
+    "requireFeatureFlaggedSoak": true
+  }
 }
