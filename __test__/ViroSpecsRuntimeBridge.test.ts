@@ -1,5 +1,9 @@
 jest.mock("react-native", () => ({
   NativeModules: {},
+  Platform: {
+    OS: "test",
+    constants: {},
+  },
   processColor: (value: unknown) => value,
 }));
 
