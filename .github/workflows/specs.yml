@@ -41,8 +41,10 @@ jobs:
 
       - name: Verify public SPECS surface
         run: |
-          grep -q 'compileViroSpecsJSX' dist/index.js
           grep -q 'getXRRuntime' dist/index.js
+          if test -f components/Spatial/ViroSpecsJSXCompiler.ts; then
+            grep -q 'compileViroSpecsJSX' dist/index.js
+          fi
           if test -f components/Spatial/ViroSpecsRuntimeBridge.ts; then
             grep -q 'mountViroSpecsCompilation' dist/index.js
           fi
