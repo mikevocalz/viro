@@ -466,6 +466,8 @@ export {
   dispatchViroSpecsInteraction,
   serializeViroSpecsCompilation,
   viroEulerDegreesToQuaternion,
+  compileRegisteredViroAnimationForSpecs,
+  mountViroSpecsCompilation,
   getXRRuntime,
   useXRRuntime,
   hasXRCapability,
