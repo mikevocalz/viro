@@ -29,6 +29,6 @@ jobs:
       - name: Typecheck
         run: npx tsc --noEmit
       - name: Specs compiler regression
-        run: npx jest __test__/ViroSpecsCompiler.test.tsx --runInBand
+        run: npx jest __test__/ViroSpecsCompiler.test.tsx --runInBand --config jest.specs.config.cjs
       - name: CLI syntax
         run: node --check bin/viro-specs.cjs
