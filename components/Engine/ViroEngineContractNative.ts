@@ -17,5 +17,11 @@ export async function getViroEngineContractInfo(): Promise<ViroEngineContractInf
     | ViroEngineContractNativeModule
     | null
     | undefined;
-  return queryViroEngineContract(nativeModule);
+  try {
+    return await queryViroEngineContract(nativeModule);
+  } catch {
+    // The JS package may be newer than the bundled renderer AAR/framework.
+    // Treat a missing/older platform bridge exactly like an absent module.
+    return queryViroEngineContract(null);
+  }
 }
