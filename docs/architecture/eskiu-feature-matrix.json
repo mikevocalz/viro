@@ -1,0 +1,283 @@
+{
+  "schemaVersion": 1,
+  "program": "eskiu-extension-architecture",
+  "status": "phase-0",
+  "evidenceGate": {
+    "requiredBeforeEskiuBackend": true,
+    "sources": [
+      "official ViroReact MCP",
+      "reactviro_find_native_bridge",
+      "ReactVision reactvision-platform/native MCP",
+      "ReactVision/viro branches",
+      "ReactVision/virocore branches"
+    ]
+  },
+  "features": [
+    {
+      "id": "spatial-layout",
+      "publicSurface": "ViroSpatialLayout",
+      "layer": "typescript",
+      "hotPath": false,
+      "action": "keep",
+      "domains": [
+        "capabilities"
+      ]
+    },
+    {
+      "id": "runtime-capabilities",
+      "publicSurface": "ViroXRRuntime / VRModuleOpenXR",
+      "layer": "bridge",
+      "hotPath": false,
+      "action": "adapt",
+      "domains": [
+        "capabilities",
+        "diagnostics"
+      ]
+    },
+    {
+      "id": "meta-glasses-targeting",
+      "publicSurface": "Expo config/plugin targeting",
+      "layer": "typescript",
+      "hotPath": false,
+      "action": "keep",
+      "domains": [
+        "capabilities"
+      ]
+    },
+    {
+      "id": "pico-openxr",
+      "publicSurface": "XR navigator/runtime",
+      "layer": "bridge+renderer",
+      "hotPath": true,
+      "action": "isolate",
+      "domains": [
+        "capabilities",
+        "frames",
+        "input",
+        "spatial"
+      ]
+    },
+    {
+      "id": "quest-openxr",
+      "publicSurface": "XR navigator/runtime",
+      "layer": "bridge+renderer",
+      "hotPath": true,
+      "action": "isolate",
+      "domains": [
+        "capabilities",
+        "frames",
+        "input",
+        "spatial"
+      ]
+    },
+    {
+      "id": "visionos",
+      "publicSurface": "ViroVisionOSModule",
+      "layer": "bridge+renderer",
+      "hotPath": true,
+      "action": "isolate",
+      "domains": [
+        "frames",
+        "input",
+        "spatial",
+        "surfaces"
+      ]
+    },
+    {
+      "id": "stylus",
+      "publicSurface": "subscribeSpatialStylus / input events",
+      "layer": "bridge+renderer",
+      "hotPath": true,
+      "action": "adapt",
+      "domains": [
+        "input",
+        "frames"
+      ]
+    },
+    {
+      "id": "controller-precision",
+      "publicSurface": "drag/controller events",
+      "layer": "renderer",
+      "hotPath": true,
+      "action": "adapt",
+      "domains": [
+        "input",
+        "frames"
+      ]
+    },
+    {
+      "id": "hands-gaze",
+      "publicSurface": "hand/gaze events",
+      "layer": "bridge+renderer",
+      "hotPath": true,
+      "action": "adapt",
+      "domains": [
+        "input",
+        "frames"
+      ]
+    },
+    {
+      "id": "colocation",
+      "publicSurface": "ViroColocation + hooks",
+      "layer": "typescript+bridge+renderer",
+      "hotPath": true,
+      "action": "split",
+      "domains": [
+        "spatial",
+        "frames",
+        "diagnostics"
+      ]
+    },
+    {
+      "id": "shared-frames",
+      "publicSurface": "ViroSharedFrame",
+      "layer": "bridge+renderer",
+      "hotPath": true,
+      "action": "adapt",
+      "domains": [
+        "spatial",
+        "frames"
+      ]
+    },
+    {
+      "id": "world-mesh",
+      "publicSurface": "world mesh/events",
+      "layer": "renderer",
+      "hotPath": true,
+      "action": "instrument-then-adapt",
+      "domains": [
+        "geometry",
+        "buffers",
+        "spatial"
+      ]
+    },
+    {
+      "id": "dynamic-geometry",
+      "publicSurface": "ViroGeometry/ViroPolyline/custom streams",
+      "layer": "renderer",
+      "hotPath": true,
+      "action": "instrument-then-adapt",
+      "domains": [
+        "geometry",
+        "buffers",
+        "resources"
+      ]
+    },
+    {
+      "id": "mapbox-ar",
+      "publicSurface": "route geometry consumer",
+      "layer": "typescript+renderer",
+      "hotPath": true,
+      "action": "keep-api-adapt-buffers",
+      "domains": [
+        "geometry",
+        "buffers"
+      ]
+    },
+    {
+      "id": "gpu-panel",
+      "publicSurface": "ViroGpuPanel",
+      "layer": "typescript+surface",
+      "hotPath": true,
+      "action": "adapt",
+      "domains": [
+        "surfaces",
+        "resources",
+        "buffers"
+      ]
+    },
+    {
+      "id": "rive-panel",
+      "publicSurface": "ViroRivePanel",
+      "layer": "typescript+surface",
+      "hotPath": true,
+      "action": "keep-api-adapt-surface",
+      "domains": [
+        "surfaces",
+        "resources"
+      ]
+    },
+    {
+      "id": "three-panel",
+      "publicSurface": "ViroThreeJSPanel",
+      "layer": "typescript+surface",
+      "hotPath": true,
+      "action": "keep-api-adapt-surface",
+      "domains": [
+        "surfaces",
+        "resources"
+      ]
+    },
+    {
+      "id": "camera-texture",
+      "publicSurface": "ViroCameraTexture",
+      "layer": "bridge+renderer",
+      "hotPath": true,
+      "action": "adapt",
+      "domains": [
+        "media",
+        "surfaces",
+        "buffers"
+      ]
+    },
+    {
+      "id": "recording-video",
+      "publicSurface": "media capture/video",
+      "layer": "bridge+renderer",
+      "hotPath": true,
+      "action": "adapt",
+      "domains": [
+        "media",
+        "surfaces"
+      ]
+    },
+    {
+      "id": "gltf-loading",
+      "publicSurface": "Viro3DObject",
+      "layer": "renderer",
+      "hotPath": true,
+      "action": "instrument-first",
+      "domains": [
+        "resources",
+        "buffers",
+        "geometry"
+      ]
+    },
+    {
+      "id": "particles",
+      "publicSurface": "ViroParticleEmitter",
+      "layer": "renderer",
+      "hotPath": true,
+      "action": "profile-first",
+      "domains": [
+        "buffers",
+        "resources"
+      ]
+    },
+    {
+      "id": "physics",
+      "publicSurface": "physics props/events",
+      "layer": "renderer",
+      "hotPath": true,
+      "action": "profile-first",
+      "domains": [
+        "buffers",
+        "resources"
+      ]
+    },
+    {
+      "id": "web-wasm",
+      "publicSurface": "*.web.tsx + viro-web-renderer",
+      "layer": "renderer",
+      "hotPath": true,
+      "action": "parity-target",
+      "domains": [
+        "capabilities",
+        "frames",
+        "buffers",
+        "surfaces",
+        "geometry"
+      ]
+    }
+  ]
+}
