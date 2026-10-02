@@ -1,4 +1,5 @@
 import * as React from "react";
+import { ViroAnimations } from "../Animation/ViroAnimations";
 import { Viro3DObject } from "../Viro3DObject";
 import { ViroImage } from "../ViroImage";
 import { ViroNode } from "../ViroNode";
@@ -49,6 +50,13 @@ export type ViroSpecsInteractionEvent = {
   timestampMs?: number;
 };
 
+export type ViroSpecsAnimationEvent = {
+  nodeId: string;
+  name: string;
+  phase: "start" | "finish";
+  completionEvent?: string;
+};
+
 export type ViroSpecsSceneSnapshot = {
   version: 1;
   nodes: ViroSpecsPortableNode[];
@@ -59,9 +67,30 @@ export type ViroSpecsSourceResolver = (
   kind: "image" | "model"
 ) => string;
 
+export type ViroSpecsAnimationPlan =
+  | {
+      action: "play";
+      nodeId: string;
+      name: string;
+      definition: {
+        properties: Record<string, number>;
+        durationMs: number;
+        delayMs?: number;
+        easing?: string;
+        loop?: boolean;
+        completionEvent?: string;
+      };
+    }
+  | {
+      action: "stop";
+      nodeId: string;
+      name: string;
+    };
+
 export type ViroSpecsCompiledScene = {
   scene: ViroSpecsSceneSnapshot;
   polylines: ViroSpecsPortablePolyline[];
+  animations: ViroSpecsAnimationPlan[];
   callbacks: Map<string, ViroSpecsCallbackRecord>;
   diagnostics: string[];
 };
@@ -74,6 +103,8 @@ export type ViroSpecsCallbackRecord = {
   ) => void;
   onClick?: (position: Vec3, source: number) => void;
   onDrag?: (position: Vec3, source: number) => void;
+  onAnimationStart?: () => void;
+  onAnimationFinish?: () => void;
 };
 
 const IDENTITY: Transform = {
@@ -197,12 +228,67 @@ function defaultSourceResolver(source: unknown): string {
   );
 }
 
+function resolveRelative(value: number | string, base: number): number | null {
+  if (typeof value === "number") return value;
+  const trimmed = value.trim();
+
+  const relative = /^([+\-*/])=(-?\d+(?:\.\d+)?)$/.exec(trimmed);
+  if (relative) {
+    const operand = Number(relative[2]);
+    switch (relative[1]) {
+      case "+":
+        return base + operand;
+      case "-":
+        return base - operand;
+      case "*":
+        return base * operand;
+      case "/":
+        return operand === 0 ? null : base / operand;
+    }
+  }
+
+  const absolute = Number(trimmed);
+  return Number.isFinite(absolute) ? absolute : null;
+}
+
+function animationBase(property: string, props: any): number {
+  const position = (props.position ?? [0, 0, 0]) as Vec3;
+  const scale = (props.scale ?? [1, 1, 1]) as Vec3;
+  const rotation = (props.rotation ?? [0, 0, 0]) as Vec3;
+
+  switch (property) {
+    case "positionX":
+      return position[0];
+    case "positionY":
+      return position[1];
+    case "positionZ":
+      return position[2];
+    case "scaleX":
+      return scale[0];
+    case "scaleY":
+      return scale[1];
+    case "scaleZ":
+      return scale[2];
+    case "rotateX":
+      return rotation[0];
+    case "rotateY":
+      return rotation[1];
+    case "rotateZ":
+      return rotation[2];
+    case "opacity":
+      return props.opacity ?? 1;
+    default:
+      return 0;
+  }
+}
+
 export function compileViroSpecsChildren(
   children: React.ReactNode,
   sourceResolver: ViroSpecsSourceResolver = defaultSourceResolver
 ): ViroSpecsCompiledScene {
   const nodes: ViroSpecsPortableNode[] = [];
   const polylines: ViroSpecsPortablePolyline[] = [];
+  const animations: ViroSpecsAnimationPlan[] = [];
   const callbacks = new Map<string, ViroSpecsCallbackRecord>();
   const diagnostics: string[] = [];
   let ordinal = 0;
@@ -235,6 +321,12 @@ export function compileViroSpecsChildren(
     if (props.onHover) callbackRecord.onHover = props.onHover;
     if (props.onClick) callbackRecord.onClick = props.onClick;
     if (props.onDrag) callbackRecord.onDrag = props.onDrag;
+    if (props.animation?.onStart) {
+      callbackRecord.onAnimationStart = props.animation.onStart;
+    }
+    if (props.animation?.onFinish) {
+      callbackRecord.onAnimationFinish = props.animation.onFinish;
+    }
     if (Object.keys(callbackRecord).length) callbacks.set(id, callbackRecord);
 
     if (kind === "polyline") {
@@ -281,6 +373,99 @@ export function compileViroSpecsChildren(
 
     nodes.push(node);
 
+    if (props.animation?.name) {
+      const animationName = String(props.animation.name);
+      if (props.animation.run === false) {
+        animations.push({
+          action: "stop",
+          nodeId: id,
+          name: animationName,
+        });
+      } else if (props.animation.run === true) {
+        const registered = ViroAnimations.getRegisteredAnimation(animationName);
+
+        if (!registered || Array.isArray(registered)) {
+          diagnostics.push(
+            "Specs animation " +
+              animationName +
+              " is missing or is an animation chain."
+          );
+        } else {
+          const resolvedProperties: Record<string, number> = {};
+
+          for (const [property, value] of Object.entries(
+            registered.properties ?? {}
+          )) {
+            if (
+              ![
+                "positionX",
+                "positionY",
+                "positionZ",
+                "scaleX",
+                "scaleY",
+                "scaleZ",
+                "rotateX",
+                "rotateY",
+                "rotateZ",
+                "opacity",
+              ].includes(property)
+            ) {
+              if (value !== undefined) {
+                diagnostics.push(
+                  "Specs animation " +
+                    animationName +
+                    " does not support property " +
+                    property +
+                    "."
+                );
+              }
+              continue;
+            }
+
+            if (typeof value !== "number" && typeof value !== "string") {
+              continue;
+            }
+
+            const resolved = resolveRelative(
+              value,
+              animationBase(property, props)
+            );
+            if (resolved === null) {
+              diagnostics.push(
+                "Specs animation " +
+                  animationName +
+                  " could not resolve " +
+                  property +
+                  "=" +
+                  String(value) +
+                  "."
+              );
+              continue;
+            }
+            resolvedProperties[property] = resolved;
+          }
+
+          if (Object.keys(resolvedProperties).length) {
+            animations.push({
+              action: "play",
+              nodeId: id,
+              name: animationName,
+              definition: {
+                properties: resolvedProperties,
+                durationMs: registered.duration,
+                delayMs:
+                  (registered.delay ?? 0) + (props.animation.delay ?? 0),
+                easing: registered.easing,
+                loop: Boolean(props.animation.loop),
+                completionEvent:
+                  "viro-animation-complete:" + id + ":" + animationName,
+              },
+            });
+          }
+        }
+      }
+    }
+
     if (props.children) {
       React.Children.forEach(props.children, (nested) =>
         visit(nested, id, worldTransform)
@@ -293,6 +478,7 @@ export function compileViroSpecsChildren(
   return {
     scene: { version: 1, nodes },
     polylines,
+    animations,
     callbacks,
     diagnostics,
   };
@@ -322,5 +508,19 @@ export function dispatchViroSpecsInteraction(
     case "drag":
       record.onDrag?.(position, source);
       break;
+  }
+}
+
+export function dispatchViroSpecsAnimationEvent(
+  event: ViroSpecsAnimationEvent,
+  callbacks: ReadonlyMap<string, ViroSpecsCallbackRecord>
+): void {
+  const record = callbacks.get(event.nodeId);
+  if (!record) return;
+
+  if (event.phase === "start") {
+    record.onAnimationStart?.();
+  } else {
+    record.onAnimationFinish?.();
   }
 }
