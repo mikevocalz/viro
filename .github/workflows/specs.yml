@@ -1,0 +1,51 @@
+name: Viro SPECS integration
+
+on:
+  pull_request:
+    paths:
+      - "components/Spatial/ViroXRRuntime.ts"
+      - "components/Spatial/ViroSpecs*.ts"
+      - "components/Animation/ViroAnimations.ts"
+      - "__test__/ViroSpecs*"
+      - "examples/specs/**"
+      - "docs/specs-*.md"
+      - "bin/viro.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/specs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  specs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm install
+
+      - name: SPECS Jest regressions
+        run: npm test -- --runInBand --runTestsByPath __test__/ViroSpecsJSXCompiler.test.tsx __test__/ViroSpecsRuntimeBridge.test.ts --passWithNoTests
+
+      - name: Build TypeScript and declarations
+        run: npm run build
+
+      - name: Verify public SPECS surface
+        run: |
+          grep -q 'compileViroSpecsJSX' dist/index.js
+          grep -q 'getXRRuntime' dist/index.js
+          if test -f components/Spatial/ViroSpecsRuntimeBridge.ts; then
+            grep -q 'mountViroSpecsCompilation' dist/index.js
+          fi
+
+      - name: Pack smoke test
+        run: npm pack --dry-run
