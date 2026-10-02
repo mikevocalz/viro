@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "program": "eskiu-extension-architecture",
-  "status": "phase-2-validated-boundaries",
+  "status": "phase-3-repository-complete-promotion-gated",
   "evidenceGate": {
     "requiredBeforeEskiuBackend": true,
     "sources": [
@@ -59,7 +59,7 @@
         "input",
         "spatial"
       ],
-      "status": "semantic-contract-ready-production-swap-gated"
+      "status": "toolchain-and-semantic-contract-ready-production-swap-evidence-gated"
     },
     {
       "id": "quest-openxr",
@@ -73,7 +73,7 @@
         "input",
         "spatial"
       ],
-      "status": "semantic-contract-ready-production-swap-gated"
+      "status": "toolchain-and-semantic-contract-ready-production-swap-evidence-gated"
     },
     {
       "id": "visionos",
@@ -87,7 +87,7 @@
         "spatial",
         "surfaces"
       ],
-      "status": "object-target-proven-public-api-stable"
+      "status": "object-target-proven-public-api-stable-production-swap-evidence-gated"
     },
     {
       "id": "stylus",
@@ -261,7 +261,7 @@
         "buffers",
         "geometry"
       ],
-      "status": "transient-memory-instrumented"
+      "status": "transient-memory-instrumentation-accessor-contract-eskiu-shadow-and-cpp-adapter-landed"
     },
     {
       "id": "particles",
@@ -300,7 +300,7 @@
         "surfaces",
         "geometry"
       ],
-      "status": "wasm-object-link-proven"
+      "status": "wasm-object-link-proven-renderer-promotion-evidence-gated"
     }
   ],
   "coreRepositoryStatus": "mikevocalz/virocore phase-2-validated-boundaries",
@@ -329,5 +329,20 @@
     "requireNativeMcpPerModule": true,
     "requireDeviceABBenchmark": true,
     "requireFeatureFlaggedSoak": true
+  },
+  "repositoryCompletion": {
+    "status": "complete",
+    "productionDefault": "cpp",
+    "autoPolicy": "cpp-until-domain-promotion",
+    "promotionRequirements": [
+      "native-mcp-module-map",
+      "same-device-cpp-eskiu-a-b",
+      "correctness-parity",
+      "memory-or-allocation-win",
+      "frame-or-latency-non-regression",
+      "platform-coverage",
+      "feature-flagged-soak",
+      "rollback-retained"
+    ]
   }
 }
