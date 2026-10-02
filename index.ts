@@ -259,8 +259,6 @@ import {
   dispatchViroSpecsInteraction,
   serializeViroSpecsCompilation,
   viroEulerDegreesToQuaternion,
-  compileRegisteredViroAnimationForSpecs,
-  mountViroSpecsCompilation,
 } from "./components/Spatial/ViroSpecsJSXCompiler";
 import {
   compileRegisteredViroAnimationForSpecs,
