@@ -7,11 +7,12 @@ const traverse = require("@babel/traverse").default;
 const UNRESOLVED = Symbol("unresolved");
 
 function parseArgs(argv) {
-  const result = {};
+  const result = { format: "json" };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === "--entry") result.entry = argv[++i];
     else if (arg === "--out") result.out = argv[++i];
+    else if (arg === "--format") result.format = argv[++i];
   }
   return result;
 }
@@ -858,12 +859,90 @@ function compile(sourceText, entryPath) {
   };
 }
 
+
+function lensTs(result) {
+  const scene = JSON.stringify(result.scene, null, 2);
+  const polylines = JSON.stringify(result.polylines, null, 2);
+  const interactions = JSON.stringify(result.interactions, null, 2);
+  const animations = JSON.stringify(result.animations, null, 2);
+
+  return `import { ViroSpecsAnimationHost } from "../lens/ViroSpecsAnimationHost";
+import { ViroSpecsInteractionHost } from "../lens/ViroSpecsInteractionHost";
+import { ViroSpecsNavigationHost } from "../lens/ViroSpecsNavigationHost";
+import { ViroSpecsRuntimeHost } from "../lens/ViroSpecsRuntimeHost";
+
+const GENERATED_SCENE: any = ${scene};
+const GENERATED_POLYLINES: any[] = ${polylines};
+const GENERATED_INTERACTIONS: any[] = ${interactions};
+const GENERATED_ANIMATIONS: any[] = ${animations};
+
+@component
+export class ViroGeneratedSceneHost extends BaseScriptComponent {
+  @input runtimeHostObject: SceneObject;
+  @input interactionHostObject: SceneObject;
+  @input animationHostObject: SceneObject;
+  @input navigationHostObject: SceneObject;
+
+  onAwake(): void {
+    this.createEvent("OnStartEvent").bind(() => this.startGeneratedScene());
+  }
+
+  private startGeneratedScene(): void {
+    const runtime = this.runtimeHostObject.getComponent(
+      ViroSpecsRuntimeHost.getTypeName()
+    ) as ViroSpecsRuntimeHost | null;
+    const interaction = this.interactionHostObject.getComponent(
+      ViroSpecsInteractionHost.getTypeName()
+    ) as ViroSpecsInteractionHost | null;
+    const animation = this.animationHostObject.getComponent(
+      ViroSpecsAnimationHost.getTypeName()
+    ) as ViroSpecsAnimationHost | null;
+    const navigation = this.navigationHostObject.getComponent(
+      ViroSpecsNavigationHost.getTypeName()
+    ) as ViroSpecsNavigationHost | null;
+
+    if (!runtime) {
+      throw new Error("Generated Viro scene requires ViroSpecsRuntimeHost.");
+    }
+
+    runtime.applySceneSnapshot(GENERATED_SCENE);
+
+    if (interaction) {
+      for (const item of GENERATED_INTERACTIONS) {
+        interaction.setInteractable(item.nodeId, true);
+        if (item.manipulation) {
+          interaction.setManipulationEnabled(item.nodeId, true);
+        }
+      }
+    }
+
+    if (animation) {
+      for (const item of GENERATED_ANIMATIONS) {
+        animation.play(item.nodeId, item.plan);
+      }
+    }
+
+    if (navigation) {
+      for (const line of GENERATED_POLYLINES) {
+        navigation.presentPolyline(line);
+      }
+    }
+  }
+}
+`;
+}
+
 if (require.main === module) {
   const args = parseArgs(process.argv.slice(2));
   if (!args.entry || !args.out) {
     console.error(
-      "Usage: viro-specs-compile --entry scene.tsx --out specs-scene.json"
+      "Usage: viro-specs-compile --entry scene.tsx --out output --format json|lens-ts"
     );
+    process.exit(1);
+  }
+
+  if (!["json", "lens-ts"].includes(args.format)) {
+    console.error("Unknown --format " + args.format);
     process.exit(1);
   }
 
@@ -882,8 +961,18 @@ if (require.main === module) {
   }
 
   fs.mkdirSync(path.dirname(output), { recursive: true });
-  fs.writeFileSync(output, JSON.stringify(result, null, 2) + "\n");
-  console.log("Wrote SPECS manifest:", output);
+  fs.writeFileSync(
+    output,
+    args.format === "lens-ts"
+      ? lensTs(result)
+      : JSON.stringify(result, null, 2) + "\n"
+  );
+  console.log(
+    args.format === "lens-ts"
+      ? "Wrote generated Lens Studio host:"
+      : "Wrote SPECS manifest:",
+    output
+  );
 }
 
-module.exports = { compile };
+module.exports = { compile, lensTs };
