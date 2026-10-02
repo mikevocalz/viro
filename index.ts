@@ -400,6 +400,7 @@ import {
   hasViroXRRuntimeCapability,
   isViroSpecsRuntime,
 } from "./components/Specs/ViroSpecsRuntime";
+import { ViroSpecsScene } from "./components/Specs/ViroSpecsScene";
 import { AppRegistry } from "react-native";
 
 // Auto-register the Quest VR entry point. VRActivity launches this component
@@ -536,6 +537,7 @@ export {
   getViroXRRuntime,
   hasViroXRRuntimeCapability,
   isViroSpecsRuntime,
+  ViroSpecsScene,
   // Utilities
   hasOpenXRSupport,
   isQuest,
@@ -718,3 +720,17 @@ export type {
   ViroXRRuntimeCapabilityState,
   ViroXRRuntimeInfo,
 } from "./components/Specs/ViroSpecsRuntime";
+
+
+export type {
+  ViroSpecsSceneProps,
+  ViroSpecsSceneTransport,
+} from "./components/Specs/ViroSpecsScene";
+export type {
+  ViroSpecsCompiledScene,
+  ViroSpecsInteractionEvent,
+  ViroSpecsPortableNode,
+  ViroSpecsPortablePolyline,
+  ViroSpecsSceneSnapshot,
+  ViroSpecsSourceResolver,
+} from "./components/Specs/ViroSpecsCompiler";
