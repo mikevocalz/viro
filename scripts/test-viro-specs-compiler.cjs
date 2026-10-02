@@ -1,6 +1,6 @@
 const assert = require("node:assert/strict");
 const path = require("node:path");
-const { compile } = require("../bin/viro-specs-compile.cjs");
+const { compile, lensTs } = require("../bin/viro-specs-compile.cjs");
 
 const source = `
   const MODEL = require("./model.glb");
@@ -135,3 +135,12 @@ assert.ok(
 );
 
 console.log("viro specs static compiler: PASS");
+
+
+const generated = lensTs(result);
+assert.match(generated, /class ViroGeneratedSceneHost/);
+assert.match(generated, /runtime\.applySceneSnapshot/);
+assert.match(generated, /interaction\.setInteractable/);
+assert.match(generated, /interaction\.setManipulationEnabled/);
+assert.match(generated, /animation\.play/);
+assert.match(generated, /navigation\.presentPolyline/);
