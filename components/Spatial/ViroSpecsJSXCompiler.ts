@@ -1,14 +1,21 @@
 import * as React from "react";
-import { ViroARScene } from "../AR/ViroARScene";
-import { Viro3DObject } from "../Viro3DObject";
-import { ViroFlexView } from "../ViroFlexView";
-import { ViroImage } from "../ViroImage";
-import { ViroNode } from "../ViroNode";
-import { ViroPolyline } from "../ViroPolyline";
-import { ViroScene } from "../ViroScene";
-import { ViroSurface } from "../ViroSurface";
-import { ViroText } from "../ViroText";
-import { ViroEventSource } from "../Types/ViroUtils";
+
+const VIRO_EYE_GAZE_EVENT_SOURCE = 12;
+
+const PORTABLE_COMPONENT_KINDS: Record<
+  string,
+  ViroSpecsPortableNodeKind | "polyline" | "scene"
+> = {
+  ViroARScene: "scene",
+  ViroScene: "scene",
+  ViroNode: "group",
+  ViroText: "text",
+  ViroImage: "image",
+  Viro3DObject: "model",
+  ViroPolyline: "polyline",
+  ViroFlexView: "panel",
+  ViroSurface: "panel",
+};
 
 export type ViroSpecsPortableNodeKind =
   | "group"
@@ -183,7 +190,7 @@ function defaultAssetId(source: unknown): string | undefined {
 }
 
 function sourceNumber(source: ViroSpecsPortableInteractionSource): number {
-  return source === "gaze" ? ViroEventSource.EYE_GAZE : 0;
+  return source === "gaze" ? VIRO_EYE_GAZE_EVENT_SOURCE : 0;
 }
 
 function safeIdPart(value: string): string {
@@ -194,17 +201,29 @@ function propsFor(element: React.ReactElement<any>): Record<string, any> {
   return (element.props ?? {}) as Record<string, any>;
 }
 
+function componentTypeName(type: React.ElementType): string | null {
+  if (typeof type === "string") return type;
+
+  const candidate = type as {
+    displayName?: string;
+    name?: string;
+    render?: { displayName?: string; name?: string };
+  };
+
+  return (
+    candidate.displayName ??
+    candidate.name ??
+    candidate.render?.displayName ??
+    candidate.render?.name ??
+    null
+  );
+}
+
 function componentKind(
   type: React.ElementType
 ): ViroSpecsPortableNodeKind | "polyline" | "scene" | null {
-  if (type === ViroARScene || type === ViroScene) return "scene";
-  if (type === ViroNode) return "group";
-  if (type === ViroText) return "text";
-  if (type === ViroImage) return "image";
-  if (type === Viro3DObject) return "model";
-  if (type === ViroPolyline) return "polyline";
-  if (type === ViroFlexView || type === ViroSurface) return "panel";
-  return null;
+  const name = componentTypeName(type);
+  return name ? PORTABLE_COMPONENT_KINDS[name] ?? null : null;
 }
 
 export function compileViroSpecsJSX(
