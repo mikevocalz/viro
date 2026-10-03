@@ -259,6 +259,22 @@ const withViroAppBuildGradle = (
       /implementation\("com.facebook.react:react-android"\)/,
       `implementation("com.facebook.react:react-android")${viroNewArchDependencies}`
     );
+    // :react_viro and :viro_renderer declare a "device" flavor dimension
+    // (mobile, pico, quest). An app without that dimension cannot pick a
+    // variant, so default it from xRMode. An app that defines its own
+    // device flavors overrides this per flavor.
+    if (
+      !config.modResults.contents.includes("missingDimensionStrategy 'device'") &&
+      !/flavorDimensions[^\n]*"device"/.test(config.modResults.contents)
+    ) {
+      const configured = props?.android?.xRMode ?? [];
+      const modes = Array.isArray(configured) ? configured : [configured as XrMode];
+      const device = modes.includes("QUEST") ? "quest" : modes.includes("PICO") ? "pico" : "mobile";
+      config.modResults.contents = config.modResults.contents.replace(
+        /defaultConfig\s*\{/,
+        (match) => `${match}\n        missingDimensionStrategy 'device', '${device}'`
+      );
+    }
     return config;
   });
 
