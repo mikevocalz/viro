@@ -1,16 +1,18 @@
 /**
- * Web implementation of ViroVideo — a surface textured with a playing
- * `<video>`. Each decoded frame is drawn to a canvas, uploaded as a texture and
- * applied to the surface's material (unlit). Reuses the per-frame upload pattern
- * from the AR camera background.
+ * Web implementation of ViroVideo.
  *
- * MVP scope: source, width/height, paused, loop, muted, volume, onFinish/onError.
- * `stereoMode`, `resizeMode`, `onUpdateTime`, buffering events are follow-ups.
- *
- * Perf note: this recreates a texture per frame (same tradeoff as the AR camera
- * feed). A `viroUpdateTexture` C API would let it reuse one GL texture.
+ * Uses a reusable GPU source texture when the active WASM renderer supports it,
+ * falling back to RGBA uploads for older binaries. Playback lifecycle mirrors
+ * the native surface: buffering, time/duration updates, finish, error and seek.
  */
-import { useEffect, useRef, useState } from "react";
+import * as React from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 import {
   ViroLightingModel,
   ViroTextureChannel,
@@ -20,6 +22,11 @@ import { useViroNode, type ViroWebNodeProps } from "./Web/useViroNode";
 import { useViroFlexSlot } from "./Web/ViroFlexSlotContext";
 import { useViroScene } from "./Web/ViroWebContext";
 import { resolveImageSource } from "./Web/viroImageLoader";
+import {
+  attachWebVideoLifecycle,
+  seekHtmlVideo,
+  startWebVideoTexturePump,
+} from "./Web/viroWebVideo";
 
 type Props = ViroWebNodeProps & {
   source: unknown;
@@ -29,144 +36,108 @@ type Props = ViroWebNodeProps & {
   loop?: boolean;
   muted?: boolean;
   volume?: number;
+  onBufferStart?: () => void;
+  onBufferEnd?: () => void;
   onFinish?: () => void;
+  onUpdateTime?: (currentTime: number, totalTime: number) => void;
   onError?: (error: unknown) => void;
   [key: string]: any;
 };
 
-// requestVideoFrameCallback isn't in every TS DOM lib; access it via a cast.
-function requestVideoFrame(video: HTMLVideoElement, cb: () => void): number | null {
-  const fn = (video as any).requestVideoFrameCallback;
-  return typeof fn === "function" ? fn.call(video, cb) : null;
-}
-function cancelVideoFrame(video: HTMLVideoElement, id: number): void {
-  const fn = (video as any).cancelVideoFrameCallback;
-  if (typeof fn === "function") fn.call(video, id);
-}
+export type ViroWebVideoHandle = {
+  seekToTime(timeInSeconds: number): void;
+};
 
-export function ViroVideo(props: Props): null {
-  const scene = useViroScene();
-  const url = resolveImageSource(props.source);
+export const ViroVideo = forwardRef<ViroWebVideoHandle, Props>(
+  function ViroVideo(props, ref) {
+    const scene = useViroScene();
+    const url = resolveImageSource(props.source);
+    const [aspect, setAspect] = useState(1);
+    const slot = useViroFlexSlot();
+    const sizePropSet = slot != null || props.width != null || props.height != null;
+    const width = slot?.width ?? props.width ?? 1;
+    const height = slot?.height ?? props.height ?? (sizePropSet ? 1 : width / aspect);
 
-  // With neither size prop given the surface takes the source's aspect ratio at one
-  // unit wide, the rule the phone bridges apply. 1 until the metadata loads.
-  const [aspect, setAspect] = useState(1);
-  // Inside a ViroFlexView the layout decides the size, as it does natively, and
-  // that counts as the size being set: the slot does not grow to the video.
-  const slot = useViroFlexSlot();
-  const sizePropSet = slot != null || props.width != null || props.height != null;
-  const width = slot?.width ?? props.width ?? 1;
-  const height = slot?.height ?? props.height ?? (sizePropSet ? 1 : width / aspect);
+    const geometryRef = useRef<ViroHandle>(0);
+    useViroNode(
+      props,
+      (s) => {
+        const geo = s.createSurface(width, height);
+        geometryRef.current = geo;
+        return geo;
+      },
+      true,
+      sizePropSet ? undefined : aspect,
+    );
 
-  const geometryRef = useRef<ViroHandle>(0);
-  useViroNode(
-    props,
-    (s) => {
-      const geo = s.createSurface(width, height);
-      geometryRef.current = geo;
-      return geo;
-    },
-    true,
-    sizePropSet ? undefined : aspect
-  );
+    const videoRef = useRef<HTMLVideoElement | null>(null);
+    const propsRef = useRef(props);
+    propsRef.current = props;
 
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const propsRef = useRef(props);
-  propsRef.current = props;
+    useImperativeHandle(
+      ref,
+      () => ({
+        seekToTime(timeInSeconds: number) {
+          seekHtmlVideo(videoRef.current, timeInSeconds);
+        },
+      }),
+      [],
+    );
 
-  // Create the <video> + per-frame texture upload; torn down when the URL changes.
-  useEffect(() => {
-    if (!url) return;
+    useEffect(() => {
+      if (!url) return;
 
-    const video = document.createElement("video");
-    video.src = url;
-    video.crossOrigin = "anonymous";
-    video.playsInline = true;
-    videoRef.current = video;
+      const video = document.createElement("video");
+      video.crossOrigin = "anonymous";
+      video.playsInline = true;
+      video.preload = "auto";
+      videoRef.current = video;
 
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      const material = scene.createMaterial();
+      scene.setMaterialLightingModel(material, ViroLightingModel.Constant);
 
-    const material = scene.createMaterial();
-    scene.setMaterialLightingModel(material, ViroLightingModel.Constant);
-    let currentTex = 0;
-    let rafId = 0;
-    let vfcId = 0;
-    let cancelled = false;
-
-    const uploadFrame = () => {
-      if (cancelled || !ctx) return;
-      // Read per frame rather than capturing: the surface is rebuilt when the
-      // video's aspect ratio arrives, which replaces the handle.
-      const geo = geometryRef.current;
-      const w = video.videoWidth;
-      const h = video.videoHeight;
-      if (geo && w > 0 && h > 0 && video.readyState >= video.HAVE_CURRENT_DATA) {
-        if (canvas.width !== w || canvas.height !== h) {
-          canvas.width = w;
-          canvas.height = h;
-        }
-        ctx.drawImage(video, 0, 0, w, h);
-        const rgba = ctx.getImageData(0, 0, w, h).data;
-        // Upload as-is (top-first), matching ViroImage's orientation.
-        const tex = scene.createTextureRGBA(new Uint8Array(rgba), w, h, true);
-        scene.setMaterialTexture(material, ViroTextureChannel.Diffuse, tex);
+      const detachLifecycle = attachWebVideoLifecycle(video, () => propsRef.current);
+      const stopPump = startWebVideoTexturePump(scene, video, (texture) => {
+        const geo = geometryRef.current;
+        if (!geo) return;
+        scene.setMaterialTexture(material, ViroTextureChannel.Diffuse, texture);
         scene.setGeometryMaterial(geo, material);
-        if (currentTex) scene.destroyTexture(currentTex);
-        currentTex = tex;
+      });
+
+      const onMetadata = () => {
+        if (video.videoWidth > 0 && video.videoHeight > 0) {
+          setAspect(video.videoWidth / video.videoHeight);
+        }
+      };
+      video.addEventListener("loadedmetadata", onMetadata);
+      video.src = url;
+      video.load();
+
+      return () => {
+        stopPump();
+        detachLifecycle();
+        video.removeEventListener("loadedmetadata", onMetadata);
+        video.pause();
+        video.removeAttribute("src");
+        video.load();
+        videoRef.current = null;
+        scene.destroyMaterial(material);
+      };
+    }, [scene, url]);
+
+    useEffect(() => {
+      const video = videoRef.current;
+      if (!video) return;
+      video.loop = props.loop ?? false;
+      video.muted = props.muted ?? false;
+      if (props.volume != null) video.volume = props.volume;
+      if (props.paused ?? false) {
+        video.pause();
+      } else {
+        video.play().catch((error) => propsRef.current.onError?.(error));
       }
-      scheduleNext();
-    };
+    }, [props.paused, props.loop, props.muted, props.volume, url]);
 
-    const scheduleNext = () => {
-      if (cancelled) return;
-      const id = requestVideoFrame(video, uploadFrame);
-      if (id != null) vfcId = id;
-      else rafId = requestAnimationFrame(uploadFrame);
-    };
-
-    const onEnded = () => propsRef.current.onFinish?.();
-    const onErr = () => propsRef.current.onError?.(new Error(`video failed: ${url}`));
-    const onMetadata = () => {
-      if (video.videoWidth > 0 && video.videoHeight > 0) {
-        setAspect(video.videoWidth / video.videoHeight);
-      }
-    };
-    video.addEventListener("ended", onEnded);
-    video.addEventListener("error", onErr);
-    video.addEventListener("loadedmetadata", onMetadata);
-
-    scheduleNext();
-
-    return () => {
-      cancelled = true;
-      if (rafId) cancelAnimationFrame(rafId);
-      if (vfcId) cancelVideoFrame(video, vfcId);
-      video.removeEventListener("ended", onEnded);
-      video.removeEventListener("error", onErr);
-      video.removeEventListener("loadedmetadata", onMetadata);
-      video.pause();
-      video.src = "";
-      videoRef.current = null;
-      if (currentTex) scene.destroyTexture(currentTex);
-      scene.destroyMaterial(material);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [url]);
-
-  // Live playback controls applied to the current <video>.
-  useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
-    v.loop = props.loop ?? false;
-    v.muted = props.muted ?? false;
-    if (props.volume != null) v.volume = props.volume;
-    if (props.paused ?? false) {
-      v.pause();
-    } else {
-      v.play().catch((err) => propsRef.current.onError?.(err));
-    }
-  }, [props.paused, props.loop, props.muted, props.volume, url]);
-
-  return null;
-}
+    return null;
+  },
+);
