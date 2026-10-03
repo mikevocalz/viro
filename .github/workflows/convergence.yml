@@ -11,6 +11,7 @@ on:
       - feat/meta-vr-glasses-capabilities
   pull_request:
     branches:
+      - main
       - decax9-three-panel
 
 permissions:
