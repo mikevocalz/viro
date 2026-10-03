@@ -1,6 +1,6 @@
 import type { CanvasSurface } from "./nitroCanvas";
 
-export type ViroPanelSurfaceKind = "gpu" | "rive" | "three";
+export type ViroPanelSurfaceKind = "rive";
 
 export interface ViroPanelSurfaceSnapshot {
   kind: ViroPanelSurfaceKind;

@@ -125,8 +125,7 @@ export function requireNitroCanvas(): NitroCanvasModule {
     cached = require("nitro-canvas-in-Vision") as NitroCanvasModule;
   } catch {
     throw new Error(
-      "nitro-canvas-in-Vision is not installed. ViroGpuPanel, ViroThreeJSPanel " +
-        "and ViroRivePanel need it; no other Viro component does."
+      "nitro-canvas-in-Vision is not installed. ViroRivePanel needs it; no other Viro component does."
     );
   }
   return cached;
