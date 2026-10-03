@@ -8,6 +8,7 @@ type Vec3 = [number, number, number];
 export type ExtendedWebNodeHandlers = {
   onClick?: (clickState: number, source: number, position: Vec3) => void;
   onHover?: (isHovering: boolean, source: number, position: Vec3) => void;
+  onScroll?: (source: number, delta: Vec3) => void;
   onDrag?: (source: number, position: Vec3) => void;
   onPinch?: (source: number, scaleFactor: number, pinchState: number) => void;
 };
@@ -24,7 +25,9 @@ type ExtendedWebModule = {
       z: number,
     ) => void,
   ) => void;
+  viroOnTouch?: (action: number, x: number, y: number) => void;
   viroOnPinch?: (scaleFactor: number, state: number) => void;
+  viroOnScroll?: (x: number, y: number) => void;
   viroSetNodeDragConfig?: (
     handle: number,
     dragType: number,
@@ -91,6 +94,9 @@ export function installExtendedWebInput(renderer: ViroWebRenderer): ExtendedStat
       case 2:
         nodeHandlers.onClick?.(intArg, source, position);
         break;
+      case 7:
+        nodeHandlers.onScroll?.(source, position);
+        break;
       case 8:
         nodeHandlers.onDrag?.(source, position);
         break;
@@ -100,10 +106,27 @@ export function installExtendedWebInput(renderer: ViroWebRenderer): ExtendedStat
     }
   });
 
+  const canvas = renderer.canvasElement;
+
+  // Browser wheel / trackpad -> Viro OnScroll. Refresh the hit ray at the
+  // pointer location first so scrolling targets the panel actually under the
+  // cursor, not the node last clicked.
+  if (module.viroOnScroll && module.viroOnTouch) {
+    const onWheel = (event: WheelEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+      const x = (event.clientX - rect.left) * (canvas.width / rect.width);
+      const y = (event.clientY - rect.top) * (canvas.height / rect.height);
+      module.viroOnTouch?.(1, x, y);
+      module.viroOnScroll?.(event.deltaX, event.deltaY);
+      event.preventDefault();
+    };
+    canvas.addEventListener("wheel", onWheel, { passive: false });
+  }
+
   // Browser two-pointer pinch -> Viro's existing native pinch pipeline.
   // Single-pointer dragging is already fed by ViroWebRenderer's pointer events.
   if (module.viroOnPinch) {
-    const canvas = renderer.canvasElement;
     const pointers = new Map<number, PointerEvent>();
     let pinchStartDistance: number | null = null;
     let lastScale = 1;
