@@ -82,8 +82,15 @@ export function installExtendedWebInput(renderer: ViroWebRenderer): ExtendedStat
     originalClear(handle);
   }) as typeof renderer.clearNodeEventHandlers;
 
+  // Nodes that registered before this install went only into the renderer's
+  // own map. Replacing the WASM callback below would silently drop their click
+  // and hover events, so fall back to that map for any handle missing here.
+  const rendererHandlers = (renderer as unknown as {
+    eventHandlers?: Map<ViroHandle, ExtendedWebNodeHandlers>;
+  }).eventHandlers;
+
   module.viroSetEventCallback?.((handle, action, source, intArg, x, y, z) => {
-    const nodeHandlers = handlers.get(handle);
+    const nodeHandlers = handlers.get(handle) ?? rendererHandlers?.get(handle);
     if (!nodeHandlers) return;
 
     const position: Vec3 = [x, y, z];

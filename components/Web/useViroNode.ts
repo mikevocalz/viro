@@ -206,17 +206,26 @@ export function useViroNode(
     if (hasClick) scene.setNodeEventEnabled(node, ViroEventAction.Click, true);
     if (hasHover) scene.setNodeEventEnabled(node, ViroEventAction.Hover, true);
     if (hasScroll) scene.setNodeEventEnabled(node, 7 as ViroEventAction, true);
-    if (hasDrag) {
-      configureWebDrag(renderer, node, {
-        dragType: propsRef.current.dragType,
-        dragPlane: propsRef.current.dragPlane,
-      });
-      scene.setNodeEventEnabled(node, 8 as ViroEventAction, true);
-    }
+    if (hasDrag) scene.setNodeEventEnabled(node, 8 as ViroEventAction, true);
     if (hasPinch) scene.setNodeEventEnabled(node, 10 as ViroEventAction, true);
     return () => renderer.clearNodeEventHandlers(node);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [node, hasClick, hasHover, hasScroll, hasDrag, hasPinch, renderer, scene]);
+
+  // Drag config is applied on its own so a changed dragType or dragPlane
+  // reaches the native solver; the handler effect above only reruns when a
+  // handler is added or removed. The plane is keyed by value because callers
+  // usually pass a fresh object literal each render.
+  const dragType = props.dragType;
+  const dragPlaneKey = props.dragPlane ? JSON.stringify(props.dragPlane) : "";
+  useEffect(() => {
+    if (!hasDrag) return;
+    configureWebDrag(renderer, node, {
+      dragType,
+      dragPlane: propsRef.current.dragPlane,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [node, hasDrag, renderer, dragType, dragPlaneKey]);
 
   // Materials (first material applied to the geometry; MVP scope).
   const materialsKey = Array.isArray(props.materials)
