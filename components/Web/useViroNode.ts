@@ -183,14 +183,14 @@ export function useViroNode(
     if (!hasClick && !hasHover && !hasScroll && !hasDrag && !hasPinch) return;
     installExtendedWebInput(renderer);
     renderer.setNodeEventHandlers(node, {
-      onClick: (clickState, source, position) => {
+      onClick: (clickState: number, source: number, position: ViroPosition) => {
         const p = propsRef.current;
         p.onClickState?.(clickState, position, source);
         if (clickState === ViroClickState.Clicked) {
           p.onClick?.(position, source);
         }
       },
-      onHover: (isHovering, source, position) => {
+      onHover: (isHovering: boolean, source: number, position: ViroPosition) => {
         propsRef.current.onHover?.(isHovering, position, source);
       },
       onScroll: (source: number, delta: ViroPosition) => {
