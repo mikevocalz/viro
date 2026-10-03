@@ -44,6 +44,7 @@ type MetaLayoutModule = {
 };
 type MetaWindowModule = {
   SpatialWindow: React.ComponentType<any>;
+  createWindowScene?: (options?: Record<string, unknown>) => unknown;
 };
 
 let modules:
@@ -79,6 +80,13 @@ function fallbackNode(
     : React.createElement(React.Fragment, null, children);
 }
 
+let windowScene: unknown;
+function defaultWindowScene(window: MetaWindowModule): unknown {
+  // The initializer's native type must not change while mounted, so reuse one.
+  windowScene ??= window.createWindowScene?.();
+  return windowScene;
+}
+
 export function getViroSpatialLayoutSupport(): ViroSpatialLayoutSupport {
   const resolved = loadMetaSpatialModules();
   return {
@@ -101,7 +109,14 @@ export function ViroSpatialSceneProvider(
   if (!resolved?.layout?.SpatialSceneProvider) {
     return React.createElement(React.Fragment, null, children);
   }
-  return React.createElement(resolved.layout.SpatialSceneProvider, rest, children);
+  // Meta's provider throws "does not allow configless initialization" without
+  // an initializer, so default to the Window scene that SpatialWindow needs.
+  const initializer = rest.initializer ?? defaultWindowScene(resolved.window);
+  return React.createElement(
+    resolved.layout.SpatialSceneProvider,
+    { ...rest, initializer },
+    children
+  );
 }
 
 export function ViroSpatialWindow(
