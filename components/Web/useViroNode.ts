@@ -19,6 +19,10 @@ import { useViroScene, useViroParentNode, useViroRenderer } from "./ViroWebConte
 import { createMaterialFromRegistry } from "./viroMaterialRegistry";
 import { useViroAnimation, type ViroAnimationProp } from "./useViroAnimation";
 import { applyPhysicsBody, type ViroPhysicsBodyProp } from "./viroPhysicsBody";
+import {
+  configureWebDrag,
+  installExtendedWebInput,
+} from "./viroExtendedInput";
 
 const DEG2RAD = Math.PI / 180;
 
@@ -86,6 +90,15 @@ export interface ViroWebNodeProps {
     source: number,
   ) => void;
   onHover?: (isHovering: boolean, position: ViroPosition, source: number) => void;
+  onScroll?: (scrollPos: ViroPosition, source: number) => void;
+  onDrag?: (dragToPos: ViroPosition, source: number) => void;
+  onPinch?: (pinchState: number, scaleFactor: number, source: number) => void;
+  dragType?: "FixedDistance" | "FixedDistanceOrigin" | "FixedToWorld" | "FixedToPlane" | "Gizmo";
+  dragPlane?: {
+    planePoint: ViroPosition;
+    planeNormal: ViroPosition;
+    maxDistance: number;
+  };
   animation?: ViroAnimationProp;
 }
 
@@ -163,25 +176,56 @@ export function useViroNode(
   // so a changed callback identity does not re-subscribe.
   const hasClick = !!(props.onClick || props.onClickState);
   const hasHover = !!props.onHover;
+  const hasScroll = !!props.onScroll;
+  const hasDrag = !!props.onDrag && props.dragType !== "Gizmo";
+  const hasPinch = !!props.onPinch;
   useEffect(() => {
-    if (!hasClick && !hasHover) return;
+    if (!hasClick && !hasHover && !hasScroll && !hasDrag && !hasPinch) return;
+    installExtendedWebInput(renderer);
     renderer.setNodeEventHandlers(node, {
-      onClick: (clickState, source, position) => {
+      onClick: (clickState: number, source: number, position: ViroPosition) => {
         const p = propsRef.current;
         p.onClickState?.(clickState, position, source);
         if (clickState === ViroClickState.Clicked) {
           p.onClick?.(position, source);
         }
       },
-      onHover: (isHovering, source, position) => {
+      onHover: (isHovering: boolean, source: number, position: ViroPosition) => {
         propsRef.current.onHover?.(isHovering, position, source);
       },
-    });
+      onScroll: (source: number, delta: ViroPosition) => {
+        propsRef.current.onScroll?.(delta, source);
+      },
+      onDrag: (source: number, position: ViroPosition) => {
+        propsRef.current.onDrag?.(position, source);
+      },
+      onPinch: (source: number, scaleFactor: number, pinchState: number) => {
+        propsRef.current.onPinch?.(pinchState, scaleFactor, source);
+      },
+    } as never);
     if (hasClick) scene.setNodeEventEnabled(node, ViroEventAction.Click, true);
     if (hasHover) scene.setNodeEventEnabled(node, ViroEventAction.Hover, true);
+    if (hasScroll) scene.setNodeEventEnabled(node, 7 as ViroEventAction, true);
+    if (hasDrag) scene.setNodeEventEnabled(node, 8 as ViroEventAction, true);
+    if (hasPinch) scene.setNodeEventEnabled(node, 10 as ViroEventAction, true);
     return () => renderer.clearNodeEventHandlers(node);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [node, hasClick, hasHover]);
+  }, [node, hasClick, hasHover, hasScroll, hasDrag, hasPinch, renderer, scene]);
+
+  // Drag config is applied on its own so a changed dragType or dragPlane
+  // reaches the native solver; the handler effect above only reruns when a
+  // handler is added or removed. The plane is keyed by value because callers
+  // usually pass a fresh object literal each render.
+  const dragType = props.dragType;
+  const dragPlaneKey = props.dragPlane ? JSON.stringify(props.dragPlane) : "";
+  useEffect(() => {
+    if (!hasDrag) return;
+    configureWebDrag(renderer, node, {
+      dragType,
+      dragPlane: propsRef.current.dragPlane,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [node, hasDrag, renderer, dragType, dragPlaneKey]);
 
   // Materials (first material applied to the geometry; MVP scope).
   const materialsKey = Array.isArray(props.materials)
