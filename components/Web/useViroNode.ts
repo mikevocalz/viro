@@ -22,6 +22,8 @@ import { applyPhysicsBody, type ViroPhysicsBodyProp } from "./viroPhysicsBody";
 import {
   configureWebDrag,
   installExtendedWebInput,
+  warnIfWebInputUnavailable,
+  type ExtendedInputKind,
 } from "./viroExtendedInput";
 
 const DEG2RAD = Math.PI / 180;
@@ -182,6 +184,11 @@ export function useViroNode(
   useEffect(() => {
     if (!hasClick && !hasHover && !hasScroll && !hasDrag && !hasPinch) return;
     installExtendedWebInput(renderer);
+    const wanted: ExtendedInputKind[] = [];
+    if (hasDrag) wanted.push("drag");
+    if (hasPinch) wanted.push("pinch");
+    if (hasScroll) wanted.push("scroll");
+    warnIfWebInputUnavailable(renderer, wanted);
     renderer.setNodeEventHandlers(node, {
       onClick: (clickState: number, source: number, position: ViroPosition) => {
         const p = propsRef.current;

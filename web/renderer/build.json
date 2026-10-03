@@ -1,0 +1,22 @@
+{
+  "virocore": {
+    "repo": "mikevocalz/virocore",
+    "commit": "d9b833d85084311f32e96008f1b144e043574f07",
+    "buildId": "d9b833d8 2026-10-03T20:45:48Z"
+  },
+  "ci": {
+    "workflow": "Renderer / WebAssembly renderer",
+    "runId": 37152640651,
+    "artifact": "viro-web-renderer"
+  },
+  "addedExports": [
+    "viroOnPinch",
+    "viroOnScroll",
+    "viroSetNodeDragConfig"
+  ],
+  "sha256": {
+    "viro-web.js": "518ea268c7c951b53888803e7ecdc219c04f7f15f7bc96186d5cacc100bd5507",
+    "viro-web.wasm": "3679e573bf6caf574a378c11da243c4e31d1dd7196db460166b36c65e757354c",
+    "viro-web.data": "a20c0483a7c018eaa47bc2ce6250d958e6a7653512f2391805b235fcbf529baa"
+  }
+}

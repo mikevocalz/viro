@@ -80,6 +80,7 @@
     "shims",
     "scripts",
     "examples",
+    "web/renderer",
     "app.plugin.js",
     "android/react_viro",
     "android/viro_renderer",

@@ -437,6 +437,12 @@ function ARDemoScene() {
 // state via useVirtualController: the left stick moves the box, button "A"
 // recolors it. A tappable "next" box pushes a second scene to exercise
 // push/pop navigation.
+// Drag / scroll / pinch counters for the draggable node in scene A. Module
+// level, not state: the callbacks fire per pointer move and only the status
+// panel needs them.
+const extInput = { drag: 0, scroll: 0, pinch: 0 };
+const fmt = (v: number[]) => v.map((n) => n.toFixed(2)).join(", ");
+
 function InputSceneA(props: { sceneNavigator?: any }) {
   const controller = useVirtualController("p1");
   const { x, y } = controller.left;
@@ -451,6 +457,30 @@ function InputSceneA(props: { sceneNavigator?: any }) {
         scale={[0.6, 0.6, 0.6]}
         materials={[pressedA ? "redBox" : "blueBox"]}
       />
+      {/* Draggable node (left): drag it, wheel over it, or pinch it. Counts go
+          to the status panel and every callback to the log, so a renderer
+          without the drag/pinch/scroll bindings shows up as counters stuck at 0. */}
+      <ViroNode
+        position={[-2.5, 0, -5]}
+        dragType="FixedDistance"
+        onDrag={(pos: number[]) => {
+          extInput.drag += 1;
+          setStatus("onDrag", `${extInput.drag} @ [${fmt(pos)}]`);
+          if (extInput.drag % 10 === 1) hlog("input", "onDrag", extInput.drag, fmt(pos));
+        }}
+        onScroll={(delta: number[]) => {
+          extInput.scroll += 1;
+          setStatus("onScroll", `${extInput.scroll} d=[${fmt(delta)}]`);
+          hlog("input", "onScroll", extInput.scroll, fmt(delta));
+        }}
+        onPinch={(state: number, scale: number) => {
+          extInput.pinch += 1;
+          setStatus("onPinch", `${extInput.pinch} state=${state} scale=${scale.toFixed(2)}`);
+          hlog("input", "onPinch", state, scale.toFixed(2));
+        }}
+      >
+        <ViroBox scale={[0.8, 0.8, 0.8]} materials={["checker"]} />
+      </ViroNode>
       {/* Tappable box → push scene B (demonstrates the navigator's scene stack). */}
       <ViroBox
         position={[0, -2.5, -5]}
