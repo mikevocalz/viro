@@ -89,7 +89,7 @@ export const Viro360Video = forwardRef<ViroWeb360VideoHandle, Props>(
       if (props.volume != null) video.volume = props.volume;
       if (props.paused ?? false) video.pause();
       else video.play().catch((error) => propsRef.current.onError?.(error));
-    }, [props.paused, props.loop, props.muted, props.volume, url]);
+    }, [props.paused, props.loop, props.muted, props.volume, scene, url]);
 
     useEffect(() => {
       scene.setBackgroundRotation(

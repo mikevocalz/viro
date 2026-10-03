@@ -136,7 +136,7 @@ export const ViroVideo = forwardRef<ViroWebVideoHandle, Props>(
       } else {
         video.play().catch((error) => propsRef.current.onError?.(error));
       }
-    }, [props.paused, props.loop, props.muted, props.volume, url]);
+    }, [props.paused, props.loop, props.muted, props.volume, scene, url]);
 
     return null;
   },
