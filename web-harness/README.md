@@ -51,6 +51,7 @@ so a CORS failure there is unexpected.
 | W6 motion denied | `?mode=ar` | Deny motion access, or get no motion events. The `motion` status and a red line show `denied` or `no-events`. |
 | W7 transparent PNG borders | `?mode=studio` | The orange disc on a green square is in front of the helmet. Its transparent border must show the helmet, with no black or white frame. |
 | W8 Studio mounts once | `?mode=studio` | Turn `ticker` on (top left). `parent renders` goes up every 500 ms, while `scene mounts` and `canvas mounts` must stay at 1. |
+| Drag / scroll / pinch | `?mode=input` | Drag the left checker box, wheel over it, pinch it. The `onDrag`, `onScroll` and `onPinch` status rows count callbacks. With a renderer that lacks the bindings they stay absent and the console shows `input is off`. |
 | onAssetError | `?mode=studio` | The fixture's "Missing model (404)" logs `onAssetError ... (404)` in red. |
 | onRendererAbort | `?mode=studio&glb=<huge.glb>` | A WASM abort (usually out of memory) logs `onRendererAbort` and replaces the scene with an error message. |
 

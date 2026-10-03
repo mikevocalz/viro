@@ -8,15 +8,21 @@
 # tracking engine 18 days older than the tree it was being tested against, and
 # the only way to notice was to compare binaries by hand.
 #
-#   web-harness/wasm/    <- viro-web.{js,wasm,data}   from viro-web-renderer
+#   web-harness/wasm/    <- viro-web.{js,wasm,data}   from web/renderer/
 #   web-harness/public/  <- tinyvio-slam.{js,wasm}    from tinyvio
 #
-# Override either source with VIRO_WEB_RENDERER=/path or TINYVIO=/path.
+# web/renderer/ is the renderer this repo ships (see its build.json for the
+# virocore commit and CI run). Point VIRO_WEB_RENDERER at a viro-web-renderer
+# checkout to test a different build, or TINYVIO=/path for the tracker.
 #
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-RENDERER="${VIRO_WEB_RENDERER:-$ROOT/../viro-web-renderer}"
+if [ -n "${VIRO_WEB_RENDERER:-}" ]; then
+  RENDERER_DIR="$VIRO_WEB_RENDERER/wasm"
+else
+  RENDERER_DIR="$ROOT/web/renderer"
+fi
 TINYVIO="${TINYVIO:-$ROOT/../tinyvio}"
 
 WASM_DIR="$ROOT/web-harness/wasm"
@@ -45,10 +51,10 @@ copy_or_warn() {
   fi
 }
 
-echo "renderer  <- $RENDERER/wasm"
+echo "renderer  <- $RENDERER_DIR"
 for f in viro-web.js viro-web.wasm viro-web.data; do
-  copy_or_warn "$RENDERER/wasm/$f" "$WASM_DIR" \
-    "cd ../virocore/wasm && ./build_web.sh && cd ../../viro-web-renderer && npm run copy-wasm"
+  copy_or_warn "$RENDERER_DIR/$f" "$WASM_DIR" \
+    "gh run download <run> -R mikevocalz/virocore -n viro-web-renderer -D web/renderer (see web/renderer/build.json)"
 done
 
 echo "tracking  <- $TINYVIO/web/slam"

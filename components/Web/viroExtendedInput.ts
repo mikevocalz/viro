@@ -190,6 +190,52 @@ export function installExtendedWebInput(renderer: ViroWebRenderer): ExtendedStat
   return state;
 }
 
+/**
+ * The renderer bindings each extended input needs. All three arrived together in
+ * mikevocalz/virocore#79, so a renderer missing one is missing all of them.
+ */
+const REQUIRED_EXPORTS = {
+  drag: "viroSetNodeDragConfig",
+  pinch: "viroOnPinch",
+  scroll: "viroOnScroll",
+} as const;
+
+export type ExtendedInputKind = keyof typeof REQUIRED_EXPORTS;
+
+/** Which of the requested inputs the loaded renderer cannot deliver. */
+export function missingWebInput(
+  renderer: ViroWebRenderer,
+  wanted: readonly ExtendedInputKind[],
+): ExtendedInputKind[] {
+  const module = renderer.wasmModule as unknown as Record<string, unknown>;
+  return wanted.filter((kind) => typeof module[REQUIRED_EXPORTS[kind]] !== "function");
+}
+
+const warned = new WeakSet<ViroWebRenderer>();
+
+/**
+ * Warn once per renderer when a node asks for drag, pinch or scroll that the
+ * loaded binary cannot deliver. Without this the props are accepted and then
+ * nothing happens, which is what @reactvision/viro-web-renderer 1.0.1 does.
+ * Returns true if it warned.
+ */
+export function warnIfWebInputUnavailable(
+  renderer: ViroWebRenderer,
+  wanted: readonly ExtendedInputKind[],
+): boolean {
+  if (wanted.length === 0 || warned.has(renderer)) return false;
+  const missing = missingWebInput(renderer, wanted);
+  if (missing.length === 0) return false;
+  warned.add(renderer);
+  console.warn(
+    `[Viro web] ${missing.join(", ")} input is off: the loaded WASM renderer has no ` +
+      missing.map((kind) => REQUIRED_EXPORTS[kind]).join(", ") +
+      ". Serve the renderer shipped in @reactvision/react-viro/web/renderer and pass " +
+      "webRendererOptions={{ assetBaseUrl }} pointing at it. See docs/WEB_PANEL_INPUT_PARITY.md.",
+  );
+  return true;
+}
+
 export type WebDragConfig = {
   dragType?: "FixedDistance" | "FixedDistanceOrigin" | "FixedToWorld" | "FixedToPlane" | "Gizmo";
   dragPlane?: {
