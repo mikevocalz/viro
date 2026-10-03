@@ -90,6 +90,7 @@ export interface ViroWebNodeProps {
     source: number,
   ) => void;
   onHover?: (isHovering: boolean, position: ViroPosition, source: number) => void;
+  onScroll?: (scrollPos: ViroPosition, source: number) => void;
   onDrag?: (dragToPos: ViroPosition, source: number) => void;
   onPinch?: (pinchState: number, scaleFactor: number, source: number) => void;
   dragType?: "FixedDistance" | "FixedDistanceOrigin" | "FixedToWorld" | "FixedToPlane" | "Gizmo";
@@ -175,10 +176,11 @@ export function useViroNode(
   // so a changed callback identity does not re-subscribe.
   const hasClick = !!(props.onClick || props.onClickState);
   const hasHover = !!props.onHover;
+  const hasScroll = !!props.onScroll;
   const hasDrag = !!props.onDrag && props.dragType !== "Gizmo";
   const hasPinch = !!props.onPinch;
   useEffect(() => {
-    if (!hasClick && !hasHover && !hasDrag && !hasPinch) return;
+    if (!hasClick && !hasHover && !hasScroll && !hasDrag && !hasPinch) return;
     installExtendedWebInput(renderer);
     renderer.setNodeEventHandlers(node, {
       onClick: (clickState, source, position) => {
@@ -191,6 +193,9 @@ export function useViroNode(
       onHover: (isHovering, source, position) => {
         propsRef.current.onHover?.(isHovering, position, source);
       },
+      onScroll: (source: number, delta: ViroPosition) => {
+        propsRef.current.onScroll?.(delta, source);
+      },
       onDrag: (source: number, position: ViroPosition) => {
         propsRef.current.onDrag?.(position, source);
       },
@@ -200,6 +205,7 @@ export function useViroNode(
     } as never);
     if (hasClick) scene.setNodeEventEnabled(node, ViroEventAction.Click, true);
     if (hasHover) scene.setNodeEventEnabled(node, ViroEventAction.Hover, true);
+    if (hasScroll) scene.setNodeEventEnabled(node, 7 as ViroEventAction, true);
     if (hasDrag) {
       configureWebDrag(renderer, node, {
         dragType: propsRef.current.dragType,
@@ -210,7 +216,7 @@ export function useViroNode(
     if (hasPinch) scene.setNodeEventEnabled(node, 10 as ViroEventAction, true);
     return () => renderer.clearNodeEventHandlers(node);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [node, hasClick, hasHover, hasDrag, hasPinch, renderer, scene]);
+  }, [node, hasClick, hasHover, hasScroll, hasDrag, hasPinch, renderer, scene]);
 
   // Materials (first material applied to the geometry; MVP scope).
   const materialsKey = Array.isArray(props.materials)
