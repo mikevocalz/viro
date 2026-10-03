@@ -1,35 +1,30 @@
-/**
- * True when running on the web platform (react-native-web). Web uses the
- * WASM/WebGL2 renderer via @reactvision/viro-web-renderer and the .web.tsx
- * bridge instead of the native view managers.
- */
+import { type MetaHorizonFormFactor } from "./ViroXRRuntime";
+/** True when running through react-native-web. */
 export declare const isWeb: boolean;
-/** True iff the device is a Meta Quest (1, 2, Pro, 3, 3S). */
+/** True for Android XR devices in the Meta Horizon OS / OpenXR family. */
+export declare const isMetaHorizonXR: boolean;
+/**
+ * Best-effort *reported* Meta form factor. Horizon compatibility mode can make
+ * newer hardware report an older Quest identity, so never use this value as a
+ * physical-device or feature-capability guarantee.
+ */
+export declare const metaHorizonFormFactor: MetaHorizonFormFactor | null;
+/**
+ * True when Android reports a Quest-compatible identity. Meta VR Glasses may
+ * also report a Quest model while Horizon compatibility mode is active.
+ * Do not use this flag for feature gating; query the needed capability instead.
+ */
+export declare const isKnownQuest: boolean;
+/**
+ * @deprecated Use isMetaHorizonXR for immersive routing. `isKnownQuest` and
+ * model strings are diagnostic only because Horizon compatibility mode can
+ * report a Quest identity on newer devices. Kept broad for backwards compatibility.
+ */
 export declare const isQuest: boolean;
-/**
- * True iff the device is a PICO standalone headset (Neo / 4 / 4 Ultra).
- * Re-exported here because viro's `ViroXRSceneNavigator` consumes the
- * flag to take a PICO-specific routing branch (render
- * `ViroVRSceneNavigator` inline since on PICO the MainActivity is
- * itself the immersive Activity — no separate VRActivity needed).
- * `@expo-pico/core` still owns app-level PICO config (manifest,
- * launcher intent-filters, etc.).
- */
+/** True for PICO standalone OpenXR hardware. */
 export declare const isPico: boolean;
-/**
- * True iff the device is any standalone OpenXR-class headset (Quest
- * or PICO). Use for branches that gate "render through the headset
- * compositor; skip the ARCore code path." Vendor-specific routing
- * belongs in the vendor-specific `isQuest` / `isPico` branches.
- */
+/** True when Viro should use its Android OpenXR immersive path. */
 export declare const isXRHeadset: boolean;
-/**
- * True when this app build includes the OpenXR VR native module (i.e. the
- * Quest variant of react-viro is registered in `MainApplication`). Does NOT
- * imply the current device is a Quest — for that, use `isQuest`.
- *
- * Useful when you need to decide whether `ViroVRSceneNavigator` *could* render
- * if you forced VR mode (e.g., for in-app build diagnostics).
- */
+/** Build capability, not device identity. */
 export declare const hasOpenXRSupport: boolean;
 export declare const isVisionOS: boolean;

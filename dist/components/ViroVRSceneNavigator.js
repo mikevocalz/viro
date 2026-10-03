@@ -344,6 +344,34 @@ class ViroVRSceneNavigator extends React.Component {
     _recenterTracking = () => {
         ViroSceneNavigatorModule.recenterTracking((0, react_native_1.findNodeHandle)(this));
     };
+    /**
+     * Quest co-location bridge used by ViroSharedFrame inside VRActivity.
+     * ViroXRSceneNavigator already exposed these calls to the panel-side ref, but
+     * the actual immersive scene is mounted by ViroVRSceneNavigator in a second
+     * React root. Expose the same API here so scene code receives a usable
+     * arSceneNavigator instead of losing shared-frame support at the activity
+     * boundary.
+     */
+    _rvCreateSharedFrame = async (groupId) => {
+        const viewTag = (0, react_native_1.findNodeHandle)(this);
+        if (viewTag == null || !VRModuleOpenXR?.rvCreateSharedFrame) {
+            return {
+                success: false,
+                error: "Quest shared-frame creation is unavailable in this runtime.",
+            };
+        }
+        return await VRModuleOpenXR.rvCreateSharedFrame(viewTag, groupId);
+    };
+    _rvJoinSharedFrame = async (groupId) => {
+        const viewTag = (0, react_native_1.findNodeHandle)(this);
+        if (viewTag == null || !VRModuleOpenXR?.rvJoinSharedFrame) {
+            return {
+                success: false,
+                error: "Quest shared-frame join is unavailable in this runtime.",
+            };
+        }
+        return await VRModuleOpenXR.rvJoinSharedFrame(viewTag, groupId);
+    };
     _project = async (point) => {
         return await ViroSceneNavigatorModule.project((0, react_native_1.findNodeHandle)(this), point);
     };
@@ -383,7 +411,7 @@ class ViroVRSceneNavigator extends React.Component {
         for (var scene in sceneDictionary) {
             var Scene = sceneDictionary[scene].sceneClass.scene;
             var props = sceneDictionary[scene].sceneClass.passProps;
-            views.push(<Scene key={"scene" + i} sceneNavigator={this.sceneNavigator} {...props}/>);
+            views.push(<Scene key={"scene" + i} sceneNavigator={this.sceneNavigator} arSceneNavigator={this.sceneNavigator} {...props}/>);
             i++;
         }
         return views;
@@ -398,6 +426,8 @@ class ViroVRSceneNavigator extends React.Component {
         project: this._project,
         unproject: this._unproject,
         recenterTracking: this._recenterTracking,
+        rvCreateSharedFrame: this._rvCreateSharedFrame,
+        rvJoinSharedFrame: this._rvJoinSharedFrame,
         // Screen capture, with ViroARSceneNavigator's signatures and results, so a
         // scene captures through `sceneNavigator` on any platform. Meta Quest only;
         // elsewhere they report RECORD_ERROR_UNSUPPORTED_PLATFORM.

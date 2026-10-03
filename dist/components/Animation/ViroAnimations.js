@@ -14,8 +14,10 @@ exports.ViroAnimations = void 0;
  */
 const react_native_1 = require("react-native");
 const AnimationManager = react_native_1.NativeModules.VRTAnimationManager;
+const registeredAnimations = {};
 class ViroAnimations {
     static registerAnimations(animations) {
+        Object.assign(registeredAnimations, animations);
         for (var key in animations) {
             if (!Array.isArray(animations[key])) {
                 const animation = animations[key];
@@ -28,6 +30,9 @@ class ViroAnimations {
         if (AnimationManager) {
             AnimationManager.setJSAnimations(animations);
         }
+    }
+    static getRegisteredAnimation(name) {
+        return registeredAnimations[name];
     }
 }
 exports.ViroAnimations = ViroAnimations;
