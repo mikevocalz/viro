@@ -43,6 +43,8 @@ type ExtendedWebModule = {
 
 type ExtendedState = {
   handlers: Map<ViroHandle, ExtendedWebNodeHandlers>;
+  /** Removes the canvas listeners and restores the renderer's own methods. */
+  detach: () => void;
 };
 
 const installed = new WeakMap<ViroWebRenderer, ExtendedState>();
@@ -63,10 +65,18 @@ export function installExtendedWebInput(renderer: ViroWebRenderer): ExtendedStat
   if (existing) return existing;
 
   const handlers = new Map<ViroHandle, ExtendedWebNodeHandlers>();
-  const state: ExtendedState = { handlers };
+  const cleanups: Array<() => void> = [];
+  const state: ExtendedState = {
+    handlers,
+    detach: () => {
+      for (const cleanup of cleanups.splice(0)) cleanup();
+    },
+  };
   installed.set(renderer, state);
 
   const module = renderer.wasmModule as unknown as ExtendedWebModule;
+  const ownSet = Object.getOwnPropertyDescriptor(renderer, "setNodeEventHandlers");
+  const ownClear = Object.getOwnPropertyDescriptor(renderer, "clearNodeEventHandlers");
   const originalSet = renderer.setNodeEventHandlers.bind(renderer);
   const originalClear = renderer.clearNodeEventHandlers.bind(renderer);
 
@@ -81,6 +91,17 @@ export function installExtendedWebInput(renderer: ViroWebRenderer): ExtendedStat
     handlers.delete(handle);
     originalClear(handle);
   }) as typeof renderer.clearNodeEventHandlers;
+
+  cleanups.push(() => {
+    // Put back exactly what was there: the class methods live on the
+    // prototype, so usually that means deleting the shadowing own property.
+    const target = renderer as unknown as Record<string, unknown>;
+    if (ownSet) Object.defineProperty(renderer, "setNodeEventHandlers", ownSet);
+    else delete target.setNodeEventHandlers;
+    if (ownClear) Object.defineProperty(renderer, "clearNodeEventHandlers", ownClear);
+    else delete target.clearNodeEventHandlers;
+    handlers.clear();
+  });
 
   // Nodes that registered before this install went only into the renderer's
   // own map. Replacing the WASM callback below would silently drop their click
@@ -129,6 +150,7 @@ export function installExtendedWebInput(renderer: ViroWebRenderer): ExtendedStat
       event.preventDefault();
     };
     canvas.addEventListener("wheel", onWheel, { passive: false });
+    cleanups.push(() => canvas.removeEventListener("wheel", onWheel));
   }
 
   // Browser two-pointer pinch -> Viro's existing native pinch pipeline.
@@ -185,9 +207,29 @@ export function installExtendedWebInput(renderer: ViroWebRenderer): ExtendedStat
     canvas.addEventListener("pointermove", onMove);
     canvas.addEventListener("pointerup", finishPointer);
     canvas.addEventListener("pointercancel", finishPointer);
+    cleanups.push(() => {
+      canvas.removeEventListener("pointerdown", onDown);
+      canvas.removeEventListener("pointermove", onMove);
+      canvas.removeEventListener("pointerup", finishPointer);
+      canvas.removeEventListener("pointercancel", finishPointer);
+      pointers.clear();
+    });
   }
 
   return state;
+}
+
+/**
+ * Undo installExtendedWebInput: remove the wheel and pinch listeners it put on
+ * the canvas. Called when the renderer is torn down. Without it the listeners
+ * outlived the renderer, and a canvas that got a new renderer fed every wheel
+ * and pinch into the old module as well.
+ */
+export function uninstallExtendedWebInput(renderer: ViroWebRenderer): void {
+  const state = installed.get(renderer);
+  if (!state) return;
+  installed.delete(renderer);
+  state.detach();
 }
 
 /**

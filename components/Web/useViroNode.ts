@@ -16,6 +16,7 @@ import {
   type ViroSceneApi,
 } from "@reactvision/viro-web-renderer";
 import { useViroScene, useViroParentNode, useViroRenderer } from "./ViroWebContext";
+import { useDeferredRelease } from "./useDeferredRelease";
 import { createMaterialFromRegistry } from "./viroMaterialRegistry";
 import { useViroAnimation, type ViroAnimationProp } from "./useViroAnimation";
 import { applyPhysicsBody, type ViroPhysicsBodyProp } from "./viroPhysicsBody";
@@ -131,8 +132,11 @@ export function useViroNode(
   const propsRef = useRef(props);
   propsRef.current = props;
 
-  // Node lifecycle: attach to parent on mount; destroy node on unmount.
+  // Node lifecycle: attach to parent on mount; destroy node on unmount. The
+  // destroy is deferred so StrictMode's remount re-attaches a live handle.
+  const nodeRelease = useDeferredRelease();
   useEffect(() => {
+    nodeRelease.cancel();
     scene.addChildNode(parent, node);
     propsRef.current.onNodeHandle?.(node);
     return () => {
@@ -140,7 +144,7 @@ export function useViroNode(
       // afterwards is asking the renderer about freed memory.
       propsRef.current.onNodeHandle?.(0);
       scene.removeNodeFromParent(node);
-      scene.destroyNode(node);
+      nodeRelease.schedule(() => scene.destroyNode(node));
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
