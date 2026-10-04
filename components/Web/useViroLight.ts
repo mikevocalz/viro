@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { ViroLightType, type ViroHandle } from "@reactvision/viro-web-renderer";
 import { useViroScene, useViroParentNode } from "./ViroWebContext";
 import { parseColorToRGBA } from "./viroColor";
+import { useDeferredRelease } from "./useDeferredRelease";
 
 export interface ViroWebLightProps {
   color?: string | number;
@@ -36,11 +37,14 @@ export function useViroLight(type: ViroLightType, props: ViroWebLightProps): Vir
 
   const [light] = useState<ViroHandle>(() => scene.createLight(type));
 
+  // Deferred destroy: StrictMode's remount re-adds this same handle.
+  const lightRelease = useDeferredRelease();
   useEffect(() => {
+    lightRelease.cancel();
     scene.addLightToNode(parent, light);
     return () => {
       scene.removeLightFromNode(parent, light);
-      scene.destroyLight(light);
+      lightRelease.schedule(() => scene.destroyLight(light));
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

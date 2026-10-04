@@ -7,6 +7,7 @@
 import * as React from "react";
 import { useEffect, useState } from "react";
 import type { ViroHandle } from "@reactvision/viro-web-renderer";
+import { useDeferredRelease } from "./Web/useDeferredRelease";
 import {
   useViroScene,
   useViroParentNode,
@@ -29,9 +30,12 @@ export function ViroPortal(props: Props) {
   const [frame] = useState<ViroHandle>(() => scene.createPortalFrame());
 
   // Register as the portal scene's entrance (this also parents the frame).
+  // Deferred destroy: StrictMode's remount re-registers this same handle.
+  const frameRelease = useDeferredRelease();
   useEffect(() => {
+    frameRelease.cancel();
     scene.setPortalEntrance(portalScene, frame);
-    return () => scene.destroyNode(frame);
+    return () => frameRelease.schedule(() => scene.destroyNode(frame));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -18,9 +18,8 @@
  * follow-up.
  */
 import * as React from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  ViroWebRenderer,
   ViroArSession,
   ViroTrackingState,
   TrackingReason,
@@ -36,7 +35,7 @@ import {
   ViroARContext,
 } from "../Web/ViroWebContext";
 import type { ArPlaneAnchor } from "@reactvision/viro-web-renderer";
-import { resetMaterialCache } from "../Web/viroMaterialRegistry";
+import { useViroWebRenderer } from "../Web/viroRendererHost";
 import {
   useViroRendererEffects,
   type ViroRendererEffectProps,
@@ -199,9 +198,6 @@ function trackingLabel(state: ViroTrackingState): string {
 
 export function ViroARSceneNavigator(props: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [renderer, setRenderer] = useState<ViroWebRenderer | null>(null);
-  useViroRendererEffects(renderer, props);
-  const [rootNode, setRootNode] = useState<ViroHandle>(0);
   const sessionRef = useRef<ViroArSession | null>(null);
 
   const [started, setStarted] = useState(false);
@@ -213,35 +209,26 @@ export function ViroARSceneNavigator(props: Props) {
   const motionMissingRef = useRef(false);
   const [anchors, setAnchors] = useState<ArPlaneAnchor[]>([]);
 
-  useEffect(() => {
-    let cancelled = false;
-    let created: ViroWebRenderer | null = null;
-    (async () => {
-      if (!canvasRef.current) return;
-      try {
-        created = await ViroWebRenderer.create({
-          canvas: canvasRef.current,
-          ...props.webRendererOptions,
-        });
-        if (cancelled) {
-          created.dispose();
-          return;
-        }
-        setRootNode(created.scene.getRootNode());
-        setRenderer(created);
-      } catch (err) {
-        console.error("[Viro web AR] failed to initialize renderer:", err);
-        setError("Could not initialize the renderer.");
-      }
-    })();
-    return () => {
-      cancelled = true;
+  // One renderer per canvas, kept across StrictMode's unmount/remount and torn
+  // down (render loop included) on a real unmount. See viroRendererHost.
+  const renderer = useViroWebRenderer(canvasRef, props.webRendererOptions, (err) => {
+    console.error("[Viro web AR] failed to initialize renderer:", err);
+    setError("Could not initialize the renderer.");
+  });
+  useViroRendererEffects(renderer, props);
+  const rootNode = useMemo<ViroHandle>(
+    () => (renderer ? renderer.scene.getRootNode() : 0),
+    [renderer],
+  );
+
+  // The camera session ends with the navigator.
+  useEffect(
+    () => () => {
       sessionRef.current?.stop();
       sessionRef.current = null;
-      created?.dispose();
-      resetMaterialCache();
-    };
-  }, []);
+    },
+    [],
+  );
 
   // Keep the renderer's viewport in sync with the canvas size.
   useEffect(() => {

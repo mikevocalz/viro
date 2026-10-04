@@ -910,4 +910,15 @@ function App() {
   );
 }
 
-createRoot(document.getElementById("root")!).render(<App />);
+// ?strict=1 mounts under React.StrictMode, which mounts, unmounts and mounts
+// again in development. Next.js dev does this by default.
+const strict = new URLSearchParams(window.location.search).get("strict") === "1";
+createRoot(document.getElementById("root")!).render(
+  strict ? (
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  ) : (
+    <App />
+  ),
+);

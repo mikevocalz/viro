@@ -22,6 +22,7 @@ Every mode shares two overlays, sized to read on a phone:
 | `?scene=<uuid>&key=<apiKey>` | Studio | Fetches the real scene instead of the fixture (see below). |
 | `?base=<url>` | Studio | Platform origin for `?scene`. Default `https://platform.reactvision.xyz`. |
 | `?ticker=1` | Studio | Starts the re-render ticker on load. |
+| `?strict=1` | all | Mounts the app under `React.StrictMode` (mount, unmount, mount again), as Next.js dev does. The status overlay is unchanged; the console shows one `Constructing VROSceneWeb` per canvas when the navigator handles it. |
 
 ### Studio scene fetch
 
