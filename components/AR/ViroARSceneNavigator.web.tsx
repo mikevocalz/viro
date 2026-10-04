@@ -40,6 +40,7 @@ import {
   useViroRendererEffects,
   type ViroRendererEffectProps,
 } from "../Web/useViroRendererEffects";
+import { useViroReticle, type ViroReticleProps } from "../Web/useViroReticle";
 
 /** AR capture/tuning knobs forwarded to the ViroArSession. */
 type ArOptions = Partial<
@@ -97,7 +98,8 @@ type Props = {
    */
   onMotionUnavailable?: (reason: "denied" | "no-events") => void;
   [key: string]: any;
-} & ViroRendererEffectProps;
+} & ViroRendererEffectProps &
+  ViroReticleProps;
 
 const containerStyle: React.CSSProperties = {
   position: "relative",
@@ -216,6 +218,7 @@ export function ViroARSceneNavigator(props: Props) {
     setError("Could not initialize the renderer.");
   });
   useViroRendererEffects(renderer, props);
+  useViroReticle(renderer, props);
   const rootNode = useMemo<ViroHandle>(
     () => (renderer ? renderer.scene.getRootNode() : 0),
     [renderer],

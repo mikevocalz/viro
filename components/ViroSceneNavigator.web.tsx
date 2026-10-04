@@ -25,6 +25,7 @@ import {
   ViroParentNodeContext,
 } from "./Web/ViroWebContext";
 import { useViroWebRenderer } from "./Web/viroRendererHost";
+import { useViroReticle, type ViroReticleProps } from "./Web/useViroReticle";
 
 type SceneDescriptor = { scene: React.ComponentType<any>; passProps?: any };
 
@@ -36,7 +37,7 @@ type Props = {
   onExitViro?: () => void; // no-op on web
   webRendererOptions?: Omit<ViroWebRendererOptions, "canvas">;
   [key: string]: any;
-};
+} & ViroReticleProps;
 
 type Stack = {
   dict: Record<string, SceneDescriptor>;
@@ -86,6 +87,7 @@ export function ViroSceneNavigator(props: Props) {
   const renderer = useViroWebRenderer(canvasRef, props.webRendererOptions, (err) =>
     console.error("[Viro web] failed to initialize renderer:", err),
   );
+  useViroReticle(renderer, props);
   const rootNode = useMemo<ViroHandle>(
     () => (renderer ? renderer.scene.getRootNode() : 0),
     [renderer],
