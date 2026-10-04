@@ -1,4 +1,4 @@
-import type { CanvasProducer, CanvasSurface } from "nitro-canvas-in-Vision";
+import type { CanvasProducer, CanvasSurface } from "./nitroCanvas";
 export type CanvasPanelOpts<P extends CanvasProducer> = {
     resourceKey?: unknown;
     producerFactory: () => P;

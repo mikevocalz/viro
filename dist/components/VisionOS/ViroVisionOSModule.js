@@ -155,4 +155,3 @@ async function sharedSpacePushIncoming(base64) {
         return false;
     return VRTVisionOSModule.sharedSpacePushIncoming(base64);
 }
-

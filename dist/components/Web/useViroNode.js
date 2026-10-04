@@ -13,9 +13,11 @@ exports.useViroNode = useViroNode;
 const react_1 = require("react");
 const viro_web_renderer_1 = require("@reactvision/viro-web-renderer");
 const ViroWebContext_1 = require("./ViroWebContext");
+const useDeferredRelease_1 = require("./useDeferredRelease");
 const viroMaterialRegistry_1 = require("./viroMaterialRegistry");
 const useViroAnimation_1 = require("./useViroAnimation");
 const viroPhysicsBody_1 = require("./viroPhysicsBody");
+const viroExtendedInput_1 = require("./viroExtendedInput");
 const DEG2RAD = Math.PI / 180;
 /**
  * The billboard axis a `transformBehaviors` list asks for, or null for none.
@@ -63,8 +65,11 @@ createNodeFn) {
     // identity changes; declared here because the mount effect already needs it.
     const propsRef = (0, react_1.useRef)(props);
     propsRef.current = props;
-    // Node lifecycle: attach to parent on mount; destroy node on unmount.
+    // Node lifecycle: attach to parent on mount; destroy node on unmount. The
+    // destroy is deferred so StrictMode's remount re-attaches a live handle.
+    const nodeRelease = (0, useDeferredRelease_1.useDeferredRelease)();
     (0, react_1.useEffect)(() => {
+        nodeRelease.cancel();
         scene.addChildNode(parent, node);
         propsRef.current.onNodeHandle?.(node);
         return () => {
@@ -72,7 +77,7 @@ createNodeFn) {
             // afterwards is asking the renderer about freed memory.
             propsRef.current.onNodeHandle?.(0);
             scene.removeNodeFromParent(node);
-            scene.destroyNode(node);
+            nodeRelease.schedule(() => scene.destroyNode(node));
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -108,9 +113,21 @@ createNodeFn) {
     // so a changed callback identity does not re-subscribe.
     const hasClick = !!(props.onClick || props.onClickState);
     const hasHover = !!props.onHover;
+    const hasScroll = !!props.onScroll;
+    const hasDrag = !!props.onDrag && props.dragType !== "Gizmo";
+    const hasPinch = !!props.onPinch;
     (0, react_1.useEffect)(() => {
-        if (!hasClick && !hasHover)
+        if (!hasClick && !hasHover && !hasScroll && !hasDrag && !hasPinch)
             return;
+        (0, viroExtendedInput_1.installExtendedWebInput)(renderer);
+        const wanted = [];
+        if (hasDrag)
+            wanted.push("drag");
+        if (hasPinch)
+            wanted.push("pinch");
+        if (hasScroll)
+            wanted.push("scroll");
+        (0, viroExtendedInput_1.warnIfWebInputUnavailable)(renderer, wanted);
         renderer.setNodeEventHandlers(node, {
             onClick: (clickState, source, position) => {
                 const p = propsRef.current;
@@ -122,14 +139,44 @@ createNodeFn) {
             onHover: (isHovering, source, position) => {
                 propsRef.current.onHover?.(isHovering, position, source);
             },
+            onScroll: (source, delta) => {
+                propsRef.current.onScroll?.(delta, source);
+            },
+            onDrag: (source, position) => {
+                propsRef.current.onDrag?.(position, source);
+            },
+            onPinch: (source, scaleFactor, pinchState) => {
+                propsRef.current.onPinch?.(pinchState, scaleFactor, source);
+            },
         });
         if (hasClick)
             scene.setNodeEventEnabled(node, viro_web_renderer_1.ViroEventAction.Click, true);
         if (hasHover)
             scene.setNodeEventEnabled(node, viro_web_renderer_1.ViroEventAction.Hover, true);
+        if (hasScroll)
+            scene.setNodeEventEnabled(node, 7, true);
+        if (hasDrag)
+            scene.setNodeEventEnabled(node, 8, true);
+        if (hasPinch)
+            scene.setNodeEventEnabled(node, 10, true);
         return () => renderer.clearNodeEventHandlers(node);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [node, hasClick, hasHover]);
+    }, [node, hasClick, hasHover, hasScroll, hasDrag, hasPinch, renderer, scene]);
+    // Drag config is applied on its own so a changed dragType or dragPlane
+    // reaches the native solver; the handler effect above only reruns when a
+    // handler is added or removed. The plane is keyed by value because callers
+    // usually pass a fresh object literal each render.
+    const dragType = props.dragType;
+    const dragPlaneKey = props.dragPlane ? JSON.stringify(props.dragPlane) : "";
+    (0, react_1.useEffect)(() => {
+        if (!hasDrag)
+            return;
+        (0, viroExtendedInput_1.configureWebDrag)(renderer, node, {
+            dragType,
+            dragPlane: propsRef.current.dragPlane,
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [node, hasDrag, renderer, dragType, dragPlaneKey]);
     // Materials (first material applied to the geometry; MVP scope).
     const materialsKey = Array.isArray(props.materials)
         ? props.materials.join(",")

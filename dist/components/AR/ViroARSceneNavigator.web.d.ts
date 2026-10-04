@@ -20,6 +20,7 @@
 import * as React from "react";
 import { ViroArSession, type ViroWebRendererOptions, type ViroArSessionOptions } from "@reactvision/viro-web-renderer";
 import { type ViroRendererEffectProps } from "../Web/useViroRendererEffects";
+import { type ViroReticleProps } from "../Web/useViroReticle";
 /** AR capture/tuning knobs forwarded to the ViroArSession. */
 type ArOptions = Partial<Pick<ViroArSessionOptions, "captureWidth" | "captureHeight" | "feedWidth" | "feedHeight" | "poseSmoothing" | "facingMode" | "intrinsics" | "intrinsicsSize" | "tuning" | "showCameraBackground" | "detectPlanes" | "maxPlanes" | "renderWhileLimited" | "playback">>;
 type Props = {
@@ -59,6 +60,6 @@ type Props = {
      */
     onMotionUnavailable?: (reason: "denied" | "no-events") => void;
     [key: string]: any;
-} & ViroRendererEffectProps;
+} & ViroRendererEffectProps & ViroReticleProps;
 export declare function ViroARSceneNavigator(props: Props): React.JSX.Element;
 export {};

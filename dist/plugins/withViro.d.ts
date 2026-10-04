@@ -169,6 +169,47 @@ export interface ViroConfigurationOptions {
          * DEFAULTS TO: true
          */
         questArm64Only?: boolean;
+        /**
+         * Mark the QUEST/OpenXR build as ready for Meta VR Glasses delivery.
+         *
+         * When true, Viro defaults com.meta.store.defaultDeviceTargets to
+         * "quest3+" unless metaDefaultDeviceTargets is supplied explicitly.
+         * Meta documents quest3+ as covering the Quest 3 family, Meta VR Glasses,
+         * and future Meta VR devices.
+         *
+         * This does not make controller-only interactions compatible. The app must
+         * implement and test eye/hand input separately.
+         *
+         * DEFAULTS TO: false
+         */
+        metaVrGlassesCompatible?: boolean;
+        /**
+         * Optional Meta Horizon Store default-device-target expression written to
+         * com.meta.store.defaultDeviceTargets. Examples from Meta include
+         * "quest3+", "quest3only", or combined expressions using "|".
+         *
+         * When omitted and metaVrGlassesCompatible is true, defaults to "quest3+".
+         * When both are omitted, Viro leaves Store delivery targeting unchanged.
+         */
+        metaDefaultDeviceTargets?: string;
+        /**
+         * Enable Meta VR Layout SDK native dependencies for React Native spatial
+         * windows. The app must install both @metavr/layout-compat and
+         * @metavr/layout-window-compat as direct dependencies.
+         *
+         * This is intended for builds whose xRMode includes "QUEST". The Layout
+         * SDK is a Standard Android panel/window feature; Viro's immersive OpenXR
+         * scene path remains separate.
+         *
+         * DEFAULTS TO: false
+         */
+        metaSpatialLayout?: boolean;
+        /**
+         * MetaVRX BOM version used when metaSpatialLayout is enabled.
+         *
+         * DEFAULTS TO: "1.2026.0.0"
+         */
+        metaSpatialLayoutBomVersion?: string;
     };
 }
 /**

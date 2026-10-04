@@ -6,7 +6,6 @@ function requireNitroCanvas() {
     if (cached)
         return cached;
     try {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
         cached = require("nitro-canvas-in-Vision");
     }
     catch {

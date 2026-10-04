@@ -143,4 +143,3 @@ export declare function sharedSpaceState(): Promise<ViroSharedSpaceState>;
 export declare function sharedSpaceNextOutgoing(): Promise<string | null>;
 /** Hand ARKit base64 alignment data received from another participant. */
 export declare function sharedSpacePushIncoming(base64: string): Promise<boolean>;
-

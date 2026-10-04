@@ -10,6 +10,7 @@
 import * as React from "react";
 import { type ViroWebRendererOptions } from "@reactvision/viro-web-renderer";
 import { type ViroRendererEffectProps } from "./Web/useViroRendererEffects";
+import { type ViroReticleProps } from "./Web/useViroReticle";
 type Props = {
     initialScene: {
         scene: React.ComponentType<any>;
@@ -22,6 +23,6 @@ type Props = {
      */
     webRendererOptions?: Omit<ViroWebRendererOptions, "canvas">;
     [key: string]: any;
-} & ViroRendererEffectProps;
+} & ViroRendererEffectProps & ViroReticleProps;
 export declare function Viro3DSceneNavigator(props: Props): React.JSX.Element;
 export {};

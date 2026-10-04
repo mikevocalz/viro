@@ -9,15 +9,19 @@ exports.useViroLight = useViroLight;
 const react_1 = require("react");
 const ViroWebContext_1 = require("./ViroWebContext");
 const viroColor_1 = require("./viroColor");
+const useDeferredRelease_1 = require("./useDeferredRelease");
 function useViroLight(type, props) {
     const scene = (0, ViroWebContext_1.useViroScene)();
     const parent = (0, ViroWebContext_1.useViroParentNode)();
     const [light] = (0, react_1.useState)(() => scene.createLight(type));
+    // Deferred destroy: StrictMode's remount re-adds this same handle.
+    const lightRelease = (0, useDeferredRelease_1.useDeferredRelease)();
     (0, react_1.useEffect)(() => {
+        lightRelease.cancel();
         scene.addLightToNode(parent, light);
         return () => {
             scene.removeLightFromNode(parent, light);
-            scene.destroyLight(light);
+            lightRelease.schedule(() => scene.destroyLight(light));
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);

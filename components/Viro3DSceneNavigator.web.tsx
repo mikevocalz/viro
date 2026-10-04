@@ -22,6 +22,7 @@ import {
   useViroRendererEffects,
   type ViroRendererEffectProps,
 } from "./Web/useViroRendererEffects";
+import { useViroReticle, type ViroReticleProps } from "./Web/useViroReticle";
 
 type Props = {
   initialScene: { scene: React.ComponentType<any> };
@@ -33,7 +34,8 @@ type Props = {
    */
   webRendererOptions?: Omit<ViroWebRendererOptions, "canvas">;
   [key: string]: any;
-} & ViroRendererEffectProps;
+} & ViroRendererEffectProps &
+  ViroReticleProps;
 
 const containerStyle: React.CSSProperties = {
   position: "relative",
@@ -56,6 +58,7 @@ export function Viro3DSceneNavigator(props: Props) {
     console.error("[Viro web] failed to initialize renderer:", err),
   );
   useViroRendererEffects(renderer, props);
+  useViroReticle(renderer, props);
   const rootNode = useMemo<ViroHandle>(
     () => (renderer ? renderer.scene.getRootNode() : 0),
     [renderer],

@@ -9,6 +9,7 @@ const config_plugins_1 = require("@expo/config-plugins");
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const insertLinesHelper_1 = require("./util/insertLinesHelper");
+const metaTargeting_1 = require("./metaTargeting");
 let viroPluginConfig = ["AR", "GVR"];
 const withBranchAndroid = (config) => {
     // Directly edit MainApplication.java
@@ -111,7 +112,44 @@ const withViroProjectBuildGradle = (config) => (0, config_plugins_1.withProjectB
     newConfig.modResults.contents = newConfig.modResults.contents.replace(/classpath\("com.android.tools.build:gradle.*/, `classpath('com.android.tools.build:gradle:4.1.1')`);
     return newConfig;
 });
-const withViroAppBuildGradle = (config) => (0, config_plugins_1.withAppBuildGradle)(config, async (config) => {
+function assertDirectAppDependency(projectRoot, packageName) {
+    const packageJsonPath = path_1.default.join(projectRoot, "package.json");
+    let appPackage;
+    try {
+        appPackage = JSON.parse(fs_1.default.readFileSync(packageJsonPath, "utf8"));
+    }
+    catch {
+        throw new Error(`[Viro] metaSpatialLayout requires a readable app package.json at ${packageJsonPath}.`);
+    }
+    const sections = [
+        appPackage.dependencies,
+        appPackage.optionalDependencies,
+        appPackage.devDependencies,
+    ];
+    if (!sections.some((section) => section?.[packageName])) {
+        throw new Error(`[Viro] metaSpatialLayout requires ${packageName} as a direct app dependency. ` +
+            "Install both @metavr/layout-compat and @metavr/layout-window-compat before expo prebuild.");
+    }
+}
+const withViroAppBuildGradle = (config, props) => (0, config_plugins_1.withAppBuildGradle)(config, async (config) => {
+    let metaSpatialDependencies = "";
+    if (props?.android?.metaSpatialLayout) {
+        const configuredModes = props.android.xRMode ?? [];
+        const modes = Array.isArray(configuredModes)
+            ? configuredModes
+            : [configuredModes];
+        if (!modes.includes("QUEST")) {
+            throw new Error('[Viro] android.metaSpatialLayout requires android.xRMode to include "QUEST".');
+        }
+        assertDirectAppDependency(config.modRequest.projectRoot, "@metavr/layout-compat");
+        assertDirectAppDependency(config.modRequest.projectRoot, "@metavr/layout-window-compat");
+        const bomVersion = props.android.metaSpatialLayoutBomVersion ?? "1.2026.0.0";
+        metaSpatialDependencies = `
+    // Meta VR Layout SDK (React Native spatial windows)
+    implementation platform('com.meta.metavrx:metavrx-bom:${bomVersion}')
+    implementation 'com.meta.metavrx.layout:layout-react-compat'
+    implementation 'com.meta.metavrx.layout:layout-window-react-compat'`;
+    }
     // ViroReact New Architecture (Fabric) Dependencies
     const viroNewArchDependencies = `
     // ========================================================================
@@ -127,7 +165,7 @@ const withViroAppBuildGradle = (config) => (0, config_plugins_1.withAppBuildGrad
     implementation 'androidx.media3:media3-exoplayer-smoothstreaming:1.1.1'
     implementation 'com.google.protobuf.nano:protobuf-javanano:3.1.0'
     // Required for ARCore Geospatial API
-    implementation 'com.google.android.gms:play-services-location:21.0.1'
+    implementation 'com.google.android.gms:play-services-location:21.0.1'${metaSpatialDependencies}
     // ========================================================================`;
     // Add Viro dependencies for legacy architecture (fallback)
     config.modResults.contents = config.modResults.contents.replace(/implementation "com.facebook.react:react-native:\+"  \/\/ From node_modules/, `implementation "com.facebook.react:react-native:+"  // From node_modules${viroNewArchDependencies}`);
@@ -293,8 +331,13 @@ const withViroManifest = (config) => (0, config_plugins_1.withAndroidManifest)(c
         contents.manifest["uses-permission"] = contents.manifest["uses-permission"].filter((p) => p.$?.["android:name"] !== "android.permission.SYSTEM_ALERT_WINDOW");
     }
     if (usesArcore) {
-        contents.manifest.queries = [
-            {
+        // Preserve query entries contributed by other platform plugins (notably
+        // @expo-pico/core's OpenXR broker query). Replacing the whole array made
+        // Quest/AR + PICO multi-platform prebuilds depend on plugin ordering.
+        const queries = contents.manifest.queries ?? [];
+        const hasArCoreQuery = queries.some((query) => query.package?.some((pkg) => pkg.$?.["android:name"] === "com.google.ar.core"));
+        if (!hasArCoreQuery) {
+            queries.push({
                 package: [
                     {
                         $: {
@@ -302,8 +345,9 @@ const withViroManifest = (config) => (0, config_plugins_1.withAndroidManifest)(c
                         },
                     },
                 ],
-            },
-        ];
+            });
+        }
+        contents.manifest.queries = queries;
     }
     contents.manifest["uses-feature"] = [];
     contents.manifest["uses-permission"].push({
@@ -352,7 +396,9 @@ const withViroManifest = (config) => (0, config_plugins_1.withAndroidManifest)(c
         contents.manifest["uses-feature"].push({
             $: {
                 "android:name": "android.hardware.vr.headtracking",
-                "android:required": "true",
+                // A combined ["AR", "QUEST"] APK must remain installable on phones.
+                // Quest-only binaries can require head tracking for store targeting.
+                "android:required": activeXrModes.includes("AR") ? "false" : "true",
                 "android:version": "1",
             },
         });
@@ -448,11 +494,10 @@ const withViroQuestActivity = (config, props) => {
             xrModes = [xrMode];
         }
     }
-    // QUEST-only (not widened to PICO): the VRActivity.kt template itself is
-    // Android-generic, but this same function (step 3 below) registers the
-    // activity with com.oculus.intent.category.VR + com.oculus.vr.focusaware —
-    // Quest-specific. PICO uses pvr.app.type=vr and no oculus categories, an
-    // unresolved PICO-vs-Quest manifest difference — see TODO(pico) above.
+    // Meta Horizon immersive mode still uses the historical QUEST enum because
+    // it selects Viro's Android OpenXR + Horizon launch path. Meta VR Glasses run
+    // the same OS/SDK family; do not add a fake device id to supportedDevices.
+    (0, metaTargeting_1.assertMetaVrGlassesXrMode)(xrModes, props?.android);
     if (!xrModes.includes("QUEST"))
         return config;
     // 1. Generate VRActivity.kt
@@ -479,6 +524,7 @@ import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
 import com.facebook.react.defaults.DefaultReactActivityDelegate
+import com.facebook.react.modules.core.DeviceEventManagerModule
 import com.facebook.react.runtime.ReactHostImpl
 
 /**
@@ -620,6 +666,21 @@ class VRActivity : ReactActivity() {
         // each VR session piles up across re-entries and stale VRTComponents
         // intercept hit-tested viewTags with dead ReactContexts, breaking
         // onClick / onHover until you press dozens of times.
+        //
+        // Tell JS the immersive activity is gone before unloading the
+        // surface. Horizon can finish VRActivity directly (Meta-button quit
+        // confirm, OS reclaim) without exitVRScene() running, so this emit
+        // is the only signal that clears VRQuestNavigatorBridge's vrActive
+        // flag on that path — without it the AppState relaunch resurrects
+        // VR on the next foreground edge and the user has to quit
+        // repeatedly.
+        try {
+            reactHost?.currentReactContext
+                ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+                ?.emit("VRLauncher.vrDestroyed", null)
+        } catch (t: Throwable) {
+            android.util.Log.w("VRActivity", "emit VRLauncher.vrDestroyed failed", t)
+        }
         try {
             reactDelegate?.unloadApp()
         } catch (t: Throwable) {
@@ -725,6 +786,22 @@ class VRActivity : ReactActivity() {
                 },
             });
         }
+        // Store delivery targeting is separate from compatibility-mode identity.
+        // Meta VR Glasses do not currently have a public com.oculus.supportedDevices
+        // identifier. Meta documents "quest3+" as including Quest 3 family,
+        // Meta VR Glasses, and future devices.
+        const metaDefaultDeviceTargets = (0, metaTargeting_1.resolveMetaDefaultDeviceTargets)(props?.android);
+        if (metaDefaultDeviceTargets) {
+            const alreadyHasDefaultTargets = app["meta-data"].some((m) => m.$?.["android:name"] === "com.meta.store.defaultDeviceTargets");
+            if (!alreadyHasDefaultTargets) {
+                app["meta-data"].push({
+                    $: {
+                        "android:name": "com.meta.store.defaultDeviceTargets",
+                        "android:value": metaDefaultDeviceTargets,
+                    },
+                });
+            }
+        }
         return config;
     });
     return config;
@@ -734,7 +811,7 @@ const withViroAndroid = (config, props) => {
     config = withViroProjectBuildGradle(config);
     config = withViroManifest(config);
     config = withViroSettingsGradle(config);
-    config = withViroAppBuildGradle(config);
+    config = withViroAppBuildGradle(config, props);
     config = withViroQuestActivity(config, props);
     return config;
 };

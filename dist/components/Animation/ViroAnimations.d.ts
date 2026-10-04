@@ -53,4 +53,5 @@ export type ViroAnimation = {
 };
 export declare class ViroAnimations {
     static registerAnimations(animations: ViroAnimationDict): void;
+    static getRegisteredAnimation(name: string): ViroRegisterableAnimation | ViroRegisterableAnimation[] | undefined;
 }

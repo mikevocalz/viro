@@ -101,6 +101,15 @@ function checkRNVersionForVR() {
  * When only `initialScene` is provided it is used for both modes.
  *
  * Renderer flags (`hdrEnabled`, `pbrEnabled`, `bloomEnabled`, `shadowsEnabled`,
+ * Screen capture is on the same `sceneNavigator` everywhere:
+ * `takeScreenshot(fileName, saveToCameraRoll)` and `stopVideoRecording()`
+ * resolve `{ success, url, errorCode }`, and `startVideoRecording(fileName,
+ * saveToCameraRoll, onError)` reports failures to `onError`. On Quest the
+ * ref's `sceneNavigator` and the scene's own forward to VRModuleOpenXR, which
+ * captures the left eye without the passthrough room and reports
+ * `RECORD_ERROR_NOT_READY` until the XR session is rendering. visionOS has
+ * no capture, and reports `RECORD_ERROR_UNSUPPORTED_PLATFORM`.
+ *
  * `multisamplingEnabled`) reach ViroARSceneNavigator as props and
  * ViroVRSceneNavigator on Quest via the intent bridge. visionOS gets neither:
  * ViroSceneNavigator does not take them. `passthroughEnabled`, `vrModeEnabled`
@@ -128,7 +137,7 @@ exports.ViroXRSceneNavigator = React.forwardRef(function ViroXRSceneNavigator(pr
     //        (MainActivity is itself the immersive Activity on PICO).
     // AR:    expose the underlying ViroARSceneNavigator instance directly.
     React.useImperativeHandle(ref, () => {
-        if (ViroPlatform_1.isQuest || ViroPlatform_1.isPico) {
+        if (ViroPlatform_1.isMetaHorizonXR || ViroPlatform_1.isPico) {
             // PICO follows Quest: navigator ops cross the activity boundary through
             // the same bridge — VRActivity owns the ViroVRSceneNavigator instance.
             // project/unproject/recenterTracking can't go through dispatchOp — that
@@ -159,6 +168,13 @@ exports.ViroXRSceneNavigator = React.forwardRef(function ViroXRSceneNavigator(pr
                 // without awaiting still get the rejection.
                 project: async (point) => ViroSceneNavigatorModule?.project(requireViewTag(), point),
                 unproject: async (point) => ViroSceneNavigatorModule?.unproject(requireViewTag(), point),
+                // Screen capture, with ViroARSceneNavigator's signatures and results.
+                // VRModuleOpenXR again, for the reason given for the shared frame
+                // below. They resolve (or call onError) with RECORD_ERROR_NOT_READY
+                // before the VR scene has mounted, rather than throwing.
+                takeScreenshot: (fileName, saveToCameraRoll) => VRModuleOpenXR_1.VRCapture.takeScreenshot(VRQuestNavigatorBridge_1.VRQuestNavigatorBridge.getViewTag(), fileName, saveToCameraRoll),
+                startVideoRecording: (fileName, saveToCameraRoll, onError) => VRModuleOpenXR_1.VRCapture.startVideoRecording(VRQuestNavigatorBridge_1.VRQuestNavigatorBridge.getViewTag(), fileName, saveToCameraRoll, onError),
+                stopVideoRecording: () => VRModuleOpenXR_1.VRCapture.stopVideoRecording(VRQuestNavigatorBridge_1.VRQuestNavigatorBridge.getViewTag()),
                 // CL-H. These are the two names `metaSpatialAnchorFrameSource` looks for,
                 // and their absence here is the whole of why co-location did not work on
                 // Quest: the native side has driven Meta's group sharing since the OpenXR
@@ -256,7 +272,7 @@ exports.ViroXRSceneNavigator = React.forwardRef(function ViroXRSceneNavigator(pr
     // a 2D RN UI never bleeds into the XR scene). VRActivity auto-finishes
     // when MainActivity resumes, so we re-launch on background→active.
     React.useEffect(() => {
-        if (!ViroPlatform_1.isQuest && !ViroPlatform_1.isPico)
+        if (!ViroPlatform_1.isMetaHorizonXR && !ViroPlatform_1.isPico)
             return;
         checkRNVersionForVR();
         const registerIntentAndLaunch = () => {
@@ -310,7 +326,7 @@ exports.ViroXRSceneNavigator = React.forwardRef(function ViroXRSceneNavigator(pr
     // Quest AND PICO render nothing here — VRActivity owns the display.
     // The XR scene runs in a dedicated immersive activity so MainActivity
     // can stay a 2D panel (no React Native UI bleed into the XR scene).
-    if (ViroPlatform_1.isQuest || ViroPlatform_1.isPico)
+    if (ViroPlatform_1.isMetaHorizonXR || ViroPlatform_1.isPico)
         return null;
     if (ViroPlatform_1.isVisionOS) {
         // The visionOS renderer has no AR subsystem — every VROAR* class is excluded from the
