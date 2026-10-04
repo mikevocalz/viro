@@ -84,6 +84,7 @@ const nitroCanvas_1 = require("./CanvasPanel/nitroCanvas");
 const ViroNode_1 = require("./ViroNode");
 const ViroQuad_1 = require("./ViroQuad");
 const useCanvasPanel_1 = require("./CanvasPanel/useCanvasPanel");
+const engineSurfaceAdapter_1 = require("./CanvasPanel/engineSurfaceAdapter");
 exports.ViroGpuPanel = React.forwardRef(function ViroGpuPanel(props, ref) {
     const { init, width, height, position = [0, 1.45, -2.0], rotation, resolution = { width: 1024, height: 1024 }, sRGB, androidRoute, lightingModel, fallbackColor, materialName, onReady, onError, autoTick, } = props;
     const state = (0, useCanvasPanel_1.useCanvasPanel)({
@@ -102,6 +103,7 @@ exports.ViroGpuPanel = React.forwardRef(function ViroGpuPanel(props, ref) {
         surface: state?.surface ?? null,
         producer: state?.producer ?? null,
         materialName: state?.materialName ?? "",
+        engineSurface: (0, engineSurfaceAdapter_1.describeCanvasSurface)(state?.surface, "gpu"),
     }), [state]);
     if (!state)
         return null;

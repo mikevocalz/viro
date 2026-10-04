@@ -36,13 +36,18 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ViroRivePanel = void 0;
 /** Native Rive panel. Its runtime owns the idle-aware frame clock. */
 const React = __importStar(require("react"));
+const react_native_1 = require("react-native");
 const nitroCanvas_1 = require("./CanvasPanel/nitroCanvas");
 const ViroNode_1 = require("./ViroNode");
 const ViroQuad_1 = require("./ViroQuad");
 const useCanvasPanel_1 = require("./CanvasPanel/useCanvasPanel");
+const engineSurfaceAdapter_1 = require("./CanvasPanel/engineSurfaceAdapter");
 exports.ViroRivePanel = React.forwardRef(function ViroRivePanel(props, ref) {
-    const { init, source, input, onRuntimeReady, width, height, position = [0, 1.45, -2.0], rotation, resolution = { width: 1024, height: 1024 }, sRGB, androidRoute = "surface-texture", lightingModel, fallbackColor, materialName, onReady, onError, autoTick, } = props;
+    const { init, source, input, onRuntimeReady, width, height, position = [0, 1.45, -2.0], rotation, resolution = { width: 1024, height: 1024 }, sRGB, androidRoute = react_native_1.Platform.OS === "android" ? "ahb" : "surface-texture", lightingModel, fallbackColor, materialName, onReady, onError, autoTick, bindings, } = props;
     const runtime = React.useRef(null);
+    const latestBindings = React.useRef(bindings);
+    latestBindings.current = bindings;
+    const appliedBindings = React.useRef(new Map());
     React.useEffect(() => () => { runtime.current = null; }, [source, init]);
     const ready = React.useRef(onRuntimeReady);
     ready.current = onRuntimeReady;
@@ -66,19 +71,30 @@ exports.ViroRivePanel = React.forwardRef(function ViroRivePanel(props, ref) {
         materialName,
         onReady: ({ producer }) => {
             const value = producer.runtime;
-            runtime.current = value && "panel" in value ? value.panel : null;
-            if (runtime.current)
+            runtime.current =
+                value && typeof value === "object" && "panel" in value
+                    ? value.panel
+                    : value;
+            if (runtime.current) {
+                applyBindings(runtime.current, latestBindings.current, appliedBindings.current);
                 ready.current?.(runtime.current);
+            }
             onReady?.();
         },
         onError,
         autoTick,
     });
+    React.useEffect(() => {
+        if (!runtime.current)
+            return;
+        applyBindings(runtime.current, bindings, appliedBindings.current);
+    }, [bindings]);
     React.useImperativeHandle(ref, () => ({
         get runtime() { return state ? runtime.current : null; },
         surface: state?.surface ?? null,
         producer: state?.producer ?? null,
         materialName: state?.materialName ?? "",
+        engineSurface: (0, engineSurfaceAdapter_1.describeCanvasSurface)(state?.surface, "rive"),
     }), [state]);
     if (!state)
         return null;
@@ -106,4 +122,38 @@ function InteractiveRiveQuad({ width, height, materialName, input, producer, run
     // The input adapter requires a point on the panel plane, not its world AABB.
     return <ViroQuad_1.ViroQuad width={width} height={height} materials={[materialName]} {...handlers} highAccuracyEvents dragPlane={{ ...handlers.dragPlane, planePoint: [...handlers.dragPlane.planePoint],
             planeNormal: [...handlers.dragPlane.planeNormal] }}/>;
+}
+function bindingFingerprint(value) {
+    if (typeof value === "object") {
+        return value.kind + ":" + String(value.kind === "trigger" ? value.serial : value.value);
+    }
+    return typeof value + ":" + String(value);
+}
+function applyBindings(panel, bindings, applied) {
+    if (!bindings)
+        return;
+    for (const [path, value] of Object.entries(bindings)) {
+        const fingerprint = bindingFingerprint(value);
+        if (applied.get(path) === fingerprint)
+            continue;
+        if (typeof value === "string") {
+            panel.setString?.(path, value);
+        }
+        else if (typeof value === "number") {
+            panel.setNumber?.(path, value);
+        }
+        else if (typeof value === "boolean") {
+            panel.setBoolean?.(path, value);
+        }
+        else if (value.kind === "enum") {
+            panel.setEnum?.(path, value.value);
+        }
+        else if (value.kind === "color") {
+            panel.setColor?.(path, value.value);
+        }
+        else if (value.kind === "trigger") {
+            panel.fireTrigger?.(path);
+        }
+        applied.set(path, fingerprint);
+    }
 }

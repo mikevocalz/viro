@@ -52,9 +52,9 @@ exports.ViroSceneNavigator = ViroSceneNavigator;
  */
 const React = __importStar(require("react"));
 const react_1 = require("react");
-const viro_web_renderer_1 = require("@reactvision/viro-web-renderer");
 const ViroWebContext_1 = require("./Web/ViroWebContext");
-const viroMaterialRegistry_1 = require("./Web/viroMaterialRegistry");
+const viroRendererHost_1 = require("./Web/viroRendererHost");
+const useViroReticle_1 = require("./Web/useViroReticle");
 const containerStyle = {
     position: "relative",
     width: "100%",
@@ -89,41 +89,15 @@ function resolveArgs(param1, param2) {
 }
 function ViroSceneNavigator(props) {
     const canvasRef = (0, react_1.useRef)(null);
-    const [renderer, setRenderer] = (0, react_1.useState)(null);
-    const [rootNode, setRootNode] = (0, react_1.useState)(0);
+    // One renderer per canvas, kept across StrictMode's unmount/remount and torn
+    // down (render loop included) on a real unmount. See viroRendererHost.
+    const renderer = (0, viroRendererHost_1.useViroWebRenderer)(canvasRef, props.webRendererOptions, (err) => console.error("[Viro web] failed to initialize renderer:", err));
+    (0, useViroReticle_1.useViroReticle)(renderer, props);
+    const rootNode = (0, react_1.useMemo)(() => (renderer ? renderer.scene.getRootNode() : 0), [renderer]);
     const [stack, setStack] = (0, react_1.useState)(() => {
         const key = props.initialSceneKey ?? randomTag();
         return { dict: { [key]: props.initialScene }, history: [key] };
     });
-    // Renderer bootstrap — identical to Viro3DSceneNavigator.web.
-    (0, react_1.useEffect)(() => {
-        let cancelled = false;
-        let created = null;
-        (async () => {
-            if (!canvasRef.current)
-                return;
-            try {
-                created = await viro_web_renderer_1.ViroWebRenderer.create({
-                    canvas: canvasRef.current,
-                    ...props.webRendererOptions,
-                });
-                if (cancelled) {
-                    created.dispose();
-                    return;
-                }
-                setRootNode(created.scene.getRootNode());
-                setRenderer(created);
-            }
-            catch (err) {
-                console.error("[Viro web] failed to initialize renderer:", err);
-            }
-        })();
-        return () => {
-            cancelled = true;
-            created?.dispose();
-            (0, viroMaterialRegistry_1.resetMaterialCache)();
-        };
-    }, []);
     (0, react_1.useEffect)(() => {
         const canvas = canvasRef.current;
         if (!renderer || !canvas)

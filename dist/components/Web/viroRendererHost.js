@@ -1,0 +1,117 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.teardownViroWebRenderer = teardownViroWebRenderer;
+exports.acquireViroWebRenderer = acquireViroWebRenderer;
+exports.releaseViroWebRenderer = releaseViroWebRenderer;
+exports.useViroWebRenderer = useViroWebRenderer;
+/**
+ * One WASM renderer per <canvas>, shared by every mount of a navigator on it.
+ *
+ * React StrictMode mounts a component, unmounts it and mounts it again, keeping
+ * the same DOM. A navigator that created its renderer in an effect therefore
+ * started a second WASM module on the same canvas while the first was still
+ * loading. Both modules got the same WebGL context, the first one's dispose()
+ * left its main loop running, and whichever loop drew last each frame won:
+ * usually the stale one, with an empty scene.
+ *
+ * Here a mount takes a reference on the canvas's renderer and an unmount drops
+ * it. Teardown waits one macrotask, so StrictMode's immediate remount takes the
+ * renderer back before anything is released. A real unmount tears it down for
+ * good, main loop included.
+ */
+const react_1 = require("react");
+const viro_web_renderer_1 = require("@reactvision/viro-web-renderer");
+const viroExtendedInput_1 = require("./viroExtendedInput");
+const viroMaterialRegistry_1 = require("./viroMaterialRegistry");
+const hosts = new WeakMap();
+/**
+ * Stop a renderer for good. ViroWebRenderer.dispose() releases its JS state but
+ * leaves the Emscripten main loop scheduled, so the module would keep drawing
+ * into the canvas. pauseMainLoop is what emscripten_cancel_main_loop calls, and
+ * every published build exports it on the module.
+ */
+function teardownViroWebRenderer(renderer) {
+    (0, viroExtendedInput_1.uninstallExtendedWebInput)(renderer);
+    renderer.dispose();
+    const module = renderer.wasmModule;
+    module.pauseMainLoop?.();
+    (0, viroMaterialRegistry_1.resetMaterialCache)();
+}
+/** Take a reference on the canvas's renderer, creating it on first use. */
+function acquireViroWebRenderer(canvas, options) {
+    const existing = hosts.get(canvas);
+    if (existing && !existing.tornDown) {
+        if (existing.teardownTimer !== null) {
+            clearTimeout(existing.teardownTimer);
+            existing.teardownTimer = null;
+        }
+        existing.users += 1;
+        return existing.promise;
+    }
+    const host = {
+        promise: undefined,
+        renderer: null,
+        users: 1,
+        teardownTimer: null,
+        tornDown: false,
+    };
+    host.promise = viro_web_renderer_1.ViroWebRenderer.create({ canvas, ...options }).then((renderer) => {
+        host.renderer = renderer;
+        // Every user left while the WASM was still loading.
+        if (host.tornDown)
+            teardownViroWebRenderer(renderer);
+        return renderer;
+    }, (err) => {
+        // Let the next mount try again rather than inherit the failure.
+        if (hosts.get(canvas) === host)
+            hosts.delete(canvas);
+        throw err;
+    });
+    hosts.set(canvas, host);
+    return host.promise;
+}
+/** Drop a reference. The renderer is torn down once nobody takes it back. */
+function releaseViroWebRenderer(canvas) {
+    const host = hosts.get(canvas);
+    if (!host || host.tornDown)
+        return;
+    host.users = Math.max(0, host.users - 1);
+    if (host.users > 0 || host.teardownTimer !== null)
+        return;
+    host.teardownTimer = setTimeout(() => {
+        host.teardownTimer = null;
+        if (host.users > 0)
+            return;
+        host.tornDown = true;
+        if (hosts.get(canvas) === host)
+            hosts.delete(canvas);
+        if (host.renderer)
+            teardownViroWebRenderer(host.renderer);
+    }, 0);
+}
+/**
+ * The renderer for the canvas in `canvasRef`, or null while it loads. Options
+ * are read once, on the first mount, as they were before.
+ */
+function useViroWebRenderer(canvasRef, options, onError) {
+    const [renderer, setRenderer] = (0, react_1.useState)(null);
+    (0, react_1.useEffect)(() => {
+        const canvas = canvasRef.current;
+        if (!canvas)
+            return;
+        let active = true;
+        acquireViroWebRenderer(canvas, options).then((created) => {
+            if (active)
+                setRenderer(created);
+        }, (err) => {
+            if (active)
+                onError(err);
+        });
+        return () => {
+            active = false;
+            releaseViroWebRenderer(canvas);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+    return renderer;
+}

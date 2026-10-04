@@ -42,6 +42,7 @@ exports.ViroPortal = ViroPortal;
  */
 const React = __importStar(require("react"));
 const react_1 = require("react");
+const useDeferredRelease_1 = require("./Web/useDeferredRelease");
 const ViroWebContext_1 = require("./Web/ViroWebContext");
 const DEG2RAD = Math.PI / 180;
 function ViroPortal(props) {
@@ -49,9 +50,12 @@ function ViroPortal(props) {
     const portalScene = (0, ViroWebContext_1.useViroParentNode)(); // the enclosing VROPortal
     const [frame] = (0, react_1.useState)(() => scene.createPortalFrame());
     // Register as the portal scene's entrance (this also parents the frame).
+    // Deferred destroy: StrictMode's remount re-registers this same handle.
+    const frameRelease = (0, useDeferredRelease_1.useDeferredRelease)();
     (0, react_1.useEffect)(() => {
+        frameRelease.cancel();
         scene.setPortalEntrance(portalScene, frame);
-        return () => scene.destroyNode(frame);
+        return () => frameRelease.schedule(() => scene.destroyNode(frame));
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
     const [px, py, pz] = props.position ?? [0, 0, 0];

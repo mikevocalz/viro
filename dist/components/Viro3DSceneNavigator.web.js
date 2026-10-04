@@ -45,10 +45,10 @@ exports.Viro3DSceneNavigator = Viro3DSceneNavigator;
  */
 const React = __importStar(require("react"));
 const react_1 = require("react");
-const viro_web_renderer_1 = require("@reactvision/viro-web-renderer");
 const ViroWebContext_1 = require("./Web/ViroWebContext");
-const viroMaterialRegistry_1 = require("./Web/viroMaterialRegistry");
+const viroRendererHost_1 = require("./Web/viroRendererHost");
 const useViroRendererEffects_1 = require("./Web/useViroRendererEffects");
+const useViroReticle_1 = require("./Web/useViroReticle");
 const containerStyle = {
     position: "relative",
     width: "100%",
@@ -63,37 +63,12 @@ const canvasStyle = {
 };
 function Viro3DSceneNavigator(props) {
     const canvasRef = (0, react_1.useRef)(null);
-    const [renderer, setRenderer] = (0, react_1.useState)(null);
+    // One renderer per canvas, kept across StrictMode's unmount/remount and torn
+    // down (render loop included) on a real unmount. See viroRendererHost.
+    const renderer = (0, viroRendererHost_1.useViroWebRenderer)(canvasRef, props.webRendererOptions, (err) => console.error("[Viro web] failed to initialize renderer:", err));
     (0, useViroRendererEffects_1.useViroRendererEffects)(renderer, props);
-    const [rootNode, setRootNode] = (0, react_1.useState)(0);
-    (0, react_1.useEffect)(() => {
-        let cancelled = false;
-        let created = null;
-        (async () => {
-            if (!canvasRef.current)
-                return;
-            try {
-                created = await viro_web_renderer_1.ViroWebRenderer.create({
-                    canvas: canvasRef.current,
-                    ...props.webRendererOptions,
-                });
-                if (cancelled) {
-                    created.dispose();
-                    return;
-                }
-                setRootNode(created.scene.getRootNode());
-                setRenderer(created);
-            }
-            catch (err) {
-                console.error("[Viro web] failed to initialize renderer:", err);
-            }
-        })();
-        return () => {
-            cancelled = true;
-            created?.dispose();
-            (0, viroMaterialRegistry_1.resetMaterialCache)();
-        };
-    }, []);
+    (0, useViroReticle_1.useViroReticle)(renderer, props);
+    const rootNode = (0, react_1.useMemo)(() => (renderer ? renderer.scene.getRootNode() : 0), [renderer]);
     // Keep the renderer's viewport in sync with the canvas size (fixes aspect
     // distortion on layout/window resize). ResizeObserver catches container
     // changes, not just window resizes.

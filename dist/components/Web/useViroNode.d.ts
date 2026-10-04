@@ -35,6 +35,15 @@ export interface ViroWebNodeProps {
     onClick?: (position: ViroPosition, source: number) => void;
     onClickState?: (clickState: number, position: ViroPosition, source: number) => void;
     onHover?: (isHovering: boolean, position: ViroPosition, source: number) => void;
+    onScroll?: (scrollPos: ViroPosition, source: number) => void;
+    onDrag?: (dragToPos: ViroPosition, source: number) => void;
+    onPinch?: (pinchState: number, scaleFactor: number, source: number) => void;
+    dragType?: "FixedDistance" | "FixedDistanceOrigin" | "FixedToWorld" | "FixedToPlane" | "Gizmo";
+    dragPlane?: {
+        planePoint: ViroPosition;
+        planeNormal: ViroPosition;
+        maxDistance: number;
+    };
     animation?: ViroAnimationProp;
 }
 export declare function useViroNode(props: ViroWebNodeProps, createGeometry?: (scene: ViroSceneApi) => ViroHandle, contentReady?: boolean, geometryKey?: string | number, createNodeFn?: (scene: ViroSceneApi) => ViroHandle): ViroHandle;

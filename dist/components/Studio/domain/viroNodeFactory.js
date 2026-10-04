@@ -34,6 +34,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createNodeConfig = createNodeConfig;
+exports.dragNodeProps = dragNodeProps;
 exports.createNode = createNode;
 const React = __importStar(require("react"));
 const Viro3DObject_1 = require("../../Viro3DObject");
@@ -47,6 +48,25 @@ const dragConfiguration_1 = require("./dragConfiguration");
 const physicsConfig_1 = require("./physicsConfig");
 const placementStore_1 = require("./placementStore");
 const assetPosition_1 = require("./assetPosition");
+/**
+ * The asset's onError: logged as before, and handed to the host when it asked.
+ * Before this the console was the only place a failure went, and a host's error
+ * tracking hooks window.onerror and unhandledrejection, neither of which a
+ * caught load error ever reaches.
+ */
+function assetErrorHandler(asset, config, kind) {
+    return (e) => {
+        console.error(`[Studio] ${kind} "${asset.name}" error:`, e);
+        if (!config.onAssetError)
+            return;
+        const error = e instanceof Error
+            ? e
+            : new Error(typeof e === "object" && e && "nativeEvent" in e
+                ? JSON.stringify(e.nativeEvent)
+                : String(e));
+        config.onAssetError(asset, error);
+    };
+}
 function createNodeConfig(asset, sceneNavigator, animations, scene, onAnimationTrigger, animationStates, isDragActive, onSceneChange, runtimeCtx, 
 // The detected plane this asset is anchored to, once the session has found
 // one. Only the assets under the plane wrapper have it.
@@ -97,8 +117,13 @@ dragSurface) {
         })
         : undefined;
     const viroTag = parsedPhysics ? asset.id : undefined;
-    const launchVelocity = parsedPhysics?.velocity
-        ? [...parsedPhysics.velocity]
+    const lockedPhysicsBody = parsedPhysics &&
+        dragType &&
+        (0, physicsConfig_1.shouldUseKinematicPhysicsDrag)(asset, parsedPhysics)
+        ? (0, physicsConfig_1.buildViroPhysicsBody)(parsedPhysics, {
+            kinematicDragOverride: true,
+            scale: scaleValue,
+        })
         : undefined;
     const onClick = createOnClickHandler(asset, sceneNavigator, animations, onAnimationTrigger, onSceneChange, runtimeCtx);
     const animation = animationStates?.[asset.id];
@@ -109,7 +134,7 @@ dragSurface) {
         dragType,
         dragPlane,
         physicsBody,
-        launchVelocity,
+        ...(lockedPhysicsBody ? { lockedPhysicsBody } : {}),
         viroTag,
         onClick,
         animation,
@@ -156,11 +181,11 @@ function create3DObject(asset, config, onAssetLoaded, notifyPhysicsDrag, onColli
     const shaderOverrides = hasMaterialConfig
         ? [(0, materialConfig_1.studioMaterialName)(asset.id)]
         : undefined;
-    return (<Viro3DObject_1.Viro3DObject key={asset.id} {...(nodeRef ? { ref: nodeRef } : {})} source={{ uri: asset.file_url }} position={config.position} rotation={config.rotation} scale={config.scale} type={modelType} dragType={config.dragType} dragPlane={config.dragPlane} animation={config.animation} onClick={config.onClick} {...(config.onNodeHandle ? { onNodeHandle: config.onNodeHandle } : {})} onLoadEnd={() => onAssetLoaded?.(asset.id)} onError={(e) => console.error(`[Studio] 3D model "${asset.name}" error:`, e)} 
+    return (<Viro3DObject_1.Viro3DObject key={asset.id} {...(nodeRef ? { ref: nodeRef } : {})} source={{ uri: asset.file_url }} position={config.position} rotation={config.rotation} scale={config.scale} type={modelType} dragType={config.dragType} dragPlane={config.dragPlane} animation={config.animation} onClick={config.onClick} {...(config.onNodeHandle ? { onNodeHandle: config.onNodeHandle } : {})} onLoadEnd={() => onAssetLoaded?.(asset.id)} onError={assetErrorHandler(asset, config, "3D model")} 
     // Viro derives native canDrag from `onDrag != undefined`; without this prop
     // the drag recognizer is never attached, even when dragType is set.
     {...(config.dragType
-        ? { onDrag: () => notifyPhysicsDrag?.(asset.id) }
+        ? { onDrag: (to) => notifyPhysicsDrag?.(asset.id, to) }
         : {})} {...(shaderOverrides ? { shaderOverrides } : {})} {...(config.physicsBody
         ? { physicsBody: config.physicsBody, viroTag: config.viroTag }
         : {})} {...(onCollision ? { onCollision: onCollision } : {})} {...(config.onGaze ? { onGaze: config.onGaze } : {})}/>);
@@ -176,8 +201,8 @@ function createImage(asset, config, onAssetLoaded, notifyPhysicsDrag, onCollisio
     // ScaleToFill; the default StretchToFill keeps the 1x1 quad and squashes
     // the picture. The crop this mode also selects needs explicit size props,
     // so the UVs stay 0 to 1.
-    resizeMode="ScaleToFill" position={config.position} rotation={config.rotation} scale={config.scale} dragType={config.dragType} animation={config.animation} onClick={config.onClick} {...(config.onNodeHandle ? { onNodeHandle: config.onNodeHandle } : {})} onLoadEnd={() => onAssetLoaded?.(asset.id)} onError={(e) => console.error(`[Studio] Image "${asset.name}" error:`, e)} {...(config.dragType
-        ? { onDrag: () => notifyPhysicsDrag?.(asset.id) }
+    resizeMode="ScaleToFill" position={config.position} rotation={config.rotation} scale={config.scale} dragType={config.dragType} animation={config.animation} onClick={config.onClick} {...(config.onNodeHandle ? { onNodeHandle: config.onNodeHandle } : {})} onLoadEnd={() => onAssetLoaded?.(asset.id)} onError={assetErrorHandler(asset, config, "Image")} {...(config.dragType
+        ? { onDrag: (to) => notifyPhysicsDrag?.(asset.id, to) }
         : {})} {...(config.physicsBody
         ? { physicsBody: config.physicsBody, viroTag: config.viroTag }
         : {})} {...(onCollision ? { onCollision: onCollision } : {})} {...(config.onGaze ? { onGaze: config.onGaze } : {})}/>);
@@ -188,7 +213,8 @@ function createImage(asset, config, onAssetLoaded, notifyPhysicsDrag, onCollisio
  * subscribes when the template actually has placeholders). Resolution is
  * fail-soft: unknown names stay literal.
  */
-const VariableText = ({ asset, config, store, notifyPhysicsDrag, onCollision, nodeRef, visible, position, rotation, }) => {
+const VariableText = ({ asset, config, store, notifyPhysicsDrag, onCollision, nodeRef, visible, position, rotation, dragLocked, physicsBody, }) => {
+    const body = physicsBody ?? config.physicsBody;
     const template = asset.name ?? "";
     const compute = () => store
         ? (0, apiRequestHelpers_1.interpolateDisplayTemplate)(template, (n) => store.get(n))
@@ -210,11 +236,9 @@ const VariableText = ({ asset, config, store, notifyPhysicsDrag, onCollision, no
             // Centred on the node rather than hung from the top of its box, so the
             // authored position is where the text is at any scale.
             textAlignVertical: "center",
-        }} {...(config.dragType
-        ? { onDrag: () => notifyPhysicsDrag?.(asset.id) }
-        : {})} {...(config.physicsBody
-        ? { physicsBody: config.physicsBody, viroTag: config.viroTag }
-        : {})} {...(onCollision ? { onCollision: onCollision } : {})} {...(config.onGaze ? { onGaze: config.onGaze } : {})}/>);
+        }} {...(config.dragType && !dragLocked
+        ? { onDrag: (to) => notifyPhysicsDrag?.(asset.id, to) }
+        : {})} {...(body ? { physicsBody: body, viroTag: config.viroTag } : {})} {...(onCollision ? { onCollision: onCollision } : {})} {...(config.onGaze ? { onGaze: config.onGaze } : {})}/>);
 };
 /**
  * Wraps a created node and drives its `visible` prop from the per-scene
@@ -237,16 +261,19 @@ const VisibleNode = ({ assetId, store, children }) => {
  * asset, then mounts it at the tap point with the author position AND rotation
  * applied relative to where the user was facing when they tapped (see
  * StudioPlacementStore.resolvePlacedPosition / resolvePlacedRotation), and hands
- * off to VisibleNode so Set Visibility still applies. Rendered at scene root
- * (world space), never inside a plane wrapper.
+ * off to VisibleNode so Set Visibility still applies. Never inside a plane
+ * wrapper: the position is in the frame the node renders in, world coordinates
+ * at the scene root, or scene-origin coordinates while shared.
  */
 const PlaceableNode = ({ assetId, store, authorPosition, authorRotation, visibilityStore, children, }) => {
-    const [placed, setPlaced] = React.useState(() => store.isPlaced(assetId));
+    // The position rather than a placed flag: a shared session can move an asset
+    // that is already placed, and only a new position re-renders it.
+    const [placedAt, setPlacedAt] = React.useState(() => store.getPosition(assetId));
     React.useEffect(() => {
-        setPlaced(store.isPlaced(assetId));
-        return store.subscribe(assetId, () => setPlaced(store.isPlaced(assetId)));
+        setPlacedAt(store.getPosition(assetId));
+        return store.subscribe(assetId, () => setPlacedAt(store.getPosition(assetId)));
     }, [store, assetId]);
-    if (!placed)
+    if (!placedAt)
         return null;
     const position = store.resolvePlacedPosition(assetId, authorPosition) ?? authorPosition;
     const rotation = store.resolvePlacedRotation(assetId, authorRotation) ?? authorRotation;
@@ -254,38 +281,56 @@ const PlaceableNode = ({ assetId, store, authorPosition, authorRotation, visibil
       {React.cloneElement(children, { position, rotation })}
     </VisibleNode>);
 };
+/** Far below what can be seen, and enough to make a prop a change. */
+const DRAG_REPAINT_NUDGE_M = 1e-6;
 /**
- * Sends an authored velocity once, as a launch.
- *
- * `physicsBody.velocity` is a CONSTANT velocity on the device: both bridges pass
- * `isConstant` true and `VROPhysicsBody::applyPresetVelocity` reasserts it on the
- * rigid body every frame, so gravity never gets a turn and the node runs in a
- * straight line for as long as the scene lives. virocore's other slot,
- * `_instantVelocity`, is applied once and then cleared, which is what an author
- * means by a velocity and what the editors preview. Only
- * `VRTNodeModule.setVelocity` reaches it, so the value is sent through the node's
- * own ref here instead of being declared on the body.
- *
- * The node is built by `render` rather than cloned, so the ref arrives through
- * the `nodeRef` prop each creator already forwards: TEXT renders a function
- * component, which a cloned `ref` would miss. That ref is the node's only one,
- * hence `forwardRef` for the proximity registration that would otherwise own it.
+ * The props a DragNode hands its node. Injected ones (from VisibleNode and
+ * PlaceableNode) pass through, another device's drag position wins over them,
+ * and while that device holds the asset it cannot be dragged here.
  */
-const LaunchNode = ({ velocity, forwardRef, render }) => {
-    const nodeRef = React.useRef(null);
-    const setRef = React.useCallback((ref) => {
-        nodeRef.current = ref;
-        forwardRef?.(ref);
-    }, [forwardRef]);
-    // Keyed on the numbers, since `config` hands back a new array every render.
-    const signature = velocity.join(",");
+function dragNodeProps(drag, injected, childPosition, isText, lockedPhysicsBody) {
+    const props = {};
+    for (const [key, value] of Object.entries(injected)) {
+        if (value !== undefined)
+            props[key] = value;
+    }
+    const base = drag.position ?? props.position ?? childPosition;
+    // A prop equal to the last one is never sent to native, and a refused drag
+    // moved the node there natively, so a repaint has to differ from it.
+    if (base) {
+        props.position =
+            drag.revision % 2 === 1
+                ? [base[0], base[1] + DRAG_REPAINT_NUDGE_M, base[2]]
+                : base;
+    }
+    if (drag.locked) {
+        // canDrag follows onDrag (see create3DObject).
+        if (isText)
+            props.dragLocked = true;
+        else
+            props.onDrag = undefined;
+        if (lockedPhysicsBody)
+            props.physicsBody = lockedPhysicsBody;
+    }
+    return props;
+}
+/**
+ * Moves a draggable node where another device in a shared session dragged it,
+ * subscribing to its own asset so a remote drag repaints this node alone.
+ */
+const DragNode = ({ assetId, store, lockedPhysicsBody, children, ...injected }) => {
+    const read = () => ({
+        position: store.getPosition(assetId),
+        locked: store.isLocked(assetId),
+        revision: store.revision(assetId),
+    });
+    const [drag, setDrag] = React.useState(read);
     React.useEffect(() => {
-        // Both platforms resolve the view inside a UI block, which runs after this
-        // mount's own view operations, so the physics body exists by then.
-        nodeRef.current?.setVelocity?.([...velocity]);
+        setDrag(read());
+        return store.subscribe(assetId, () => setDrag(read()));
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [signature]);
-    return render(setRef);
+    }, [store, assetId]);
+    return React.cloneElement(children, dragNodeProps(drag, injected, children.props.position ?? children.props.config?.position, children.type === VariableText, lockedPhysicsBody));
 };
 function createText(asset, config, notifyPhysicsDrag, store, onCollision, nodeRef) {
     return (<VariableText key={asset.id} asset={asset} config={config} store={store} notifyPhysicsDrag={notifyPhysicsDrag} onCollision={onCollision} nodeRef={nodeRef}/>);
@@ -295,8 +340,8 @@ function createVideo(asset, config, notifyPhysicsDrag, onCollision, nodeRef) {
         console.warn(`[Studio] Video "${asset.name}" has no file_url`);
         return null;
     }
-    return (<ViroVideo_1.ViroVideo key={asset.id} {...(nodeRef ? { ref: nodeRef } : {})} source={{ uri: asset.file_url }} position={config.position} rotation={config.rotation} scale={config.scale} dragType={config.dragType} animation={config.animation} onClick={config.onClick} {...(config.onNodeHandle ? { onNodeHandle: config.onNodeHandle } : {})} loop={true} muted={false} onError={(e) => console.error(`[Studio] Video "${asset.name}" error:`, e)} {...(config.dragType
-        ? { onDrag: () => notifyPhysicsDrag?.(asset.id) }
+    return (<ViroVideo_1.ViroVideo key={asset.id} {...(nodeRef ? { ref: nodeRef } : {})} source={{ uri: asset.file_url }} position={config.position} rotation={config.rotation} scale={config.scale} dragType={config.dragType} animation={config.animation} onClick={config.onClick} {...(config.onNodeHandle ? { onNodeHandle: config.onNodeHandle } : {})} loop={true} muted={false} onError={assetErrorHandler(asset, config, "Video")} {...(config.dragType
+        ? { onDrag: (to) => notifyPhysicsDrag?.(asset.id, to) }
         : {})} {...(config.physicsBody
         ? { physicsBody: config.physicsBody, viroTag: config.viroTag }
         : {})} {...(onCollision ? { onCollision: onCollision } : {})} {...(config.onGaze ? { onGaze: config.onGaze } : {})}/>);
@@ -313,10 +358,11 @@ dragSurface,
 // transform off its component ref; web reads it off a renderer handle, since
 // these components' props carry an index signature that makes them unsafe
 // behind forwardRef (see useViroNode's onNodeHandle). Only one is ever set.
-registerProximityNode) {
+registerProximityNode, onAssetError) {
     const type = resolveType(asset);
     const config = createNodeConfig(asset, sceneNavigator, animations, scene, onAnimationTrigger, animationStates, isDragActive, onSceneChange, runtimeCtx, dragSurface);
     config.onGaze = onGaze;
+    config.onAssetError = onAssetError;
     const proximityRef = registerProximityTarget
         ? (ref) => registerProximityTarget(asset.id, ref)
         : undefined;
@@ -340,16 +386,14 @@ registerProximityNode) {
                 return null;
         }
     };
-    // Two routes exist for the authored one-shot velocity and only one may run:
-    // LaunchNode sends it through the node's ref (VRTNodeModule.setVelocity),
-    // while buildViroPhysicsBody can instead put `instantVelocity` on the body
-    // itself, which the bridges hand to the same setVelocity(isConstant: NO). Both
-    // at once would latch the impulse twice, so the body's own prop wins wherever
-    // it is present and LaunchNode covers the case where it is not.
-    const launchesViaPhysicsBody = config.physicsBody?.instantVelocity !== undefined;
-    const node = config.launchVelocity && !launchesViaPhysicsBody ? (<LaunchNode velocity={config.launchVelocity} forwardRef={proximityRef} render={buildNode}/>) : (buildNode(proximityRef));
-    if (!node)
+    const built = buildNode(proximityRef);
+    if (!built)
         return null;
+    // Marker content sits on each device's own image, so its drags stay local.
+    const dragStore = runtimeCtx?.dragStore;
+    const node = dragStore && config.dragType && !asset.trigger_image_url ? (<DragNode assetId={asset.id} store={dragStore} lockedPhysicsBody={config.lockedPhysicsBody}>
+        {built}
+      </DragNode>) : (built);
     // Tap-to-place assets are withheld until placed; PlaceableNode then mounts the
     // node at the tap point with the author position and rotation applied relative
     // to the user's facing, and wraps it in VisibleNode itself. A marker asset is

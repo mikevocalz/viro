@@ -163,8 +163,48 @@ export declare class ViroVRSceneNavigator extends React.Component<Props, State> 
     popHistoryByN(n: number): void;
     getSceneIndex(sceneTag: string): number;
     _recenterTracking: () => void;
+    /**
+     * Quest co-location bridge used by ViroSharedFrame inside VRActivity.
+     * ViroXRSceneNavigator already exposed these calls to the panel-side ref, but
+     * the actual immersive scene is mounted by ViroVRSceneNavigator in a second
+     * React root. Expose the same API here so scene code receives a usable
+     * arSceneNavigator instead of losing shared-frame support at the activity
+     * boundary.
+     */
+    _rvCreateSharedFrame: (groupId: string) => Promise<{
+        success: boolean;
+        frameId?: string;
+        transform?: string;
+        error?: string;
+    }>;
+    _rvJoinSharedFrame: (groupId: string) => Promise<{
+        success: boolean;
+        frameId?: string;
+        transform?: string;
+        error?: string;
+    }>;
     _project: (point: Viro3DPoint) => Promise<any>;
     _unproject: (point: Viro3DPoint) => Promise<any>;
+    /**
+     * Takes a screenshot of the rendered scene, as ViroARSceneNavigator does.
+     *
+     * Meta Quest only: the left eye of the next frame, saved as `fileName`.jpg in
+     * app storage and also to the gallery when `saveToCameraRoll`. Resolves
+     * `{ success, url, errorCode }` and never rejects. Elsewhere it resolves with
+     * `RECORD_ERROR_UNSUPPORTED_PLATFORM`, and on Quest with
+     * `RECORD_ERROR_NOT_READY` until the XR session is rendering. A capture of a
+     * passthrough scene holds the virtual content only.
+     */
+    _takeScreenshot: (fileName: string, saveToCameraRoll: boolean) => Promise<import("./Utilities/VRModuleOpenXR").ViroCaptureResult>;
+    /**
+     * Starts recording the rendered scene (left eye) and the microphone, as
+     * ViroARSceneNavigator does. Meta Quest only; `onError` receives a
+     * ViroRecordingErrorConstants code, `RECORD_ERROR_UNSUPPORTED_PLATFORM`
+     * elsewhere.
+     */
+    _startVideoRecording: (fileName: string, saveToCameraRoll: boolean, onError: (errorCode: number) => void) => void;
+    /** Stops the recording. Resolves `{ success, url, errorCode }`. */
+    _stopVideoRecording: () => Promise<import("./Utilities/VRModuleOpenXR").ViroCaptureResult>;
     _renderSceneStackItems(): React.JSX.Element[];
     sceneNavigator: {
         push: (param1?: ViroScene | string, param2?: ViroScene) => void;
@@ -175,6 +215,21 @@ export declare class ViroVRSceneNavigator extends React.Component<Props, State> 
         project: (point: Viro3DPoint) => Promise<any>;
         unproject: (point: Viro3DPoint) => Promise<any>;
         recenterTracking: () => void;
+        rvCreateSharedFrame: (groupId: string) => Promise<{
+            success: boolean;
+            frameId?: string;
+            transform?: string;
+            error?: string;
+        }>;
+        rvJoinSharedFrame: (groupId: string) => Promise<{
+            success: boolean;
+            frameId?: string;
+            transform?: string;
+            error?: string;
+        }>;
+        takeScreenshot: (fileName: string, saveToCameraRoll: boolean) => Promise<import("./Utilities/VRModuleOpenXR").ViroCaptureResult>;
+        startVideoRecording: (fileName: string, saveToCameraRoll: boolean, onError: (errorCode: number) => void) => void;
+        stopVideoRecording: () => Promise<import("./Utilities/VRModuleOpenXR").ViroCaptureResult>;
         viroAppProps: any;
     };
     render(): React.JSX.Element;
