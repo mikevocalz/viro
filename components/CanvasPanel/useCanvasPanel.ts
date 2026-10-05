@@ -104,15 +104,19 @@ export function useCanvasPanel<P extends CanvasProducer>(opts: CanvasPanelOpts<P
       }).then(() => {
         if (!alive) return;
         attached = true;
+        syncClock();
         try {
-          syncClock();
           latest.current.onReady?.(resource!);
         } catch (error) { report(error); }
       }).catch((error) => {
         // Attach failed: the producer owns no valid frame surface, so retire
-        // the whole resource rather than render a dead canvasSource.
+        // the whole resource rather than render a dead canvasSource. If the
+        // component already unmounted, the finally block below owns disposal.
+        if (!alive) return;
         report(error);
         attached = false;
+        cancelFrame();
+        resource?.producer.setActive?.(false);
         store.setState({ resource: null });
         if (resource) {
           try { disposeProducer(); } finally {
