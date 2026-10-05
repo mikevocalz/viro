@@ -651,7 +651,7 @@ public class VRTARSceneNavigator extends VRT3DSceneNavigator {
     }
 
     public String getRecordingStatus() {
-        return "UNSUPPORTED"; // mirrors ARScene.RecordingStatus.UNSUPPORTED.name()
+        return "Unsupported";
     }
 
     /** "progress|message" for a resolve in flight, empty when none is. */
