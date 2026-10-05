@@ -18,7 +18,13 @@ import { ViroNode } from "../ViroNode";
 import { ViroScene } from "../ViroScene";
 import { ViroText } from "../ViroText";
 import { ViroController } from "../ViroController";
-import { isQuest } from "../Utilities/ViroPlatform";
+import { isQuest, isVisionOS } from "../Utilities/ViroPlatform";
+
+// Platforms that host a Studio scene outside a ViroARScene: Quest in its OpenXR VR root, and
+// visionOS in the ImmersiveSpace, where ViroARScene renders null. StudioSceneNavigator already
+// pairs the two (isQuest || isVisionOS); this is the half that was left behind. Every other
+// isQuest in this file is Quest-only behaviour — OpenXR, head-locked overlays — and stays as is.
+const rootsOutsideAR = isQuest || isVisionOS;
 import { ViroTrackingStateConstants } from "../ViroConstants";
 import type {
   ViroAmbientLightInfo,
