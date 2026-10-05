@@ -48,20 +48,15 @@ if (virocoreRoot) {
 } else notes.push("VIROCORE_ROOT not set; ViroCore bridge check skipped");
 
 if (failures.length) {
-  console.error("
-Rive/XR conformance audit FAILED
-");
+  console.error("\nRive/XR conformance audit FAILED\n");
   failures.forEach(x => console.error("- " + x));
   notes.forEach(x => console.error("- " + x));
   process.exit(1);
 }
-console.log("
-Rive/XR conformance audit PASSED
-");
+console.log("\nRive/XR conformance audit PASSED\n");
 notes.forEach(x => console.log("- " + x));
 console.log("- native Rive producer path is present");
 console.log("- surface-local pointer mapping is present");
 console.log("- Viro scene node + quad composition is present");
 console.log("- no WebView/screenshot/PNG/GIF fallback is present");
-console.log("
-Native device validation is still required.");
+console.log("\nNative device validation is still required.");
