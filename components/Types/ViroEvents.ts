@@ -742,6 +742,12 @@ export type ViroEarthTrackingState =
   | "Stopped"
   | "Localizing";
 
+export type ViroRecordingStatus =
+  | "None"
+  | "Recording"
+  | "IOError"
+  | "Unsupported";
+
 /**
  * VPS (Visual Positioning System) availability at a location.
  */
