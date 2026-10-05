@@ -1,11 +1,8 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ViroGameLoop = ViroGameLoop;
-const react_1 = require("react");
-function ViroGameLoop(props) {
-    const propsRef = (0, react_1.useRef)(props);
+import { useEffect, useRef } from "react";
+export function ViroGameLoop(props) {
+    const propsRef = useRef(props);
     propsRef.current = props;
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         let raf = 0;
         let last = performance.now();
         const start = last;

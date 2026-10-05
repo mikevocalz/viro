@@ -1,45 +1,9 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.StudioColocationIndicator = StudioColocationIndicator;
-const React = __importStar(require("react"));
-const react_native_1 = require("react-native");
-const ViroPlatform_1 = require("../Utilities/ViroPlatform");
-const indicatorContent_1 = require("./colocation/indicatorContent");
-const colocationStore_1 = require("./domain/colocationStore");
-const useStudioColocation_1 = require("./useStudioColocation");
+import * as React from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { isQuest } from "../Utilities/ViroPlatform";
+import { studioColocationIndicatorContent } from "./colocation/indicatorContent";
+import { studioColocationStore } from "./domain/colocationStore";
+import { useStudioColocation } from "./useStudioColocation";
 /**
  * Shared-space status pill: scan guidance with a Done button for the host,
  * progress while hosting or resolving, then the join code and how many other
@@ -50,30 +14,30 @@ const useStudioColocation_1 = require("./useStudioColocation");
  * prop). Hosts with their own chrome can set that prop to false and render this
  * where it fits, or build a custom UI from useStudioColocation().
  */
-const subscribe = (onChange) => colocationStore_1.studioColocationStore.subscribe(onChange);
-const getOriginPrompt = () => colocationStore_1.studioColocationStore.getOriginPrompt();
+const subscribe = (onChange) => studioColocationStore.subscribe(onChange);
+const getOriginPrompt = () => studioColocationStore.getOriginPrompt();
 const noOriginPrompt = () => null;
-function StudioColocationIndicator() {
-    const state = (0, useStudioColocation_1.useStudioColocation)();
+export function StudioColocationIndicator() {
+    const state = useStudioColocation();
     const originPrompt = React.useSyncExternalStore(subscribe, getOriginPrompt, noOriginPrompt);
-    const content = (0, indicatorContent_1.studioColocationIndicatorContent)(state, originPrompt, ViroPlatform_1.isQuest ? "headset" : "phone");
+    const content = studioColocationIndicatorContent(state, originPrompt, isQuest ? "headset" : "phone");
     if (!content)
         return null;
-    return (<react_native_1.View style={styles.pill} pointerEvents="box-none">
-      <react_native_1.Text style={[styles.title, content.tone === "error" && styles.error]}>
+    return (<View style={styles.pill} pointerEvents="box-none">
+      <Text style={[styles.title, content.tone === "error" && styles.error]}>
         {content.title}
-      </react_native_1.Text>
-      {content.code && <react_native_1.Text style={styles.code}>{content.code}</react_native_1.Text>}
-      {content.detail && <react_native_1.Text style={styles.detail}>{content.detail}</react_native_1.Text>}
-      {content.done && (<react_native_1.Pressable accessibilityRole="button" accessibilityState={{ disabled: !content.done.enabled }} disabled={!content.done.enabled} onPress={() => colocationStore_1.studioColocationStore.finishScan()} style={[
+      </Text>
+      {content.code && <Text style={styles.code}>{content.code}</Text>}
+      {content.detail && <Text style={styles.detail}>{content.detail}</Text>}
+      {content.done && (<Pressable accessibilityRole="button" accessibilityState={{ disabled: !content.done.enabled }} disabled={!content.done.enabled} onPress={() => studioColocationStore.finishScan()} style={[
                 styles.button,
                 !content.done.enabled && styles.buttonDisabled,
             ]}>
-          <react_native_1.Text style={styles.buttonLabel}>Done</react_native_1.Text>
-        </react_native_1.Pressable>)}
-    </react_native_1.View>);
+          <Text style={styles.buttonLabel}>Done</Text>
+        </Pressable>)}
+    </View>);
 }
-const styles = react_native_1.StyleSheet.create({
+const styles = StyleSheet.create({
     pill: {
         backgroundColor: "rgba(0,0,0,0.7)",
         borderRadius: 8,

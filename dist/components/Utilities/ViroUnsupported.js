@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Copyright © 2026 ReactVision. All rights reserved.
  *
@@ -9,9 +8,6 @@
  * whose manager is excluded from a platform's renderer therefore has to decide in JS, before it
  * renders, and say so once rather than on every frame.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.warnUnsupported = warnUnsupported;
-exports.resetUnsupportedWarnings = resetUnsupportedWarnings;
 const warned = new Set();
 /**
  * Logs once per component name, however many instances mount.
@@ -20,7 +16,7 @@ const warned = new Set();
  * @param platform  the platform it cannot render on, e.g. `"Apple Vision Pro"`
  * @param alternative what to use instead, when there is one
  */
-function warnUnsupported(component, platform, alternative) {
+export function warnUnsupported(component, platform, alternative) {
     const key = `${component}@${platform}`;
     if (warned.has(key))
         return;
@@ -29,6 +25,6 @@ function warnUnsupported(component, platform, alternative) {
         (alternative ? ` ${alternative}` : ""));
 }
 /** Test seam: forgets what has already been warned about. */
-function resetUnsupportedWarnings() {
+export function resetUnsupportedWarnings() {
     warned.clear();
 }

@@ -1,9 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.teardownViroWebRenderer = teardownViroWebRenderer;
-exports.acquireViroWebRenderer = acquireViroWebRenderer;
-exports.releaseViroWebRenderer = releaseViroWebRenderer;
-exports.useViroWebRenderer = useViroWebRenderer;
 /**
  * One WASM renderer per <canvas>, shared by every mount of a navigator on it.
  *
@@ -19,10 +13,10 @@ exports.useViroWebRenderer = useViroWebRenderer;
  * renderer back before anything is released. A real unmount tears it down for
  * good, main loop included.
  */
-const react_1 = require("react");
-const viro_web_renderer_1 = require("@reactvision/viro-web-renderer");
-const viroExtendedInput_1 = require("./viroExtendedInput");
-const viroMaterialRegistry_1 = require("./viroMaterialRegistry");
+import { useEffect, useState } from "react";
+import { ViroWebRenderer, } from "@reactvision/viro-web-renderer";
+import { uninstallExtendedWebInput } from "./viroExtendedInput";
+import { resetMaterialCache } from "./viroMaterialRegistry";
 const hosts = new WeakMap();
 /**
  * Stop a renderer for good. ViroWebRenderer.dispose() releases its JS state but
@@ -30,15 +24,15 @@ const hosts = new WeakMap();
  * into the canvas. pauseMainLoop is what emscripten_cancel_main_loop calls, and
  * every published build exports it on the module.
  */
-function teardownViroWebRenderer(renderer) {
-    (0, viroExtendedInput_1.uninstallExtendedWebInput)(renderer);
+export function teardownViroWebRenderer(renderer) {
+    uninstallExtendedWebInput(renderer);
     renderer.dispose();
     const module = renderer.wasmModule;
     module.pauseMainLoop?.();
-    (0, viroMaterialRegistry_1.resetMaterialCache)();
+    resetMaterialCache();
 }
 /** Take a reference on the canvas's renderer, creating it on first use. */
-function acquireViroWebRenderer(canvas, options) {
+export function acquireViroWebRenderer(canvas, options) {
     const existing = hosts.get(canvas);
     if (existing && !existing.tornDown) {
         if (existing.teardownTimer !== null) {
@@ -55,7 +49,7 @@ function acquireViroWebRenderer(canvas, options) {
         teardownTimer: null,
         tornDown: false,
     };
-    host.promise = viro_web_renderer_1.ViroWebRenderer.create({ canvas, ...options }).then((renderer) => {
+    host.promise = ViroWebRenderer.create({ canvas, ...options }).then((renderer) => {
         host.renderer = renderer;
         // Every user left while the WASM was still loading.
         if (host.tornDown)
@@ -71,7 +65,7 @@ function acquireViroWebRenderer(canvas, options) {
     return host.promise;
 }
 /** Drop a reference. The renderer is torn down once nobody takes it back. */
-function releaseViroWebRenderer(canvas) {
+export function releaseViroWebRenderer(canvas) {
     const host = hosts.get(canvas);
     if (!host || host.tornDown)
         return;
@@ -93,9 +87,9 @@ function releaseViroWebRenderer(canvas) {
  * The renderer for the canvas in `canvasRef`, or null while it loads. Options
  * are read once, on the first mount, as they were before.
  */
-function useViroWebRenderer(canvasRef, options, onError) {
-    const [renderer, setRenderer] = (0, react_1.useState)(null);
-    (0, react_1.useEffect)(() => {
+export function useViroWebRenderer(canvasRef, options, onError) {
+    const [renderer, setRenderer] = useState(null);
+    useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas)
             return;

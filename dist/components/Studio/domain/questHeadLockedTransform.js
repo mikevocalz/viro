@@ -1,6 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.computeHeadLockedTransform = computeHeadLockedTransform;
 const RAD_TO_DEG = 180 / Math.PI;
 /**
  * World position + yaw-only rotation for a panel that should sit `distanceM`
@@ -20,7 +17,7 @@ const RAD_TO_DEG = 180 / Math.PI;
  * user instead of matching the camera's own facing. If the panel renders
  * backwards (invisible / mirrored text) on device, drop the `+ 180`.
  */
-function computeHeadLockedTransform(pose, opts = {}) {
+export function computeHeadLockedTransform(pose, opts = {}) {
     const { distanceM = 1.2, verticalOffsetM = 0 } = opts;
     const [px, py, pz] = pose.position;
     const [fx, fy, fz] = pose.forward;

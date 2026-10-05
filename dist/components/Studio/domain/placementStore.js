@@ -1,8 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.StudioPlacementStore = void 0;
-exports.isTapToPlaceAsset = isTapToPlaceAsset;
-const utils_1 = require("./utils");
+import { ChangeListeners, GlobalListeners, KeyedListeners, isDev, } from "./utils";
 /**
  * Image triggering wins over tap-to-place: a marker both triggers its content and
  * anchors it, since the node is a child of `ViroARImageMarker` and follows the
@@ -12,7 +8,7 @@ const utils_1 = require("./utils");
  * wrap, which used to withhold such an asset until a tap and then hand it world
  * coordinates inside the marker's frame.
  */
-function isTapToPlaceAsset(asset) {
+export function isTapToPlaceAsset(asset) {
     return !!asset?.tap_to_place && !asset.trigger_image_url;
 }
 /**
@@ -122,16 +118,16 @@ function cameraBasis(forward, up) {
  * global one (the placement UI re-reads which asset is active). Placement is
  * a guided queue — one asset at a time, in author-defined order.
  */
-class StudioPlacementStore {
+export class StudioPlacementStore {
     status = new Map();
     positions = new Map();
     // Full camera orientation (rotation matrix) at tap time per placement, so the
     // author position and rotation resolve in the frame the user was looking in.
     bases = new Map();
     order = [];
-    keyed = new utils_1.KeyedListeners();
-    active = new utils_1.GlobalListeners();
-    changes = new utils_1.ChangeListeners();
+    keyed = new KeyedListeners();
+    active = new GlobalListeners();
+    changes = new ChangeListeners();
     /** Initialise-if-absent from the tap_to_place flag (idempotent, strict-mode safe). */
     seed(assets) {
         for (const asset of byPlacementOrder(assets)) {
@@ -239,7 +235,7 @@ class StudioPlacementStore {
             this.bases.set(assetId, basis);
         else
             this.bases.delete(assetId);
-        if ((0, utils_1.isDev)()) {
+        if (isDev()) {
             console.log(`[Studio] Placed "${assetId}" at`, position);
         }
         this.keyed.notify(assetId);
@@ -259,4 +255,3 @@ class StudioPlacementStore {
         return this.changes.subscribe(listener);
     }
 }
-exports.StudioPlacementStore = StudioPlacementStore;

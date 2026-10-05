@@ -1,50 +1,14 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.StudioColocationPeers = StudioColocationPeers;
-const React = __importStar(require("react"));
-const react_1 = require("react");
-const useViroSmoothing_1 = require("../../hooks/useViroSmoothing");
-const ViroMaterials_1 = require("../../Material/ViroMaterials");
-const ViroBox_1 = require("../../ViroBox");
-const ViroNode_1 = require("../../ViroNode");
-const ViroSphere_1 = require("../../ViroSphere");
-const frameMath_1 = require("./frameMath");
+import * as React from "react";
+import { useEffect, useState } from "react";
+import { useViroSmoothedPeers } from "../../hooks/useViroSmoothing";
+import { ViroMaterials } from "../../Material/ViroMaterials";
+import { ViroBox } from "../../ViroBox";
+import { ViroNode } from "../../ViroNode";
+import { ViroSphere } from "../../ViroSphere";
+import { quatToEuler } from "./frameMath";
 /** Faster than the 20 Hz peers arrive at: see useViroColocation's `pollMs`. */
 const PEER_POLL_MS = 33;
-ViroMaterials_1.ViroMaterials.createMaterials({
+ViroMaterials.createMaterials({
     StudioColocationPeer: {
         lightingModel: "Constant",
         diffuseColor: "#34C759",
@@ -60,9 +24,9 @@ function samePeers(a, b) {
  * they change 20 times a second, and a render of the scene around it rebuilds
  * every asset node.
  */
-function StudioColocationPeers({ readPeers, }) {
-    const [peers, setPeers] = (0, react_1.useState)([]);
-    (0, react_1.useEffect)(() => {
+export function StudioColocationPeers({ readPeers, }) {
+    const [peers, setPeers] = useState([]);
+    useEffect(() => {
         let cancelled = false;
         let inFlight = false;
         const id = setInterval(() => {
@@ -87,11 +51,11 @@ function StudioColocationPeers({ readPeers, }) {
             clearInterval(id);
         };
     }, [readPeers]);
-    const smoothed = (0, useViroSmoothing_1.useViroSmoothedPeers)(peers);
+    const smoothed = useViroSmoothedPeers(peers);
     return (<>
-      {smoothed.map((peer) => (<ViroNode_1.ViroNode key={peer.peerId} position={peer.position} rotation={(0, frameMath_1.quatToEuler)(peer.rotation)}>
-          <ViroBox_1.ViroBox width={0.07} height={0.14} length={0.01} materials={["StudioColocationPeer"]}/>
-          <ViroSphere_1.ViroSphere radius={0.025} position={[0, 0.11, 0]} materials={["StudioColocationPeer"]}/>
-        </ViroNode_1.ViroNode>))}
+      {smoothed.map((peer) => (<ViroNode key={peer.peerId} position={peer.position} rotation={quatToEuler(peer.rotation)}>
+          <ViroBox width={0.07} height={0.14} length={0.01} materials={["StudioColocationPeer"]}/>
+          <ViroSphere radius={0.025} position={[0, 0.11, 0]} materials={["StudioColocationPeer"]}/>
+        </ViroNode>))}
     </>);
 }

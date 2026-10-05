@@ -1,8 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.registerTriggerImageTargets = registerTriggerImageTargets;
-exports.cleanupTriggerImageTargets = cleanupTriggerImageTargets;
-const ViroARTrackingTargets_1 = require("../../AR/ViroARTrackingTargets");
+import { ViroARTrackingTargets } from "../../AR/ViroARTrackingTargets";
 const DEFAULT_PHYSICAL_WIDTH = 0.2; // meters
 const DEFAULT_ORIENTATION = "Up";
 /**
@@ -21,7 +17,7 @@ const DEFAULT_ORIENTATION = "Up";
  * placements that disagree are asking for two reference images, and the caller
  * groups its markers by target name to put the sharers on one.
  */
-function registerTriggerImageTargets(assets) {
+export function registerTriggerImageTargets(assets) {
     const assetsWithTrigger = assets.filter((a) => !!a.trigger_image_url);
     if (assetsWithTrigger.length === 0) {
         return new Map();
@@ -46,16 +42,16 @@ function registerTriggerImageTargets(assets) {
         }
         targetNameByAssetId.set(asset.id, targetName);
     }
-    ViroARTrackingTargets_1.ViroARTrackingTargets.createTargets(targets);
+    ViroARTrackingTargets.createTargets(targets);
     return targetNameByAssetId;
 }
 /**
  * Cleans up trigger image targets when the scene unmounts.
  */
-function cleanupTriggerImageTargets(targetNames) {
+export function cleanupTriggerImageTargets(targetNames) {
     targetNames.forEach((name) => {
         try {
-            ViroARTrackingTargets_1.ViroARTrackingTargets.deleteTarget(name);
+            ViroARTrackingTargets.deleteTarget(name);
         }
         catch (error) {
             console.warn(`[Studio] Failed to delete trigger target "${name}":`, error);

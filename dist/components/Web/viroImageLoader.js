@@ -1,13 +1,9 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.resolveImageSource = resolveImageSource;
-exports.loadImageRGBA = loadImageRGBA;
 const cache = new Map();
 /**
  * Resolve a Viro image source to a URL. Web supports a string URL or { uri }.
  * (react-native-web/bundlers turn require('./x.png') into a URL string.)
  */
-function resolveImageSource(source) {
+export function resolveImageSource(source) {
     if (typeof source === "string")
         return source;
     if (source && typeof source === "object") {
@@ -17,7 +13,7 @@ function resolveImageSource(source) {
     }
     return undefined;
 }
-function loadImageRGBA(url) {
+export function loadImageRGBA(url) {
     const cached = cache.get(url);
     if (cached)
         return cached;

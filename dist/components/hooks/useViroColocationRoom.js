@@ -4,11 +4,9 @@
  * @providesModule useViroColocationRoom
  */
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.useViroColocationRoom = useViroColocationRoom;
-const react_1 = require("react");
-const ViroFrameSource_1 = require("../AR/ViroFrameSource");
-const ViroColocationRooms_1 = require("../AR/ViroColocationRooms");
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { cloudAnchorFrameSource, metaSpatialAnchorFrameSource, visionOSSharedSpaceFrameSource, } from "../AR/ViroFrameSource";
+import { createColocationRoom, formatJoinCode, lookupColocationRoom, } from "../AR/ViroColocationRooms";
 /**
  * Turn a frame into a room others can join, or a code into the room and the
  * frame source that goes with it.
@@ -27,20 +25,20 @@ const ViroColocationRooms_1 = require("../AR/ViroColocationRooms");
  * One request, before the session starts. The frame acquisition that follows it
  * takes 12 to 30 seconds on phones, so this is not the slow part.
  */
-function useViroColocationRoom(options) {
+export function useViroColocationRoom(options) {
     const { apiKey, projectId, endpoint, headers, host, joinCode, enabled = true, } = options;
-    const [status, setStatus] = (0, react_1.useState)("idle");
-    const [room, setRoom] = (0, react_1.useState)(null);
-    const [error, setError] = (0, react_1.useState)();
-    const [attempt, setAttempt] = (0, react_1.useState)(0);
+    const [status, setStatus] = useState("idle");
+    const [room, setRoom] = useState(null);
+    const [error, setError] = useState();
+    const [attempt, setAttempt] = useState(0);
     // Creating a room is not idempotent, so a re-render must never start a second
     // one. This is what an effect that can run twice needs instead of a guard on
     // the request itself.
-    const inFlight = (0, react_1.useRef)(null);
+    const inFlight = useRef(null);
     // Read when the request goes out, not a dependency: a token refresh would
     // restart the effect and drop an in-flight create's result, which the guard
     // above then never requests again. Headers first arriving do restart it.
-    const headersRef = (0, react_1.useRef)(headers);
+    const headersRef = useRef(headers);
     headersRef.current = headers;
     const hasHeaders = headers !== undefined;
     const hostKey = host
@@ -55,7 +53,7 @@ function useViroColocationRoom(options) {
         : hostKey
             ? `host:${hostKey}`
             : "";
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         if (!enabled || !target)
             return;
         if (inFlight.current === target && status !== "failed")
@@ -72,8 +70,8 @@ function useViroColocationRoom(options) {
                 headers: headersRef.current,
             };
             const result = joinCode
-                ? await (0, ViroColocationRooms_1.lookupColocationRoom)(config, joinCode)
-                : await (0, ViroColocationRooms_1.createColocationRoom)(config, host);
+                ? await lookupColocationRoom(config, joinCode)
+                : await createColocationRoom(config, host);
             if (cancelled)
                 return;
             if (!result.success) {
@@ -92,12 +90,12 @@ function useViroColocationRoom(options) {
         // retry path goes through `attempt` instead.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [apiKey, projectId, endpoint, hasHeaders, target, enabled, attempt]);
-    const frameSource = (0, react_1.useMemo)(() => {
+    const frameSource = useMemo(() => {
         if (!room)
             return null;
         return frameSourceFor(room, Boolean(host));
     }, [room, host]);
-    const retry = (0, react_1.useCallback)(() => {
+    const retry = useCallback(() => {
         inFlight.current = null;
         setAttempt((n) => n + 1);
     }, []);
@@ -105,7 +103,7 @@ function useViroColocationRoom(options) {
         status,
         room,
         roomId: room?.roomId ?? null,
-        displayCode: room?.joinCode ? (0, ViroColocationRooms_1.formatJoinCode)(room.joinCode) : null,
+        displayCode: room?.joinCode ? formatJoinCode(room.joinCode) : null,
         frameSource,
         error,
         retry,
@@ -120,14 +118,14 @@ function frameSourceFor(room, isHost) {
     switch (room.frameKind) {
         case "cloud_anchor":
             return room.cloudAnchorId
-                ? (0, ViroFrameSource_1.cloudAnchorFrameSource)(room.cloudAnchorId)
+                ? cloudAnchorFrameSource(room.cloudAnchorId)
                 : null;
         case "meta_group":
             return room.frameRef
-                ? (0, ViroFrameSource_1.metaSpatialAnchorFrameSource)(room.frameRef, isHost ? "create" : "join")
+                ? metaSpatialAnchorFrameSource(room.frameRef, isHost ? "create" : "join")
                 : null;
         case "visionos_space":
-            return (0, ViroFrameSource_1.visionOSSharedSpaceFrameSource)(room.roomId);
+            return visionOSSharedSpaceFrameSource(room.roomId);
         default:
             // A room the relay created by saving state: it has a room id and nothing
             // that says how its devices found each other.

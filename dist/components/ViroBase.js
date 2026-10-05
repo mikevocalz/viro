@@ -1,44 +1,8 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ViroBase = void 0;
-const React = __importStar(require("react"));
-const react_native_1 = require("react-native");
-const ViroEvents_1 = require("./Types/ViroEvents");
-const ViroUtils_1 = require("./Types/ViroUtils");
-class ViroBase extends React.Component {
+import * as React from "react";
+import { NativeModules, findNodeHandle, } from "react-native";
+import { ViroClickStateTypes, } from "./Types/ViroEvents";
+import { ViroEventSource, } from "./Types/ViroUtils";
+export class ViroBase extends React.Component {
     _component = null;
     _onHover = (event) => {
         this.props.onHover &&
@@ -47,7 +11,7 @@ class ViroBase extends React.Component {
         // above still fires for every source; onGaze fires only for the eye-gaze ray.
         if (this.props.onGaze &&
             event.nativeEvent.source ===
-                ViroUtils_1.ViroEventSource.EYE_GAZE) {
+                ViroEventSource.EYE_GAZE) {
             this.props.onGaze(event.nativeEvent.isHovering, event.nativeEvent.position, event.nativeEvent.source);
         }
     };
@@ -59,7 +23,7 @@ class ViroBase extends React.Component {
         this.props.onClickState &&
             this.props.onClickState(event.nativeEvent.clickState, event.nativeEvent.position, event.nativeEvent.source);
         // Value representation of Clicked ClickState within EventDelegateJni.
-        if (event.nativeEvent.clickState == ViroEvents_1.ViroClickStateTypes.CLICKED) {
+        if (event.nativeEvent.clickState == ViroClickStateTypes.CLICKED) {
             this._onClick(event);
         }
     };
@@ -112,19 +76,19 @@ class ViroBase extends React.Component {
         this.props.onError && this.props.onError(event);
     };
     getTransformAsync = async () => {
-        return await react_native_1.NativeModules.VRTNodeModule.getNodeTransform((0, react_native_1.findNodeHandle)(this));
+        return await NativeModules.VRTNodeModule.getNodeTransform(findNodeHandle(this));
     };
     getBoundingBoxAsync = async () => {
-        return await react_native_1.NativeModules.VRTNodeModule.getBoundingBox((0, react_native_1.findNodeHandle)(this));
+        return await NativeModules.VRTNodeModule.getBoundingBox(findNodeHandle(this));
     };
     applyImpulse = (force, position) => {
-        react_native_1.NativeModules.VRTNodeModule.applyImpulse((0, react_native_1.findNodeHandle)(this), force, position);
+        NativeModules.VRTNodeModule.applyImpulse(findNodeHandle(this), force, position);
     };
     applyTorqueImpulse = (torque) => {
-        react_native_1.NativeModules.VRTNodeModule.applyTorqueImpulse((0, react_native_1.findNodeHandle)(this), torque);
+        NativeModules.VRTNodeModule.applyTorqueImpulse(findNodeHandle(this), torque);
     };
     setVelocity = (velocity) => {
-        react_native_1.NativeModules.VRTNodeModule.setVelocity((0, react_native_1.findNodeHandle)(this), velocity);
+        NativeModules.VRTNodeModule.setVelocity(findNodeHandle(this), velocity);
     };
     _onCollision = (event) => {
         if (this.props.onCollision) {
@@ -143,4 +107,3 @@ class ViroBase extends React.Component {
         this._component?.setNativeProps(nativeProps);
     };
 }
-exports.ViroBase = ViroBase;

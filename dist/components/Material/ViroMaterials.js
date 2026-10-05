@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Copyright (c) 2015-present, Viro Media, Inc.
  * All rights reserved.
@@ -10,18 +9,13 @@
  * @providesModule ViroMaterials
  * @flow
  */
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ViroMaterials = void 0;
-const react_native_1 = require("react-native");
+import { NativeModules, processColor, TurboModuleRegistry, } from "react-native";
 // @ts-ignore
-const AssetRegistry_1 = require("react-native/Libraries/Image/AssetRegistry");
+import { getAssetByID } from "react-native/Libraries/Image/AssetRegistry";
 // @ts-ignore
-const resolveAssetSource_1 = __importDefault(require("react-native/Libraries/Image/resolveAssetSource"));
-var MaterialManager = react_native_1.NativeModules.VRTMaterialManager ||
-    react_native_1.TurboModuleRegistry.get("VRTMaterialManager");
+import resolveAssetSource from "react-native/Libraries/Image/resolveAssetSource";
+var MaterialManager = NativeModules.VRTMaterialManager ||
+    TurboModuleRegistry.get("VRTMaterialManager");
 console.log("VRTMaterialManager lookup:", MaterialManager ? "FOUND" : "NOT FOUND");
 // Maps VROSemanticLabel enum value → bit position (bit N = label N, value 1-11).
 const kSemanticLabelBit = {
@@ -37,7 +31,7 @@ const kSemanticLabelBit = {
     person: 1 << 10,
     water: 1 << 11,
 };
-class ViroMaterials {
+export class ViroMaterials {
     static createMaterials(materials) {
         var result = {};
         for (var key in materials) {
@@ -50,25 +44,25 @@ class ViroMaterials {
                     if (prop === "ReflectiveTexture" || prop === "reflectiveTexture") {
                         var reflectiveShape = {};
                         for (var cubeMapTexture in material[prop]) {
-                            var cubeMapSource = (0, resolveAssetSource_1.default)(material[prop][cubeMapTexture]);
+                            var cubeMapSource = resolveAssetSource(material[prop][cubeMapTexture]);
                             reflectiveShape[cubeMapTexture] = cubeMapSource;
                         }
                         resultMaterial[prop] = reflectiveShape;
                     }
                     else if (material[prop].hasOwnProperty("source")) {
-                        var source = (0, resolveAssetSource_1.default)(material[prop]["source"]);
+                        var source = resolveAssetSource(material[prop]["source"]);
                         resultMaterial[prop] = material[prop];
                         resultMaterial[prop]["source"] = source;
                     }
                     else {
                         var assetType = "unknown";
                         if (typeof material[prop] !== "object") {
-                            var asset = (0, AssetRegistry_1.getAssetByID)(material[prop]);
+                            var asset = getAssetByID(material[prop]);
                             if (asset) {
                                 assetType = asset.type;
                             }
                         }
-                        var source = (0, resolveAssetSource_1.default)(material[prop]);
+                        var source = resolveAssetSource(material[prop]);
                         if (source) {
                             source["type"] = assetType;
                             resultMaterial[prop] = source;
@@ -76,7 +70,7 @@ class ViroMaterials {
                     }
                 }
                 else if (prop.endsWith("color") || prop.endsWith("Color")) {
-                    var color = (0, react_native_1.processColor)(material[prop]);
+                    var color = processColor(material[prop]);
                     resultMaterial[prop] = color;
                 }
                 else if (prop === "semanticMask") {
@@ -139,4 +133,3 @@ class ViroMaterials {
         MaterialManager.updateShaderUniform(materialName, uniformName, uniformType, value);
     }
 }
-exports.ViroMaterials = ViroMaterials;

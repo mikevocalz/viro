@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Copyright (c) 2018-present, Viro Media, Inc.
  * All rights reserved.
@@ -10,55 +9,20 @@
  * @providesModule ViroVRSceneNavigator
  * @flow
  */
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ViroVRSceneNavigator = void 0;
-const React = __importStar(require("react"));
-const react_native_1 = require("react-native");
-const ViroPlatform_1 = require("./Utilities/ViroPlatform");
-const ViroUnsupported_1 = require("./Utilities/ViroUnsupported");
-const VRModuleOpenXR_1 = require("./Utilities/VRModuleOpenXR");
-const ViroSceneNavigatorModule = react_native_1.NativeModules.VRTSceneNavigatorModule;
-const VRModuleOpenXR = react_native_1.NativeModules.VRModuleOpenXR;
+import * as React from "react";
+import { findNodeHandle, NativeModules, requireNativeComponent, StyleSheet, Text, View, } from "react-native";
+import { isVisionOS } from "./Utilities/ViroPlatform";
+import { warnUnsupported } from "./Utilities/ViroUnsupported";
+import { VRCapture } from "./Utilities/VRModuleOpenXR";
+const ViroSceneNavigatorModule = NativeModules.VRTSceneNavigatorModule;
+const VRModuleOpenXR = NativeModules.VRModuleOpenXR;
 var mathRandomOffset = 0;
 /**
  * ViroVRSceneNavigator is used to transition between multiple scenes.
  * Intended for OVR / Google Cardboard VR mode on non-Quest Android devices.
  * On Meta Quest use ViroXRSceneNavigator instead.
  */
-class ViroVRSceneNavigator extends React.Component {
+export class ViroVRSceneNavigator extends React.Component {
     _component = null;
     /**
      * Called from native when either the user physically decides to exit vr (hits
@@ -342,7 +306,7 @@ class ViroVRSceneNavigator extends React.Component {
         return -1;
     }
     _recenterTracking = () => {
-        ViroSceneNavigatorModule.recenterTracking((0, react_native_1.findNodeHandle)(this));
+        ViroSceneNavigatorModule.recenterTracking(findNodeHandle(this));
     };
     /**
      * Quest co-location bridge used by ViroSharedFrame inside VRActivity.
@@ -353,7 +317,7 @@ class ViroVRSceneNavigator extends React.Component {
      * boundary.
      */
     _rvCreateSharedFrame = async (groupId) => {
-        const viewTag = (0, react_native_1.findNodeHandle)(this);
+        const viewTag = findNodeHandle(this);
         if (viewTag == null || !VRModuleOpenXR?.rvCreateSharedFrame) {
             return {
                 success: false,
@@ -363,7 +327,7 @@ class ViroVRSceneNavigator extends React.Component {
         return await VRModuleOpenXR.rvCreateSharedFrame(viewTag, groupId);
     };
     _rvJoinSharedFrame = async (groupId) => {
-        const viewTag = (0, react_native_1.findNodeHandle)(this);
+        const viewTag = findNodeHandle(this);
         if (viewTag == null || !VRModuleOpenXR?.rvJoinSharedFrame) {
             return {
                 success: false,
@@ -373,10 +337,10 @@ class ViroVRSceneNavigator extends React.Component {
         return await VRModuleOpenXR.rvJoinSharedFrame(viewTag, groupId);
     };
     _project = async (point) => {
-        return await ViroSceneNavigatorModule.project((0, react_native_1.findNodeHandle)(this), point);
+        return await ViroSceneNavigatorModule.project(findNodeHandle(this), point);
     };
     _unproject = async (point) => {
-        return await ViroSceneNavigatorModule.unproject((0, react_native_1.findNodeHandle)(this), point);
+        return await ViroSceneNavigatorModule.unproject(findNodeHandle(this), point);
     };
     /**
      * Takes a screenshot of the rendered scene, as ViroARSceneNavigator does.
@@ -389,7 +353,7 @@ class ViroVRSceneNavigator extends React.Component {
      * passthrough scene holds the virtual content only.
      */
     _takeScreenshot = async (fileName, saveToCameraRoll) => {
-        return await VRModuleOpenXR_1.VRCapture.takeScreenshot((0, react_native_1.findNodeHandle)(this), fileName, saveToCameraRoll);
+        return await VRCapture.takeScreenshot(findNodeHandle(this), fileName, saveToCameraRoll);
     };
     /**
      * Starts recording the rendered scene (left eye) and the microphone, as
@@ -398,11 +362,11 @@ class ViroVRSceneNavigator extends React.Component {
      * elsewhere.
      */
     _startVideoRecording = (fileName, saveToCameraRoll, onError) => {
-        VRModuleOpenXR_1.VRCapture.startVideoRecording((0, react_native_1.findNodeHandle)(this), fileName, saveToCameraRoll, onError);
+        VRCapture.startVideoRecording(findNodeHandle(this), fileName, saveToCameraRoll, onError);
     };
     /** Stops the recording. Resolves `{ success, url, errorCode }`. */
     _stopVideoRecording = async () => {
-        return await VRModuleOpenXR_1.VRCapture.stopVideoRecording((0, react_native_1.findNodeHandle)(this));
+        return await VRCapture.stopVideoRecording(findNodeHandle(this));
     };
     _renderSceneStackItems() {
         let views = [];
@@ -440,13 +404,13 @@ class ViroVRSceneNavigator extends React.Component {
         // ViroVRSceneNavigator's view manager is excluded from the visionOS renderer, so React has no view
         // config for it and mounting fails with "View config not found". A message rather than
         // null: this is the root of a screen, and a blank one says nothing about why.
-        if (ViroPlatform_1.isVisionOS) {
-            (0, ViroUnsupported_1.warnUnsupported)("ViroVRSceneNavigator", "Apple Vision Pro", "Use ViroXRSceneNavigator: visionOS is not a phone in a headset and has no stereo view to size.");
-            return (<react_native_1.View style={styles.viroVisionOSFallback}>
-          <react_native_1.Text style={styles.viroVisionOSFallbackText}>
+        if (isVisionOS) {
+            warnUnsupported("ViroVRSceneNavigator", "Apple Vision Pro", "Use ViroXRSceneNavigator: visionOS is not a phone in a headset and has no stereo view to size.");
+            return (<View style={styles.viroVisionOSFallback}>
+          <Text style={styles.viroVisionOSFallbackText}>
             ViroVRSceneNavigator is not supported on Apple Vision Pro.
-          </react_native_1.Text>
-        </react_native_1.View>);
+          </Text>
+        </View>);
         }
         const items = this._renderSceneStackItems();
         // Uncomment this line to check for misnamed props
@@ -467,8 +431,7 @@ class ViroVRSceneNavigator extends React.Component {
       </VRTVRSceneNavigator>);
     }
 }
-exports.ViroVRSceneNavigator = ViroVRSceneNavigator;
-var styles = react_native_1.StyleSheet.create({
+var styles = StyleSheet.create({
     viroVisionOSFallback: {
         flex: 1,
         justifyContent: "center",
@@ -487,7 +450,7 @@ var styles = react_native_1.StyleSheet.create({
         alignItems: "center",
     },
 });
-var VRTVRSceneNavigator = (0, react_native_1.requireNativeComponent)("VRTVRSceneNavigator", 
+var VRTVRSceneNavigator = requireNativeComponent("VRTVRSceneNavigator", 
 // @ts-ignore
 ViroVRSceneNavigator, {
     nativeOnly: {

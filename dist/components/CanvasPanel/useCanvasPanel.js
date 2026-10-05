@@ -1,51 +1,15 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.useCanvasPanel = useCanvasPanel;
-const React = __importStar(require("react"));
-const zustand_1 = require("zustand");
-const vanilla_1 = require("zustand/vanilla");
-const react_native_1 = require("react-native");
-const nitroCanvas_1 = require("./nitroCanvas");
-const ViroMaterials_1 = require("../Material/ViroMaterials");
+import * as React from "react";
+import { useStore } from "zustand";
+import { createStore } from "zustand/vanilla";
+import { AppState } from "react-native";
+import { requireNitroCanvas } from "./nitroCanvas";
+import { ViroMaterials } from "../Material/ViroMaterials";
 /** Allocate after commit, then render the quad only after its material exists. */
-function useCanvasPanel(opts) {
-    const store = React.useMemo(() => (0, vanilla_1.createStore)(() => ({
+export function useCanvasPanel(opts) {
+    const store = React.useMemo(() => createStore(() => ({
         resource: null,
     })), []);
-    const state = (0, zustand_1.useStore)(store, value => value.resource);
+    const state = useStore(store, value => value.resource);
     const latest = React.useRef(opts);
     latest.current = opts;
     const updateClock = React.useRef(null);
@@ -56,7 +20,7 @@ function useCanvasPanel(opts) {
         let settled = false;
         let surfaceDisposed = false;
         let frame = null;
-        let foreground = react_native_1.AppState.currentState !== "background" && react_native_1.AppState.currentState !== "inactive";
+        let foreground = AppState.currentState !== "background" && AppState.currentState !== "inactive";
         let resource = null;
         const report = (error) => {
             if (alive)
@@ -102,12 +66,12 @@ function useCanvasPanel(opts) {
                 frame = requestAnimationFrame(tick);
         };
         updateClock.current = syncClock;
-        const subscription = react_native_1.AppState.addEventListener("change", (value) => {
+        const subscription = AppState.addEventListener("change", (value) => {
             foreground = value === "active";
             syncClock();
         });
         try {
-            const surface = (0, nitroCanvas_1.requireNitroCanvas)().createCanvasSurface({ width, height, sRGB, androidRoute });
+            const surface = requireNitroCanvas().createCanvasSurface({ width, height, sRGB, androidRoute });
             let producer;
             try {
                 producer = latest.current.producerFactory();
@@ -118,8 +82,8 @@ function useCanvasPanel(opts) {
             }
             const materialName = override ?? `viroCanvasPanel_${surface.id}`;
             resource = { surface, producer, materialName };
-            ViroMaterials_1.ViroMaterials.createMaterials({ [materialName]: {
-                    diffuseTexture: (0, nitroCanvas_1.requireNitroCanvas)().canvasSource(surface),
+            ViroMaterials.createMaterials({ [materialName]: {
+                    diffuseTexture: requireNitroCanvas().canvasSource(surface),
                     diffuseColor: fallbackColor, lightingModel,
                 } });
             store.setState({ resource });
@@ -130,8 +94,8 @@ function useCanvasPanel(opts) {
                 if (!alive)
                     return;
                 attached = true;
+                syncClock();
                 try {
-                    syncClock();
                     latest.current.onReady?.(resource);
                 }
                 catch (error) {
@@ -139,16 +103,21 @@ function useCanvasPanel(opts) {
                 }
             }).catch((error) => {
                 // Attach failed: the producer owns no valid frame surface, so retire
-                // the whole resource rather than render a dead canvasSource.
+                // the whole resource rather than render a dead canvasSource. If the
+                // component already unmounted, the finally block below owns disposal.
+                if (!alive)
+                    return;
                 report(error);
                 attached = false;
+                cancelFrame();
+                resource?.producer.setActive?.(false);
                 store.setState({ resource: null });
                 if (resource) {
                     try {
                         disposeProducer();
                     }
                     finally {
-                        ViroMaterials_1.ViroMaterials.deleteMaterials([resource.materialName]);
+                        ViroMaterials.deleteMaterials([resource.materialName]);
                         disposeSurface();
                     }
                 }
@@ -189,7 +158,7 @@ function useCanvasPanel(opts) {
                     disposeProducer();
                 }
                 finally {
-                    ViroMaterials_1.ViroMaterials.deleteMaterials([resource.materialName]);
+                    ViroMaterials.deleteMaterials([resource.materialName]);
                     if (settled)
                         disposeSurface();
                 }

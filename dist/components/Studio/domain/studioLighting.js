@@ -1,4 +1,3 @@
-"use strict";
 /**
  * The light rig Studio scenes render under, shared by the native and web hosts.
  *
@@ -12,18 +11,15 @@
  * renders: both surfaces draw those unlit (Constant here, meshBasicMaterial
  * there), so a model beside one has to reach the same level.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.STUDIO_LIGHT_SCALE_STEP = exports.STUDIO_DIRECTIONAL_DIRECTION = exports.STUDIO_DIRECTIONAL_INTENSITY = exports.STUDIO_AMBIENT_INTENSITY = void 0;
-exports.studioLightScale = studioLightScale;
 /** Intensities in a neutrally lit room. Light estimation scales both together. */
-exports.STUDIO_AMBIENT_INTENSITY = 300;
-exports.STUDIO_DIRECTIONAL_INTENSITY = 700;
+export const STUDIO_AMBIENT_INTENSITY = 300;
+export const STUDIO_DIRECTIONAL_INTENSITY = 700;
 /** From the editor's main light at [10, 10, 10] toward the origin; virocore normalises it. */
-exports.STUDIO_DIRECTIONAL_DIRECTION = [
+export const STUDIO_DIRECTIONAL_DIRECTION = [
     -1, -1, -1,
 ];
 /** Smallest scale change worth a bridge write. The estimate arrives every frame. */
-exports.STUDIO_LIGHT_SCALE_STEP = 0.02;
+export const STUDIO_LIGHT_SCALE_STEP = 0.02;
 // What both runtimes report for a neutrally lit room: ARKit's ambientIntensity is
 // in lumens with 1000 neutral, and the ARCore path multiplies its pixel intensity
 // by 1000 and then by the inverse of VRTARScene's 0.5 rebalance.
@@ -40,7 +36,7 @@ const NEUTRAL_ESTIMATE = 1000;
  * a second way. So a neutral or bright room renders the rig as authored, which
  * is also the editor's rig exactly, and only a dim room pulls the two apart.
  */
-function studioLightScale(estimate) {
+export function studioLightScale(estimate) {
     if (!Number.isFinite(estimate) || estimate <= 0) {
         return 1;
     }

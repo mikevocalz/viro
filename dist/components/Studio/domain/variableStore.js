@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.StudioVariableStore = void 0;
-const expressionEvaluator_1 = require("./expressionEvaluator");
-const utils_1 = require("./utils");
+import { valueMatchesType, } from "./expressionEvaluator";
+import { ChangeListeners, GlobalListeners, isDev, } from "./utils";
 /**
  * Per-session variable store. One instance is owned by the navigator and
  * survives scene pushes; it resets only when the AR/VR session ends.
@@ -11,10 +8,10 @@ const utils_1 = require("./utils");
  * seed() only initialises names not already present (initialize-if-absent),
  * so values carry across scene transitions.
  */
-class StudioVariableStore {
+export class StudioVariableStore {
     values = new Map();
-    listeners = new utils_1.GlobalListeners();
-    changes = new utils_1.ChangeListeners();
+    listeners = new GlobalListeners();
+    changes = new ChangeListeners();
     get(name) {
         return this.values.get(name);
     }
@@ -32,7 +29,7 @@ class StudioVariableStore {
         if (Object.is(this.values.get(name), value))
             return;
         this.values.set(name, value);
-        if ((0, utils_1.isDev)()) {
+        if (isDev()) {
             console.log(`[Studio] Variable "${name}" =`, value);
         }
         this.listeners.notify();
@@ -42,13 +39,13 @@ class StudioVariableStore {
         for (const decl of declarations) {
             if (!decl?.name)
                 continue;
-            if (!(0, expressionEvaluator_1.valueMatchesType)(decl.initial_value, decl.type)) {
+            if (!valueMatchesType(decl.initial_value, decl.type)) {
                 console.warn(`[Studio] Variable "${decl.name}": initial value does not match type ${decl.type}; skipping seed.`);
                 continue;
             }
             const existing = this.values.get(decl.name);
             if (existing !== undefined) {
-                if (!(0, expressionEvaluator_1.valueMatchesType)(existing, decl.type)) {
+                if (!valueMatchesType(existing, decl.type)) {
                     console.warn(`[Studio] Variable "${decl.name}" already holds a ${typeof existing} this session, but this scene declares ${decl.type}; keeping the existing value.`);
                 }
                 continue;
@@ -69,4 +66,3 @@ class StudioVariableStore {
         return out;
     }
 }
-exports.StudioVariableStore = StudioVariableStore;

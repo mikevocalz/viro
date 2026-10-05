@@ -1,16 +1,11 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.isViroSpecsRuntime = isViroSpecsRuntime;
-exports.getViroXRRuntime = getViroXRRuntime;
-exports.hasViroXRRuntimeCapability = hasViroXRRuntimeCapability;
-const react_native_1 = require("react-native");
+import { NativeModules, Platform } from "react-native";
 function readSpecsGlobal() {
     return globalThis;
 }
-function isViroSpecsRuntime() {
+export function isViroSpecsRuntime() {
     return readSpecsGlobal().__VIRO_SPECS_BUILD__ === true;
 }
-function getViroXRRuntime() {
+export function getViroXRRuntime() {
     if (isViroSpecsRuntime()) {
         return {
             kind: "specs",
@@ -21,8 +16,8 @@ function getViroXRRuntime() {
             },
         };
     }
-    const visionOS = react_native_1.Platform.isVision === true ||
-        react_native_1.NativeModules.VRTVisionOSModule?.isVisionOS === true;
+    const visionOS = Platform.isVision === true ||
+        NativeModules.VRTVisionOSModule?.isVisionOS === true;
     if (visionOS) {
         return {
             kind: "visionos",
@@ -46,7 +41,7 @@ function getViroXRRuntime() {
         capabilities: {},
     };
 }
-function hasViroXRRuntimeCapability(capability, accepted = ["supported"]) {
+export function hasViroXRRuntimeCapability(capability, accepted = ["supported"]) {
     const state = getViroXRRuntime().capabilities[capability] ?? "unverified";
     return accepted.includes(state);
 }

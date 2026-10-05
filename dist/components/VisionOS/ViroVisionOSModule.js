@@ -1,4 +1,3 @@
-"use strict";
 /**
  * ViroVisionOSModule
  *
@@ -39,27 +38,17 @@
  *    await ViroVisionOSModule.exitImmersiveSpace();
  * ─────────────────────────────────────────────────────────────────────────────
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ViroVisionOSModule = void 0;
-exports.isVisionOS = isVisionOS;
-exports.enterImmersiveSpace = enterImmersiveSpace;
-exports.exitImmersiveSpace = exitImmersiveSpace;
-exports.setInputTuning = setInputTuning;
-exports.subscribeSpatialStylus = subscribeSpatialStylus;
-exports.sharedSpaceState = sharedSpaceState;
-exports.sharedSpaceNextOutgoing = sharedSpaceNextOutgoing;
-exports.sharedSpacePushIncoming = sharedSpacePushIncoming;
-const react_native_1 = require("react-native");
+import { NativeEventEmitter, NativeModules, Platform } from "react-native";
 /** @internal — raw NativeModule reference */
-const { VRTVisionOSModule } = react_native_1.NativeModules;
+const { VRTVisionOSModule } = NativeModules;
 /**
  * Returns true if the app is running on Apple Vision Pro (visionOS).
  * Uses the native module constant; falls back to Platform.isVision when
  * available (React Native 0.83+).
  */
-function isVisionOS() {
+export function isVisionOS() {
     // React Native 0.83+ exposes Platform.isVision on visionOS builds.
-    if (react_native_1.Platform.isVision === true)
+    if (Platform.isVision === true)
         return true;
     // Fallback: check the native module constant.
     return VRTVisionOSModule?.isVisionOS === true;
@@ -70,7 +59,7 @@ function isVisionOS() {
  * @param style  "mixed" (default) — virtual content blended over passthrough
  *               "full"  — fully virtual, passthrough hidden
  */
-async function enterImmersiveSpace(style = "mixed") {
+export async function enterImmersiveSpace(style = "mixed") {
     if (!VRTVisionOSModule) {
         if (__DEV__) {
             console.warn("[Viro] VRTVisionOSModule not available on this platform");
@@ -82,7 +71,7 @@ async function enterImmersiveSpace(style = "mixed") {
 /**
  * Dismisses the Viro ImmersiveSpace and returns to the window layer.
  */
-async function exitImmersiveSpace() {
+export async function exitImmersiveSpace() {
     if (!VRTVisionOSModule)
         return false;
     return VRTVisionOSModule.exitImmersiveSpace();
@@ -93,14 +82,14 @@ async function exitImmersiveSpace() {
  * Exists to be called from JavaScript during a session: these numbers can only be judged with a
  * headset on, and a native rebuild is ten minutes. No-op on every other platform.
  */
-function setInputTuning(tuning) {
+export function setInputTuning(tuning) {
     VRTVisionOSModule?.setInputTuning?.(tuning);
 }
 /** Subscribe to spatial-stylus frames; returns an idempotent unsubscribe function. */
-function subscribeSpatialStylus(listener) {
+export function subscribeSpatialStylus(listener) {
     if (!isVisionOS() || !VRTVisionOSModule)
         return () => undefined;
-    const subscription = new react_native_1.NativeEventEmitter(VRTVisionOSModule)
+    const subscription = new NativeEventEmitter(VRTVisionOSModule)
         .addListener("onSpatialStylus", (event) => {
         listener(event);
     });
@@ -112,7 +101,7 @@ function subscribeSpatialStylus(listener) {
         subscription.remove();
     };
 }
-exports.ViroVisionOSModule = {
+export const ViroVisionOSModule = {
     isVisionOS,
     enterImmersiveSpace,
     exitImmersiveSpace,
@@ -130,7 +119,7 @@ const NOT_SUPPORTED = {
  * here: ARKit aligns the **world origin itself**, so once `sharing` is true,
  * world coordinates already mean the same thing on every participant.
  */
-async function sharedSpaceState() {
+export async function sharedSpaceState() {
     if (!VRTVisionOSModule?.sharedSpaceState)
         return NOT_SUPPORTED;
     return VRTVisionOSModule.sharedSpaceState();
@@ -144,13 +133,13 @@ async function sharedSpaceState() {
  * receiving device passes it to {@link sharedSpacePushIncoming}. Until both
  * sides do that, `sharing` never becomes true.
  */
-async function sharedSpaceNextOutgoing() {
+export async function sharedSpaceNextOutgoing() {
     if (!VRTVisionOSModule?.sharedSpaceNextOutgoing)
         return null;
     return VRTVisionOSModule.sharedSpaceNextOutgoing();
 }
 /** Hand ARKit base64 alignment data received from another participant. */
-async function sharedSpacePushIncoming(base64) {
+export async function sharedSpacePushIncoming(base64) {
     if (!VRTVisionOSModule?.sharedSpacePushIncoming)
         return false;
     return VRTVisionOSModule.sharedSpacePushIncoming(base64);

@@ -1,21 +1,17 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.velocityRange = velocityRange;
-exports.ViroParticleEmitter = ViroParticleEmitter;
-const react_1 = require("react");
-const viro_web_renderer_1 = require("@reactvision/viro-web-renderer");
-const useViroNode_1 = require("./Web/useViroNode");
-const ViroWebContext_1 = require("./Web/ViroWebContext");
-const viroImageLoader_1 = require("./Web/viroImageLoader");
-const viroParticleAppearance_1 = require("./Web/viroParticleAppearance");
+import { useEffect, useRef } from "react";
+import { ViroParticleSpawnShape, } from "@reactvision/viro-web-renderer";
+import { useViroNode } from "./Web/useViroNode";
+import { useViroScene } from "./Web/ViroWebContext";
+import { loadImageRGBA, resolveImageSource } from "./Web/viroImageLoader";
+import { resolveParticleAppearance, } from "./Web/viroParticleAppearance";
 function shapeEnum(shape) {
     switch ((shape ?? "").toLowerCase()) {
         case "box":
-            return viro_web_renderer_1.ViroParticleSpawnShape.Box;
+            return ViroParticleSpawnShape.Box;
         case "sphere":
-            return viro_web_renderer_1.ViroParticleSpawnShape.Sphere;
+            return ViroParticleSpawnShape.Sphere;
         default:
-            return viro_web_renderer_1.ViroParticleSpawnShape.Point;
+            return ViroParticleSpawnShape.Point;
     }
 }
 const asVec3 = (a) => [a?.[0] ?? 0, a?.[1] ?? 0, a?.[2] ?? 0];
@@ -31,7 +27,7 @@ const asPair = (a, d = 0) => [a?.[0] ?? d, a?.[1] ?? a?.[0] ?? d];
  *
  * A range with one entry is a fixed velocity, not a range from zero.
  */
-function velocityRange(velocity) {
+export function velocityRange(velocity) {
     const range = velocity?.initialRange;
     if (range && range.length > 0) {
         const min = asVec3(range[0]);
@@ -40,19 +36,19 @@ function velocityRange(velocity) {
     const min = asVec3(velocity?.min);
     return [min, velocity?.max ? asVec3(velocity.max) : min];
 }
-function ViroParticleEmitter(props) {
-    const scene = (0, ViroWebContext_1.useViroScene)();
-    const node = (0, useViroNode_1.useViroNode)(props);
-    const url = (0, viroImageLoader_1.resolveImageSource)(props.image?.source);
-    const texRef = (0, react_1.useRef)(0);
-    const propsRef = (0, react_1.useRef)(props);
+export function ViroParticleEmitter(props) {
+    const scene = useViroScene();
+    const node = useViroNode(props);
+    const url = resolveImageSource(props.image?.source);
+    const texRef = useRef(0);
+    const propsRef = useRef(props);
     propsRef.current = props;
     // Build the emitter once the sprite texture is ready.
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         if (!node || !url)
             return;
         let cancelled = false;
-        (0, viroImageLoader_1.loadImageRGBA)(url)
+        loadImageRGBA(url)
             .then((img) => {
             if (cancelled)
                 return;
@@ -79,7 +75,7 @@ function ViroParticleEmitter(props) {
                 const [accelMin, accelMax] = velocityRange(accel);
                 scene.setParticleAcceleration(node, accelMin, accelMax);
             }
-            for (const call of (0, viroParticleAppearance_1.resolveParticleAppearance)(p.particleAppearance)) {
+            for (const call of resolveParticleAppearance(p.particleAppearance)) {
                 scene.setParticleModifier(node, call.property, call.min, call.max, call.factor, call.intervals);
             }
             scene.setParticleEmitterRun(node, p.run !== false);
@@ -99,15 +95,15 @@ function ViroParticleEmitter(props) {
     const appearanceKey = props.particleAppearance
         ? JSON.stringify(props.particleAppearance)
         : "";
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         if (!node || !appearanceKey)
             return;
-        for (const call of (0, viroParticleAppearance_1.resolveParticleAppearance)(propsRef.current.particleAppearance)) {
+        for (const call of resolveParticleAppearance(propsRef.current.particleAppearance)) {
             scene.setParticleModifier(node, call.property, call.min, call.max, call.factor, call.intervals);
         }
     }, [scene, node, appearanceKey]);
     // Run/pause toggling.
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         if (node)
             scene.setParticleEmitterRun(node, props.run !== false);
     }, [scene, node, props.run]);

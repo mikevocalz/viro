@@ -1,39 +1,3 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.StudioSceneNavigator = void 0;
 /**
  * Web host/navigator for Studio scenes. Web counterpart of StudioSceneNavigator
  * (native): instead of pushing StudioARScene onto ViroXRSceneNavigator via the
@@ -46,19 +10,19 @@ exports.StudioSceneNavigator = void 0;
  * scenes via the runtime's injectable `navigate` seam). `apiRequestExecutor`
  * (for API_REQUEST functions) is likewise injected.
  */
-const React = __importStar(require("react"));
-const react_1 = require("react");
-const Viro3DSceneNavigator_web_1 = require("../Viro3DSceneNavigator.web");
-const ViroARSceneNavigator_web_1 = require("../AR/ViroARSceneNavigator.web");
-const StudioARScene_web_1 = require("./StudioARScene.web");
-const placementStore_1 = require("./domain/placementStore");
-const placementBannerStore_1 = require("./domain/placementBannerStore");
-const studioRendererEffects_1 = require("./domain/studioRendererEffects");
-const variableStore_1 = require("./domain/variableStore");
-const StudioPlacementIndicator_web_1 = require("./StudioPlacementIndicator.web");
-const StudioRecordingIndicator_web_1 = require("./StudioRecordingIndicator.web");
-const StudioColocationIndicator_web_1 = require("./StudioColocationIndicator.web");
-const colocationStore_1 = require("./domain/colocationStore");
+import * as React from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, } from "react";
+import { Viro3DSceneNavigator } from "../Viro3DSceneNavigator.web";
+import { ViroARSceneNavigator } from "../AR/ViroARSceneNavigator.web";
+import { StudioARScene } from "./StudioARScene.web";
+import { StudioPlacementStore, isTapToPlaceAsset } from "./domain/placementStore";
+import { studioPlacementBannerStore } from "./domain/placementBannerStore";
+import { STUDIO_RENDERER_EFFECTS } from "./domain/studioRendererEffects";
+import { StudioVariableStore } from "./domain/variableStore";
+import { StudioPlacementIndicator } from "./StudioPlacementIndicator.web";
+import { StudioRecordingIndicator } from "./StudioRecordingIndicator.web";
+import { StudioColocationIndicator } from "./StudioColocationIndicator.web";
+import { studioColocationStore } from "./domain/colocationStore";
 /**
  * What the navigators mount as the scene. At module scope on purpose: it used to
  * be a closure built in the render body, so every navigator render handed React
@@ -68,7 +32,7 @@ const colocationStore_1 = require("./domain/colocationStore");
  * props now travel through `viroAppProps`, which both navigators spread onto it.
  */
 function StudioSceneRoot({ sceneNavigator: _sceneNavigator, ...props }) {
-    return <StudioARScene_web_1.StudioARScene key={props.sceneData?.scene.id} {...props}/>;
+    return <StudioARScene key={props.sceneData?.scene.id} {...props}/>;
 }
 const STUDIO_SCENE = { scene: StudioSceneRoot };
 function isARScene(sceneData) {
@@ -87,21 +51,21 @@ function isARScene(sceneData) {
  * `devicePixelRatio` other than 1.
  */
 const StudioPlacementOverlay = ({ store, apiRef, getName }) => {
-    const [activeId, setActiveId] = (0, react_1.useState)(() => store.activeAssetId());
-    const missTimerRef = (0, react_1.useRef)(null);
-    (0, react_1.useEffect)(() => {
+    const [activeId, setActiveId] = useState(() => store.activeAssetId());
+    const missTimerRef = useRef(null);
+    useEffect(() => {
         setActiveId(store.activeAssetId());
         return store.subscribeActive(() => setActiveId(store.activeAssetId()));
     }, [store]);
-    (0, react_1.useEffect)(() => {
-        placementBannerStore_1.studioPlacementBannerStore.set(!!activeId, activeId ? getName(activeId) : null);
+    useEffect(() => {
+        studioPlacementBannerStore.set(!!activeId, activeId ? getName(activeId) : null);
     }, [activeId, getName]);
-    (0, react_1.useEffect)(() => () => {
+    useEffect(() => () => {
         if (missTimerRef.current)
             clearTimeout(missTimerRef.current);
-        placementBannerStore_1.studioPlacementBannerStore.reset();
+        studioPlacementBannerStore.reset();
     }, []);
-    const handlePointerUp = (0, react_1.useCallback)((evt) => {
+    const handlePointerUp = useCallback((evt) => {
         const api = apiRef.current;
         if (!api)
             return;
@@ -116,13 +80,13 @@ const StudioPlacementOverlay = ({ store, apiRef, getName }) => {
         const y = ((evt.clientY - rect.top) / rect.height) * bufferH;
         void api.placeAtScreenPoint(x, y).then((result) => {
             if (result !== "miss") {
-                placementBannerStore_1.studioPlacementBannerStore.setShowMiss(false);
+                studioPlacementBannerStore.setShowMiss(false);
                 return;
             }
-            placementBannerStore_1.studioPlacementBannerStore.setShowMiss(true);
+            studioPlacementBannerStore.setShowMiss(true);
             if (missTimerRef.current)
                 clearTimeout(missTimerRef.current);
-            missTimerRef.current = setTimeout(() => placementBannerStore_1.studioPlacementBannerStore.setShowMiss(false), 2500);
+            missTimerRef.current = setTimeout(() => studioPlacementBannerStore.setShowMiss(false), 2500);
         });
     }, [apiRef]);
     if (!activeId)
@@ -135,27 +99,27 @@ const StudioPlacementOverlay = ({ store, apiRef, getName }) => {
             touchAction: "none",
         }}/>);
 };
-exports.StudioSceneNavigator = (0, react_1.forwardRef)((props, ref) => {
+export const StudioSceneNavigator = forwardRef((props, ref) => {
     const { recordingIndicator = true, placementIndicator = true, colocation, colocationIndicator = true, onColocationStateChange, arOptions, onSessionReady, onMotionUnavailable, sceneData: injectedSceneData, loadScene, sceneId, apiRequestExecutor, mode, webRendererOptions, slamScriptUrl, onSceneReady, onError, onAssetError, onRendererAbort, onSceneChange, onSceneLoaded, onPlaneDetected, onUnsupported, noAssetsMessage, loadingView, renderError, } = props;
-    const containerRef = (0, react_1.useRef)(null);
+    const containerRef = useRef(null);
     // Session-scoped variable store (survives NAVIGATION between scenes).
-    const variableStoreRef = (0, react_1.useRef)(null);
+    const variableStoreRef = useRef(null);
     if (variableStoreRef.current === null)
-        variableStoreRef.current = new variableStore_1.StudioVariableStore();
+        variableStoreRef.current = new StudioVariableStore();
     // The guided placement queue, and the scene's imperative handle onto it.
-    const placementStoreRef = (0, react_1.useRef)(null);
-    const placementApiRef = (0, react_1.useRef)(null);
-    const [sceneData, setSceneData] = (0, react_1.useState)(injectedSceneData);
-    const [error, setError] = (0, react_1.useState)(null);
-    const onSceneLoadedRef = (0, react_1.useRef)(onSceneLoaded);
+    const placementStoreRef = useRef(null);
+    const placementApiRef = useRef(null);
+    const [sceneData, setSceneData] = useState(injectedSceneData);
+    const [error, setError] = useState(null);
+    const onSceneLoadedRef = useRef(onSceneLoaded);
     onSceneLoadedRef.current = onSceneLoaded;
-    const onColocationStateChangeRef = (0, react_1.useRef)(onColocationStateChange);
+    const onColocationStateChangeRef = useRef(onColocationStateChange);
     onColocationStateChangeRef.current = onColocationStateChange;
     const colocationRequested = colocation !== undefined;
     // Idle is only news after a failure was reported, as on native.
-    const colocationReportedRef = (0, react_1.useRef)(false);
-    const [colocationStoreOwner] = (0, react_1.useState)(() => ({}));
-    (0, react_1.useEffect)(() => {
+    const colocationReportedRef = useRef(false);
+    const [colocationStoreOwner] = useState(() => ({}));
+    useEffect(() => {
         if (!colocationRequested && !colocationReportedRef.current)
             return;
         colocationReportedRef.current = colocationRequested;
@@ -166,14 +130,14 @@ exports.StudioSceneNavigator = (0, react_1.forwardRef)((props, ref) => {
                 message: "Co-location rooms need a phone or headset: a browser cannot align with a device's scan.",
             }
             : { status: "idle" };
-        colocationStore_1.studioColocationStore.set(state, colocationStoreOwner);
+        studioColocationStore.set(state, colocationStoreOwner);
         onColocationStateChangeRef.current?.(state);
     }, [colocationRequested, colocationStoreOwner]);
-    (0, react_1.useEffect)(() => () => colocationStore_1.studioColocationStore.reset(colocationStoreOwner), [colocationStoreOwner]);
+    useEffect(() => () => studioColocationStore.reset(colocationStoreOwner), [colocationStoreOwner]);
     // The navigators read their renderer options once, when they create it.
-    const onRendererAbortRef = (0, react_1.useRef)(onRendererAbort);
+    const onRendererAbortRef = useRef(onRendererAbort);
     onRendererAbortRef.current = onRendererAbort;
-    const rendererOptions = (0, react_1.useMemo)(() => ({
+    const rendererOptions = useMemo(() => ({
         ...webRendererOptions,
         onAbort: (err) => {
             webRendererOptions?.onAbort?.(err);
@@ -181,12 +145,12 @@ exports.StudioSceneNavigator = (0, react_1.forwardRef)((props, ref) => {
             setError(err);
         },
     }), [webRendererOptions]);
-    const applyScene = (0, react_1.useCallback)((next) => {
+    const applyScene = useCallback((next) => {
         setSceneData(next);
         onSceneLoadedRef.current?.(next);
     }, []);
     // Initial load: prefer injected data, else fetch by id.
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         if (injectedSceneData) {
             applyScene(injectedSceneData);
             return;
@@ -209,7 +173,7 @@ exports.StudioSceneNavigator = (0, react_1.forwardRef)((props, ref) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [sceneId, injectedSceneData]);
     // NAVIGATION seam: fetch the target scene and re-render.
-    const navigate = (0, react_1.useCallback)((targetSceneId) => {
+    const navigate = useCallback((targetSceneId) => {
         if (!loadScene) {
             console.warn("[Studio web] navigate ignored: no loadScene provided");
             return;
@@ -218,7 +182,7 @@ exports.StudioSceneNavigator = (0, react_1.forwardRef)((props, ref) => {
             .then((data) => applyScene(data))
             .catch((err) => onError?.(err instanceof Error ? err : new Error(String(err))));
     }, [loadScene, applyScene, onError]);
-    (0, react_1.useImperativeHandle)(ref, () => ({
+    useImperativeHandle(ref, () => ({
         takeScreenshot: async (fileName) => {
             const canvas = containerRef.current?.querySelector("canvas");
             if (!canvas)
@@ -237,9 +201,9 @@ exports.StudioSceneNavigator = (0, react_1.forwardRef)((props, ref) => {
     }), []);
     // Owned here rather than in the scene so the prompt can read the same queue
     // the tap surface drives, and so neither survives a scene change.
-    const placementStore = (placementStoreRef.current ??= new placementStore_1.StudioPlacementStore());
+    const placementStore = (placementStoreRef.current ??= new StudioPlacementStore());
     const placementNames = new Map((sceneData?.assets ?? [])
-        .filter(placementStore_1.isTapToPlaceAsset)
+        .filter(isTapToPlaceAsset)
         .map((a) => [a.id, a.name ?? ""]));
     const getPlacementName = (assetId) => placementNames.get(assetId) ?? null;
     if (error && renderError)
@@ -275,17 +239,17 @@ exports.StudioSceneNavigator = (0, react_1.forwardRef)((props, ref) => {
         pointerEvents: "none",
     };
     return (<div ref={containerRef} style={{ width: "100%", height: "100%", position: "relative" }}>
-      {resolvedMode === "ar" ? (<ViroARSceneNavigator_web_1.ViroARSceneNavigator initialScene={STUDIO_SCENE} viroAppProps={sceneProps} webRendererOptions={rendererOptions} slamScriptUrl={slamScriptUrl} arOptions={{ detectPlanes: true, ...arOptions }} onSessionReady={onSessionReady} onMotionUnavailable={onMotionUnavailable} {...studioRendererEffects_1.STUDIO_RENDERER_EFFECTS}/>) : (<Viro3DSceneNavigator_web_1.Viro3DSceneNavigator initialScene={STUDIO_SCENE} viroAppProps={sceneProps} webRendererOptions={rendererOptions} {...studioRendererEffects_1.STUDIO_RENDERER_EFFECTS}/>)}
+      {resolvedMode === "ar" ? (<ViroARSceneNavigator initialScene={STUDIO_SCENE} viroAppProps={sceneProps} webRendererOptions={rendererOptions} slamScriptUrl={slamScriptUrl} arOptions={{ detectPlanes: true, ...arOptions }} onSessionReady={onSessionReady} onMotionUnavailable={onMotionUnavailable} {...STUDIO_RENDERER_EFFECTS}/>) : (<Viro3DSceneNavigator initialScene={STUDIO_SCENE} viroAppProps={sceneProps} webRendererOptions={rendererOptions} {...STUDIO_RENDERER_EFFECTS}/>)}
       {recordingIndicator && (<div style={{ ...overlay, top: 52 }}>
-          <StudioRecordingIndicator_web_1.StudioRecordingIndicator />
+          <StudioRecordingIndicator />
         </div>)}
       {resolvedMode === "ar" && (<StudioPlacementOverlay store={placementStore} apiRef={placementApiRef} getName={getPlacementName}/>)}
       {placementIndicator && (<div style={{ ...overlay, top: 64, padding: "0 24px", zIndex: 2 }}>
-          <StudioPlacementIndicator_web_1.StudioPlacementIndicator />
+          <StudioPlacementIndicator />
         </div>)}
       {colocationIndicator && (<div style={{ ...overlay, bottom: 40, padding: "0 24px", zIndex: 2 }}>
-          <StudioColocationIndicator_web_1.StudioColocationIndicator />
+          <StudioColocationIndicator />
         </div>)}
     </div>);
 });
-exports.StudioSceneNavigator.displayName = "StudioSceneNavigator";
+StudioSceneNavigator.displayName = "StudioSceneNavigator";

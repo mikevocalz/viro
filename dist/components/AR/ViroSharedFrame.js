@@ -4,43 +4,8 @@
  * @providesModule ViroSharedFrame
  */
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ViroSharedFrame = void 0;
-const React = __importStar(require("react"));
-const ViroNode_1 = require("../ViroNode");
+import * as React from "react";
+import { ViroNode } from "../ViroNode";
 /** How often the source is asked what it is doing. */
 const PROGRESS_POLL_MS = 500;
 /**
@@ -80,7 +45,7 @@ const RETRYABLE = new Set([
  *
  * `<ViroARCloudAnchor>` is this with the cloud-anchor source pre-selected.
  */
-class ViroSharedFrame extends React.Component {
+export class ViroSharedFrame extends React.Component {
     state = { frame: null };
     static _unsupportedWarned = new Set();
     // Acquiring is async and the component can unmount mid-flight — a cloud
@@ -188,12 +153,11 @@ class ViroSharedFrame extends React.Component {
         const { frame } = this.state;
         if (!frame) {
             return this.props.placeholder
-                ? <ViroNode_1.ViroNode>{this.props.placeholder}</ViroNode_1.ViroNode>
+                ? <ViroNode>{this.props.placeholder}</ViroNode>
                 : null;
         }
-        return (<ViroNode_1.ViroNode position={frame.position} rotation={frame.rotation} scale={frame.scale}>
+        return (<ViroNode position={frame.position} rotation={frame.rotation} scale={frame.scale}>
         {this.props.children}
-      </ViroNode_1.ViroNode>);
+      </ViroNode>);
     }
 }
-exports.ViroSharedFrame = ViroSharedFrame;
