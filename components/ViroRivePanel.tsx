@@ -122,6 +122,9 @@ export const ViroRivePanel = React.forwardRef<
       // fingerprint map must not carry over or unchanged bindings are skipped.
       appliedBindings.current.clear();
       if (runtime.current) {
+        // A newly mounted native runtime has its own binding state. Never
+        // reuse fingerprints from the previous artboard/runtime instance.
+        appliedBindings.current.clear();
         applyBindings(runtime.current, latestBindings.current, appliedBindings.current);
         ready.current?.(runtime.current);
       }
