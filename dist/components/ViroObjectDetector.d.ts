@@ -111,6 +111,10 @@ type Props = ViewProps & {
      */
     onError?: (event: ViroDetectorErrorEvent) => void;
 };
+/** The error `onError` reports when the native view is not in this build. */
+export declare const VIRO_OBJECT_DETECTOR_UNAVAILABLE_ERROR: string;
+/** Test seam: forgets the answer, so the next mount asks React Native again. */
+export declare function resetObjectDetectorNativeViewCheck(): void;
 /**
  * ViroObjectDetector — on-device open-vocabulary object detection powered by YOLOE.
  *
@@ -137,18 +141,6 @@ type Props = ViewProps & {
  *   confidenceThreshold={0.4}
  *   maxFPS={15}
  *   onDetection={({ detections }) => {
-  // Its view manager is excluded from the visionOS renderer, so React has no view config for it
-  // and mounting fails with "View config not found". visionOS grants no passthrough camera access
-  // without an enterprise entitlement, so there is nothing for the detector to look at either.
-  if (isVisionOS) {
-    warnUnsupported(
-      "ViroObjectDetector",
-      "Apple Vision Pro",
-      "visionOS grants no passthrough camera access without an enterprise entitlement."
-    );
-    return null;
-  }
-
  *     detections.forEach(d => console.log(d.label, d.confidence, d.screenBoundingBox));
  *   }}
  * />

@@ -1,5 +1,6 @@
 import * as React from "react";
 import { ViewStyle } from "react-native";
+import { type StudioQuestMenuItem } from "./domain/questMenuStore";
 import type { StudioColocationOptions, StudioColocationRoom, StudioColocationState } from "./colocation/types";
 import { StudioSceneResponse } from "./types";
 /** Imperative handle exposed via ref. */
@@ -43,6 +44,15 @@ export interface StudioSceneNavigatorProps {
     onError?: (err: Error) => void;
     onSceneChange?: (sceneId: string, sceneName: string) => void;
     onExitViro?: () => void;
+    /** Meta Quest only. Passed to `ViroXRSceneNavigator`, which documents it. */
+    renderQuestPanel?: (enter: () => void) => React.ReactNode;
+    /**
+     * Meta Quest only. Buttons for the in-scene menu, listed above its Exit
+     * button. The wearer opens and closes the menu with the left controller's Y
+     * button, and pressing a button closes it. Nothing 2D can be seen from
+     * inside the headset, so this is where the host's scene actions go.
+     */
+    questMenuItems?: readonly StudioQuestMenuItem[];
     /** Fired after the scene is fetched and parsed, before it is pushed. */
     onSceneLoaded?: (sceneData: StudioSceneResponse) => void;
     /** Threaded to the initial scene's StudioARScene (initial scene only). */

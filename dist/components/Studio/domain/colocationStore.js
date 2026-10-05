@@ -17,6 +17,7 @@ const UNOWNED = {};
  */
 class StudioColocationStore {
     state = IDLE;
+    failure = null;
     originPrompt = null;
     owner = null;
     finishScanHandlers = new Map();
@@ -28,6 +29,15 @@ class StudioColocationStore {
     subscribe(listener) {
         return this.listeners.subscribe(listener);
     }
+    /**
+     * The last session's failure, kept through the idle that follows it: a host
+     * that clears its `colocation` prop on failure makes the state idle at once,
+     * and the Quest HUD still has to say why. The next session's first state,
+     * or clearFailure(), drops it.
+     */
+    getFailure() {
+        return this.failure;
+    }
     /** Ignored while another owner's session is reported. */
     set(state, owner = UNOWNED) {
         if (!this.writable(owner))
@@ -36,6 +46,17 @@ class StudioColocationStore {
         if (this.state === state)
             return;
         this.state = state;
+        if (state.status === "failed")
+            this.failure = state;
+        else if (state.status !== "idle")
+            this.failure = null;
+        this.listeners.notify();
+    }
+    /** A new session was asked for, whose first state comes only once the relay answers. */
+    clearFailure(owner = UNOWNED) {
+        if (!this.writable(owner) || this.failure === null)
+            return;
+        this.failure = null;
         this.listeners.notify();
     }
     getOriginPrompt() {
@@ -84,10 +105,12 @@ class StudioColocationStore {
                 return;
         }
         this.owner = null;
-        if (this.state.status === "idle" && !this.originPrompt)
+        if (this.state.status === "idle" && !this.originPrompt && !this.failure) {
             return;
+        }
         this.state = IDLE;
         this.originPrompt = null;
+        this.failure = null;
         this.listeners.notify();
     }
     writable(owner) {

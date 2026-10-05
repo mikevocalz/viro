@@ -551,12 +551,4 @@ public class VRT3DSceneNavigator extends FrameLayout {
     public void setMultisamplingEnabled(boolean enabled) {
         mRendererConfig.setMultisamplingEnabled(enabled);
     }
-
-    /**
-     * The view rendering this navigator's scenes: a ViroViewOpenXR on Quest, which is
-     * what the AR scene module hit-tests through there.
-     */
-    public ViroView getViroView() {
-        return mViroView;
-    }
 }

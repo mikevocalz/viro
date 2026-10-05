@@ -1,5 +1,8 @@
 import type { StudioColocationOriginPrompt } from "../colocation/indicatorContent";
 import type { StudioColocationState } from "../colocation/types";
+type StudioColocationFailure = Extract<StudioColocationState, {
+    status: "failed";
+}>;
 /** Who writes to the store: each navigator passes a token of its own. */
 export type StudioColocationStoreOwner = object;
 /**
@@ -17,6 +20,7 @@ export type StudioColocationStoreOwner = object;
  */
 declare class StudioColocationStore {
     private state;
+    private failure;
     private originPrompt;
     private owner;
     private finishScanHandlers;
@@ -24,8 +28,17 @@ declare class StudioColocationStore {
     private listeners;
     getState(): StudioColocationState;
     subscribe(listener: () => void): () => void;
+    /**
+     * The last session's failure, kept through the idle that follows it: a host
+     * that clears its `colocation` prop on failure makes the state idle at once,
+     * and the Quest HUD still has to say why. The next session's first state,
+     * or clearFailure(), drops it.
+     */
+    getFailure(): StudioColocationFailure | null;
     /** Ignored while another owner's session is reported. */
     set(state: StudioColocationState, owner?: StudioColocationStoreOwner): void;
+    /** A new session was asked for, whose first state comes only once the relay answers. */
+    clearFailure(owner?: StudioColocationStoreOwner): void;
     getOriginPrompt(): StudioColocationOriginPrompt | null;
     setOriginPrompt(prompt: StudioColocationOriginPrompt | null, owner?: StudioColocationStoreOwner): void;
     /** The owning navigator's `colocationIndicator`, which the Quest HUD honours too. */

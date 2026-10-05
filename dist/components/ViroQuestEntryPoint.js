@@ -13,9 +13,12 @@ import { ViroText } from "./ViroText";
 function QuestCrashFallbackScene() {
     return (<ViroScene>
       <ViroAmbientLight color="#ffffff" intensity={1000}/>
-      <ViroText text="Something went wrong loading this scene." position={[0, 0, -2]} width={3} height={1} style={{ fontFamily: "Arial", fontSize: 20, color: "#FFFFFF", textAlign: "center" }}/>
+      <ViroText text="Something went wrong loading this scene." position={[0, 0, -2]} width={3} height={1} style={{ fontFamily: "sans-serif", fontSize: 20, color: "#FFFFFF", textAlign: "center" }}/>
     </ViroScene>);
 }
+// Counted because a re-entry can mount the next VRActivity's surface before the
+// finishing one has unmounted.
+let mountedEntryPoints = 0;
 /**
  * Drop-in root component for VRActivity on Meta Quest.
  *
@@ -31,6 +34,17 @@ export function ViroQuestEntryPoint() {
     const [intent, setIntent] = React.useState(() => VRQuestNavigatorBridge.getIntent());
     const navRef = React.useRef(null);
     React.useEffect(() => VRQuestNavigatorBridge.onIntent(setIntent), []);
+    // VRActivity also ends without exitVRScene(), when the wearer quits from the
+    // system menu or Horizon OS brings the panel forward, and its surface unmounts
+    // either way.
+    React.useEffect(() => {
+        mountedEntryPoints++;
+        VRQuestNavigatorBridge.setVRActive(true);
+        return () => {
+            if (--mountedEntryPoints === 0)
+                VRQuestNavigatorBridge.setVRActive(false);
+        };
+    }, []);
     // Wire hardware back button to exit VR. Apps that need custom back behaviour
     // can call AppRegistry.registerComponent('VRQuestScene', ...) to override.
     //

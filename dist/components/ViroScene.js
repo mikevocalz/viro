@@ -10,7 +10,21 @@ import * as React from "react";
 import { findNodeHandle, NativeModules, requireNativeComponent, } from "react-native";
 import { ViroBase } from "./ViroBase";
 import { ViroSceneContext } from "./ViroSceneContext";
+import { ViroActiveCameraTracker } from "./Utilities/ViroActiveCameraTracker";
 export class ViroScene extends ViroBase {
+    state = { activeCameraTag: null };
+    _unmounting = false;
+    // One tracker for the component's life, so the context value is stable and the cameras do
+    // not re-render on every render of the scene.
+    _cameras = new ViroActiveCameraTracker((activeCameraTag) => {
+        // A camera unmounting with the whole scene still reports in; the scene is past rendering.
+        if (!this._unmounting) {
+            this.setState({ activeCameraTag });
+        }
+    });
+    componentWillUnmount() {
+        this._unmounting = true;
+    }
     _onPlatformUpdate = (event) => {
         /**
          * ##### DEPRECATION WARNING - 'vrPlatform' is deprecated in favor of 'platform'! Support
@@ -104,29 +118,10 @@ export class ViroScene extends ViroBase {
             typeof this.props.onFuse === "object") {
             timeToFuse = this.props.onFuse.timeToFuse;
         }
-        return (<ViroSceneContext.Provider value={{
-                cameraDidMount: (camera) => {
-                    if (camera.props.active) {
-                        NativeModules.VRTCameraModule.setSceneCamera(findNodeHandle(this), findNodeHandle(camera));
-                    }
-                },
-                cameraWillUnmount: (camera) => {
-                    if (camera.props.active) {
-                        NativeModules.VRTCameraModule.removeSceneCamera(findNodeHandle(this), findNodeHandle(camera));
-                    }
-                },
-                cameraDidUpdate: (camera, active) => {
-                    if (active) {
-                        NativeModules.VRTCameraModule.setSceneCamera(findNodeHandle(this), findNodeHandle(camera));
-                    }
-                    else {
-                        NativeModules.VRTCameraModule.removeSceneCamera(findNodeHandle(this), findNodeHandle(camera));
-                    }
-                },
-            }}>
+        return (<ViroSceneContext.Provider value={this._cameras}>
         <VRTScene {...this.props} ref={(component) => {
                 this._component = component;
-            }} canHover={(this.props.onHover != undefined || this.props.onGaze != undefined)} canClick={this.props.onClick != undefined ||
+            }} activeCameraTag={this.state.activeCameraTag} canHover={(this.props.onHover != undefined || this.props.onGaze != undefined)} canClick={this.props.onClick != undefined ||
                 this.props.onClickState != undefined} canTouch={this.props.onTouch != undefined} canScroll={this.props.onScroll != undefined} canSwipe={this.props.onSwipe != undefined} canFuse={this.props.onFuse != undefined} canDrag={this.props.onDrag != undefined} canPinch={this.props.onPinch != undefined} canRotate={this.props.onRotate != undefined} canCameraTransformUpdate={this.props.onCameraTransformUpdate != undefined} onHoverViro={this._onHover} onClickViro={this._onClickState} onClick={undefined} onTouchViro={this._onTouch} onScrollViro={this._onScroll} onSwipeViro={this._onSwipe} onFuseViro={this._onFuse} onDragViro={this._onDrag} onRotateViro={this._onRotate} onPinchViro={this._onPinch} onPlatformUpdateViro={this._onPlatformUpdate} onCameraTransformUpdateViro={this._onCameraTransformUpdate} timeToFuse={timeToFuse}/>
       </ViroSceneContext.Provider>);
     }
@@ -160,5 +155,6 @@ ViroScene, {
         timeToFuse: true,
         physicsBody: true,
         onCollisionViro: true,
+        activeCameraTag: true,
     },
 });

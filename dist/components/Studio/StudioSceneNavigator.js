@@ -11,6 +11,7 @@ import { StudioPlacementIndicator } from "./StudioPlacementIndicator";
 import { StudioColocationIndicator } from "./StudioColocationIndicator";
 import { studioPlacementBannerStore } from "./domain/placementBannerStore";
 import { studioColocationStore } from "./domain/colocationStore";
+import { questMenuStore, } from "./domain/questMenuStore";
 import { StudioColocationController } from "./colocation/controller";
 import { registerSceneAnimations } from "./domain/animationRegistry";
 import { registerStudioMaterialsForAssets } from "./domain/studioMaterials";
@@ -49,9 +50,12 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
+        backgroundColor: "#000000",
+    },
+    spinner: {
+        flex: 1,
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "#000000",
     },
     recordingOverlay: {
         position: "absolute",
@@ -140,7 +144,7 @@ const StudioPlacementOverlay = ({ store, apiRef, getName }) => {
  * ready. This means VRActivity always launches with the actual content scene
  * as its initial scene, avoiding the LoadingVRScene → replace timing race.
  */
-export const StudioSceneNavigator = forwardRef(function StudioSceneNavigator({ sceneId, worldAlignment = "Gravity", autofocus = true, style, onSceneReady, onError, onSceneChange, onExitViro, onSceneLoaded, onPlaneDetected, onPlaneSelected, noAssetsMessage, loadingView, renderError, recordingIndicator = true, placementIndicator = true, colocation, colocationIndicator = true, onColocationStateChange, onColocationRoom, }, ref) {
+export const StudioSceneNavigator = forwardRef(function StudioSceneNavigator({ sceneId, worldAlignment = "Gravity", autofocus = true, style, onSceneReady, onError, onSceneChange, onExitViro, renderQuestPanel, questMenuItems, onSceneLoaded, onPlaneDetected, onPlaneSelected, noAssetsMessage, loadingView, renderError, recordingIndicator = true, placementIndicator = true, colocation, colocationIndicator = true, onColocationStateChange, onColocationRoom, }, ref) {
     const navigatorRef = useRef(null);
     const loadedSceneIdRef = useRef(null);
     const [isSceneReady, setIsSceneReady] = useState(false);
@@ -220,10 +224,18 @@ export const StudioSceneNavigator = forwardRef(function StudioSceneNavigator({ s
         studioColocationStore.setBuiltInIndicatorShown(colocationIndicator, colocationStoreOwner);
     }, [colocationIndicator, colocationStoreOwner]);
     useEffect(() => {
+        if (!isQuest)
+            return;
+        questMenuStore.set(questMenuItems, colocationStoreOwner);
+        return () => questMenuStore.clear(colocationStoreOwner);
+    }, [questMenuItems, colocationStoreOwner]);
+    useEffect(() => {
+        if (colocation)
+            studioColocationStore.clearFailure(colocationStoreOwner);
         colocationRef.current?.request(colocation ?? null, {
             restartFailed: false,
         });
-    }, [colocation]);
+    }, [colocation, colocationStoreOwner]);
     // The tap-to-place overlay would catch taps for content that is withheld
     // while a shared session is set up.
     const [colocationPending, setColocationPending] = useState(false);
@@ -426,8 +438,12 @@ export const StudioSceneNavigator = forwardRef(function StudioSceneNavigator({ s
     // the ImmersiveSpace, not in this window, so the window would otherwise sit blank
     // while the scene loads.
     if ((isQuest || isVisionOS) && !vrSceneEntry) {
+        // The host's view fills the window, as it does over the phone camera;
+        // centring it here shrank it to its content's width.
         return (<View style={styles.loader}>
-        {overlay ?? <ActivityIndicator size="large" color="#ffffff"/>}
+        {overlay ?? (<View style={styles.spinner}>
+            <ActivityIndicator size="large" color="#ffffff"/>
+          </View>)}
       </View>);
     }
     return (<StudioSceneErrorBoundary sceneId={sceneId} onError={onError} renderError={renderError}>
@@ -450,7 +466,7 @@ export const StudioSceneNavigator = forwardRef(function StudioSceneNavigator({ s
     // passthrough layer on that OpenXR compositor, so the room disappears
     // behind the scene. PBR on Quest goes with it, which is the trade — a
     // headset that shows nothing of the room is the worse of the two.
-    hdrEnabled={!isQuest} bloomEnabled={false} onExitViro={onExitViro} 
+    hdrEnabled={!isQuest} bloomEnabled={false} onExitViro={onExitViro} renderQuestPanel={renderQuestPanel} 
     // Quest-only (no-op on phones). Quest mounts a ViroScene root rather
     // than ViroARScene outside a shared session (see StudioARScene for
     // why), and a virtual root turns none of this on by itself, so both
