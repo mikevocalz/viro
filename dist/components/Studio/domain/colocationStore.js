@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.studioColocationStore = void 0;
-const utils_1 = require("./utils");
+import { GlobalListeners } from "./utils";
 const IDLE = { status: "idle" };
 /** Calls that pass no owner, as a single writer would. */
 const UNOWNED = {};
@@ -24,7 +21,7 @@ class StudioColocationStore {
     owner = null;
     finishScanHandlers = new Map();
     builtInIndicator = new Map();
-    listeners = new utils_1.GlobalListeners();
+    listeners = new GlobalListeners();
     getState() {
         return this.state;
     }
@@ -97,4 +94,4 @@ class StudioColocationStore {
         return this.owner === null || this.owner === owner;
     }
 }
-exports.studioColocationStore = new StudioColocationStore();
+export const studioColocationStore = new StudioColocationStore();

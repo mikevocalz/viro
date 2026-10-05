@@ -4,11 +4,8 @@
  * @providesModule useViroSmoothing
  */
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.useViroSmoothedPeers = useViroSmoothedPeers;
-exports.useViroSmoothedEntities = useViroSmoothedEntities;
-const react_1 = require("react");
-const ViroSmoothing_1 = require("../AR/ViroSmoothing");
+import { useEffect, useRef, useState } from "react";
+import { approachFactor, approachQuat, approachVec3, DEFAULT_SNAP_EPSILON, isQuat, isVec3, } from "../AR/ViroSmoothing";
 const DEFAULT_HALF_LIFE_MS = 35;
 /**
  * Drive a blend toward the latest target every frame.
@@ -23,15 +20,15 @@ const DEFAULT_HALF_LIFE_MS = 35;
  * the part that re-renders every consumer, so a still room is free.
  */
 function useSmoothedList(targets, keyOf, blend, options) {
-    const { halfLifeMs = DEFAULT_HALF_LIFE_MS, snapEpsilon = ViroSmoothing_1.DEFAULT_SNAP_EPSILON, enabled = true, } = options ?? {};
-    const [smoothed, setSmoothed] = (0, react_1.useState)(targets);
-    const targetsRef = (0, react_1.useRef)(targets);
-    (0, react_1.useEffect)(() => {
+    const { halfLifeMs = DEFAULT_HALF_LIFE_MS, snapEpsilon = DEFAULT_SNAP_EPSILON, enabled = true, } = options ?? {};
+    const [smoothed, setSmoothed] = useState(targets);
+    const targetsRef = useRef(targets);
+    useEffect(() => {
         targetsRef.current = targets;
     });
-    const currentRef = (0, react_1.useRef)(new Map());
-    const emittedRef = (0, react_1.useRef)([]);
-    (0, react_1.useEffect)(() => {
+    const currentRef = useRef(new Map());
+    const emittedRef = useRef([]);
+    useEffect(() => {
         if (!enabled)
             return;
         let frame = 0;
@@ -40,7 +37,7 @@ function useSmoothedList(targets, keyOf, blend, options) {
         const tick = (nowMs) => {
             if (cancelled)
                 return;
-            const factor = (0, ViroSmoothing_1.approachFactor)(last ? nowMs - last : 16, halfLifeMs);
+            const factor = approachFactor(last ? nowMs - last : 16, halfLifeMs);
             last = nowMs;
             const live = targetsRef.current;
             const map = currentRef.current;
@@ -85,8 +82,8 @@ function peerKey(peer) {
     return peer.peerId;
 }
 function blendPeer(previous, target, factor, snapEpsilon) {
-    const position = (0, ViroSmoothing_1.approachVec3)(previous.position, target.position, factor, snapEpsilon);
-    const rotation = (0, ViroSmoothing_1.approachQuat)(previous.rotation, target.rotation, factor, snapEpsilon);
+    const position = approachVec3(previous.position, target.position, factor, snapEpsilon);
+    const rotation = approachQuat(previous.rotation, target.rotation, factor, snapEpsilon);
     if (position === target.position && rotation === target.rotation)
         return target;
     return { ...target, position, rotation };
@@ -106,7 +103,7 @@ function blendPeer(previous, target, factor, snapEpsilon) {
  * Updates land at frame rate while anyone is moving, so call it in the
  * component that draws the markers rather than one that draws the whole scene.
  */
-function useViroSmoothedPeers(peers, options) {
+export function useViroSmoothedPeers(peers, options) {
     return useSmoothedList(peers, peerKey, blendPeer, options);
 }
 function entityKey(entity) {
@@ -128,14 +125,14 @@ function entityKey(entity) {
  * owns is then left alone, which is the half of the contract that keeps a drag
  * tracking the hand.
  */
-function useViroSmoothedEntities(entities, fields, options) {
-    const fieldsRef = (0, react_1.useRef)(fields);
-    const localPeerIdRef = (0, react_1.useRef)(options?.localPeerId);
-    (0, react_1.useEffect)(() => {
+export function useViroSmoothedEntities(entities, fields, options) {
+    const fieldsRef = useRef(fields);
+    const localPeerIdRef = useRef(options?.localPeerId);
+    useEffect(() => {
         fieldsRef.current = fields;
         localPeerIdRef.current = options?.localPeerId;
     });
-    const blend = (0, react_1.useRef)((previous, target, factor, snapEpsilon) => {
+    const blend = useRef((previous, target, factor, snapEpsilon) => {
         const mine = localPeerIdRef.current;
         if (mine && target.owner === mine)
             return target;
@@ -145,11 +142,11 @@ function useViroSmoothedEntities(entities, fields, options) {
             const to = target.fields[name];
             const from = previous.fields[name];
             let value;
-            if (kind === "vec3" && (0, ViroSmoothing_1.isVec3)(from) && (0, ViroSmoothing_1.isVec3)(to)) {
-                value = (0, ViroSmoothing_1.approachVec3)(from, to, factor, snapEpsilon);
+            if (kind === "vec3" && isVec3(from) && isVec3(to)) {
+                value = approachVec3(from, to, factor, snapEpsilon);
             }
-            else if (kind === "quat" && (0, ViroSmoothing_1.isQuat)(from) && (0, ViroSmoothing_1.isQuat)(to)) {
-                value = (0, ViroSmoothing_1.approachQuat)(from, to, factor, snapEpsilon);
+            else if (kind === "quat" && isQuat(from) && isQuat(to)) {
+                value = approachQuat(from, to, factor, snapEpsilon);
             }
             else {
                 continue;

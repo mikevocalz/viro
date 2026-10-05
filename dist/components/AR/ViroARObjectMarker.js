@@ -9,50 +9,15 @@
  * @providesModule ViroARObjectMarker
  */
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ViroARObjectMarker = void 0;
-const ViroBase_1 = require("../ViroBase");
-const React = __importStar(require("react"));
-const react_native_1 = require("react-native");
-const ViroPlatform_1 = require("../Utilities/ViroPlatform");
-const ViroUnsupported_1 = require("../Utilities/ViroUnsupported");
+import { ViroBase } from "../ViroBase";
+import * as React from "react";
+import { requireNativeComponent } from "react-native";
+import { isQuest, isVisionOS } from "../Utilities/ViroPlatform";
+import { warnUnsupported } from "../Utilities/ViroUnsupported";
 /**
  * Container for Viro Components anchored to a detected object.
  */
-class ViroARObjectMarker extends ViroBase_1.ViroBase {
+export class ViroARObjectMarker extends ViroBase {
     _onAnchorFound(event) {
         if (this.props.onAnchorFound) {
             this.props.onAnchorFound(event.nativeEvent.anchorFoundMap);
@@ -71,11 +36,11 @@ class ViroARObjectMarker extends ViroBase_1.ViroBase {
     render() {
         // The AR view managers are excluded from the visionOS renderer, so ViroARObjectMarker has no
         // native half there and mounting it would crash rather than render nothing.
-        if (ViroPlatform_1.isVisionOS) {
-            (0, ViroUnsupported_1.warnUnsupported)("ViroARObjectMarker", "Apple Vision Pro", "Object tracking comes from the AR subsystem, which visionOS does not carry.");
+        if (isVisionOS) {
+            warnUnsupported("ViroARObjectMarker", "Apple Vision Pro", "Object tracking comes from the AR subsystem, which visionOS does not carry.");
             return null;
         }
-        if (ViroPlatform_1.isQuest) {
+        if (isQuest) {
             console.warn("[Viro] ViroARObjectMarker is not supported on Quest and will not render.");
             return null;
         }
@@ -92,8 +57,7 @@ class ViroARObjectMarker extends ViroBase_1.ViroBase {
                 this.props.onClickState != undefined} canTouch={this.props.onTouch != undefined} canScroll={this.props.onScroll != undefined} canSwipe={this.props.onSwipe != undefined} canDrag={this.props.onDrag != undefined} canPinch={this.props.onPinch != undefined} canRotate={this.props.onRotate != undefined} canFuse={this.props.onFuse != undefined} onHoverViro={this._onHover} onClickViro={this._onClickState} onClick={undefined} onTouchViro={this._onTouch} onScrollViro={this._onScroll} onSwipeViro={this._onSwipe} onDragViro={this._onDrag} onPinchViro={this._onPinch} onRotateViro={this._onRotate} onFuseViro={this._onFuse} timeToFuse={timeToFuse} canCollide={this.props.onCollision != undefined} onCollisionViro={this._onCollision} onAnchorFoundViro={this._onAnchorFound} onAnchorUpdatedViro={this._onAnchorUpdated} onAnchorRemovedViro={this._onAnchorRemoved}/>);
     }
 }
-exports.ViroARObjectMarker = ViroARObjectMarker;
-var VRTARObjectMarker = (0, react_native_1.requireNativeComponent)("VRTARObjectMarker", 
+var VRTARObjectMarker = requireNativeComponent("VRTARObjectMarker", 
 // @ts-ignore
 ViroARObjectMarker, {
     nativeOnly: {

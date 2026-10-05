@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.studioPlacementBannerStore = void 0;
-const utils_1 = require("./utils");
+import { GlobalListeners } from "./utils";
 /**
  * The mobile tap-to-place prompt ("Tap a surface to place …") is a single-active
  * affordance (the guided queue exposes one asset at a time), so this module
@@ -13,7 +10,7 @@ class StudioPlacementBannerStore {
     active = false;
     assetName = null;
     miss = false;
-    listeners = new utils_1.GlobalListeners();
+    listeners = new GlobalListeners();
     isActive() {
         return this.active;
     }
@@ -53,4 +50,4 @@ class StudioPlacementBannerStore {
         this.listeners.notify();
     }
 }
-exports.studioPlacementBannerStore = new StudioPlacementBannerStore();
+export const studioPlacementBannerStore = new StudioPlacementBannerStore();

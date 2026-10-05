@@ -1,50 +1,14 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ViroXRSceneNavigator = void 0;
-const React = __importStar(require("react"));
-const react_native_1 = require("react-native");
-const ViroARSceneNavigator_1 = require("./AR/ViroARSceneNavigator");
-const ViroSceneNavigator_1 = require("./ViroSceneNavigator");
-const ViroPlatform_1 = require("./Utilities/ViroPlatform");
-const ViroImmersiveSpaceGate_1 = require("./VisionOS/ViroImmersiveSpaceGate");
-const ViroVisionOSModule_1 = require("./VisionOS/ViroVisionOSModule");
-const VRQuestNavigatorBridge_1 = require("./Utilities/VRQuestNavigatorBridge");
-const VRModuleOpenXR_1 = require("./Utilities/VRModuleOpenXR");
-const ViroSceneNavigatorModule = react_native_1.NativeModules.VRTSceneNavigatorModule;
-const VRLauncher = react_native_1.NativeModules.VRLauncher;
+import * as React from "react";
+import { AppState, NativeModules, PermissionsAndroid, StyleSheet, View, } from "react-native";
+import { ViroARSceneNavigator } from "./AR/ViroARSceneNavigator";
+import { ViroSceneNavigator } from "./ViroSceneNavigator";
+import { isMetaHorizonXR, isPico, isVisionOS } from "./Utilities/ViroPlatform";
+import { beginSceneRootScan, claimImmersiveSpace, ownsImmersiveSpace, releaseImmersiveSpace, scheduleImmersiveSpaceExit, sawARSceneRoot, } from "./VisionOS/ViroImmersiveSpaceGate";
+import { enterImmersiveSpace, exitImmersiveSpace, } from "./VisionOS/ViroVisionOSModule";
+import { VRQuestNavigatorBridge } from "./Utilities/VRQuestNavigatorBridge";
+import { VRCapture, VRModuleOpenXR } from "./Utilities/VRModuleOpenXR";
+const ViroSceneNavigatorModule = NativeModules.VRTSceneNavigatorModule;
+const VRLauncher = NativeModules.VRLauncher;
 // Quest VR requires a lifecycle-correct VRActivity that drives
 // ReactHostImpl.onHostResume(VRActivity) on entry. The skipActivityIdentity
 // AssertionOnHostPause feature flag (used to suppress the racy MainActivity.
@@ -115,11 +79,11 @@ function checkRNVersionForVR() {
  * ViroSceneNavigator does not take them. `passthroughEnabled`, `vrModeEnabled`
  * and `handTrackingEnabled` are Quest-only and go over the bridge alone.
  */
-exports.ViroXRSceneNavigator = React.forwardRef(function ViroXRSceneNavigator(props, ref) {
+export const ViroXRSceneNavigator = React.forwardRef(function ViroXRSceneNavigator(props, ref) {
     // Opens the scan the mount effect reads. Here rather than in an effect because a parent
     // renders before its children: this has to run before the scene root does.
-    if (ViroPlatform_1.isVisionOS)
-        (0, ViroImmersiveSpaceGate_1.beginSceneRootScan)();
+    if (isVisionOS)
+        beginSceneRootScan();
     const { initialScene, arInitialScene, vrInitialScene, 
     // Renderer config. Destructured because Quest forwards it over the intent
     // bridge rather than as props; the AR branch passes it on by hand below,
@@ -137,7 +101,7 @@ exports.ViroXRSceneNavigator = React.forwardRef(function ViroXRSceneNavigator(pr
     //        (MainActivity is itself the immersive Activity on PICO).
     // AR:    expose the underlying ViroARSceneNavigator instance directly.
     React.useImperativeHandle(ref, () => {
-        if (ViroPlatform_1.isMetaHorizonXR || ViroPlatform_1.isPico) {
+        if (isMetaHorizonXR || isPico) {
             // PICO follows Quest: navigator ops cross the activity boundary through
             // the same bridge — VRActivity owns the ViroVRSceneNavigator instance.
             // project/unproject/recenterTracking can't go through dispatchOp — that
@@ -150,19 +114,19 @@ exports.ViroXRSceneNavigator = React.forwardRef(function ViroXRSceneNavigator(pr
             // already used this way elsewhere); project/unproject reuse the generic
             // VRTSceneNavigatorModule, which already resolves views by raw tag.
             const requireViewTag = () => {
-                const tag = VRQuestNavigatorBridge_1.VRQuestNavigatorBridge.getViewTag();
+                const tag = VRQuestNavigatorBridge.getViewTag();
                 if (tag == null) {
                     throw new Error("[Viro] Quest VR scene not mounted yet — call this after the VR scene is active.");
                 }
                 return tag;
             };
             const bridgeNav = {
-                push: (scene) => VRQuestNavigatorBridge_1.VRQuestNavigatorBridge.dispatchOp({ type: "push", scene }),
-                replace: (scene) => VRQuestNavigatorBridge_1.VRQuestNavigatorBridge.dispatchOp({ type: "replace", scene }),
-                jump: (scene) => VRQuestNavigatorBridge_1.VRQuestNavigatorBridge.dispatchOp({ type: "jump", scene }),
-                pop: () => VRQuestNavigatorBridge_1.VRQuestNavigatorBridge.dispatchOp({ type: "pop" }),
-                popN: (n) => VRQuestNavigatorBridge_1.VRQuestNavigatorBridge.dispatchOp({ type: "popN", n }),
-                recenterTracking: () => VRModuleOpenXR_1.VRModuleOpenXR?.recenterTracking?.(requireViewTag()),
+                push: (scene) => VRQuestNavigatorBridge.dispatchOp({ type: "push", scene }),
+                replace: (scene) => VRQuestNavigatorBridge.dispatchOp({ type: "replace", scene }),
+                jump: (scene) => VRQuestNavigatorBridge.dispatchOp({ type: "jump", scene }),
+                pop: () => VRQuestNavigatorBridge.dispatchOp({ type: "pop" }),
+                popN: (n) => VRQuestNavigatorBridge.dispatchOp({ type: "popN", n }),
+                recenterTracking: () => VRModuleOpenXR?.recenterTracking?.(requireViewTag()),
                 // async so a missing viewTag rejects the returned promise instead of
                 // throwing synchronously — callers doing `nav.project(p).catch(...)`
                 // without awaiting still get the rejection.
@@ -172,27 +136,27 @@ exports.ViroXRSceneNavigator = React.forwardRef(function ViroXRSceneNavigator(pr
                 // VRModuleOpenXR again, for the reason given for the shared frame
                 // below. They resolve (or call onError) with RECORD_ERROR_NOT_READY
                 // before the VR scene has mounted, rather than throwing.
-                takeScreenshot: (fileName, saveToCameraRoll) => VRModuleOpenXR_1.VRCapture.takeScreenshot(VRQuestNavigatorBridge_1.VRQuestNavigatorBridge.getViewTag(), fileName, saveToCameraRoll),
-                startVideoRecording: (fileName, saveToCameraRoll, onError) => VRModuleOpenXR_1.VRCapture.startVideoRecording(VRQuestNavigatorBridge_1.VRQuestNavigatorBridge.getViewTag(), fileName, saveToCameraRoll, onError),
-                stopVideoRecording: () => VRModuleOpenXR_1.VRCapture.stopVideoRecording(VRQuestNavigatorBridge_1.VRQuestNavigatorBridge.getViewTag()),
+                takeScreenshot: (fileName, saveToCameraRoll) => VRCapture.takeScreenshot(VRQuestNavigatorBridge.getViewTag(), fileName, saveToCameraRoll),
+                startVideoRecording: (fileName, saveToCameraRoll, onError) => VRCapture.startVideoRecording(VRQuestNavigatorBridge.getViewTag(), fileName, saveToCameraRoll, onError),
+                stopVideoRecording: () => VRCapture.stopVideoRecording(VRQuestNavigatorBridge.getViewTag()),
                 // CL-H. These are the two names `metaSpatialAnchorFrameSource` looks for,
                 // and their absence here is the whole of why co-location did not work on
                 // Quest: the native side has driven Meta's group sharing since the OpenXR
                 // session learned it, and nothing forwarded to it. They go through
                 // VRModuleOpenXR rather than ARSceneNavigatorModule because that module
                 // resolves its view as a VRTARSceneNavigator, which VRActivity does not host.
-                rvCreateSharedFrame: async (groupId) => VRModuleOpenXR_1.VRModuleOpenXR?.rvCreateSharedFrame?.(requireViewTag(), groupId) ?? {
+                rvCreateSharedFrame: async (groupId) => VRModuleOpenXR?.rvCreateSharedFrame?.(requireViewTag(), groupId) ?? {
                     success: false,
                     error: "VRModuleOpenXR is unavailable — is this a Quest build?",
                 },
-                rvJoinSharedFrame: async (groupId) => VRModuleOpenXR_1.VRModuleOpenXR?.rvJoinSharedFrame?.(requireViewTag(), groupId) ?? {
+                rvJoinSharedFrame: async (groupId) => VRModuleOpenXR?.rvJoinSharedFrame?.(requireViewTag(), groupId) ?? {
                     success: false,
                     error: "VRModuleOpenXR is unavailable — is this a Quest build?",
                 },
             };
             return { sceneNavigator: bridgeNav, arSceneNavigator: bridgeNav };
         }
-        if (ViroPlatform_1.isVisionOS) {
+        if (isVisionOS) {
             // Expose the instance under both names, as the Quest branch does. Callers written for
             // the AR path reach for `arSceneNavigator` (Studio does), and there is no reason for
             // them to learn a third spelling just because the host underneath changed.
@@ -202,7 +166,7 @@ exports.ViroXRSceneNavigator = React.forwardRef(function ViroXRSceneNavigator(pr
         return arRef.current;
     }, []);
     // Track AppState so we can detect background → active transitions.
-    const appStateRef = React.useRef(react_native_1.AppState.currentState);
+    const appStateRef = React.useRef(AppState.currentState);
     // Identity of this navigator for ImmersiveSpace ownership. A symbol rather than a
     // counter: it cannot collide, and it means nothing outside this comparison.
     const visionOSOwnerRef = React.useRef(Symbol("ViroXRSceneNavigator"));
@@ -221,11 +185,11 @@ exports.ViroXRSceneNavigator = React.forwardRef(function ViroXRSceneNavigator(pr
     // the visionOS ImmersiveSpace shares this runtime: the scene tree below stays mounted, and
     // the native side hands its VRTScene to the CompositorServices render loop.
     React.useEffect(() => {
-        if (!ViroPlatform_1.isVisionOS)
+        if (!isVisionOS)
             return;
         // An AR-rooted scene has nothing to put in the space — ViroARScene cannot mount on visionOS
         // and rendered null just above. Opening it anyway dims the room and shows an empty world.
-        if ((0, ViroImmersiveSpaceGate_1.sawARSceneRoot)()) {
+        if (sawARSceneRoot()) {
             console.warn("[Viro] The scene given to ViroXRSceneNavigator is rooted in ViroARScene, which " +
                 "visionOS does not support, so the ImmersiveSpace was not opened. Root the scene " +
                 "in ViroScene, or pass one through `vrInitialScene`.");
@@ -235,9 +199,9 @@ exports.ViroXRSceneNavigator = React.forwardRef(function ViroXRSceneNavigator(pr
         // who has it; here the ImmersiveSpace is, and this is the same flag. The last navigator to
         // claim it is the one driving it, and only that one may close it again.
         const owner = visionOSOwnerRef.current;
-        (0, ViroImmersiveSpaceGate_1.claimImmersiveSpace)(owner);
+        claimImmersiveSpace(owner);
         let cancelled = false;
-        const open = () => (0, ViroVisionOSModule_1.enterImmersiveSpace)(visionOSImmersionStyle).then((opened) => {
+        const open = () => enterImmersiveSpace(visionOSImmersionStyle).then((opened) => {
             if (!opened && !cancelled) {
                 console.warn("[Viro] Could not open the visionOS ImmersiveSpace. Check that the host app's " +
                     "SwiftUI App declares `ImmersiveSpace(id: ViroImmersiveSpace.id)` and applies " +
@@ -249,8 +213,8 @@ exports.ViroXRSceneNavigator = React.forwardRef(function ViroXRSceneNavigator(pr
         // Activity finishes on the way out. visionOS closes the ImmersiveSpace on the same
         // transition, so it is reopened for the same reason — and only by whoever owns it, or two
         // mounted navigators would both reopen and fight over the one surface.
-        const appStateSub = react_native_1.AppState.addEventListener("change", (nextState) => {
-            if (nextState === "active" && (0, ViroImmersiveSpaceGate_1.ownsImmersiveSpace)(owner)) {
+        const appStateSub = AppState.addEventListener("change", (nextState) => {
+            if (nextState === "active" && ownsImmersiveSpace(owner)) {
                 open();
             }
         });
@@ -259,9 +223,9 @@ exports.ViroXRSceneNavigator = React.forwardRef(function ViroXRSceneNavigator(pr
             appStateSub.remove();
             // Not on the way out of a screen that no longer owns the space: another navigator has
             // taken it over, and closing it would blank what the wearer is actually looking at.
-            if ((0, ViroImmersiveSpaceGate_1.releaseImmersiveSpace)(owner)) {
-                (0, ViroImmersiveSpaceGate_1.scheduleImmersiveSpaceExit)(() => {
-                    (0, ViroVisionOSModule_1.exitImmersiveSpace)();
+            if (releaseImmersiveSpace(owner)) {
+                scheduleImmersiveSpaceExit(() => {
+                    exitImmersiveSpace();
                 });
             }
         };
@@ -272,13 +236,13 @@ exports.ViroXRSceneNavigator = React.forwardRef(function ViroXRSceneNavigator(pr
     // a 2D RN UI never bleeds into the XR scene). VRActivity auto-finishes
     // when MainActivity resumes, so we re-launch on background→active.
     React.useEffect(() => {
-        if (!ViroPlatform_1.isMetaHorizonXR && !ViroPlatform_1.isPico)
+        if (!isMetaHorizonXR && !isPico)
             return;
         checkRNVersionForVR();
         const registerIntentAndLaunch = () => {
             const scene = vrInitialScene ?? initialScene;
             if (scene) {
-                VRQuestNavigatorBridge_1.VRQuestNavigatorBridge.setIntent(scene, {
+                VRQuestNavigatorBridge.setIntent(scene, {
                     hdrEnabled,
                     pbrEnabled,
                     bloomEnabled,
@@ -292,16 +256,16 @@ exports.ViroXRSceneNavigator = React.forwardRef(function ViroXRSceneNavigator(pr
                     debug,
                 });
             }
-            VRQuestNavigatorBridge_1.VRQuestNavigatorBridge.setVRActive(true);
+            VRQuestNavigatorBridge.setVRActive(true);
             VRLauncher?.launchVRScene?.();
         };
         // Request the runtime grants once before the first launch. Caught and
         // ignored on failure — a denied/unavailable permission should degrade
         // (no planes, no passthrough camera), not block VR from opening at all.
-        react_native_1.PermissionsAndroid.requestMultiple(QUEST_RUNTIME_PERMISSIONS)
+        PermissionsAndroid.requestMultiple(QUEST_RUNTIME_PERMISSIONS)
             .catch(() => undefined)
             .then(registerIntentAndLaunch);
-        const sub = react_native_1.AppState.addEventListener("change", (nextState) => {
+        const sub = AppState.addEventListener("change", (nextState) => {
             const prev = appStateRef.current;
             appStateRef.current = nextState;
             if (prev === "active" && nextState !== "active") {
@@ -311,13 +275,13 @@ exports.ViroXRSceneNavigator = React.forwardRef(function ViroXRSceneNavigator(pr
             // (Quest menu, home, recents). Explicit exitVRScene() clears isVRActive()
             // before finishing VRActivity, so Activity-transition-driven background→active
             // cycles are ignored here.
-            if (prev !== "active" && nextState === "active" && VRQuestNavigatorBridge_1.VRQuestNavigatorBridge.isVRActive()) {
+            if (prev !== "active" && nextState === "active" && VRQuestNavigatorBridge.isVRActive()) {
                 // Skip if we were only briefly out of "active" — that's a racy
                 // dual-Activity ReactHost bounce, not a genuine menu return.
                 const backgroundedFor = Date.now() - leftActiveAtRef.current;
                 if (leftActiveAtRef.current > 0 && backgroundedFor < 1500)
                     return;
-                VRQuestNavigatorBridge_1.VRQuestNavigatorBridge.setVRActive(true);
+                VRQuestNavigatorBridge.setVRActive(true);
                 VRLauncher?.launchVRScene?.();
             }
         });
@@ -326,9 +290,9 @@ exports.ViroXRSceneNavigator = React.forwardRef(function ViroXRSceneNavigator(pr
     // Quest AND PICO render nothing here — VRActivity owns the display.
     // The XR scene runs in a dedicated immersive activity so MainActivity
     // can stay a 2D panel (no React Native UI bleed into the XR scene).
-    if (ViroPlatform_1.isMetaHorizonXR || ViroPlatform_1.isPico)
+    if (isMetaHorizonXR || isPico)
         return null;
-    if (ViroPlatform_1.isVisionOS) {
+    if (isVisionOS) {
         // The visionOS renderer has no AR subsystem — every VROAR* class is excluded from the
         // xros build, so a ViroARScene root has no view manager and fails at mount with
         // "View config not found for component `VRTARScene`". The scene root has to be a plain
@@ -347,18 +311,18 @@ exports.ViroXRSceneNavigator = React.forwardRef(function ViroXRSceneNavigator(pr
         // window is black. The scene tree still mounts, which is what matters: that is how the
         // native VRTScene reaches the renderer.
         const { style: _ignoredStyle, ...visionRest } = rest;
-        return (<react_native_1.View style={styles.visionOSHost} pointerEvents="none">
-          <ViroSceneNavigator_1.ViroSceneNavigator ref={visionRef} initialScene={visionScene} {...visionRest}/>
-        </react_native_1.View>);
+        return (<View style={styles.visionOSHost} pointerEvents="none">
+          <ViroSceneNavigator ref={visionRef} initialScene={visionScene} {...visionRest}/>
+        </View>);
     }
     const scene = arInitialScene ?? initialScene;
     if (!scene) {
         console.warn("[Viro] ViroXRSceneNavigator requires `arInitialScene` or `initialScene`.");
         return null;
     }
-    return (<ViroARSceneNavigator_1.ViroARSceneNavigator ref={arRef} initialScene={scene} hdrEnabled={hdrEnabled} pbrEnabled={pbrEnabled} bloomEnabled={bloomEnabled} shadowsEnabled={shadowsEnabled} multisamplingEnabled={multisamplingEnabled} {...rest}/>);
+    return (<ViroARSceneNavigator ref={arRef} initialScene={scene} hdrEnabled={hdrEnabled} pbrEnabled={pbrEnabled} bloomEnabled={bloomEnabled} shadowsEnabled={shadowsEnabled} multisamplingEnabled={multisamplingEnabled} {...rest}/>);
 });
-const styles = react_native_1.StyleSheet.create({
+const styles = StyleSheet.create({
     /** See the visionOS branch above: present in the tree, absent from the layout. */
     visionOSHost: {
         position: "absolute",

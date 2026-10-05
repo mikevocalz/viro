@@ -1,6 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.classifyAndroidXRBuild = classifyAndroidXRBuild;
 /**
  * Classify Android XR hardware from Android Build facts without coupling Viro
  * to a single product generation.
@@ -10,7 +7,7 @@ exports.classifyAndroidXRBuild = classifyAndroidXRBuild;
  * Quest-compatible Android identity on newer hardware, so this classifier is
  * only for routing/diagnostics; runtime capabilities remain authoritative.
  */
-function classifyAndroidXRBuild(info) {
+export function classifyAndroidXRBuild(info) {
     const manufacturer = (info.manufacturer ?? "").trim().toLowerCase();
     const brand = (info.brand ?? "").trim().toLowerCase();
     const model = (info.model ?? "").trim().toLowerCase();

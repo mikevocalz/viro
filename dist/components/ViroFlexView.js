@@ -10,51 +10,16 @@
  * @flow
  */
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ViroFlexView = void 0;
-const React = __importStar(require("react"));
-const react_native_1 = require("react-native");
-const ViroProps_1 = require("./Utilities/ViroProps");
-const ViroBase_1 = require("./ViroBase");
+import * as React from "react";
+import { requireNativeComponent } from "react-native";
+import { checkMisnamedProps } from "./Utilities/ViroProps";
+import { ViroBase } from "./ViroBase";
 /**
  * Used to render a ViroFlexView
  */
-class ViroFlexView extends ViroBase_1.ViroBase {
+export class ViroFlexView extends ViroBase {
     render() {
-        (0, ViroProps_1.checkMisnamedProps)("ViroFlexView", this.props);
+        checkMisnamedProps("ViroFlexView", this.props);
         // Since materials and transformBehaviors can be either a string or an array, convert the string to a 1-element array.
         let materials = typeof this.props.materials === "string"
             ? new Array(this.props.materials)
@@ -107,8 +72,7 @@ class ViroFlexView extends ViroBase_1.ViroBase {
         return <VROFlexView {...nativeProps}/>;
     }
 }
-exports.ViroFlexView = ViroFlexView;
-var VROFlexView = (0, react_native_1.requireNativeComponent)("VRTFlexView", 
+var VROFlexView = requireNativeComponent("VRTFlexView", 
 // @ts-ignore
 ViroFlexView, {
     nativeOnly: {

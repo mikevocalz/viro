@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.StudioVisibilityStore = void 0;
-const utils_1 = require("./utils");
+import { ChangeListeners, KeyedListeners, isDev, } from "./utils";
 /**
  * Per-scene visibility store, keyed by scene asset placement id. Seeded from
  * each asset's author-time `hidden_on_load` default at scene load; Set
@@ -12,10 +9,10 @@ const utils_1 = require("./utils");
  * Visibility on one object repaints only that node, not the whole scene. Node
  * factories subscribe to their own asset id.
  */
-class StudioVisibilityStore {
+export class StudioVisibilityStore {
     visible = new Map();
-    listeners = new utils_1.KeyedListeners();
-    changes = new utils_1.ChangeListeners();
+    listeners = new KeyedListeners();
+    changes = new ChangeListeners();
     /** Current visibility; defaults to visible for assets never seeded/set. */
     isVisible(assetId) {
         return this.visible.get(assetId) ?? true;
@@ -47,7 +44,7 @@ class StudioVisibilityStore {
         if (this.visible.get(assetId) === next)
             return;
         this.visible.set(assetId, next);
-        if ((0, utils_1.isDev)()) {
+        if (isDev()) {
             console.log(`[Studio] Visibility "${assetId}" =`, next);
         }
         this.listeners.notify(assetId);
@@ -70,4 +67,3 @@ class StudioVisibilityStore {
         this.changes.notify(null, "local");
     }
 }
-exports.StudioVisibilityStore = StudioVisibilityStore;

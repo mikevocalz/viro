@@ -1,22 +1,19 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.useViroLight = useViroLight;
 /**
  * Lifecycle hook for web light components. A light is a VROLight (not a node):
  * it's created via the C API, added to the enclosing node, updated as props
  * change, and removed on unmount.
  */
-const react_1 = require("react");
-const ViroWebContext_1 = require("./ViroWebContext");
-const viroColor_1 = require("./viroColor");
-const useDeferredRelease_1 = require("./useDeferredRelease");
-function useViroLight(type, props) {
-    const scene = (0, ViroWebContext_1.useViroScene)();
-    const parent = (0, ViroWebContext_1.useViroParentNode)();
-    const [light] = (0, react_1.useState)(() => scene.createLight(type));
+import { useState, useEffect } from "react";
+import { useViroScene, useViroParentNode } from "./ViroWebContext";
+import { parseColorToRGBA } from "./viroColor";
+import { useDeferredRelease } from "./useDeferredRelease";
+export function useViroLight(type, props) {
+    const scene = useViroScene();
+    const parent = useViroParentNode();
+    const [light] = useState(() => scene.createLight(type));
     // Deferred destroy: StrictMode's remount re-adds this same handle.
-    const lightRelease = (0, useDeferredRelease_1.useDeferredRelease)();
-    (0, react_1.useEffect)(() => {
+    const lightRelease = useDeferredRelease();
+    useEffect(() => {
         lightRelease.cancel();
         scene.addLightToNode(parent, light);
         return () => {
@@ -28,9 +25,9 @@ function useViroLight(type, props) {
     const { color, intensity, temperature, direction, position, attenuationStartDistance, attenuationEndDistance, innerAngle, outerAngle, castsShadow, influenceBitMask, shadowOpacity, shadowMapSize, shadowBias, shadowNearZ, shadowFarZ, shadowOrthographicSize, } = props;
     const dirKey = direction ? direction.join(",") : "";
     const posKey = position ? position.join(",") : "";
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         if (color !== undefined) {
-            const [r, g, b] = (0, viroColor_1.parseColorToRGBA)(color);
+            const [r, g, b] = parseColorToRGBA(color);
             scene.setLightColor(light, r, g, b);
         }
         if (intensity !== undefined)

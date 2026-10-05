@@ -1,9 +1,6 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.useStudioShaderTimeUniforms = useStudioShaderTimeUniforms;
-const react_1 = require("react");
-const ViroMaterials_1 = require("../../Material/ViroMaterials");
-const materialConfig_1 = require("./materialConfig");
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import { ViroMaterials } from "../../Material/ViroMaterials";
+import { materialConfigNeedsTimeUniform, parseMaterialConfig, studioMaterialName, } from "./materialConfig";
 /** ~60fps — matches Viro starter kit / shader docs. */
 const TIME_TICK_MS = 16;
 function computeTimeUniformPayload(assets) {
@@ -13,10 +10,10 @@ function computeTimeUniformPayload(assets) {
             continue;
         if (asset.material_config == null)
             continue;
-        const config = (0, materialConfig_1.parseMaterialConfig)(asset.material_config);
-        if (!config || !(0, materialConfig_1.materialConfigNeedsTimeUniform)(config))
+        const config = parseMaterialConfig(asset.material_config);
+        if (!config || !materialConfigNeedsTimeUniform(config))
             continue;
-        names.push((0, materialConfig_1.studioMaterialName)(asset.id));
+        names.push(studioMaterialName(asset.id));
     }
     names.sort();
     return { key: names.join("|"), names };
@@ -25,20 +22,20 @@ function computeTimeUniformPayload(assets) {
  * Drives the `time` shader uniform for materials that use animated presets.
  * Uses `setInterval(16)` and `Date.now() % 1000000` like working Viro starter kits.
  */
-function useStudioShaderTimeUniforms(assets) {
-    const payload = (0, react_1.useMemo)(() => computeTimeUniformPayload(assets), [assets]);
-    const payloadRef = (0, react_1.useRef)(payload);
+export function useStudioShaderTimeUniforms(assets) {
+    const payload = useMemo(() => computeTimeUniformPayload(assets), [assets]);
+    const payloadRef = useRef(payload);
     payloadRef.current = payload;
-    const applyTimeUniforms = (0, react_1.useCallback)(() => {
+    const applyTimeUniforms = useCallback(() => {
         const { names } = payloadRef.current;
         if (names.length === 0)
             return;
         const time = Date.now() % 1_000_000;
         for (const name of names) {
-            ViroMaterials_1.ViroMaterials.updateShaderUniform(name, "time", "float", time);
+            ViroMaterials.updateShaderUniform(name, "time", "float", time);
         }
     }, []);
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         if (payload.names.length === 0)
             return;
         const id = setInterval(applyTimeUniforms, TIME_TICK_MS);

@@ -1,10 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.installExtendedWebInput = installExtendedWebInput;
-exports.uninstallExtendedWebInput = uninstallExtendedWebInput;
-exports.missingWebInput = missingWebInput;
-exports.warnIfWebInputUnavailable = warnIfWebInputUnavailable;
-exports.configureWebDrag = configureWebDrag;
 const installed = new WeakMap();
 function distance(a, b) {
     return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
@@ -16,7 +9,7 @@ function distance(a, b) {
  * The WASM binary remains feature-detected so a JS bundle can still load
  * against an older renderer; those two capabilities simply stay unavailable.
  */
-function installExtendedWebInput(renderer) {
+export function installExtendedWebInput(renderer) {
     const existing = installed.get(renderer);
     if (existing)
         return existing;
@@ -174,7 +167,7 @@ function installExtendedWebInput(renderer) {
  * outlived the renderer, and a canvas that got a new renderer fed every wheel
  * and pinch into the old module as well.
  */
-function uninstallExtendedWebInput(renderer) {
+export function uninstallExtendedWebInput(renderer) {
     const state = installed.get(renderer);
     if (!state)
         return;
@@ -191,7 +184,7 @@ const REQUIRED_EXPORTS = {
     scroll: "viroOnScroll",
 };
 /** Which of the requested inputs the loaded renderer cannot deliver. */
-function missingWebInput(renderer, wanted) {
+export function missingWebInput(renderer, wanted) {
     const module = renderer.wasmModule;
     return wanted.filter((kind) => typeof module[REQUIRED_EXPORTS[kind]] !== "function");
 }
@@ -202,7 +195,7 @@ const warned = new WeakSet();
  * nothing happens, which is what @reactvision/viro-web-renderer 1.0.1 does.
  * Returns true if it warned.
  */
-function warnIfWebInputUnavailable(renderer, wanted) {
+export function warnIfWebInputUnavailable(renderer, wanted) {
     if (wanted.length === 0 || warned.has(renderer))
         return false;
     const missing = missingWebInput(renderer, wanted);
@@ -215,7 +208,7 @@ function warnIfWebInputUnavailable(renderer, wanted) {
         "webRendererOptions={{ assetBaseUrl }} pointing at it. See docs/WEB_PANEL_INPUT_PARITY.md.");
     return true;
 }
-function configureWebDrag(renderer, handle, config) {
+export function configureWebDrag(renderer, handle, config) {
     const module = renderer.wasmModule;
     if (!module.viroSetNodeDragConfig || config.dragType === "Gizmo")
         return false;

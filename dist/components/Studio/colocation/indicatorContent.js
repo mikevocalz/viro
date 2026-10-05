@@ -1,14 +1,11 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.studioColocationIndicatorContent = studioColocationIndicatorContent;
-const ViroColocationRooms_1 = require("../../AR/ViroColocationRooms");
+import { formatJoinCode } from "../../AR/ViroColocationRooms";
 function peersLine(peers) {
     if (peers === 0)
         return "No one else is here yet";
     return peers === 1 ? "1 other device" : `${peers} other devices`;
 }
 /** What both indicator variants show for a state; null shows nothing. */
-function studioColocationIndicatorContent(state, originPrompt = null, device = "phone") {
+export function studioColocationIndicatorContent(state, originPrompt = null, device = "phone") {
     const headset = device === "headset";
     switch (state.status) {
         case "idle":
@@ -45,7 +42,7 @@ function studioColocationIndicatorContent(state, originPrompt = null, device = "
                         ? "Tap a surface to place the scene."
                         : "Point your device at a surface to place the scene.",
                     code: originPrompt.joinCode
-                        ? (0, ViroColocationRooms_1.formatJoinCode)(originPrompt.joinCode)
+                        ? formatJoinCode(originPrompt.joinCode)
                         : null,
                     done: null,
                     tone: "progress",
@@ -95,7 +92,7 @@ function studioColocationIndicatorContent(state, originPrompt = null, device = "
                 title: state.room.isHost ? "Sharing this room" : "Joined this room",
                 detail: peersLine(state.peers),
                 code: state.room.isHost && state.room.joinCode
-                    ? (0, ViroColocationRooms_1.formatJoinCode)(state.room.joinCode)
+                    ? formatJoinCode(state.room.joinCode)
                     : null,
                 done: null,
                 tone: "live",

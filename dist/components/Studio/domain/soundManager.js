@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.StudioSoundManager = exports.SOUND_WAIT_BACKSTOP_MS = void 0;
-const utils_1 = require("./utils");
+import { GlobalListeners, isDev } from "./utils";
 /**
  * Last-resort cap on how long a step waits for a non-looping PLAY to finish. A
  * clip that fails to load fires onError (released at once); a clip whose native
@@ -10,15 +7,15 @@ const utils_1 = require("./utils");
  * Generous on purpose: it must outlast any realistic single clip so it never
  * cuts one short, only catches a genuine stall.
  */
-exports.SOUND_WAIT_BACKSTOP_MS = 5 * 60 * 1000;
+export const SOUND_WAIT_BACKSTOP_MS = 5 * 60 * 1000;
 /**
  * Per-scene sound store. PLAY adds an entry under a fresh playId; STOP removes
  * by audio asset id (null = all). The whole <StudioSounds> list re-renders on
  * any change, so subscribers are GLOBAL like StudioVariableStore (not per-key).
  */
-class StudioSoundManager {
+export class StudioSoundManager {
     sounds = new Map();
-    listeners = new utils_1.GlobalListeners();
+    listeners = new GlobalListeners();
     nextPlayId = 1;
     // Per-playId completion callback for a step waiting on a non-looping PLAY.
     // Fired on natural finish (via remove) AND when the sound is cut short by a
@@ -85,10 +82,10 @@ class StudioSoundManager {
             // Non-looping waited sound: arm the stall backstop. A looping sound is
             // never awaited, so it gets no timer.
             if (!entry.loop) {
-                this.finishTimers.set(playId, setTimeout(() => this.remove(playId), exports.SOUND_WAIT_BACKSTOP_MS));
+                this.finishTimers.set(playId, setTimeout(() => this.remove(playId), SOUND_WAIT_BACKSTOP_MS));
             }
         }
-        if ((0, utils_1.isDev)()) {
+        if (isDev()) {
             console.log(`[Studio] Sound play "${entry.audioAssetId}" (#${playId})`);
         }
         this.listeners.notify();
@@ -128,4 +125,3 @@ class StudioSoundManager {
             this.fire(id);
     }
 }
-exports.StudioSoundManager = StudioSoundManager;

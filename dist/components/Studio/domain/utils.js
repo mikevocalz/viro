@@ -1,12 +1,8 @@
-"use strict";
 // Small shared helpers for the Studio runtime domain.
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ChangeListeners = exports.KeyedListeners = exports.GlobalListeners = exports.isDev = void 0;
 /** True only in a dev build; gates verbose runtime logging in the Studio stores. */
-const isDev = () => typeof __DEV__ !== "undefined" && __DEV__;
-exports.isDev = isDev;
+export const isDev = () => typeof __DEV__ !== "undefined" && __DEV__;
 /** A set of subscribers notified together (variable + sound stores). */
-class GlobalListeners {
+export class GlobalListeners {
     listeners = new Set();
     subscribe(listener) {
         this.listeners.add(listener);
@@ -19,10 +15,9 @@ class GlobalListeners {
         [...this.listeners].forEach((fn) => fn());
     }
 }
-exports.GlobalListeners = GlobalListeners;
 /** Subscribers partitioned by key; notify(key) wakes only that key's set
  * (the visibility store's per-asset variant). */
-class KeyedListeners {
+export class KeyedListeners {
     listeners = new Map();
     subscribe(key, listener) {
         let set = this.listeners.get(key);
@@ -45,8 +40,7 @@ class KeyedListeners {
         this.listeners.forEach((set) => [...set].forEach((fn) => fn()));
     }
 }
-exports.KeyedListeners = KeyedListeners;
-class ChangeListeners {
+export class ChangeListeners {
     listeners = new Set();
     subscribe(listener) {
         this.listeners.add(listener);
@@ -58,4 +52,3 @@ class ChangeListeners {
         [...this.listeners].forEach((fn) => fn(key, origin));
     }
 }
-exports.ChangeListeners = ChangeListeners;

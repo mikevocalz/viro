@@ -10,49 +10,14 @@
  * @flow
  */
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ViroSoundField = void 0;
-const React = __importStar(require("react"));
-const react_native_1 = require("react-native");
+import * as React from "react";
+import { findNodeHandle, NativeModules, Platform, requireNativeComponent, } from "react-native";
 // @ts-ignore
 // The visionOS-safe resolver. Image.resolveAssetSource returns an empty uri there;
 // see ViroAssetSource.ts for why, and what it falls back to.
-const ViroAssetSource_1 = require("./Utilities/ViroAssetSource");
-const ViroProps_1 = require("./Utilities/ViroProps");
-class ViroSoundField extends React.Component {
+import { resolveViroAssetSource as resolveAssetSource } from "./Utilities/ViroAssetSource";
+import { checkMisnamedProps } from "./Utilities/ViroProps";
+export class ViroSoundField extends React.Component {
     _component = null;
     _onFinish = (event) => {
         this.props.onFinish && this.props.onFinish(event);
@@ -64,10 +29,10 @@ class ViroSoundField extends React.Component {
         this._component?.setNativeProps(nativeProps);
     };
     render() {
-        (0, ViroProps_1.checkMisnamedProps)("ViroSoundField", this.props);
+        checkMisnamedProps("ViroSoundField", this.props);
         var soundSrc = this.props.source;
         if (typeof soundSrc === "number") {
-            soundSrc = (0, ViroAssetSource_1.resolveViroAssetSource)(soundSrc);
+            soundSrc = resolveAssetSource(soundSrc);
         }
         else if (typeof soundSrc === "string") {
             /**
@@ -94,18 +59,17 @@ class ViroSoundField extends React.Component {
         return <VRTSoundField {...nativeProps}/>;
     }
     seekToTime = (timeInSeconds) => {
-        switch (react_native_1.Platform.OS) {
+        switch (Platform.OS) {
             case "ios":
-                react_native_1.NativeModules.VRTSoundFieldManager.seekToTime((0, react_native_1.findNodeHandle)(this), timeInSeconds);
+                NativeModules.VRTSoundFieldManager.seekToTime(findNodeHandle(this), timeInSeconds);
                 break;
             case "android":
-                react_native_1.NativeModules.UIManager.dispatchViewManagerCommand((0, react_native_1.findNodeHandle)(this), react_native_1.NativeModules.UIManager.VRTSoundField.Commands.seekToTime, [timeInSeconds]);
+                NativeModules.UIManager.dispatchViewManagerCommand(findNodeHandle(this), NativeModules.UIManager.VRTSoundField.Commands.seekToTime, [timeInSeconds]);
                 break;
         }
     };
 }
-exports.ViroSoundField = ViroSoundField;
-var VRTSoundField = (0, react_native_1.requireNativeComponent)("VRTSoundField", 
+var VRTSoundField = requireNativeComponent("VRTSoundField", 
 // @ts-ignore
 ViroSoundField, {
     nativeOnly: {

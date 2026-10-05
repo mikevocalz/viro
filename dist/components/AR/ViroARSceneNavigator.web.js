@@ -1,39 +1,3 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ViroARSceneNavigator = ViroARSceneNavigator;
 /**
  * Web implementation of ViroARSceneNavigator. Owns the <canvas> + ViroWebRenderer
  * (WASM host, virocore) and drives a ViroArSession which runs slam-wasm to track
@@ -53,13 +17,13 @@ exports.ViroARSceneNavigator = ViroARSceneNavigator;
  * MVP scope: single scene; camera + 6-DoF pose tracking. Planes/hit-test are a
  * follow-up.
  */
-const React = __importStar(require("react"));
-const react_1 = require("react");
-const viro_web_renderer_1 = require("@reactvision/viro-web-renderer");
-const ViroWebContext_1 = require("../Web/ViroWebContext");
-const viroRendererHost_1 = require("../Web/viroRendererHost");
-const useViroRendererEffects_1 = require("../Web/useViroRendererEffects");
-const useViroReticle_1 = require("../Web/useViroReticle");
+import * as React from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ViroArSession, ViroTrackingState, TrackingReason, requestDeviceMotionPermission, } from "@reactvision/viro-web-renderer";
+import { ViroRendererContext, ViroParentNodeContext, ViroARContext, } from "../Web/ViroWebContext";
+import { useViroWebRenderer } from "../Web/viroRendererHost";
+import { useViroRendererEffects, } from "../Web/useViroRendererEffects";
+import { useViroReticle } from "../Web/useViroReticle";
 const containerStyle = {
     position: "relative",
     width: "100%",
@@ -147,41 +111,41 @@ const MOTION_MISSING = "No motion sensor data. AR can't start tracking on this d
 const NO_MOTION_AFTER_MS = 3000;
 function trackingLabel(state) {
     switch (state) {
-        case viro_web_renderer_1.ViroTrackingState.Normal:
+        case ViroTrackingState.Normal:
             return "Tracking";
-        case viro_web_renderer_1.ViroTrackingState.Limited:
+        case ViroTrackingState.Limited:
             return "Tracking limited";
         default:
             return "No tracking";
     }
 }
-function ViroARSceneNavigator(props) {
-    const canvasRef = (0, react_1.useRef)(null);
-    const sessionRef = (0, react_1.useRef)(null);
-    const [started, setStarted] = (0, react_1.useState)(false);
-    const [starting, setStarting] = (0, react_1.useState)(false);
-    const [error, setError] = (0, react_1.useState)(null);
-    const [tracking, setTracking] = (0, react_1.useState)(viro_web_renderer_1.ViroTrackingState.Unavailable);
-    const [motionMissing, setMotionMissing] = (0, react_1.useState)(false);
-    const noGravitySinceRef = (0, react_1.useRef)(null);
-    const motionMissingRef = (0, react_1.useRef)(false);
-    const [anchors, setAnchors] = (0, react_1.useState)([]);
+export function ViroARSceneNavigator(props) {
+    const canvasRef = useRef(null);
+    const sessionRef = useRef(null);
+    const [started, setStarted] = useState(false);
+    const [starting, setStarting] = useState(false);
+    const [error, setError] = useState(null);
+    const [tracking, setTracking] = useState(ViroTrackingState.Unavailable);
+    const [motionMissing, setMotionMissing] = useState(false);
+    const noGravitySinceRef = useRef(null);
+    const motionMissingRef = useRef(false);
+    const [anchors, setAnchors] = useState([]);
     // One renderer per canvas, kept across StrictMode's unmount/remount and torn
     // down (render loop included) on a real unmount. See viroRendererHost.
-    const renderer = (0, viroRendererHost_1.useViroWebRenderer)(canvasRef, props.webRendererOptions, (err) => {
+    const renderer = useViroWebRenderer(canvasRef, props.webRendererOptions, (err) => {
         console.error("[Viro web AR] failed to initialize renderer:", err);
         setError("Could not initialize the renderer.");
     });
-    (0, useViroRendererEffects_1.useViroRendererEffects)(renderer, props);
-    (0, useViroReticle_1.useViroReticle)(renderer, props);
-    const rootNode = (0, react_1.useMemo)(() => (renderer ? renderer.scene.getRootNode() : 0), [renderer]);
+    useViroRendererEffects(renderer, props);
+    useViroReticle(renderer, props);
+    const rootNode = useMemo(() => (renderer ? renderer.scene.getRootNode() : 0), [renderer]);
     // The camera session ends with the navigator.
-    (0, react_1.useEffect)(() => () => {
+    useEffect(() => () => {
         sessionRef.current?.stop();
         sessionRef.current = null;
     }, []);
     // Keep the renderer's viewport in sync with the canvas size.
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         const canvas = canvasRef.current;
         if (!renderer || !canvas)
             return;
@@ -190,7 +154,7 @@ function ViroARSceneNavigator(props) {
         renderer.resize();
         return () => observer.disconnect();
     }, [renderer]);
-    const resolveLoadSlam = (0, react_1.useCallback)(() => {
+    const resolveLoadSlam = useCallback(() => {
         if (props.loadSlam)
             return props.loadSlam;
         const url = props.slamScriptUrl;
@@ -203,7 +167,7 @@ function ViroARSceneNavigator(props) {
         // fetching a second copy of a 265 KB module to arrive at the same object.
         return undefined;
     }, [props.loadSlam, props.slamScriptUrl]);
-    const startAR = (0, react_1.useCallback)(async () => {
+    const startAR = useCallback(async () => {
         if (!renderer || starting || started)
             return;
         setStarting(true);
@@ -217,7 +181,7 @@ function ViroARSceneNavigator(props) {
             // with no IMU, and the tracker then never left "initializing" while the
             // screen said nothing about why. renderWhileLimited is the one caller
             // that wants to go on regardless (a desktop preview has no IMU at all).
-            const motion = await (0, viro_web_renderer_1.requestDeviceMotionPermission)();
+            const motion = await requestDeviceMotionPermission();
             if (!motion && !props.arOptions?.renderWhileLimited) {
                 setError(MOTION_DENIED);
                 setStarting(false);
@@ -228,7 +192,7 @@ function ViroARSceneNavigator(props) {
         noGravitySinceRef.current = null;
         motionMissingRef.current = false;
         setMotionMissing(false);
-        const session = new viro_web_renderer_1.ViroArSession({
+        const session = new ViroArSession({
             sceneApi: renderer.scene,
             loadSlam: resolveLoadSlam(),
             ...props.arOptions,
@@ -236,7 +200,7 @@ function ViroARSceneNavigator(props) {
                 setTracking(state);
                 // Granted is not the same as arriving: some browsers grant and then
                 // deliver nothing. NoGravity past a few seconds means no IMU at all.
-                if (detail?.reason === viro_web_renderer_1.TrackingReason.NoGravity) {
+                if (detail?.reason === TrackingReason.NoGravity) {
                     const now = performance.now();
                     noGravitySinceRef.current ??= now;
                     if (!motionMissingRef.current && now - noGravitySinceRef.current > NO_MOTION_AFTER_MS) {
@@ -287,7 +251,7 @@ function ViroARSceneNavigator(props) {
     // Replay starts on its own. The button exists to satisfy a browser that will
     // not open a camera without a gesture; there is no camera here, and a preview
     // that waits for a click nobody is there to make would simply never render.
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         // Waits for rootNode, not just for the renderer: the live path starts from a
         // tap, which happens long after the scene has mounted, and matching that
         // ordering costs nothing.
@@ -307,13 +271,13 @@ function ViroARSceneNavigator(props) {
     return (<div style={containerStyle}>
       <canvas ref={canvasRef} style={canvasStyle}/>
 
-      {renderer && rootNode && SceneComponent ? (<ViroWebContext_1.ViroRendererContext.Provider value={renderer}>
-          <ViroWebContext_1.ViroARContext.Provider value={{ session: sessionRef.current, anchors, trackingState: tracking }}>
-            <ViroWebContext_1.ViroParentNodeContext.Provider value={rootNode}>
+      {renderer && rootNode && SceneComponent ? (<ViroRendererContext.Provider value={renderer}>
+          <ViroARContext.Provider value={{ session: sessionRef.current, anchors, trackingState: tracking }}>
+            <ViroParentNodeContext.Provider value={rootNode}>
               <SceneComponent sceneNavigator={sceneNavigator} {...props.viroAppProps}/>
-            </ViroWebContext_1.ViroParentNodeContext.Provider>
-          </ViroWebContext_1.ViroARContext.Provider>
-        </ViroWebContext_1.ViroRendererContext.Provider>) : null}
+            </ViroParentNodeContext.Provider>
+          </ViroARContext.Provider>
+        </ViroRendererContext.Provider>) : null}
 
       {started ? (<div style={statusStyle}>
           {motionMissing && !props.arOptions?.renderWhileLimited

@@ -1,14 +1,11 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.StudioDragBridge = exports.STUDIO_DRAG_IDLE_MS = exports.STUDIO_DRAG_PREFIX = void 0;
-const useViroThrottledWrite_1 = require("../../hooks/useViroThrottledWrite");
-const frameMath_1 = require("./frameMath");
-exports.STUDIO_DRAG_PREFIX = "drag:";
+import { VIRO_REPLICATION_WRITE_INTERVAL_MS } from "../../hooks/useViroThrottledWrite";
+import { invert, isVec3, transformPoint, } from "./frameMath";
+export const STUDIO_DRAG_PREFIX = "drag:";
 /**
  * The renderer reports a drag's moves and never its end, so this long without
  * a move ends it. Longer than a pause mid-drag, since the end gives up the claim.
  */
-exports.STUDIO_DRAG_IDLE_MS = 500;
+export const STUDIO_DRAG_IDLE_MS = 500;
 function sameVec(a, b) {
     return !!b && a.every((v, i) => v === b[i]);
 }
@@ -21,7 +18,7 @@ function sameVec(a, b) {
  * Rows are applied to the scene's drag store, never to scene state, so a drag
  * elsewhere repaints only the node it moves.
  */
-class StudioDragBridge {
+export class StudioDragBridge {
     host;
     intervalMs;
     idleMs;
@@ -31,7 +28,7 @@ class StudioDragBridge {
     drags = new Map();
     /** This device's last write per asset: its echo is where the node already is. */
     written = new Map();
-    constructor(host, intervalMs = useViroThrottledWrite_1.VIRO_REPLICATION_WRITE_INTERVAL_MS, idleMs = exports.STUDIO_DRAG_IDLE_MS) {
+    constructor(host, intervalMs = VIRO_REPLICATION_WRITE_INTERVAL_MS, idleMs = STUDIO_DRAG_IDLE_MS) {
         this.host = host;
         this.intervalMs = intervalMs;
         this.idleMs = idleMs;
@@ -120,14 +117,14 @@ class StudioDragBridge {
             };
             this.drags.set(assetId, drag);
             if (!refused)
-                this.host.claim(exports.STUDIO_DRAG_PREFIX + assetId);
+                this.host.claim(STUDIO_DRAG_PREFIX + assetId);
         }
         if (drag.idleTimer)
             clearTimeout(drag.idleTimer);
         drag.idleTimer = setTimeout(() => this.end(assetId, false), this.idleMs);
         if (drag.refused)
             return;
-        drag.pending = (0, frameMath_1.transformPoint)(toLocation, world);
+        drag.pending = transformPoint(toLocation, world);
         this.schedule(assetId, drag);
     };
     schedule(assetId, drag) {
@@ -150,7 +147,7 @@ class StudioDragBridge {
         drag.pending = null;
         drag.lastSentAt = this.host.now();
         this.written.set(assetId, p);
-        this.host.set(exports.STUDIO_DRAG_PREFIX + assetId, { p });
+        this.host.set(STUDIO_DRAG_PREFIX + assetId, { p });
     }
     /** The last position goes out before the release, which the relay orders after it. */
     end(assetId, sceneGone) {
@@ -161,7 +158,7 @@ class StudioDragBridge {
         this.stopTimers(drag);
         if (!this.host.isSynced())
             return;
-        const id = exports.STUDIO_DRAG_PREFIX + assetId;
+        const id = STUDIO_DRAG_PREFIX + assetId;
         if (drag.refused) {
             if (!sceneGone)
                 this.applyRow(assetId, this.host.entity(id), true);
@@ -185,8 +182,8 @@ class StudioDragBridge {
     }
     adoptAll() {
         const present = new Set();
-        for (const entity of this.host.entities(exports.STUDIO_DRAG_PREFIX)) {
-            const assetId = entity.id.slice(exports.STUDIO_DRAG_PREFIX.length);
+        for (const entity of this.host.entities(STUDIO_DRAG_PREFIX)) {
+            const assetId = entity.id.slice(STUDIO_DRAG_PREFIX.length);
             present.add(assetId);
             this.receive(assetId, entity);
         }
@@ -207,16 +204,15 @@ class StudioDragBridge {
         const owner = entity?.owner ?? null;
         const locked = owner !== null && owner !== this.host.localPeerId();
         const raw = entity?.fields.p;
-        const p = (0, frameMath_1.isVec3)(raw) ? raw : null;
+        const p = isVec3(raw) ? raw : null;
         let position = store.getPosition(assetId);
         if (p && (force || !sameVec(p, this.written.get(assetId)))) {
             const origin = this.host.origin();
-            const inverse = origin ? (0, frameMath_1.invert)(origin) : null;
+            const inverse = origin ? invert(origin) : null;
             if (!inverse)
                 return;
-            position = (0, frameMath_1.transformPoint)(inverse, p);
+            position = transformPoint(inverse, p);
         }
         store.applyRemote(assetId, position, locked, force);
     }
 }
-exports.StudioDragBridge = StudioDragBridge;

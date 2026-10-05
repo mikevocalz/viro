@@ -1,4 +1,3 @@
-"use strict";
 /**
  * ViroGameLoop.tsx — headless component that fires per-frame JS callbacks.
  *
@@ -11,16 +10,11 @@
  *
  * Copyright © 2026 ReactVision. All rights reserved.
  */
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ViroGameLoop = ViroGameLoop;
-const react_1 = __importDefault(require("react"));
-const react_native_1 = require("react-native");
-const VRTGameLoopView = (0, react_native_1.requireNativeComponent)("VRTGameLoopView");
+import React from "react";
+import { requireNativeComponent } from "react-native";
+const VRTGameLoopView = requireNativeComponent("VRTGameLoopView");
 // ── Component ─────────────────────────────────────────────────────────────────
-function ViroGameLoop({ onUpdate, onLateUpdate, onFixedUpdate, fixedHz, }) {
+export function ViroGameLoop({ onUpdate, onLateUpdate, onFixedUpdate, fixedHz, }) {
     // Native sends dt/elapsed as strings to avoid Fabric conversions.h type-check spam.
     const parse = (e) => ({
         dt: parseFloat(e.nativeEvent.dt),
