@@ -59,6 +59,7 @@ import {
   ViroMonocularDepthPreferenceResult,
   ViroDepthOcclusionSupportResult,
   ViroGeospatialSetupStatusResult,
+  ViroRecordingStatus,
 } from "../Types/ViroEvents";
 import {
   Viro3DPoint,
