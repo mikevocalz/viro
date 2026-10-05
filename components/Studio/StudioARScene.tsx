@@ -259,9 +259,9 @@ interface StudioARSceneProps {
  */
 export const StudioARScene: React.FC<StudioARSceneProps> = (props) => {
   if (!props.sceneData) {
-    // Quest keeps its own root here for the reason spelled out at the main
-    // return below.
-    return isQuest ? (
+    // Quest and visionOS keep their own root here for the reason spelled out at
+    // the main return below.
+    return rootsOutsideAR ? (
       <ViroScene toneMappingEnabled={false} />
     ) : (
       <ViroARScene toneMappingEnabled={false} />
@@ -1777,7 +1777,7 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
   // planes, so the AR root changes nothing it renders, and the scene returns to
   // ViroScene when the session ends. Changing the root remounts everything
   // below it, which is the cost the `colocation` prop doc states.
-  if (!studioSceneRootsInAR(colocationFrame, sceneMount, isQuest)) {
+  if (!studioSceneRootsInAR(colocationFrame, sceneMount, rootsOutsideAR)) {
     return (
       <ViroScene
         {...physicsProps}
