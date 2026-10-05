@@ -34,16 +34,20 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ViroRivePanel = void 0;
+exports.bindingFingerprint = bindingFingerprint;
+exports.applyBindings = applyBindings;
 /** Native Rive panel. Its runtime owns the idle-aware frame clock. */
 const React = __importStar(require("react"));
-const react_native_1 = require("react-native");
 const nitroCanvas_1 = require("./CanvasPanel/nitroCanvas");
 const ViroNode_1 = require("./ViroNode");
 const ViroQuad_1 = require("./ViroQuad");
 const useCanvasPanel_1 = require("./CanvasPanel/useCanvasPanel");
 const engineSurfaceAdapter_1 = require("./CanvasPanel/engineSurfaceAdapter");
 exports.ViroRivePanel = React.forwardRef(function ViroRivePanel(props, ref) {
-    const { init, source, input, onRuntimeReady, width, height, position = [0, 1.45, -2.0], rotation, resolution = { width: 1024, height: 1024 }, sRGB, androidRoute = react_native_1.Platform.OS === "android" ? "ahb" : "surface-texture", lightingModel, fallbackColor, materialName, onReady, onError, autoTick, bindings, } = props;
+    const { init, source, input, onRuntimeReady, width, height, position = [0, 1.45, -2.0], rotation, resolution = { width: 1024, height: 1024 }, sRGB, 
+    // The native Rive renderer draws into the panel's producer Surface; the
+    // zero-copy AHardwareBuffer route is for GPU producers, not Rive.
+    androidRoute = "surface-texture", lightingModel, fallbackColor, materialName, onReady, onError, autoTick, bindings, } = props;
     const runtime = React.useRef(null);
     const latestBindings = React.useRef(bindings);
     latestBindings.current = bindings;

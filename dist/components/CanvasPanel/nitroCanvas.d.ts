@@ -7,6 +7,8 @@
  */
 export type CanvasBackingRoute = "ahb" | "surface-texture";
 export type CanvasPointerPhase = "down" | "move" | "up";
+/** Rive pointer delivery adds "cancel" (capture lost) to the surface phases. */
+export type RivePointerPhase = CanvasPointerPhase | "cancel";
 export type RiveFit = "contain" | "cover" | "fill";
 export interface CanvasSurface {
     readonly id: number;
@@ -79,7 +81,7 @@ export interface RiveProducer extends CanvasProducer {
     setEnum?(path: string, value: string): void;
     setColor?(path: string, value: number): void;
     fireTrigger?(path: string): void;
-    onPointer(phase: CanvasPointerPhase, x: number, y: number): void;
+    onPointer(phase: RivePointerPhase, x: number, y: number): void;
 }
 export interface CanvasInViroInputOptions {
     [key: string]: any;
@@ -116,7 +118,7 @@ export interface NitroCanvasModule {
         };
         fit: RiveFit;
     }, dispatch: (event: {
-        phase: CanvasPointerPhase;
+        phase: RivePointerPhase;
         x: number;
         y: number;
     }) => void): (event: any) => void;

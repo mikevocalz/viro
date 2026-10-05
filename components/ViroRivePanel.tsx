@@ -1,6 +1,5 @@
 /** Native Rive panel. Its runtime owns the idle-aware frame clock. */
 import * as React from "react";
-import { Platform } from "react-native";
 import type { CanvasSurface, RiveProducer, RiveProducerInit, RiveCanvasOptions, RivePanel, CanvasInViroInputOptions, CanvasInViroInputProps } from "./CanvasPanel/nitroCanvas";
 import { requireNitroCanvas } from "./CanvasPanel/nitroCanvas";
 import { ViroNode } from "./ViroNode";
@@ -77,7 +76,9 @@ export const ViroRivePanel = React.forwardRef<
     rotation,
     resolution = { width: 1024, height: 1024 },
     sRGB,
-    androidRoute = Platform.OS === "android" ? "ahb" : "surface-texture",
+    // The native Rive renderer draws into the panel's producer Surface; the
+    // zero-copy AHardwareBuffer route is for GPU producers, not Rive.
+    androidRoute = "surface-texture",
     lightingModel,
     fallbackColor,
     materialName,
@@ -184,14 +185,14 @@ function InteractiveRiveQuad({ width, height, materialName, input, producer, run
 }
 
 
-function bindingFingerprint(value: ViroRiveBindingValue): string {
+export function bindingFingerprint(value: ViroRiveBindingValue): string {
   if (typeof value === "object") {
     return value.kind + ":" + String(value.kind === "trigger" ? value.serial : value.value);
   }
   return typeof value + ":" + String(value);
 }
 
-function applyBindings(
+export function applyBindings(
   panel: RivePanel,
   bindings: ViroRiveBindings | undefined,
   applied: Map<string, string>

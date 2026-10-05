@@ -68,6 +68,13 @@ function useCanvasPanel(opts) {
             surfaceDisposed = true;
             resource.surface.dispose();
         };
+        let producerDisposed = false;
+        const disposeProducer = () => {
+            if (!resource || producerDisposed)
+                return;
+            producerDisposed = true;
+            resource.producer.dispose();
+        };
         const cancelFrame = () => {
             if (frame !== null)
                 cancelAnimationFrame(frame);
@@ -130,7 +137,7 @@ function useCanvasPanel(opts) {
                 // A late attach must retire its own resources before its surface is released.
                 if (!alive) {
                     try {
-                        producer.dispose();
+                        disposeProducer();
                     }
                     finally {
                         disposeSurface();
@@ -142,7 +149,7 @@ function useCanvasPanel(opts) {
             settled = true;
             if (resource) {
                 try {
-                    resource.producer.dispose();
+                    disposeProducer();
                 }
                 finally {
                     disposeSurface();
@@ -159,7 +166,7 @@ function useCanvasPanel(opts) {
             if (resource) {
                 resource.producer.setActive?.(false);
                 try {
-                    resource.producer.dispose();
+                    disposeProducer();
                 }
                 finally {
                     ViroMaterials_1.ViroMaterials.deleteMaterials([resource.materialName]);
