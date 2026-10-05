@@ -130,9 +130,29 @@ function useCanvasPanel(opts) {
                 if (!alive)
                     return;
                 attached = true;
-                syncClock();
-                latest.current.onReady?.(resource);
-            }).catch(report).finally(() => {
+                try {
+                    syncClock();
+                    latest.current.onReady?.(resource);
+                }
+                catch (error) {
+                    report(error);
+                }
+            }).catch((error) => {
+                // Attach failed: the producer owns no valid frame surface, so retire
+                // the whole resource rather than render a dead canvasSource.
+                report(error);
+                attached = false;
+                store.setState({ resource: null });
+                if (resource) {
+                    try {
+                        disposeProducer();
+                    }
+                    finally {
+                        ViroMaterials_1.ViroMaterials.deleteMaterials([resource.materialName]);
+                        disposeSurface();
+                    }
+                }
+            }).finally(() => {
                 settled = true;
                 // A late attach must retire its own resources before its surface is released.
                 if (!alive) {

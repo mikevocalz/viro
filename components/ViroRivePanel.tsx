@@ -118,6 +118,9 @@ export const ViroRivePanel = React.forwardRef<
         value && typeof value === "object" && "panel" in value
           ? (value.panel as RivePanel)
           : (value as RivePanel | null);
+      // A fresh runtime has none of the previous runtime's inputs; the
+      // fingerprint map must not carry over or unchanged bindings are skipped.
+      appliedBindings.current.clear();
       if (runtime.current) {
         applyBindings(runtime.current, latestBindings.current, appliedBindings.current);
         ready.current?.(runtime.current);

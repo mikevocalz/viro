@@ -32,6 +32,15 @@ jest.mock("react-native", () => ({
   findNodeHandle: jest.fn(() => 1),
 }));
 
+const createdProducers: {
+  attach: jest.Mock;
+  renderFrame: jest.Mock;
+  setActive: jest.Mock;
+  dispose: jest.Mock;
+  runtime: unknown;
+}[] = [];
+const runtimeQueue: unknown[] = [];
+
 jest.mock("../components/CanvasPanel/nitroCanvas", () => ({
   requireNitroCanvas: () => ({
     createCanvasSurface: (options: Record<string, unknown>) => {
@@ -51,6 +60,22 @@ jest.mock("../components/CanvasPanel/nitroCanvas", () => ({
       width: surface.width,
       height: surface.height,
     }),
+    createRiveCanvasRuntime: jest.fn(async () => runtimeQueue.shift() ?? {}),
+    RiveProducer: class {
+      runtime: unknown = null;
+      private init_: { createRuntime(s: unknown): Promise<unknown> };
+      attach = jest.fn(async (_surface: unknown) => {
+        this.runtime = await this.init_.createRuntime(_surface);
+      });
+      renderFrame = jest.fn();
+      setActive = jest.fn();
+      dispose = jest.fn();
+      managesOwnFrames = true;
+      constructor(init: { createRuntime(s: unknown): Promise<unknown> }) {
+        this.init_ = init;
+        createdProducers.push(this);
+      }
+    },
   }),
 }));
 
@@ -63,7 +88,12 @@ jest.mock("../components/Material/ViroMaterials", () => ({
 }));
 
 import { useCanvasPanel } from "../components/CanvasPanel/useCanvasPanel";
-import { applyBindings, bindingFingerprint } from "../components/ViroRivePanel";
+import {
+  applyBindings,
+  bindingFingerprint,
+  ViroRivePanel,
+  type ViroRivePanelProps,
+} from "../components/ViroRivePanel";
 
 function makeProducer(overrides: Record<string, unknown> = {}) {
   return {
@@ -103,6 +133,8 @@ beforeEach(() => {
   createdSurfaces.length = 0;
   createdMaterials.length = 0;
   deletedMaterials.length = 0;
+  createdProducers.length = 0;
+  runtimeQueue.length = 0;
 });
 
 describe("useCanvasPanel lifecycle", () => {
@@ -188,6 +220,53 @@ describe("useCanvasPanel lifecycle", () => {
     expect(createdSurfaces[0]!.dispose).toHaveBeenCalledTimes(1);
   });
 
+  it("releases producer, surface, and material when attach rejects", async () => {
+    const onError = jest.fn();
+    const producer = makeProducer({
+      attach: jest.fn(async () => {
+        throw new Error("surface attach failed");
+      }),
+    });
+    const harness = mountHarness({
+      producerFactory: () => producer,
+      resolution: { width: 64, height: 64 },
+      onError,
+    });
+    await harness.flush();
+
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(onError.mock.calls[0]![0].message).toContain("surface attach failed");
+    expect(producer.dispose).toHaveBeenCalledTimes(1);
+    expect(createdSurfaces[0]!.dispose).toHaveBeenCalledTimes(1);
+    expect(deletedMaterials).toHaveLength(1);
+    expect(producer.renderFrame).not.toHaveBeenCalled();
+    harness.unmount();
+    // Unmount after a failed attach must not dispose twice.
+    expect(producer.dispose).toHaveBeenCalledTimes(1);
+    expect(createdSurfaces[0]!.dispose).toHaveBeenCalledTimes(1);
+  });
+
+  it("an onReady throw reports the error but keeps the attached resource", async () => {
+    const onError = jest.fn();
+    const producer = makeProducer();
+    const harness = mountHarness({
+      producerFactory: () => producer,
+      resolution: { width: 64, height: 64 },
+      onReady: () => {
+        throw new Error("consumer callback failed");
+      },
+      onError,
+    });
+    await harness.flush();
+
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(onError.mock.calls[0]![0].message).toContain("consumer callback failed");
+    // The producer attached successfully; only the consumer callback failed.
+    expect(producer.dispose).not.toHaveBeenCalled();
+    harness.unmount();
+    expect(producer.dispose).toHaveBeenCalledTimes(1);
+  });
+
   it("reports producer construction failure through onError", async () => {
     const onError = jest.fn();
     const harness = mountHarness({
@@ -201,6 +280,76 @@ describe("useCanvasPanel lifecycle", () => {
     expect(onError).toHaveBeenCalledTimes(1);
     expect(onError.mock.calls[0]![0].message).toContain("missing riv bytes");
     expect(createdSurfaces[0]!.dispose).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("ViroRivePanel runtime replacement", () => {
+  function mountPanel() {
+    const container = document.createElement("div");
+    const root = createRoot(container);
+    const render = (props: ViroRivePanelProps) =>
+      act(() => {
+        root.render(<ViroRivePanel {...props} />);
+      });
+    const flush = () =>
+      act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+    return {
+      render,
+      flush,
+      unmount: () => act(() => root.unmount()),
+    };
+  }
+
+  it("reapplies bindings to the new runtime after a source swap", async () => {
+    const runtimeA = {
+      setString: jest.fn(),
+      setBoolean: jest.fn(),
+      artboardWidth: 100,
+      artboardHeight: 100,
+    };
+    const runtimeB = {
+      setString: jest.fn(),
+      setBoolean: jest.fn(),
+      artboardWidth: 100,
+      artboardHeight: 100,
+    };
+    runtimeQueue.push(runtimeA, runtimeB);
+
+    const panel = mountPanel();
+    const bindings = { title: "hello", enabled: true };
+    const sourceA = { rivBytes: new ArrayBuffer(8), fit: "contain" as const };
+    const sourceB = { rivBytes: new ArrayBuffer(16), fit: "contain" as const };
+
+    panel.render({
+      width: 1,
+      height: 1,
+      source: sourceA,
+      bindings,
+    });
+    await panel.flush();
+
+    expect(runtimeA.setString).toHaveBeenCalledWith("title", "hello");
+    expect(runtimeA.setBoolean).toHaveBeenCalledWith("enabled", true);
+
+    // Swap the source: the producer and its runtime are replaced.
+    panel.render({
+      width: 1,
+      height: 1,
+      source: sourceB,
+      bindings,
+    });
+    await panel.flush();
+
+    expect(createdProducers.length).toBeGreaterThanOrEqual(2);
+    // Runtime B must receive the same bindings even though their values did
+    // not change — it is a different native runtime.
+    expect(runtimeB.setString).toHaveBeenCalledWith("title", "hello");
+    expect(runtimeB.setBoolean).toHaveBeenCalledWith("enabled", true);
+
+    panel.unmount();
   });
 });
 
