@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.requireNitroCanvas = requireNitroCanvas;
 let cached = null;
-function requireNitroCanvas() {
+export function requireNitroCanvas() {
     if (cached)
         return cached;
     try {

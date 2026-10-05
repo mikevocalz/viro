@@ -1,6 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ViroAnimations = void 0;
 /**
  * Copyright (c) 2015-present, Viro Media, Inc.
  * All rights reserved.
@@ -12,17 +9,17 @@ exports.ViroAnimations = void 0;
  * @providesModule ViroAnimations
  * @flow
  */
-const react_native_1 = require("react-native");
-const AnimationManager = react_native_1.NativeModules.VRTAnimationManager;
+import { NativeModules, processColor, } from "react-native";
+const AnimationManager = NativeModules.VRTAnimationManager;
 const registeredAnimations = {};
-class ViroAnimations {
+export class ViroAnimations {
     static registerAnimations(animations) {
         Object.assign(registeredAnimations, animations);
         for (var key in animations) {
             if (!Array.isArray(animations[key])) {
                 const animation = animations[key];
                 if (animation.properties && animation.properties.color) {
-                    var newColor = (0, react_native_1.processColor)(animation.properties.color);
+                    var newColor = processColor(animation.properties.color);
                     animation.properties.color = newColor;
                 }
             }
@@ -35,4 +32,3 @@ class ViroAnimations {
         return registeredAnimations[name];
     }
 }
-exports.ViroAnimations = ViroAnimations;

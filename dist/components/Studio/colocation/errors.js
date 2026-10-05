@@ -1,21 +1,11 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ROOM_PEER_LIMIT = void 0;
-exports.roomErrorCode = roomErrorCode;
-exports.relayErrorCode = relayErrorCode;
-exports.resolveErrorCode = resolveErrorCode;
-exports.frameKindUnsupportedFailure = frameKindUnsupportedFailure;
-exports.metaSharingUnavailableFailure = metaSharingUnavailableFailure;
-exports.originRejectFailure = originRejectFailure;
-exports.errorMessage = errorMessage;
 /** The relay's own per-room peer ceiling. */
-exports.ROOM_PEER_LIMIT = 16;
+export const ROOM_PEER_LIMIT = 16;
 /**
  * A room REST refusal, from `createColocationRoom` / `lookupColocationRoom`.
  * No status means no response arrived, apart from the client's own local
  * refusals, which carry a code.
  */
-function roomErrorCode(status, code) {
+export function roomErrorCode(status, code) {
     switch (code) {
         case "PAID_PLAN_REQUIRED":
             return "PAID_PLAN_REQUIRED";
@@ -37,7 +27,7 @@ function roomErrorCode(status, code) {
  * A relay handshake refusal. 404 is a deploy in progress on the relay's host,
  * which clears on its own, so it reads as unavailable rather than missing.
  */
-function relayErrorCode(status, code) {
+export function relayErrorCode(status, code) {
     switch (code) {
         case "ROOM_FULL":
             return "ROOM_FULL";
@@ -55,7 +45,7 @@ function relayErrorCode(status, code) {
     return "UNKNOWN";
 }
 /** A resolve that failed for good, after any retries. */
-function resolveErrorCode(state) {
+export function resolveErrorCode(state) {
     switch (state) {
         case "ErrorNotAuthorized":
         case "ErrorAuthenticationFailed":
@@ -85,7 +75,7 @@ const FRAME_KIND_HOSTS = {
  * A room whose frame this device cannot align to. Frames do not cross device
  * families: a cloud anchor and a Meta anchor are unrelated coordinate frames.
  */
-function frameKindUnsupportedFailure(frameKind) {
+export function frameKindUnsupportedFailure(frameKind) {
     const { host, devices } = FRAME_KIND_HOSTS[frameKind];
     return {
         code: "FRAME_KIND_UNSUPPORTED",
@@ -97,7 +87,7 @@ function frameKindUnsupportedFailure(frameKind) {
 // is the only thing that tells it apart.
 const META_SHARING_UNAVAILABLE = "Shared frames unavailable";
 /** A Meta shared-frame failure that no retry changes, or null. */
-function metaSharingUnavailableFailure(error) {
+export function metaSharingUnavailableFailure(error) {
     if (!error.startsWith(META_SHARING_UNAVAILABLE))
         return null;
     return {
@@ -106,7 +96,7 @@ function metaSharingUnavailableFailure(error) {
     };
 }
 /** The relay refused the host's scene origin write. */
-function originRejectFailure(reason) {
+export function originRejectFailure(reason) {
     const message = `The relay refused the shared scene origin (${reason}).`;
     switch (reason) {
         case "too-many-entities":
@@ -118,7 +108,7 @@ function originRejectFailure(reason) {
             return { code: "UNKNOWN", message };
     }
 }
-function errorMessage(error) {
+export function errorMessage(error) {
     if (error instanceof Error)
         return error.message;
     return typeof error === "string" ? error : String(error);

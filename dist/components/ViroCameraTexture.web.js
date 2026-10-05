@@ -1,39 +1,3 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ViroCameraTexture = void 0;
 /**
  * ViroCameraTexture.web.tsx
  *
@@ -54,29 +18,29 @@ exports.ViroCameraTexture = void 0;
  *
  * Copyright © 2026 ReactVision. All rights reserved.
  */
-const React = __importStar(require("react"));
-const react_1 = require("react");
-const viro_web_renderer_1 = require("@reactvision/viro-web-renderer");
-const ViroWebContext_1 = require("./Web/ViroWebContext");
-const viroMaterialRegistry_1 = require("./Web/viroMaterialRegistry");
-exports.ViroCameraTexture = React.forwardRef(function ViroCameraTexture(props, ref) {
-    const scene = (0, ViroWebContext_1.useViroScene)();
+import * as React from "react";
+import { useEffect, useImperativeHandle, useRef } from "react";
+import { ViroTextureChannel } from "@reactvision/viro-web-renderer";
+import { useViroScene } from "./Web/ViroWebContext";
+import { getSharedMaterialHandle } from "./Web/viroMaterialRegistry";
+export const ViroCameraTexture = React.forwardRef(function ViroCameraTexture(props, ref) {
+    const scene = useViroScene();
     const materialName = props.material;
     const facingMode = (props.cameraPosition ?? "front") === "back" ? "environment" : "user";
     const mirror = facingMode === "user";
-    const propsRef = (0, react_1.useRef)(props);
+    const propsRef = useRef(props);
     propsRef.current = props;
-    const pausedRef = (0, react_1.useRef)(props.paused ?? false);
+    const pausedRef = useRef(props.paused ?? false);
     pausedRef.current = props.paused ?? false;
     // The canvas holding the most-recent frame, and the live stream — read by the
     // imperative capture API.
-    const canvasRef = (0, react_1.useRef)(null);
-    const streamRef = (0, react_1.useRef)(null);
-    const recorderRef = (0, react_1.useRef)(null);
-    (0, react_1.useEffect)(() => {
+    const canvasRef = useRef(null);
+    const streamRef = useRef(null);
+    const recorderRef = useRef(null);
+    useEffect(() => {
         if (!materialName)
             return;
-        const material = (0, viroMaterialRegistry_1.getSharedMaterialHandle)(scene, materialName);
+        const material = getSharedMaterialHandle(scene, materialName);
         if (!material)
             return;
         const canvas = document.createElement("canvas");
@@ -108,7 +72,7 @@ exports.ViroCameraTexture = React.forwardRef(function ViroCameraTexture(props, r
                 }
                 const rgba = ctx.getImageData(0, 0, w, h).data;
                 const tex = scene.createTextureRGBA(new Uint8Array(rgba), w, h, true);
-                scene.setMaterialTexture(material, viro_web_renderer_1.ViroTextureChannel.Diffuse, tex);
+                scene.setMaterialTexture(material, ViroTextureChannel.Diffuse, tex);
                 if (currentTex)
                     scene.destroyTexture(currentTex);
                 currentTex = tex;
@@ -180,7 +144,7 @@ exports.ViroCameraTexture = React.forwardRef(function ViroCameraTexture(props, r
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [materialName, facingMode]);
-    (0, react_1.useImperativeHandle)(ref, () => ({
+    useImperativeHandle(ref, () => ({
         async capturePhoto() {
             const canvas = canvasRef.current;
             if (!canvas || canvas.width === 0) {

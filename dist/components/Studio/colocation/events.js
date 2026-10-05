@@ -1,16 +1,12 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.StudioEventRing = exports.STUDIO_EVENT_WAIT_MS = exports.STUDIO_EVENT_HISTORY = exports.STUDIO_EVENT_PREFIX = void 0;
-exports.sceneAudioUrls = sceneAudioUrls;
-const frameMath_1 = require("./frameMath");
-exports.STUDIO_EVENT_PREFIX = "evt:";
+import { isVec3 } from "./frameMath";
+export const STUDIO_EVENT_PREFIX = "evt:";
 /** Events each device's row keeps, so a batched or coalesced write loses none. */
-exports.STUDIO_EVENT_HISTORY = 8;
+export const STUDIO_EVENT_HISTORY = 8;
 /** How long an event for a scene this device is still loading waits for it. */
-exports.STUDIO_EVENT_WAIT_MS = 10000;
+export const STUDIO_EVENT_WAIT_MS = 10000;
 const MAX_DEPTH = 16;
 /** Every clip a scene's functions can play, however deeply nested. */
-function sceneAudioUrls(sceneData) {
+export function sceneAudioUrls(sceneData) {
     const urls = new Set();
     const visitSequence = (sequence, depth) => {
         for (const step of sequence?.steps ?? [])
@@ -109,7 +105,7 @@ function decode(fields) {
         !Number.isFinite(volume) ||
         typeof loop !== "boolean" ||
         typeof stopOthers !== "boolean" ||
-        (position !== null && !(0, frameMath_1.isVec3)(position))) {
+        (position !== null && !isVec3(position))) {
         return null;
     }
     return {
@@ -153,7 +149,7 @@ function rowEvents(fields) {
  * from the other rows. Rows of devices that left are removed by the room's
  * authority (see StudioSharedState).
  */
-class StudioEventRing {
+export class StudioEventRing {
     host;
     target = null;
     unsubscribeSounds = null;
@@ -185,7 +181,7 @@ class StudioEventRing {
         this.target = target;
         if (!target)
             return;
-        const cutoff = this.host.now() - exports.STUDIO_EVENT_WAIT_MS;
+        const cutoff = this.host.now() - STUDIO_EVENT_WAIT_MS;
         const due = this.waiting
             .filter((w) => w.event.sceneId === target.sceneId && w.at >= cutoff)
             .sort((a, b) => a.n - b.n);
@@ -194,7 +190,7 @@ class StudioEventRing {
     }
     /** The row this device writes its events to. */
     ownRowId() {
-        return exports.STUDIO_EVENT_PREFIX + this.host.localPeerId();
+        return STUDIO_EVENT_PREFIX + this.host.localPeerId();
     }
     emit(event) {
         if (!this.host.isSynced())
@@ -209,8 +205,8 @@ class StudioEventRing {
         const s = ++this.ownCount;
         this.history = this.history
             .concat({ ...encode(event), s })
-            .slice(-exports.STUDIO_EVENT_HISTORY);
-        this.host.write(exports.STUDIO_EVENT_PREFIX + peer, { events: this.history });
+            .slice(-STUDIO_EVENT_HISTORY);
+        this.host.write(STUDIO_EVENT_PREFIX + peer, { events: this.history });
     }
     /** An accepted write to `evt:<rowPeer>`, in the room's order. */
     receive(rowPeer, fields) {
@@ -245,11 +241,11 @@ class StudioEventRing {
             this.fire(target, event);
             return;
         }
-        const cutoff = this.host.now() - exports.STUDIO_EVENT_WAIT_MS;
+        const cutoff = this.host.now() - STUDIO_EVENT_WAIT_MS;
         this.waiting = this.waiting
             .filter((w) => w.at >= cutoff)
             .concat({ event, n: ++this.arrivals, at: this.host.now() })
-            .slice(-exports.STUDIO_EVENT_HISTORY * 2);
+            .slice(-STUDIO_EVENT_HISTORY * 2);
     }
     dispose() {
         this.unsubscribeSounds?.();
@@ -291,4 +287,3 @@ class StudioEventRing {
         }
     }
 }
-exports.StudioEventRing = StudioEventRing;

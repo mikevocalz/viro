@@ -1,7 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.studioApiError = studioApiError;
-exports.isStudioApiError = isStudioApiError;
 /** iOS reports a non-2xx with an empty body as a bare status line. */
 const STATUS_ONLY = /^HTTP (\d{3})$/;
 /**
@@ -13,7 +9,7 @@ const STATUS_ONLY = /^HTTP (\d{3})$/;
  * `message`: on iOS a transport description is localised to the device
  * language, so matching its text breaks outside English.
  */
-function studioApiError(operation, nativeError) {
+export function studioApiError(operation, nativeError) {
     const body = nativeError?.trim() || null;
     let code = null;
     let detail = null;
@@ -46,7 +42,7 @@ function studioApiError(operation, nativeError) {
  * Structural check, so it holds across module and bundler boundaries where
  * `instanceof` on an Error subclass does not.
  */
-function isStudioApiError(error) {
+export function isStudioApiError(error) {
     if (!(error instanceof Error))
         return false;
     return ("code" in error && "detail" in error && "status" in error && "body" in error);

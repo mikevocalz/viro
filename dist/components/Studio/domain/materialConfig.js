@@ -1,13 +1,6 @@
-"use strict";
 /**
  * Studio material_config parsing and Viro material definition building.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.materialConfigNeedsTimeUniform = materialConfigNeedsTimeUniform;
-exports.materialConfigNeedsViewportUniforms = materialConfigNeedsViewportUniforms;
-exports.studioMaterialName = studioMaterialName;
-exports.parseMaterialConfig = parseMaterialConfig;
-exports.buildViroMaterialDefinition = buildViroMaterialDefinition;
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const TEXTURE_KEYS = [
     "diffuseTexture",
@@ -44,7 +37,7 @@ function collectShaderModifierStrings(config) {
 const TIME_WORD_RE = /\btime\b/i;
 const CAMERA_TEXTURE_RE = /\bcamera_texture\b/;
 const RF_VIEWPORT_RE = /\b_rf_vpw\b|\b_rf_vph\b/;
-function materialConfigNeedsTimeUniform(config) {
+export function materialConfigNeedsTimeUniform(config) {
     if (config.materialUniforms?.some((u) => u.name === "time"))
         return true;
     return collectShaderModifierStrings(config).some((s) => TIME_WORD_RE.test(s));
@@ -53,7 +46,7 @@ function materialConfigNeedsTimeUniform(config) {
  * True if the shader uses _rf_vpw/_rf_vph viewport uniforms.
  * These must be pushed via ViroMaterials.updateShaderUniform on mount and orientation change.
  */
-function materialConfigNeedsViewportUniforms(config) {
+export function materialConfigNeedsViewportUniforms(config) {
     return collectShaderModifierStrings(config).some((s) => RF_VIEWPORT_RE.test(s));
 }
 /**
@@ -144,13 +137,13 @@ function normalizeShaderModifiersForViro(mods) {
     return out;
 }
 // ─── Public API ───────────────────────────────────────────────────────────────
-function studioMaterialName(assetId) {
+export function studioMaterialName(assetId) {
     return `studio_${assetId}`;
 }
 /**
  * Parses `scene_assets.material_config` JSON. Returns null if missing or invalid.
  */
-function parseMaterialConfig(raw) {
+export function parseMaterialConfig(raw) {
     if (raw == null || typeof raw !== "object" || Array.isArray(raw))
         return null;
     const r = raw;
@@ -209,7 +202,7 @@ function parseMaterialConfig(raw) {
 /**
  * Maps a validated Studio material_config to Viro's `createMaterials` definition shape.
  */
-function buildViroMaterialDefinition(config) {
+export function buildViroMaterialDefinition(config) {
     const out = { lightingModel: config.lightingModel };
     if (config.diffuseColor !== undefined)
         out.diffuseColor = config.diffuseColor;

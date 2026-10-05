@@ -1,48 +1,10 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.compileViroSpecsChildren = compileViroSpecsChildren;
-exports.dispatchViroSpecsInteraction = dispatchViroSpecsInteraction;
-exports.dispatchViroSpecsAnimationEvent = dispatchViroSpecsAnimationEvent;
-const React = __importStar(require("react"));
-const ViroAnimations_1 = require("../Animation/ViroAnimations");
-const Viro3DObject_1 = require("../Viro3DObject");
-const ViroImage_1 = require("../ViroImage");
-const ViroNode_1 = require("../ViroNode");
-const ViroPolyline_1 = require("../ViroPolyline");
-const ViroText_1 = require("../ViroText");
+import * as React from "react";
+import { ViroAnimations } from "../Animation/ViroAnimations";
+import { Viro3DObject } from "../Viro3DObject";
+import { ViroImage } from "../ViroImage";
+import { ViroNode } from "../ViroNode";
+import { ViroPolyline } from "../ViroPolyline";
+import { ViroText } from "../ViroText";
 const IDENTITY = {
     position: [0, 0, 0],
     rotation: [0, 0, 0, 1],
@@ -126,15 +88,15 @@ function transformPoint(transform, point) {
     ];
 }
 function nodeKind(type) {
-    if (type === ViroNode_1.ViroNode)
+    if (type === ViroNode)
         return "group";
-    if (type === ViroText_1.ViroText)
+    if (type === ViroText)
         return "text";
-    if (type === ViroImage_1.ViroImage)
+    if (type === ViroImage)
         return "image";
-    if (type === Viro3DObject_1.Viro3DObject)
+    if (type === Viro3DObject)
         return "model";
-    if (type === ViroPolyline_1.ViroPolyline)
+    if (type === ViroPolyline)
         return "polyline";
     return null;
 }
@@ -201,7 +163,7 @@ function animationBase(property, props) {
             return 0;
     }
 }
-function compileViroSpecsChildren(children, sourceResolver = defaultSourceResolver) {
+export function compileViroSpecsChildren(children, sourceResolver = defaultSourceResolver) {
     const nodes = [];
     const polylines = [];
     const animations = [];
@@ -283,7 +245,7 @@ function compileViroSpecsChildren(children, sourceResolver = defaultSourceResolv
                 });
             }
             else if (props.animation.run === true) {
-                const registered = ViroAnimations_1.ViroAnimations.getRegisteredAnimation(animationName);
+                const registered = ViroAnimations.getRegisteredAnimation(animationName);
                 if (!registered || Array.isArray(registered)) {
                     diagnostics.push("Specs animation " +
                         animationName +
@@ -360,7 +322,7 @@ function compileViroSpecsChildren(children, sourceResolver = defaultSourceResolv
         diagnostics,
     };
 }
-function dispatchViroSpecsInteraction(event, callbacks) {
+export function dispatchViroSpecsInteraction(event, callbacks) {
     if (!event.targetId)
         return;
     const record = callbacks.get(event.targetId);
@@ -383,7 +345,7 @@ function dispatchViroSpecsInteraction(event, callbacks) {
             break;
     }
 }
-function dispatchViroSpecsAnimationEvent(event, callbacks) {
+export function dispatchViroSpecsAnimationEvent(event, callbacks) {
     const record = callbacks.get(event.nodeId);
     if (!record)
         return;

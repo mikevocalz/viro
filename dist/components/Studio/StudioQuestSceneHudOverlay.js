@@ -1,56 +1,20 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.StudioQuestSceneHudOverlay = StudioQuestSceneHudOverlay;
-const React = __importStar(require("react"));
-const ViroNode_1 = require("../ViroNode");
-const ViroFlexView_1 = require("../ViroFlexView");
-const ViroText_1 = require("../ViroText");
-const VRModuleOpenXR_1 = require("../Utilities/VRModuleOpenXR");
-const VRQuestNavigatorBridge_1 = require("../Utilities/VRQuestNavigatorBridge");
-const questHeadLockedTransform_1 = require("./domain/questHeadLockedTransform");
-const indicatorContent_1 = require("./colocation/indicatorContent");
-const colocationStore_1 = require("./domain/colocationStore");
-const useStudioColocation_1 = require("./useStudioColocation");
-const subscribeToColocation = (onChange) => colocationStore_1.studioColocationStore.subscribe(onChange);
+import * as React from "react";
+import { ViroNode } from "../ViroNode";
+import { ViroFlexView } from "../ViroFlexView";
+import { ViroText } from "../ViroText";
+import { exitVRScene } from "../Utilities/VRModuleOpenXR";
+import { VRQuestNavigatorBridge } from "../Utilities/VRQuestNavigatorBridge";
+import { computeHeadLockedTransform, } from "./domain/questHeadLockedTransform";
+import { studioColocationIndicatorContent } from "./colocation/indicatorContent";
+import { studioColocationStore } from "./domain/colocationStore";
+import { useStudioColocation } from "./useStudioColocation";
+const subscribeToColocation = (onChange) => studioColocationStore.subscribe(onChange);
 // Same exit path as the hardware back button (ViroQuestEntryPoint's
 // BackHandler, see roadmap task 2): invoke the current intent's onExitViro
 // before finishing VRActivity.
 function handleExitClick() {
-    VRQuestNavigatorBridge_1.VRQuestNavigatorBridge.getIntent()?.rendererConfig?.onExitViro?.();
-    (0, VRModuleOpenXR_1.exitVRScene)();
+    VRQuestNavigatorBridge.getIntent()?.rendererConfig?.onExitViro?.();
+    exitVRScene();
 }
 /**
  * Quest has no 2D chrome (header, back, plane banner) — StudioGo's is stuck
@@ -66,32 +30,32 @@ function handleExitClick() {
  * Sits below StudioQuestAlertOverlay's position (verticalOffsetM) so an
  * ALERT firing at the same time doesn't render on top of it.
  */
-function StudioQuestSceneHudOverlay({ cameraPose, sceneName, planeDetectionMode, hasFoundPlane, }) {
-    const session = (0, indicatorContent_1.studioColocationIndicatorContent)((0, useStudioColocation_1.useStudioColocation)(), null, "headset");
-    const showSession = React.useSyncExternalStore(subscribeToColocation, () => colocationStore_1.studioColocationStore.isBuiltInIndicatorShown(), () => true);
+export function StudioQuestSceneHudOverlay({ cameraPose, sceneName, planeDetectionMode, hasFoundPlane, }) {
+    const session = studioColocationIndicatorContent(useStudioColocation(), null, "headset");
+    const showSession = React.useSyncExternalStore(subscribeToColocation, () => studioColocationStore.isBuiltInIndicatorShown(), () => true);
     const colocation = showSession ? session : null;
     if (!cameraPose)
         return null;
     const height = colocation ? (colocation.detail ? 0.9 : 0.55) : 0.5;
-    const { position, rotation } = (0, questHeadLockedTransform_1.computeHeadLockedTransform)(cameraPose, {
+    const { position, rotation } = computeHeadLockedTransform(cameraPose, {
         distanceM: 1.2,
         // Grows downwards, so its top edge stays where an alert expects it.
         verticalOffsetM: -0.4 - (height - 0.5) / 2,
     });
-    return (<ViroNode_1.ViroNode position={position} rotation={rotation}>
-      <ViroFlexView_1.ViroFlexView width={1.6} height={height} style={{
+    return (<ViroNode position={position} rotation={rotation}>
+      <ViroFlexView width={1.6} height={height} style={{
             backgroundColor: "rgba(0,0,0,0.6)",
             justifyContent: "center",
             alignItems: "center",
             padding: 0.04,
         }}>
-        <ViroText_1.ViroText text={sceneName ?? "Untitled scene"} width={1.5} height={0.15} style={{
+        <ViroText text={sceneName ?? "Untitled scene"} width={1.5} height={0.15} style={{
             fontFamily: "Arial",
             fontSize: 14,
             color: "#FFFFFF",
             textAlign: "center",
         }}/>
-        {colocation && (<ViroText_1.ViroText text={colocation.code
+        {colocation && (<ViroText text={colocation.code
                 ? `${colocation.title}   ${colocation.code}`
                 : colocation.title} width={1.5} height={0.15} style={{
                 fontFamily: "Arial",
@@ -99,7 +63,7 @@ function StudioQuestSceneHudOverlay({ cameraPose, sceneName, planeDetectionMode,
                 color: colocation.tone === "error" ? "#FF8A80" : "#FFFFFF",
                 textAlign: "center",
             }}/>)}
-        {colocation?.detail && (<ViroText_1.ViroText text={colocation.detail} width={1.5} 
+        {colocation?.detail && (<ViroText text={colocation.detail} width={1.5} 
         // Three lines: a failure's reason runs long, and ViroText drops
         // what does not fit without a sign.
         height={0.36} style={{
@@ -109,18 +73,18 @@ function StudioQuestSceneHudOverlay({ cameraPose, sceneName, planeDetectionMode,
                 textAlign: "center",
             }}/>)}
         {/* A shared scene sits on the shared frame, not on a plane. */}
-        {!session && planeDetectionMode !== "NONE" && (<ViroText_1.ViroText text={hasFoundPlane ? "Plane found" : "Scanning for planes…"} width={1.5} height={0.12} style={{
+        {!session && planeDetectionMode !== "NONE" && (<ViroText text={hasFoundPlane ? "Plane found" : "Scanning for planes…"} width={1.5} height={0.12} style={{
                 fontFamily: "Arial",
                 fontSize: 11,
                 color: "#CCCCCC",
                 textAlign: "center",
             }}/>)}
-        <ViroText_1.ViroText text="[ Exit ]" width={1.5} height={0.15} onClick={handleExitClick} style={{
+        <ViroText text="[ Exit ]" width={1.5} height={0.15} onClick={handleExitClick} style={{
             fontFamily: "Arial",
             fontSize: 13,
             color: "#7FCBFF",
             textAlign: "center",
         }}/>
-      </ViroFlexView_1.ViroFlexView>
-    </ViroNode_1.ViroNode>);
+      </ViroFlexView>
+    </ViroNode>);
 }

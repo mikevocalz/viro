@@ -1,6 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.useViroRendererEffects = useViroRendererEffects;
 /**
  * The four post-processing effects, as scene-navigator props.
  *
@@ -13,9 +10,9 @@ exports.useViroRendererEffects = useViroRendererEffects;
  * Applied after the renderer exists rather than at construction, because that is
  * when a prop change can also reach it, and it is what the native setters do.
  */
-const react_1 = require("react");
-function useViroRendererEffects(renderer, { hdrEnabled, bloomEnabled, pbrEnabled, shadowsEnabled }) {
-    (0, react_1.useEffect)(() => {
+import { useEffect } from "react";
+export function useViroRendererEffects(renderer, { hdrEnabled, bloomEnabled, pbrEnabled, shadowsEnabled }) {
+    useEffect(() => {
         if (!renderer)
             return;
         const scene = renderer.scene;

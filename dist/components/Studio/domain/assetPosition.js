@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.studioAssetPosition = studioAssetPosition;
-const placementStore_1 = require("./placementStore");
+import { isTapToPlaceAsset } from "./placementStore";
 /**
  * Author position with the visibility clamp applied: Z defaults to -2 so an
  * asset with no authored Z sits in front of the camera, and a Z nearer than
@@ -18,8 +15,8 @@ const placementStore_1 = require("./placementStore");
  * The spatial-sound position lookup shares this rule, so a PLAY at an asset
  * comes from where that asset is mounted.
  */
-function studioAssetPosition(asset) {
-    const isTapToPlace = (0, placementStore_1.isTapToPlaceAsset)(asset);
+export function studioAssetPosition(asset) {
+    const isTapToPlace = isTapToPlaceAsset(asset);
     const isWorldPlacement = !!asset
         .world_placement;
     let posZ = asset.position_z ?? (isTapToPlace ? 0 : -2);

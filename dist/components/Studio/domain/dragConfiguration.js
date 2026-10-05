@@ -1,8 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.DragConfiguration = void 0;
-exports.dragSurfaceFromAnchor = dragSurfaceFromAnchor;
-exports.isSameDragSurface = isSameDragSurface;
 /**
  * How far from the camera a dragged asset may travel. Generous on purpose,
  * because it is measured against the surface the drag is confined to and
@@ -30,7 +25,7 @@ const MAX_DRAG_DISTANCE = 12;
  * `extractRotation(...).toEuler()`). Read in any other order it gives the wrong
  * axis for every plane that is not already axis-aligned.
  */
-function dragSurfaceFromAnchor(position, rotationDegrees) {
+export function dragSurfaceFromAnchor(position, rotationDegrees) {
     const toRadians = Math.PI / 180;
     const cx = Math.cos(rotationDegrees[0] * toRadians);
     const sx = Math.sin(rotationDegrees[0] * toRadians);
@@ -51,13 +46,13 @@ function dragSurfaceFromAnchor(position, rotationDegrees) {
     };
 }
 /** Equal to within a tenth of a degree and a centimetre. */
-function isSameDragSurface(a, b) {
+export function isSameDragSurface(a, b) {
     const alignment = a.normal[0] * b.normal[0] +
         a.normal[1] * b.normal[1] +
         a.normal[2] * b.normal[2];
     return alignment > 0.999998 && Math.abs(a.distance - b.distance) < 0.01;
 }
-class DragConfiguration {
+export class DragConfiguration {
     /**
      * FixedToPlane when the scene uses plane detection; otherwise FixedDistance,
      * which keeps the object at its grab distance and follows the finger.
@@ -130,4 +125,3 @@ class DragConfiguration {
         }
     }
 }
-exports.DragConfiguration = DragConfiguration;

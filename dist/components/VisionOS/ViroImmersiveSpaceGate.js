@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Copyright © 2026 ReactVision. All rights reserved.
  *
@@ -16,26 +15,17 @@
  * navigator's mount effect runs, the scene root has already rendered and said which it is. The
  * navigator opens a scan when it renders and reads the answer in that effect.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.beginSceneRootScan = beginSceneRootScan;
-exports.markARSceneRoot = markARSceneRoot;
-exports.sawARSceneRoot = sawARSceneRoot;
-exports.claimImmersiveSpace = claimImmersiveSpace;
-exports.ownsImmersiveSpace = ownsImmersiveSpace;
-exports.releaseImmersiveSpace = releaseImmersiveSpace;
-exports.scheduleImmersiveSpaceExit = scheduleImmersiveSpaceExit;
-exports.resetImmersiveSpaceOwner = resetImmersiveSpaceOwner;
 let sawARRoot = false;
 /** Called by the navigator as it renders, before its children do. */
-function beginSceneRootScan() {
+export function beginSceneRootScan() {
     sawARRoot = false;
 }
 /** Called by an AR scene root that is refusing to mount on visionOS. */
-function markARSceneRoot() {
+export function markARSceneRoot() {
     sawARRoot = true;
 }
 /** Called by the navigator in its mount effect, after the children have rendered. */
-function sawARSceneRoot() {
+export function sawARSceneRoot() {
     return sawARRoot;
 }
 /**
@@ -56,7 +46,7 @@ let pendingExit = null;
  * unmounts one navigator and mounts the next in the same commit, cleanup first, so the close is
  * always scheduled before the claim that makes it wrong.
  */
-function claimImmersiveSpace(candidate) {
+export function claimImmersiveSpace(candidate) {
     if (pendingExit !== null) {
         clearTimeout(pendingExit);
         pendingExit = null;
@@ -67,7 +57,7 @@ function claimImmersiveSpace(candidate) {
     owners.push(candidate);
 }
 /** Whether this navigator is the one currently driving the space. */
-function ownsImmersiveSpace(candidate) {
+export function ownsImmersiveSpace(candidate) {
     return owners.length > 0 && owners[owners.length - 1] === candidate;
 }
 /**
@@ -78,7 +68,7 @@ function ownsImmersiveSpace(candidate) {
  *          leave the wearer in an empty room while a perfectly good scene is still attached, and
  *          the renderer falls back to it on its own.
  */
-function releaseImmersiveSpace(candidate) {
+export function releaseImmersiveSpace(candidate) {
     const at = owners.indexOf(candidate);
     if (at === -1)
         return false;
@@ -92,7 +82,7 @@ function releaseImmersiveSpace(candidate) {
  * unconditional close reads as a blink at best, and at worst lands after the reopen and leaves the
  * space shut with nothing to reopen it.
  */
-function scheduleImmersiveSpaceExit(exit) {
+export function scheduleImmersiveSpaceExit(exit) {
     if (pendingExit !== null)
         clearTimeout(pendingExit);
     pendingExit = setTimeout(() => {
@@ -102,7 +92,7 @@ function scheduleImmersiveSpaceExit(exit) {
     }, 0);
 }
 /** Test seam: forgets the owners and any pending exit. */
-function resetImmersiveSpaceOwner() {
+export function resetImmersiveSpaceOwner() {
     owners.length = 0;
     if (pendingExit !== null) {
         clearTimeout(pendingExit);

@@ -1,8 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.createGazeHandler = createGazeHandler;
-exports.resetGazeStates = resetGazeStates;
-const sceneNavigationHandler_1 = require("./sceneNavigationHandler");
+import { executeFunctionWithRelations, } from "./sceneNavigationHandler";
 // Grace/cooldown when the binding leaves hysteresis at 0: a small default so an
 // eye-gaze flicker at the target edge can't reset the dwell or re-fire on spam.
 const DEFAULT_HYSTERESIS_MS = 250;
@@ -35,7 +31,7 @@ function attemptFire(binding, state, ctx, cooldownMs) {
     const fn = binding.scene_function;
     if (!fn)
         return;
-    (0, sceneNavigationHandler_1.executeFunctionWithRelations)(fn, ctx.sceneNavigator, ctx.animations, ctx.onAnimationTrigger, 0, ctx.onSceneChange, ctx.runtimeCtx);
+    executeFunctionWithRelations(fn, ctx.sceneNavigator, ctx.animations, ctx.onAnimationTrigger, 0, ctx.onSceneChange, ctx.runtimeCtx);
 }
 /**
  * Builds the target node's `onGaze` callback from every gaze binding on that
@@ -44,7 +40,7 @@ function attemptFire(binding, state, ctx, cooldownMs) {
  * re-fires by the same window (cooldown). one_shot fires once ever; repeating
  * fires once per look.
  */
-function createGazeHandler(bindings, ctx, stateRef) {
+export function createGazeHandler(bindings, ctx, stateRef) {
     return (isHovering) => {
         for (const binding of bindings) {
             const state = getState(stateRef, binding.id);
@@ -87,7 +83,7 @@ function createGazeHandler(bindings, ctx, stateRef) {
 }
 /** Cancels every pending timer and clears the map — call on scene change and
  * unmount so a spent dwell can't fire into a torn-down scene. */
-function resetGazeStates(stateRef) {
+export function resetGazeStates(stateRef) {
     for (const state of stateRef.current.values()) {
         if (state.dwellTimer)
             clearTimeout(state.dwellTimer);

@@ -1,6 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.useViroNode = useViroNode;
 /**
  * Shared lifecycle hook for web node components. Creates a native node (and
  * optional geometry) via the C API, parents it under the enclosing node, applies
@@ -10,14 +7,14 @@ exports.useViroNode = useViroNode;
  * first render — children read it from context and parent themselves correctly
  * even though React runs child effects before parent effects.
  */
-const react_1 = require("react");
-const viro_web_renderer_1 = require("@reactvision/viro-web-renderer");
-const ViroWebContext_1 = require("./ViroWebContext");
-const useDeferredRelease_1 = require("./useDeferredRelease");
-const viroMaterialRegistry_1 = require("./viroMaterialRegistry");
-const useViroAnimation_1 = require("./useViroAnimation");
-const viroPhysicsBody_1 = require("./viroPhysicsBody");
-const viroExtendedInput_1 = require("./viroExtendedInput");
+import { useState, useEffect, useRef } from "react";
+import { ViroBillboardAxis, ViroEventAction, ViroClickState, } from "@reactvision/viro-web-renderer";
+import { useViroScene, useViroParentNode, useViroRenderer } from "./ViroWebContext";
+import { useDeferredRelease } from "./useDeferredRelease";
+import { createMaterialFromRegistry } from "./viroMaterialRegistry";
+import { useViroAnimation } from "./useViroAnimation";
+import { applyPhysicsBody } from "./viroPhysicsBody";
+import { configureWebDrag, installExtendedWebInput, warnIfWebInputUnavailable, } from "./viroExtendedInput";
 const DEG2RAD = Math.PI / 180;
 /**
  * The billboard axis a `transformBehaviors` list asks for, or null for none.
@@ -33,19 +30,19 @@ function billboardAxis(behaviors) {
     for (const raw of behaviors.split(",")) {
         switch (raw.trim().toLowerCase()) {
             case "billboard":
-                axis = viro_web_renderer_1.ViroBillboardAxis.All;
+                axis = ViroBillboardAxis.All;
                 break;
             case "billboardx":
-                axis = viro_web_renderer_1.ViroBillboardAxis.X;
+                axis = ViroBillboardAxis.X;
                 break;
             case "billboardy":
-                axis = viro_web_renderer_1.ViroBillboardAxis.Y;
+                axis = ViroBillboardAxis.Y;
                 break;
         }
     }
     return axis;
 }
-function useViroNode(props, createGeometry, 
+export function useViroNode(props, createGeometry, 
 // False until a loaded model's subtree exists. Gates the two things that need
 // it: its embedded animations, and the shader-override merge. A node whose
 // geometry this hook builds is ready on mount, hence the default.
@@ -56,19 +53,19 @@ geometryKey,
 // Factory for the underlying node (default `createNode`). Override for special
 // node types, e.g. portal scenes (`createPortalScene`).
 createNodeFn) {
-    const scene = (0, ViroWebContext_1.useViroScene)();
-    const renderer = (0, ViroWebContext_1.useViroRenderer)();
-    const parent = (0, ViroWebContext_1.useViroParentNode)();
-    const [node] = (0, react_1.useState)(() => createNodeFn ? createNodeFn(scene) : scene.createNode());
-    const geometryRef = (0, react_1.useRef)(0);
+    const scene = useViroScene();
+    const renderer = useViroRenderer();
+    const parent = useViroParentNode();
+    const [node] = useState(() => createNodeFn ? createNodeFn(scene) : scene.createNode());
+    const geometryRef = useRef(0);
     // Read from a ref wherever an effect must not re-run when a callback's
     // identity changes; declared here because the mount effect already needs it.
-    const propsRef = (0, react_1.useRef)(props);
+    const propsRef = useRef(props);
     propsRef.current = props;
     // Node lifecycle: attach to parent on mount; destroy node on unmount. The
     // destroy is deferred so StrictMode's remount re-attaches a live handle.
-    const nodeRelease = (0, useDeferredRelease_1.useDeferredRelease)();
-    (0, react_1.useEffect)(() => {
+    const nodeRelease = useDeferredRelease();
+    useEffect(() => {
         nodeRelease.cancel();
         scene.addChildNode(parent, node);
         propsRef.current.onNodeHandle?.(node);
@@ -82,7 +79,7 @@ createNodeFn) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
     // Geometry lifecycle: (re)built on mount and whenever geometryKey changes.
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         if (!createGeometry)
             return;
         const geo = createGeometry(scene);
@@ -101,7 +98,7 @@ createNodeFn) {
     const [sx, sy, sz] = props.scale ?? [1, 1, 1];
     const opacity = props.opacity ?? 1;
     const visible = props.visible ?? true;
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         scene.setNodePosition(node, px, py, pz);
         scene.setNodeRotation(node, rx * DEG2RAD, ry * DEG2RAD, rz * DEG2RAD);
         scene.setNodeScale(node, sx, sy, sz);
@@ -116,10 +113,10 @@ createNodeFn) {
     const hasScroll = !!props.onScroll;
     const hasDrag = !!props.onDrag && props.dragType !== "Gizmo";
     const hasPinch = !!props.onPinch;
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         if (!hasClick && !hasHover && !hasScroll && !hasDrag && !hasPinch)
             return;
-        (0, viroExtendedInput_1.installExtendedWebInput)(renderer);
+        installExtendedWebInput(renderer);
         const wanted = [];
         if (hasDrag)
             wanted.push("drag");
@@ -127,12 +124,12 @@ createNodeFn) {
             wanted.push("pinch");
         if (hasScroll)
             wanted.push("scroll");
-        (0, viroExtendedInput_1.warnIfWebInputUnavailable)(renderer, wanted);
+        warnIfWebInputUnavailable(renderer, wanted);
         renderer.setNodeEventHandlers(node, {
             onClick: (clickState, source, position) => {
                 const p = propsRef.current;
                 p.onClickState?.(clickState, position, source);
-                if (clickState === viro_web_renderer_1.ViroClickState.Clicked) {
+                if (clickState === ViroClickState.Clicked) {
                     p.onClick?.(position, source);
                 }
             },
@@ -150,9 +147,9 @@ createNodeFn) {
             },
         });
         if (hasClick)
-            scene.setNodeEventEnabled(node, viro_web_renderer_1.ViroEventAction.Click, true);
+            scene.setNodeEventEnabled(node, ViroEventAction.Click, true);
         if (hasHover)
-            scene.setNodeEventEnabled(node, viro_web_renderer_1.ViroEventAction.Hover, true);
+            scene.setNodeEventEnabled(node, ViroEventAction.Hover, true);
         if (hasScroll)
             scene.setNodeEventEnabled(node, 7, true);
         if (hasDrag)
@@ -168,10 +165,10 @@ createNodeFn) {
     // usually pass a fresh object literal each render.
     const dragType = props.dragType;
     const dragPlaneKey = props.dragPlane ? JSON.stringify(props.dragPlane) : "";
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         if (!hasDrag)
             return;
-        (0, viroExtendedInput_1.configureWebDrag)(renderer, node, {
+        configureWebDrag(renderer, node, {
             dragType,
             dragPlane: propsRef.current.dragPlane,
         });
@@ -181,12 +178,12 @@ createNodeFn) {
     const materialsKey = Array.isArray(props.materials)
         ? props.materials.join(",")
         : props.materials ?? "";
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         const geo = geometryRef.current;
         if (!geo || !materialsKey)
             return;
         const firstName = materialsKey.split(",")[0];
-        const material = (0, viroMaterialRegistry_1.createMaterialFromRegistry)(scene, firstName);
+        const material = createMaterialFromRegistry(scene, firstName);
         if (material) {
             scene.setGeometryMaterial(geo, material);
         }
@@ -203,7 +200,7 @@ createNodeFn) {
     const overrideKey = Array.isArray(props.shaderOverrides)
         ? props.shaderOverrides.join(",")
         : props.shaderOverrides ?? "";
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         if (!overrideKey || !contentReady)
             return;
         // Each name re-merges from the materials the node drew before any override
@@ -211,7 +208,7 @@ createNodeFn) {
         // native bridges do too, which is the point: the merge keeps the model's own
         // colours and textures on both surfaces.
         for (const name of overrideKey.split(",")) {
-            const material = (0, viroMaterialRegistry_1.createMaterialFromRegistry)(scene, name);
+            const material = createMaterialFromRegistry(scene, name);
             if (material)
                 scene.applyShaderOverride(node, material);
         }
@@ -223,7 +220,7 @@ createNodeFn) {
     const renderingOrder = props.renderingOrder;
     const lightReceivingBitMask = props.lightReceivingBitMask;
     const shadowCastingBitMask = props.shadowCastingBitMask;
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         if (renderingOrder !== undefined)
             scene.setNodeRenderingOrder(node, renderingOrder);
         // Recursive: a loaded model's geometry is on child nodes, so a mask set on
@@ -239,7 +236,7 @@ createNodeFn) {
     const behaviorsKey = Array.isArray(props.transformBehaviors)
         ? props.transformBehaviors.join(",")
         : props.transformBehaviors ?? "";
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         scene.setNodeBillboard(node, billboardAxis(behaviorsKey));
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [node, behaviorsKey]);
@@ -248,12 +245,12 @@ createNodeFn) {
     // its velocity every frame and nothing would ever fall.
     const physicsKey = props.physicsBody ? JSON.stringify(props.physicsBody) : "";
     const viroTag = props.viroTag ?? "";
-    (0, react_1.useEffect)(() => {
-        (0, viroPhysicsBody_1.applyPhysicsBody)(scene, node, propsRef.current.physicsBody, viroTag);
+    useEffect(() => {
+        applyPhysicsBody(scene, node, propsRef.current.physicsBody, viroTag);
         return () => scene.clearPhysicsBody(node);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [node, physicsKey, viroTag]);
     // Animation (declarative ViroAnimation or model animation).
-    (0, useViroAnimation_1.useViroAnimation)(node, props.animation, { position: [px, py, pz], rotation: [rx, ry, rz], scale: [sx, sy, sz], opacity }, contentReady);
+    useViroAnimation(node, props.animation, { position: [px, py, pz], rotation: [rx, ry, rz], scale: [sx, sy, sz], opacity }, contentReady);
     return node;
 }

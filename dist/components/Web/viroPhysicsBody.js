@@ -1,7 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.resolveShape = resolveShape;
-exports.applyPhysicsBody = applyPhysicsBody;
 /**
  * Translating a node's `physicsBody` prop into C API calls.
  *
@@ -11,12 +7,12 @@ exports.applyPhysicsBody = applyPhysicsBody;
  * were already fought out against virocore's real behaviour. Nothing here
  * re-decides any of that; it only carries it across.
  */
-const viro_web_renderer_1 = require("@reactvision/viro-web-renderer");
+import { ViroPhysicsBodyType, ViroPhysicsShapeType, VIRO_COMPOUND_CHILD_STRIDE, } from "@reactvision/viro-web-renderer";
 function bodyType(type) {
     switch ((type ?? "").toLowerCase()) {
-        case "dynamic": return viro_web_renderer_1.ViroPhysicsBodyType.Dynamic;
-        case "kinematic": return viro_web_renderer_1.ViroPhysicsBodyType.Kinematic;
-        default: return viro_web_renderer_1.ViroPhysicsBodyType.Static;
+        case "dynamic": return ViroPhysicsBodyType.Dynamic;
+        case "kinematic": return ViroPhysicsBodyType.Kinematic;
+        default: return ViroPhysicsBodyType.Static;
     }
 }
 const vec3 = (a, i) => a?.[i] ?? 0;
@@ -29,13 +25,13 @@ const vec3 = (a, i) => a?.[i] ?? 0;
  * Substituting a unit box here is what used to give a 0.4 m model a 1 m collider
  * and stand it off the ground.
  */
-function resolveShape(shape) {
+export function resolveShape(shape) {
     const name = (shape?.type ?? "").toLowerCase();
     if (name === "box") {
-        return { type: viro_web_renderer_1.ViroPhysicsShapeType.Box, params: [...(shape?.params ?? [])] };
+        return { type: ViroPhysicsShapeType.Box, params: [...(shape?.params ?? [])] };
     }
     if (name === "sphere") {
-        return { type: viro_web_renderer_1.ViroPhysicsShapeType.Sphere, params: [shape?.params?.[0] ?? 0] };
+        return { type: ViroPhysicsShapeType.Sphere, params: [shape?.params?.[0] ?? 0] };
     }
     if (name === "compound") {
         // Flattened at VIRO_COMPOUND_CHILD_STRIDE floats per part. A part's rotation
@@ -49,12 +45,12 @@ function resolveShape(shape) {
         }
         // No parts is the inferred compound virocore has always meant by the tag,
         // so let it infer rather than sending an empty explicit one.
-        if (params.length < viro_web_renderer_1.VIRO_COMPOUND_CHILD_STRIDE) {
-            return { type: viro_web_renderer_1.ViroPhysicsShapeType.Infer, params: [] };
+        if (params.length < VIRO_COMPOUND_CHILD_STRIDE) {
+            return { type: ViroPhysicsShapeType.Infer, params: [] };
         }
-        return { type: viro_web_renderer_1.ViroPhysicsShapeType.Compound, params };
+        return { type: ViroPhysicsShapeType.Compound, params };
     }
-    return { type: viro_web_renderer_1.ViroPhysicsShapeType.Infer, params: [] };
+    return { type: ViroPhysicsShapeType.Infer, params: [] };
 }
 /**
  * Attach (or detach) a node's rigid body.
@@ -63,7 +59,7 @@ function resolveShape(shape) {
  * switch already decides whether the world simulates, and a body nobody drives
  * is just a collider waiting to surprise someone.
  */
-function applyPhysicsBody(scene, node, body, tag) {
+export function applyPhysicsBody(scene, node, body, tag) {
     if (!body || body.enabled === false) {
         scene.clearPhysicsBody(node);
         return;

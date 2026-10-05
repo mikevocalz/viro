@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.studioRecordingStore = void 0;
-const utils_1 = require("./utils");
+import { GlobalListeners } from "./utils";
 /**
  * Screen recording is device-global (one session per process) and the native
  * recorder exposes no isRecording query, so this module singleton is the single
@@ -11,7 +8,7 @@ const utils_1 = require("./utils");
 class StudioRecordingStore {
     recording = false;
     startedAtMs = null;
-    listeners = new utils_1.GlobalListeners();
+    listeners = new GlobalListeners();
     isRecording() {
         return this.recording;
     }
@@ -47,4 +44,4 @@ class StudioRecordingStore {
         this.listeners.notify();
     }
 }
-exports.studioRecordingStore = new StudioRecordingStore();
+export const studioRecordingStore = new StudioRecordingStore();

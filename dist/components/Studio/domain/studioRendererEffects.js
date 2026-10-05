@@ -1,6 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.STUDIO_TONE_MAPPING_ENABLED = exports.STUDIO_RENDERER_EFFECTS = void 0;
 /**
  * The post-processing Studio asks its renderer for, on both hosts.
  *
@@ -15,9 +12,9 @@ exports.STUDIO_TONE_MAPPING_ENABLED = exports.STUDIO_RENDERER_EFFECTS = void 0;
  * renders the model white. The curve is switched off per scene instead, through
  * ViroScene's `toneMappingEnabled`, which both hosts pass.
  */
-exports.STUDIO_RENDERER_EFFECTS = {
+export const STUDIO_RENDERER_EFFECTS = {
     hdrEnabled: true,
     bloomEnabled: false,
 };
 /** Studio previews no tone curve, so no scene of its renders under one. */
-exports.STUDIO_TONE_MAPPING_ENABLED = false;
+export const STUDIO_TONE_MAPPING_ENABLED = false;

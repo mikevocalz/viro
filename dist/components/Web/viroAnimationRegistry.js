@@ -1,27 +1,22 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.registerViroAnimations = registerViroAnimations;
-exports.getViroAnimationDef = getViroAnimationDef;
-exports.runDeclarativeAnimation = runDeclarativeAnimation;
-const viro_web_renderer_1 = require("@reactvision/viro-web-renderer");
+import { ViroEasing } from "@reactvision/viro-web-renderer";
 const DEG2RAD = Math.PI / 180;
 const registry = new Map();
-function registerViroAnimations(animations) {
+export function registerViroAnimations(animations) {
     for (const name of Object.keys(animations)) {
         registry.set(name, animations[name]);
     }
 }
-function getViroAnimationDef(name) {
+export function getViroAnimationDef(name) {
     return registry.get(name);
 }
 function easingValue(easing) {
     switch (easing) {
-        case "EaseIn": return viro_web_renderer_1.ViroEasing.EaseIn;
-        case "EaseOut": return viro_web_renderer_1.ViroEasing.EaseOut;
-        case "EaseInEaseOut": return viro_web_renderer_1.ViroEasing.EaseInEaseOut;
-        case "Bounce": return viro_web_renderer_1.ViroEasing.Bounce;
-        case "PowerDecel": return viro_web_renderer_1.ViroEasing.PowerDecel;
-        default: return viro_web_renderer_1.ViroEasing.Linear;
+        case "EaseIn": return ViroEasing.EaseIn;
+        case "EaseOut": return ViroEasing.EaseOut;
+        case "EaseInEaseOut": return ViroEasing.EaseInEaseOut;
+        case "Bounce": return ViroEasing.Bounce;
+        case "PowerDecel": return ViroEasing.PowerDecel;
+        default: return ViroEasing.Linear;
     }
 }
 function coerce(value, fallback) {
@@ -42,7 +37,7 @@ function coerce(value, fallback) {
  * registry entry still gets it, and matches the native side, where the prop
  * delay gates the start and the registered one is a second wait on top.
  */
-function runDeclarativeAnimation(scene, node, name, base, loop, delayMs) {
+export function runDeclarativeAnimation(scene, node, name, base, loop, delayMs) {
     const def = registry.get(name);
     if (!def)
         return false;

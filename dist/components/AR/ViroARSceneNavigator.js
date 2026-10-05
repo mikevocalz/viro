@@ -10,52 +10,17 @@
  * @flow
  */
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ViroARSceneNavigator = void 0;
-const React = __importStar(require("react"));
-const react_native_1 = require("react-native");
-const ViroPlatform_1 = require("../Utilities/ViroPlatform");
-const ViroScanStatus_1 = require("./ViroScanStatus");
-const ViroNativeModule_1 = require("../Utilities/ViroNativeModule");
-const ViroARSceneNavigatorModule = (0, ViroNativeModule_1.withMissingModuleFallback)(react_native_1.NativeModules.VRTARSceneNavigatorModule, "VRTARSceneNavigatorModule");
+import * as React from "react";
+import { findNodeHandle, NativeModules, requireNativeComponent, StyleSheet, Text, View, } from "react-native";
+import { isQuest, isVisionOS } from "../Utilities/ViroPlatform";
+import { isLocationTransform, parseScanDiagnostics, parseScanStatus, parseWorldMeshStats, withScanDiagnostics, } from "./ViroScanStatus";
+import { withMissingModuleFallback } from "../Utilities/ViroNativeModule";
+const ViroARSceneNavigatorModule = withMissingModuleFallback(NativeModules.VRTARSceneNavigatorModule, "VRTARSceneNavigatorModule");
 let mathRandomOffset = 0;
 /**
  * ViroARSceneNavigator is used to transition between multiple AR Scenes.
  */
-class ViroARSceneNavigator extends React.Component {
+export class ViroARSceneNavigator extends React.Component {
     static _questWarningLogged = false;
     static _visionOSWarningLogged = false;
     _component = null;
@@ -109,7 +74,7 @@ class ViroARSceneNavigator extends React.Component {
     componentWillUnmount() {
         // Explicitly trigger native cleanup to prevent memory leaks
         // This ensures ARSession is properly paused and GL resources are released
-        const nodeHandle = (0, react_native_1.findNodeHandle)(this);
+        const nodeHandle = findNodeHandle(this);
         if (nodeHandle) {
             ViroARSceneNavigatorModule.cleanup(nodeHandle);
         }
@@ -124,7 +89,7 @@ class ViroARSceneNavigator extends React.Component {
     _startVideoRecording = (fileName, saveToCameraRoll, 
     // TODO: What are the errorCodes? make a type for this
     onError) => {
-        ViroARSceneNavigatorModule.startVideoRecording((0, react_native_1.findNodeHandle)(this), fileName, saveToCameraRoll, onError);
+        ViroARSceneNavigatorModule.startVideoRecording(findNodeHandle(this), fileName, saveToCameraRoll, onError);
     };
     /**
      * Stops recording the video of the Viro Renderer.
@@ -133,7 +98,7 @@ class ViroARSceneNavigator extends React.Component {
      * @returns Promise that resolves when the video has stopped recording.
      */
     _stopVideoRecording = async () => {
-        return await ViroARSceneNavigatorModule.stopVideoRecording((0, react_native_1.findNodeHandle)(this));
+        return await ViroARSceneNavigatorModule.stopVideoRecording(findNodeHandle(this));
     };
     /**
      * Takes a screenshot of the Viro renderer
@@ -143,7 +108,7 @@ class ViroARSceneNavigator extends React.Component {
      * returns Object w/ success, url and errorCode keys.
      */
     _takeScreenshot = async (fileName, saveToCameraRoll) => {
-        return await ViroARSceneNavigatorModule.takeScreenshot((0, react_native_1.findNodeHandle)(this), fileName, saveToCameraRoll);
+        return await ViroARSceneNavigatorModule.takeScreenshot(findNodeHandle(this), fileName, saveToCameraRoll);
     };
     /**
      * @todo document _project
@@ -152,7 +117,7 @@ class ViroARSceneNavigator extends React.Component {
      * @returns
      */
     _project = async (point) => {
-        return await ViroARSceneNavigatorModule.project((0, react_native_1.findNodeHandle)(this), point);
+        return await ViroARSceneNavigatorModule.project(findNodeHandle(this), point);
     };
     /**
      * TODO: Document _unproject
@@ -161,7 +126,7 @@ class ViroARSceneNavigator extends React.Component {
      * @returns
      */
     _unproject = async (point) => {
-        return await ViroARSceneNavigatorModule.unproject((0, react_native_1.findNodeHandle)(this), point);
+        return await ViroARSceneNavigatorModule.unproject(findNodeHandle(this), point);
     };
     /**
      * Gets a random tag string.
@@ -462,7 +427,7 @@ class ViroARSceneNavigator extends React.Component {
      * @param removeAnchors - determines if the existing anchors should be removed too.
      */
     _resetARSession = (resetTracking, removeAnchors) => {
-        ViroARSceneNavigatorModule.resetARSession((0, react_native_1.findNodeHandle)(this), resetTracking, removeAnchors);
+        ViroARSceneNavigatorModule.resetARSession(findNodeHandle(this), resetTracking, removeAnchors);
     };
     /**
      * [iOS/ARKit 1.5+ Only]
@@ -476,7 +441,7 @@ class ViroARSceneNavigator extends React.Component {
      *  array containing 3 floats (note: rotation is in degrees).
      */
     _setWorldOrigin = (worldOrigin) => {
-        ViroARSceneNavigatorModule.setWorldOrigin((0, react_native_1.findNodeHandle)(this), worldOrigin);
+        ViroARSceneNavigatorModule.setWorldOrigin(findNodeHandle(this), worldOrigin);
     };
     /**
      * Host a local anchor to the cloud for cross-platform sharing.
@@ -501,22 +466,22 @@ class ViroARSceneNavigator extends React.Component {
      * @returns Promise resolving to { success: boolean, error?: string }.
      */
     _startRecording = async (outputDir) => {
-        return await ViroARSceneNavigatorModule.startRecording((0, react_native_1.findNodeHandle)(this), outputDir);
+        return await ViroARSceneNavigatorModule.startRecording(findNodeHandle(this), outputDir);
     };
     /**
      * Stops the recording started by startRecording and finalizes video.mp4 + session.jsonl.
      */
     _stopRecording = async () => {
-        return await ViroARSceneNavigatorModule.stopRecording((0, react_native_1.findNodeHandle)(this));
+        return await ViroARSceneNavigatorModule.stopRecording(findNodeHandle(this));
     };
     /**
      * The current recording state: "None" | "Recording" | "IOError" | "Unsupported".
      */
     _getRecordingStatus = async () => {
-        return await ViroARSceneNavigatorModule.getRecordingStatus((0, react_native_1.findNodeHandle)(this));
+        return await ViroARSceneNavigatorModule.getRecordingStatus(findNodeHandle(this));
     };
     _hostCloudAnchor = async (anchorId, ttlDays = 1) => {
-        return await ViroARSceneNavigatorModule.hostCloudAnchor((0, react_native_1.findNodeHandle)(this), anchorId, Math.max(1, Math.min(365, ttlDays)) // Clamp to valid range
+        return await ViroARSceneNavigatorModule.hostCloudAnchor(findNodeHandle(this), anchorId, Math.max(1, Math.min(365, ttlDays)) // Clamp to valid range
         );
     };
     /**
@@ -530,7 +495,7 @@ class ViroARSceneNavigator extends React.Component {
      * @returns Promise resolving to the anchor data
      */
     _resolveCloudAnchor = async (cloudAnchorId) => {
-        return await ViroARSceneNavigatorModule.resolveCloudAnchor((0, react_native_1.findNodeHandle)(this), cloudAnchorId);
+        return await ViroARSceneNavigatorModule.resolveCloudAnchor(findNodeHandle(this), cloudAnchorId);
     };
     /**
      * Progress of a resolve in flight. `active` is false when none is running.
@@ -542,14 +507,14 @@ class ViroARSceneNavigator extends React.Component {
      * consistent match.
      */
     _getCloudAnchorStatus = async () => {
-        return await ViroARSceneNavigatorModule.getCloudAnchorStatus((0, react_native_1.findNodeHandle)(this));
+        return await ViroARSceneNavigatorModule.getCloudAnchorStatus(findNodeHandle(this));
     };
     /**
      * Cancel all pending cloud anchor operations.
      * Use this when exiting a scene or when cloud operations are no longer needed.
      */
     _cancelCloudAnchorOperations = () => {
-        ViroARSceneNavigatorModule.cancelCloudAnchorOperations((0, react_native_1.findNodeHandle)(this));
+        ViroARSceneNavigatorModule.cancelCloudAnchorOperations(findNodeHandle(this));
     };
     /**
      * Begin a room/building-scale scan that defines its own location frame,
@@ -558,7 +523,7 @@ class ViroARSceneNavigator extends React.Component {
      * does not require tapping/placing an anchor first.
      */
     _startScan = () => {
-        ViroARSceneNavigatorModule.rvStartScan((0, react_native_1.findNodeHandle)(this));
+        ViroARSceneNavigatorModule.rvStartScan(findNodeHandle(this));
     };
     /**
      * Finish a scan started with startScan() and host it to the cloud. Same
@@ -569,14 +534,14 @@ class ViroARSceneNavigator extends React.Component {
      * @returns Promise resolving to the hosting result with cloudAnchorId
      */
     _finishScan = async (ttlDays = 1) => {
-        const nodeHandle = (0, react_native_1.findNodeHandle)(this);
+        const nodeHandle = findNodeHandle(this);
         const result = await ViroARSceneNavigatorModule.rvFinishScan(nodeHandle, Math.max(1, Math.min(365, ttlDays)) // Clamp to valid range
         );
         // A failure arrives as a sentence, which is all a person needs and not enough for an app to
         // say what to do differently. The numbers the gate compared are attached here so a caller can
         // tell "walk to more positions" from "there was nothing to see".
         if (!result?.success) {
-            return (0, ViroScanStatus_1.withScanDiagnostics)(result, await this._getScanDiagnostics());
+            return withScanDiagnostics(result, await this._getScanDiagnostics());
         }
         return result;
     };
@@ -588,7 +553,7 @@ class ViroARSceneNavigator extends React.Component {
      */
     _getScanStatus = async () => {
         try {
-            return (0, ViroScanStatus_1.parseScanStatus)(await ViroARSceneNavigatorModule.rvGetScanStatus((0, react_native_1.findNodeHandle)(this)));
+            return parseScanStatus(await ViroARSceneNavigatorModule.rvGetScanStatus(findNodeHandle(this)));
         }
         catch (error) {
             return { available: false, error: String(error) };
@@ -604,7 +569,7 @@ class ViroARSceneNavigator extends React.Component {
      */
     _getWorldMeshStats = async () => {
         try {
-            return (0, ViroScanStatus_1.parseWorldMeshStats)(await ViroARSceneNavigatorModule.rvGetWorldMeshStats((0, react_native_1.findNodeHandle)(this)));
+            return parseWorldMeshStats(await ViroARSceneNavigatorModule.rvGetWorldMeshStats(findNodeHandle(this)));
         }
         catch (error) {
             return { available: false, reason: String(error) };
@@ -613,7 +578,7 @@ class ViroARSceneNavigator extends React.Component {
     /** The measurements behind the last scan-based host, pass or fail. */
     _getScanDiagnostics = async () => {
         try {
-            return (0, ViroScanStatus_1.parseScanDiagnostics)(await ViroARSceneNavigatorModule.rvGetScanDiagnostics((0, react_native_1.findNodeHandle)(this)));
+            return parseScanDiagnostics(await ViroARSceneNavigatorModule.rvGetScanDiagnostics(findNodeHandle(this)));
         }
         catch {
             return { valid: false };
@@ -628,11 +593,11 @@ class ViroARSceneNavigator extends React.Component {
      * app picks, and it doubles as the co-location room key.
      */
     _rvCreateSharedFrame = async (groupId) => {
-        return await ViroARSceneNavigatorModule.rvCreateSharedFrame((0, react_native_1.findNodeHandle)(this), groupId);
+        return await ViroARSceneNavigatorModule.rvCreateSharedFrame(findNodeHandle(this), groupId);
     };
     /** CL-H: recover a shared frame another device published to `groupId`. */
     _rvJoinSharedFrame = async (groupId) => {
-        return await ViroARSceneNavigatorModule.rvJoinSharedFrame((0, react_native_1.findNodeHandle)(this), groupId);
+        return await ViroARSceneNavigatorModule.rvJoinSharedFrame(findNodeHandle(this), groupId);
     };
     /**
      * Serialize the current world mesh (from ARWorldMesh / depth sensing) to a
@@ -649,14 +614,14 @@ class ViroARSceneNavigator extends React.Component {
         // Refused here rather than sent on. The transform is what puts the mesh in the scan's frame,
         // and the only source of one is a finishScan() that succeeded — so a missing value means the
         // caller is ahead of itself, and saying that beats a native failure about a malformed string.
-        if (!(0, ViroScanStatus_1.isLocationTransform)(locationTransform)) {
+        if (!isLocationTransform(locationTransform)) {
             return {
                 success: false,
                 error: "snapshotWorldMeshToFile needs the locationTransform returned by finishScan(). " +
                     "Host a scan first.",
             };
         }
-        return await ViroARSceneNavigatorModule.rvSnapshotWorldMeshToFile((0, react_native_1.findNodeHandle)(this), locationTransform);
+        return await ViroARSceneNavigatorModule.rvSnapshotWorldMeshToFile(findNodeHandle(this), locationTransform);
     };
     /**
      * Load a mesh snapshot downloaded from a resolved cloud anchor's mesh
@@ -675,14 +640,14 @@ class ViroARSceneNavigator extends React.Component {
     _loadWorldMeshFromFile = async (filePath, resolvedTransform) => {
         // Same reasoning as the snapshot: without the frame the mesh was written in, it loads
         // somewhere arbitrary. A resolved anchor supplies it; so does the scan that hosted it.
-        if (!filePath || !(0, ViroScanStatus_1.isLocationTransform)(resolvedTransform)) {
+        if (!filePath || !isLocationTransform(resolvedTransform)) {
             return {
                 success: false,
                 error: "loadWorldMeshFromFile needs a file path and the transform of the frame the mesh " +
                     "was written in — from a resolved anchor, or from the finishScan() that hosted it.",
             };
         }
-        return await ViroARSceneNavigatorModule.rvLoadWorldMeshFromFile((0, react_native_1.findNodeHandle)(this), filePath, resolvedTransform);
+        return await ViroARSceneNavigatorModule.rvLoadWorldMeshFromFile(findNodeHandle(this), filePath, resolvedTransform);
     };
     // ===========================================================================
     // Geospatial API Methods
@@ -693,7 +658,7 @@ class ViroARSceneNavigator extends React.Component {
      * @returns Promise resolving to support status
      */
     _isGeospatialModeSupported = async () => {
-        return await ViroARSceneNavigatorModule.isGeospatialModeSupported((0, react_native_1.findNodeHandle)(this));
+        return await ViroARSceneNavigatorModule.isGeospatialModeSupported(findNodeHandle(this));
     };
     /**
      * Check if only approximate location is granted (iOS 14+ "Precise
@@ -704,7 +669,7 @@ class ViroARSceneNavigator extends React.Component {
      * @returns Promise resolving to the reduced-accuracy status
      */
     _isLocationAccuracyReduced = async () => {
-        return await ViroARSceneNavigatorModule.isLocationAccuracyReduced((0, react_native_1.findNodeHandle)(this));
+        return await ViroARSceneNavigatorModule.isLocationAccuracyReduced(findNodeHandle(this));
     };
     /**
      * Enable or disable geospatial mode.
@@ -713,7 +678,7 @@ class ViroARSceneNavigator extends React.Component {
      * @param enabled - Whether to enable geospatial mode
      */
     _setGeospatialModeEnabled = (enabled) => {
-        ViroARSceneNavigatorModule.setGeospatialModeEnabled((0, react_native_1.findNodeHandle)(this), enabled);
+        ViroARSceneNavigatorModule.setGeospatialModeEnabled(findNodeHandle(this), enabled);
     };
     /**
      * Get the current Earth tracking state.
@@ -721,7 +686,7 @@ class ViroARSceneNavigator extends React.Component {
      * @returns Promise resolving to the current tracking state
      */
     _getEarthTrackingState = async () => {
-        return await ViroARSceneNavigatorModule.getEarthTrackingState((0, react_native_1.findNodeHandle)(this));
+        return await ViroARSceneNavigatorModule.getEarthTrackingState(findNodeHandle(this));
     };
     /**
      * Get the camera's current geospatial pose (latitude, longitude, altitude, etc.)
@@ -729,7 +694,7 @@ class ViroARSceneNavigator extends React.Component {
      * @returns Promise resolving to the camera's geospatial pose
      */
     _getCameraGeospatialPose = async () => {
-        return await ViroARSceneNavigatorModule.getCameraGeospatialPose((0, react_native_1.findNodeHandle)(this));
+        return await ViroARSceneNavigatorModule.getCameraGeospatialPose(findNodeHandle(this));
     };
     /**
      * Check VPS (Visual Positioning System) availability at a specific location.
@@ -740,7 +705,7 @@ class ViroARSceneNavigator extends React.Component {
      * @returns Promise resolving to VPS availability status
      */
     _checkVPSAvailability = async (latitude, longitude) => {
-        return await ViroARSceneNavigatorModule.checkVPSAvailability((0, react_native_1.findNodeHandle)(this), latitude, longitude);
+        return await ViroARSceneNavigatorModule.checkVPSAvailability(findNodeHandle(this), latitude, longitude);
     };
     /**
      * Create a WGS84 geospatial anchor at the specified location.
@@ -753,7 +718,7 @@ class ViroARSceneNavigator extends React.Component {
      * @returns Promise resolving to the created anchor
      */
     _createGeospatialAnchor = async (latitude, longitude, altitude, quaternion) => {
-        return await ViroARSceneNavigatorModule.createGeospatialAnchor((0, react_native_1.findNodeHandle)(this), latitude, longitude, altitude, quaternion || [0, 0, 0, 1]);
+        return await ViroARSceneNavigatorModule.createGeospatialAnchor(findNodeHandle(this), latitude, longitude, altitude, quaternion || [0, 0, 0, 1]);
     };
     /**
      * Create a terrain anchor at the specified location.
@@ -766,7 +731,7 @@ class ViroARSceneNavigator extends React.Component {
      * @returns Promise resolving to the created anchor
      */
     _createTerrainAnchor = async (latitude, longitude, altitudeAboveTerrain, quaternion) => {
-        return await ViroARSceneNavigatorModule.createTerrainAnchor((0, react_native_1.findNodeHandle)(this), latitude, longitude, altitudeAboveTerrain, quaternion || [0, 0, 0, 1]);
+        return await ViroARSceneNavigatorModule.createTerrainAnchor(findNodeHandle(this), latitude, longitude, altitudeAboveTerrain, quaternion || [0, 0, 0, 1]);
     };
     /**
      * Create a rooftop anchor at the specified location.
@@ -779,7 +744,7 @@ class ViroARSceneNavigator extends React.Component {
      * @returns Promise resolving to the created anchor
      */
     _createRooftopAnchor = async (latitude, longitude, altitudeAboveRooftop, quaternion) => {
-        return await ViroARSceneNavigatorModule.createRooftopAnchor((0, react_native_1.findNodeHandle)(this), latitude, longitude, altitudeAboveRooftop, quaternion || [0, 0, 0, 1]);
+        return await ViroARSceneNavigatorModule.createRooftopAnchor(findNodeHandle(this), latitude, longitude, altitudeAboveRooftop, quaternion || [0, 0, 0, 1]);
     };
     /**
      * Remove a geospatial anchor from the session.
@@ -787,7 +752,7 @@ class ViroARSceneNavigator extends React.Component {
      * @param anchorId - The ID of the anchor to remove
      */
     _removeGeospatialAnchor = (anchorId) => {
-        ViroARSceneNavigatorModule.removeGeospatialAnchor((0, react_native_1.findNodeHandle)(this), anchorId);
+        ViroARSceneNavigatorModule.removeGeospatialAnchor(findNodeHandle(this), anchorId);
     };
     /**
      * ReactVision — save GPS coordinates to the backend and return a cross-device shareable UUID.
@@ -800,7 +765,7 @@ class ViroARSceneNavigator extends React.Component {
      * @returns Promise resolving to { success, anchorId } where anchorId is the platform UUID
      */
     _hostGeospatialAnchor = async (latitude, longitude, altitude, altitudeMode) => {
-        return await ViroARSceneNavigatorModule.hostGeospatialAnchor((0, react_native_1.findNodeHandle)(this), latitude, longitude, altitude, altitudeMode || "street_level");
+        return await ViroARSceneNavigatorModule.hostGeospatialAnchor(findNodeHandle(this), latitude, longitude, altitude, altitudeMode || "street_level");
     };
     /**
      * ReactVision — fetch GPS coordinates from the backend by platform UUID and create a local AR anchor.
@@ -811,14 +776,14 @@ class ViroARSceneNavigator extends React.Component {
      * @returns Promise resolving to { success, anchor: { anchorId, latitude, longitude, altitude } }
      */
     _resolveGeospatialAnchor = async (platformUuid, quaternion) => {
-        return await ViroARSceneNavigatorModule.resolveGeospatialAnchor((0, react_native_1.findNodeHandle)(this), platformUuid, quaternion || [0, 0, 0, 1]);
+        return await ViroARSceneNavigatorModule.resolveGeospatialAnchor(findNodeHandle(this), platformUuid, quaternion || [0, 0, 0, 1]);
     };
     /**
      * ReactVision — fetch a geospatial anchor record by UUID.
      * Returns the anchor with linked scene asset data (position, rotation, scale, fileUrl).
      */
     _rvGetGeospatialAnchor = async (anchorId) => {
-        return await ViroARSceneNavigatorModule.rvGetGeospatialAnchor((0, react_native_1.findNodeHandle)(this), anchorId);
+        return await ViroARSceneNavigatorModule.rvGetGeospatialAnchor(findNodeHandle(this), anchorId);
     };
     /**
      * ReactVision — find geospatial anchors near a GPS location.
@@ -828,62 +793,62 @@ class ViroARSceneNavigator extends React.Component {
      * @param limit     Max results (default 50)
      */
     _rvFindNearbyGeospatialAnchors = async (latitude, longitude, radius = 500, limit = 50) => {
-        return await ViroARSceneNavigatorModule.rvFindNearbyGeospatialAnchors((0, react_native_1.findNodeHandle)(this), latitude, longitude, radius, limit);
+        return await ViroARSceneNavigatorModule.rvFindNearbyGeospatialAnchors(findNodeHandle(this), latitude, longitude, radius, limit);
     };
     /**
      * ReactVision — update a geospatial anchor (link scene asset, scene, or rename).
      * Pass null/empty string to leave a field unchanged.
      */
     _rvUpdateGeospatialAnchor = async (anchorId, sceneAssetId, sceneId, name, userAssetId) => {
-        return await ViroARSceneNavigatorModule.rvUpdateGeospatialAnchor((0, react_native_1.findNodeHandle)(this), anchorId, sceneAssetId ?? "", sceneId ?? "", name ?? "", userAssetId ?? "");
+        return await ViroARSceneNavigatorModule.rvUpdateGeospatialAnchor(findNodeHandle(this), anchorId, sceneAssetId ?? "", sceneId ?? "", name ?? "", userAssetId ?? "");
     };
     _rvUploadAsset = async (filePath, assetType, fileName, appUserId) => {
-        return await ViroARSceneNavigatorModule.rvUploadAsset((0, react_native_1.findNodeHandle)(this), filePath, assetType, fileName, appUserId ?? "");
+        return await ViroARSceneNavigatorModule.rvUploadAsset(findNodeHandle(this), filePath, assetType, fileName, appUserId ?? "");
     };
     /**
      * ReactVision — permanently delete a geospatial anchor from the backend.
      */
     _rvDeleteGeospatialAnchor = async (anchorId) => {
-        return await ViroARSceneNavigatorModule.rvDeleteGeospatialAnchor((0, react_native_1.findNodeHandle)(this), anchorId);
+        return await ViroARSceneNavigatorModule.rvDeleteGeospatialAnchor(findNodeHandle(this), anchorId);
     };
     _rvListGeospatialAnchors = async (limit, offset) => {
-        return await ViroARSceneNavigatorModule.rvListGeospatialAnchors((0, react_native_1.findNodeHandle)(this), limit, offset);
+        return await ViroARSceneNavigatorModule.rvListGeospatialAnchors(findNodeHandle(this), limit, offset);
     };
     // ===========================================================================
     // Cloud Anchor Management API Methods
     // ===========================================================================
     _rvGetCloudAnchor = async (anchorId) => {
-        return await ViroARSceneNavigatorModule.rvGetCloudAnchor((0, react_native_1.findNodeHandle)(this), anchorId);
+        return await ViroARSceneNavigatorModule.rvGetCloudAnchor(findNodeHandle(this), anchorId);
     };
     _rvListCloudAnchors = async (limit, offset) => {
-        return await ViroARSceneNavigatorModule.rvListCloudAnchors((0, react_native_1.findNodeHandle)(this), limit, offset);
+        return await ViroARSceneNavigatorModule.rvListCloudAnchors(findNodeHandle(this), limit, offset);
     };
     _rvUpdateCloudAnchor = async (anchorId, name, description, isPublic) => {
-        return await ViroARSceneNavigatorModule.rvUpdateCloudAnchor((0, react_native_1.findNodeHandle)(this), anchorId, name, description, isPublic);
+        return await ViroARSceneNavigatorModule.rvUpdateCloudAnchor(findNodeHandle(this), anchorId, name, description, isPublic);
     };
     _rvDeleteCloudAnchor = async (anchorId) => {
-        return await ViroARSceneNavigatorModule.rvDeleteCloudAnchor((0, react_native_1.findNodeHandle)(this), anchorId);
+        return await ViroARSceneNavigatorModule.rvDeleteCloudAnchor(findNodeHandle(this), anchorId);
     };
     _rvFindNearbyCloudAnchors = async (latitude, longitude, radius, limit) => {
-        return await ViroARSceneNavigatorModule.rvFindNearbyCloudAnchors((0, react_native_1.findNodeHandle)(this), latitude, longitude, radius, limit);
+        return await ViroARSceneNavigatorModule.rvFindNearbyCloudAnchors(findNodeHandle(this), latitude, longitude, radius, limit);
     };
     _rvGetProject = async () => {
-        return await ViroARSceneNavigatorModule.rvGetProject((0, react_native_1.findNodeHandle)(this));
+        return await ViroARSceneNavigatorModule.rvGetProject(findNodeHandle(this));
     };
     _rvGetScene = async (sceneId) => {
-        return await ViroARSceneNavigatorModule.rvGetScene((0, react_native_1.findNodeHandle)(this), sceneId);
+        return await ViroARSceneNavigatorModule.rvGetScene(findNodeHandle(this), sceneId);
     };
     _rvGetSceneAssets = async (sceneId) => {
-        return await ViroARSceneNavigatorModule.rvGetSceneAssets((0, react_native_1.findNodeHandle)(this), sceneId);
+        return await ViroARSceneNavigatorModule.rvGetSceneAssets(findNodeHandle(this), sceneId);
     };
     _rvAttachAssetToCloudAnchor = async (anchorId, fileUrl, fileSize, name, assetType, externalUserId) => {
-        return await ViroARSceneNavigatorModule.rvAttachAssetToCloudAnchor((0, react_native_1.findNodeHandle)(this), anchorId, fileUrl, fileSize, name, assetType, externalUserId);
+        return await ViroARSceneNavigatorModule.rvAttachAssetToCloudAnchor(findNodeHandle(this), anchorId, fileUrl, fileSize, name, assetType, externalUserId);
     };
     _rvRemoveAssetFromCloudAnchor = async (anchorId, assetId) => {
-        return await ViroARSceneNavigatorModule.rvRemoveAssetFromCloudAnchor((0, react_native_1.findNodeHandle)(this), anchorId, assetId);
+        return await ViroARSceneNavigatorModule.rvRemoveAssetFromCloudAnchor(findNodeHandle(this), anchorId, assetId);
     };
     _rvTrackCloudAnchorResolution = async (anchorId, success, confidence, matchCount, inlierCount, processingTimeMs, platform, externalUserId) => {
-        return await ViroARSceneNavigatorModule.rvTrackCloudAnchorResolution((0, react_native_1.findNodeHandle)(this), anchorId, success, confidence, matchCount, inlierCount, processingTimeMs, platform, externalUserId);
+        return await ViroARSceneNavigatorModule.rvTrackCloudAnchorResolution(findNodeHandle(this), anchorId, success, confidence, matchCount, inlierCount, processingTimeMs, platform, externalUserId);
     };
     // ===========================================================================
     // Scene Semantics API Methods
@@ -896,7 +861,7 @@ class ViroARSceneNavigator extends React.Component {
      * @returns Promise resolving to support status
      */
     _isSemanticModeSupported = async () => {
-        return await ViroARSceneNavigatorModule.isSemanticModeSupported((0, react_native_1.findNodeHandle)(this));
+        return await ViroARSceneNavigatorModule.isSemanticModeSupported(findNodeHandle(this));
     };
     /**
      * Enable or disable Scene Semantics mode.
@@ -906,7 +871,7 @@ class ViroARSceneNavigator extends React.Component {
      * @param enabled - Whether to enable semantic mode
      */
     _setSemanticModeEnabled = (enabled) => {
-        ViroARSceneNavigatorModule.setSemanticModeEnabled((0, react_native_1.findNodeHandle)(this), enabled);
+        ViroARSceneNavigatorModule.setSemanticModeEnabled(findNodeHandle(this), enabled);
     };
     /**
      * Get the fraction of pixels for each semantic label in the current frame.
@@ -918,7 +883,7 @@ class ViroARSceneNavigator extends React.Component {
      * @returns Promise resolving to semantic label fractions
      */
     _getSemanticLabelFractions = async () => {
-        return await ViroARSceneNavigatorModule.getSemanticLabelFractions((0, react_native_1.findNodeHandle)(this));
+        return await ViroARSceneNavigatorModule.getSemanticLabelFractions(findNodeHandle(this));
     };
     /**
      * Get the fraction of pixels for a specific semantic label.
@@ -927,7 +892,7 @@ class ViroARSceneNavigator extends React.Component {
      * @returns Promise resolving to the fraction of pixels with that label
      */
     _getSemanticLabelFraction = async (label) => {
-        return await ViroARSceneNavigatorModule.getSemanticLabelFraction((0, react_native_1.findNodeHandle)(this), label);
+        return await ViroARSceneNavigatorModule.getSemanticLabelFraction(findNodeHandle(this), label);
     };
     // ===========================================================================
     // Monocular Depth Estimation API Methods
@@ -943,7 +908,7 @@ class ViroARSceneNavigator extends React.Component {
      * @param prefer - Whether to prefer monocular depth over LiDAR
      */
     _setPreferMonocularDepth = (prefer) => {
-        const nodeHandle = (0, react_native_1.findNodeHandle)(this);
+        const nodeHandle = findNodeHandle(this);
         if (!nodeHandle) {
             console.warn("Cannot set monocular depth preference: Component not mounted - ensure ViroARSceneNavigator is rendered and visible");
             return;
@@ -957,7 +922,7 @@ class ViroARSceneNavigator extends React.Component {
      */
     _isPreferMonocularDepth = async () => {
         try {
-            const nodeHandle = (0, react_native_1.findNodeHandle)(this);
+            const nodeHandle = findNodeHandle(this);
             if (!nodeHandle) {
                 return {
                     preferred: false,
@@ -987,7 +952,7 @@ class ViroARSceneNavigator extends React.Component {
      */
     _isDepthOcclusionSupported = async () => {
         try {
-            const nodeHandle = (0, react_native_1.findNodeHandle)(this);
+            const nodeHandle = findNodeHandle(this);
             if (!nodeHandle) {
                 return {
                     supported: false,
@@ -1015,7 +980,7 @@ class ViroARSceneNavigator extends React.Component {
      */
     _getGeospatialSetupStatus = async () => {
         try {
-            const nodeHandle = (0, react_native_1.findNodeHandle)(this);
+            const nodeHandle = findNodeHandle(this);
             if (!nodeHandle) {
                 return {
                     geospatialSupported: false,
@@ -1209,7 +1174,7 @@ class ViroARSceneNavigator extends React.Component {
         // visionOS ships no AR subsystem: every VROAR* class is excluded from that renderer, so
         // VRTARSceneNavigator has no view manager to mount and reaching it takes the app down rather
         // than rendering nothing. Guarded the same way Quest is, and for the same reason.
-        if (ViroPlatform_1.isVisionOS) {
+        if (isVisionOS) {
             if (!ViroARSceneNavigator._visionOSWarningLogged) {
                 console.warn("[Viro] ViroARSceneNavigator is not supported on Apple Vision Pro. " +
                     "Use ViroXRSceneNavigator (auto-detects visionOS) or ViroSceneNavigator instead.");
@@ -1218,13 +1183,13 @@ class ViroARSceneNavigator extends React.Component {
             if ("visionOSFallback" in this.props) {
                 return <>{this.props.visionOSFallback}</>;
             }
-            return (<react_native_1.View style={[styles.container, styles.questFallback]}>
-          <react_native_1.Text style={styles.questFallbackText}>
+            return (<View style={[styles.container, styles.questFallback]}>
+          <Text style={styles.questFallbackText}>
             AR is not supported on Apple Vision Pro.
-          </react_native_1.Text>
-        </react_native_1.View>);
+          </Text>
+        </View>);
         }
-        if (ViroPlatform_1.isQuest) {
+        if (isQuest) {
             if (!ViroARSceneNavigator._questWarningLogged) {
                 console.warn("[Viro] ViroARSceneNavigator is not supported on Meta Quest. " +
                     "Use ViroXRSceneNavigator (auto-detects Quest) or ViroVRSceneNavigator instead.");
@@ -1233,11 +1198,11 @@ class ViroARSceneNavigator extends React.Component {
             if ("questFallback" in this.props) {
                 return <>{this.props.questFallback}</>;
             }
-            return (<react_native_1.View style={[styles.container, styles.questFallback]}>
-          <react_native_1.Text style={styles.questFallbackText}>
+            return (<View style={[styles.container, styles.questFallback]}>
+          <Text style={styles.questFallbackText}>
             AR is not supported on Meta Quest.
-          </react_native_1.Text>
-        </react_native_1.View>);
+          </Text>
+        </View>);
         }
         const items = this._renderSceneStackItems();
         // update the arSceneNavigator with the latest given props on every render
@@ -1260,8 +1225,7 @@ class ViroARSceneNavigator extends React.Component {
       </VRTARSceneNavigator>);
     }
 }
-exports.ViroARSceneNavigator = ViroARSceneNavigator;
-const styles = react_native_1.StyleSheet.create({
+const styles = StyleSheet.create({
     container: {
         flex: 1,
         justifyContent: "center",
@@ -1277,7 +1241,7 @@ const styles = react_native_1.StyleSheet.create({
         textAlign: "center",
     },
 });
-const VRTARSceneNavigator = (0, react_native_1.requireNativeComponent)("VRTARSceneNavigator", 
+const VRTARSceneNavigator = requireNativeComponent("VRTARSceneNavigator", 
 // @ts-ignore
 ViroARSceneNavigator, {
     nativeOnly: { currentSceneIndex: true },

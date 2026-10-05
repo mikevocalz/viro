@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.StudioSceneErrorBoundary = void 0;
-const react_1 = require("react");
+import { Component } from "react";
 /**
  * Catches render/lifecycle errors in the Studio scene tree so a bad asset or a
  * node-factory throw can't take down the host app. Always reports via onError;
@@ -13,7 +10,7 @@ const react_1 = require("react");
  * scene load is caught in StudioSceneNavigator, which renders the same
  * renderError itself with a retry that refetches.
  */
-class StudioSceneErrorBoundary extends react_1.Component {
+export class StudioSceneErrorBoundary extends Component {
     state = { hasError: false, error: null };
     static getDerivedStateFromError(error) {
         return { hasError: true, error };
@@ -36,4 +33,3 @@ class StudioSceneErrorBoundary extends react_1.Component {
         return this.props.children;
     }
 }
-exports.StudioSceneErrorBoundary = StudioSceneErrorBoundary;
