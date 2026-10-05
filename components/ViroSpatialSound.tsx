@@ -27,6 +27,8 @@ import { resolveViroAssetSource as resolveAssetSource } from "./Utilities/ViroAs
 import { ViroErrorEvent, ViroSoundFinishEvent } from "./Types/ViroEvents";
 import { Viro3DPoint, ViroNativeRef, ViroSource } from "./Types/ViroUtils";
 import { checkMisnamedProps } from "./Utilities/ViroProps";
+import { isVisionOS } from "./Utilities/ViroPlatform";
+import { warnUnsupported } from "./Utilities/ViroUnsupported";
 
 type Props = ViewProps & {
   // Source can either be a String referencing a preloaded file, a web uri, or a
