@@ -61,6 +61,13 @@ export class ViroSpatialSound extends React.Component<Props> {
   };
 
   render() {
+    // ViroSpatialSound's view manager lives in VRTSound.mm, which the podspec excludes from the
+    // visionOS renderer, so React has no view config for it and mounting fails with
+    // "View config not found".
+    if (isVisionOS) {
+      warnUnsupported("ViroSpatialSound", "Apple Vision Pro", "Spatial audio is not part of the visionOS renderer.");
+      return null;
+    }
     checkMisnamedProps("ViroSpatialSound", this.props);
 
     var soundSrc = this.props.source;
