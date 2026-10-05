@@ -51,7 +51,7 @@ import { ViroBase } from "../ViroBase";
 import { ViroCamera } from "../ViroCamera";
 import { ViroTrackingStateConstants } from "../ViroConstants";
 import { ViroCommonProps } from "./ViroCommonProps";
-import { ViroOrbitCamera } from "components/ViroOrbitCamera";
+import { ViroOrbitCamera } from "../ViroOrbitCamera";
 import { isQuest, isVisionOS } from "../Utilities/ViroPlatform";
 import { warnUnsupported } from "../Utilities/ViroUnsupported";
 import { markARSceneRoot } from "../VisionOS/ViroImmersiveSpaceGate";

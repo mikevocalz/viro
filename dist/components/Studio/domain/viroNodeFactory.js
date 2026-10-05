@@ -1,53 +1,15 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.createNodeConfig = createNodeConfig;
-exports.dragNodeProps = dragNodeProps;
-exports.createNode = createNode;
-const React = __importStar(require("react"));
-const Viro3DObject_1 = require("../../Viro3DObject");
-const ViroImage_1 = require("../../ViroImage");
-const ViroText_1 = require("../../ViroText");
-const ViroVideo_1 = require("../../ViroVideo");
-const sceneNavigationHandler_1 = require("./sceneNavigationHandler");
-const apiRequestHelpers_1 = require("./apiRequestHelpers");
-const materialConfig_1 = require("./materialConfig");
-const dragConfiguration_1 = require("./dragConfiguration");
-const physicsConfig_1 = require("./physicsConfig");
-const placementStore_1 = require("./placementStore");
-const assetPosition_1 = require("./assetPosition");
+import * as React from "react";
+import { Viro3DObject } from "../../Viro3DObject";
+import { ViroImage } from "../../ViroImage";
+import { ViroText } from "../../ViroText";
+import { ViroVideo } from "../../ViroVideo";
+import { executeFunctionWithRelations, } from "./sceneNavigationHandler";
+import { extractPlaceholders, interpolateDisplayTemplate, } from "./apiRequestHelpers";
+import { parseMaterialConfig, studioMaterialName } from "./materialConfig";
+import { DragConfiguration } from "./dragConfiguration";
+import { buildViroPhysicsBody, isPhysicsWorldEnabled, parsePhysicsBodyConfig, shouldUseKinematicPhysicsDrag, } from "./physicsConfig";
+import { isTapToPlaceAsset } from "./placementStore";
+import { studioAssetPosition } from "./assetPosition";
 /**
  * The asset's onError: logged as before, and handed to the host when it asked.
  * Before this the console was the only place a failure went, and a host's error
@@ -67,11 +29,11 @@ function assetErrorHandler(asset, config, kind) {
         config.onAssetError(asset, error);
     };
 }
-function createNodeConfig(asset, sceneNavigator, animations, scene, onAnimationTrigger, animationStates, isDragActive, onSceneChange, runtimeCtx, 
+export function createNodeConfig(asset, sceneNavigator, animations, scene, onAnimationTrigger, animationStates, isDragActive, onSceneChange, runtimeCtx, 
 // The detected plane this asset is anchored to, once the session has found
 // one. Only the assets under the plane wrapper have it.
 dragSurface) {
-    const position = (0, assetPosition_1.studioAssetPosition)(asset);
+    const position = studioAssetPosition(asset);
     // A trigger image's orientation describes the uploaded FILE, not the surface
     // it is printed on and not a rotation for the content: it says where the top
     // of that file is, so a sideways or upside-down file is still recognised.
@@ -98,29 +60,29 @@ dragSurface) {
     if (!Number.isFinite(scaleValue) || scaleValue <= 0)
         scaleValue = 1;
     const scale = [scaleValue, scaleValue, scaleValue];
-    const dragType = dragConfiguration_1.DragConfiguration.getDragType(asset, scene);
+    const dragType = DragConfiguration.getDragType(asset, scene);
     let dragPlane;
     if (dragType === "FixedToPlane") {
-        dragPlane = dragConfiguration_1.DragConfiguration.getDragPlane(scene?.plane_direction ?? "Horizontal", position, dragSurface);
+        dragPlane = DragConfiguration.getDragPlane(scene?.plane_direction ?? "Horizontal", position, dragSurface);
     }
     // Both the body and its collision tag hang off the scene's physics switch
     // (isPhysicsWorldEnabled), which is what the Studio UI, its editor preview and
     // the apply_physics tool all treat as the switch.
-    const parsedPhysics = (0, physicsConfig_1.isPhysicsWorldEnabled)(scene)
-        ? (0, physicsConfig_1.parsePhysicsBodyConfig)(asset.physics_config)
+    const parsedPhysics = isPhysicsWorldEnabled(scene)
+        ? parsePhysicsBodyConfig(asset.physics_config)
         : null;
     const dragActive = isDragActive?.(asset.id) ?? false;
     const physicsBody = parsedPhysics
-        ? (0, physicsConfig_1.buildViroPhysicsBody)(parsedPhysics, {
-            kinematicDragOverride: dragActive && (0, physicsConfig_1.shouldUseKinematicPhysicsDrag)(asset, parsedPhysics),
+        ? buildViroPhysicsBody(parsedPhysics, {
+            kinematicDragOverride: dragActive && shouldUseKinematicPhysicsDrag(asset, parsedPhysics),
             scale: scaleValue,
         })
         : undefined;
     const viroTag = parsedPhysics ? asset.id : undefined;
     const lockedPhysicsBody = parsedPhysics &&
         dragType &&
-        (0, physicsConfig_1.shouldUseKinematicPhysicsDrag)(asset, parsedPhysics)
-        ? (0, physicsConfig_1.buildViroPhysicsBody)(parsedPhysics, {
+        shouldUseKinematicPhysicsDrag(asset, parsedPhysics)
+        ? buildViroPhysicsBody(parsedPhysics, {
             kinematicDragOverride: true,
             scale: scaleValue,
         })
@@ -156,7 +118,7 @@ function createOnClickHandler(asset, sceneNavigator, animations, onAnimationTrig
         console.warn(`[Studio] Asset "${asset.name}" has ANIMATION but no animation data`);
         return undefined;
     }
-    return () => (0, sceneNavigationHandler_1.executeFunctionWithRelations)(fn, sceneNavigator, animations, onAnimationTrigger, 0, onSceneChange, runtimeCtx);
+    return () => executeFunctionWithRelations(fn, sceneNavigator, animations, onAnimationTrigger, 0, onSceneChange, runtimeCtx);
 }
 function resolveType(asset) {
     return asset.asset_type_name ?? null;
@@ -177,11 +139,11 @@ function create3DObject(asset, config, onAssetLoaded, notifyPhysicsDrag, onColli
         return null;
     }
     const modelType = inferModelType(asset.file_url);
-    const hasMaterialConfig = (0, materialConfig_1.parseMaterialConfig)(asset.material_config) !== null;
+    const hasMaterialConfig = parseMaterialConfig(asset.material_config) !== null;
     const shaderOverrides = hasMaterialConfig
-        ? [(0, materialConfig_1.studioMaterialName)(asset.id)]
+        ? [studioMaterialName(asset.id)]
         : undefined;
-    return (<Viro3DObject_1.Viro3DObject key={asset.id} {...(nodeRef ? { ref: nodeRef } : {})} source={{ uri: asset.file_url }} position={config.position} rotation={config.rotation} scale={config.scale} type={modelType} dragType={config.dragType} dragPlane={config.dragPlane} animation={config.animation} onClick={config.onClick} {...(config.onNodeHandle ? { onNodeHandle: config.onNodeHandle } : {})} onLoadEnd={() => onAssetLoaded?.(asset.id)} onError={assetErrorHandler(asset, config, "3D model")} 
+    return (<Viro3DObject key={asset.id} {...(nodeRef ? { ref: nodeRef } : {})} source={{ uri: asset.file_url }} position={config.position} rotation={config.rotation} scale={config.scale} type={modelType} dragType={config.dragType} dragPlane={config.dragPlane} animation={config.animation} onClick={config.onClick} {...(config.onNodeHandle ? { onNodeHandle: config.onNodeHandle } : {})} onLoadEnd={() => onAssetLoaded?.(asset.id)} onError={assetErrorHandler(asset, config, "3D model")} 
     // Viro derives native canDrag from `onDrag != undefined`; without this prop
     // the drag recognizer is never attached, even when dragType is set.
     {...(config.dragType
@@ -195,7 +157,7 @@ function createImage(asset, config, onAssetLoaded, notifyPhysicsDrag, onCollisio
         console.warn(`[Studio] Image "${asset.name}" has no file_url`);
         return null;
     }
-    return (<ViroImage_1.ViroImage key={asset.id} {...(nodeRef ? { ref: nodeRef } : {})} source={{ uri: asset.file_url }} 
+    return (<ViroImage key={asset.id} {...(nodeRef ? { ref: nodeRef } : {})} source={{ uri: asset.file_url }} 
     // No width or height props, so the bridges derive the height from the
     // image's own aspect on load, but only build the quad from it under
     // ScaleToFill; the default StretchToFill keeps the 1x1 quad and squashes
@@ -217,18 +179,18 @@ const VariableText = ({ asset, config, store, notifyPhysicsDrag, onCollision, no
     const body = physicsBody ?? config.physicsBody;
     const template = asset.name ?? "";
     const compute = () => store
-        ? (0, apiRequestHelpers_1.interpolateDisplayTemplate)(template, (n) => store.get(n))
+        ? interpolateDisplayTemplate(template, (n) => store.get(n))
         : template;
     const [text, setText] = React.useState(compute);
     React.useEffect(() => {
-        if (!store || (0, apiRequestHelpers_1.extractPlaceholders)(template).length === 0)
+        if (!store || extractPlaceholders(template).length === 0)
             return;
         // Resync any write that landed between first render and subscribe.
         setText(compute());
         return store.subscribe(() => setText(compute()));
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [store, template]);
-    return (<ViroText_1.ViroText {...(nodeRef ? { ref: nodeRef } : {})} text={text} position={position ?? config.position} rotation={rotation ?? config.rotation} scale={config.scale} dragType={config.dragType} animation={config.animation} onClick={config.onClick} {...(config.onNodeHandle ? { onNodeHandle: config.onNodeHandle } : {})} {...(visible === undefined ? {} : { visible })} style={{
+    return (<ViroText {...(nodeRef ? { ref: nodeRef } : {})} text={text} position={position ?? config.position} rotation={rotation ?? config.rotation} scale={config.scale} dragType={config.dragType} animation={config.animation} onClick={config.onClick} {...(config.onNodeHandle ? { onNodeHandle: config.onNodeHandle } : {})} {...(visible === undefined ? {} : { visible })} style={{
             fontFamily: "Arial",
             fontSize: 20,
             color: "#FFFFFF",
@@ -288,7 +250,7 @@ const DRAG_REPAINT_NUDGE_M = 1e-6;
  * PlaceableNode) pass through, another device's drag position wins over them,
  * and while that device holds the asset it cannot be dragged here.
  */
-function dragNodeProps(drag, injected, childPosition, isText, lockedPhysicsBody) {
+export function dragNodeProps(drag, injected, childPosition, isText, lockedPhysicsBody) {
     const props = {};
     for (const [key, value] of Object.entries(injected)) {
         if (value !== undefined)
@@ -340,13 +302,13 @@ function createVideo(asset, config, notifyPhysicsDrag, onCollision, nodeRef) {
         console.warn(`[Studio] Video "${asset.name}" has no file_url`);
         return null;
     }
-    return (<ViroVideo_1.ViroVideo key={asset.id} {...(nodeRef ? { ref: nodeRef } : {})} source={{ uri: asset.file_url }} position={config.position} rotation={config.rotation} scale={config.scale} dragType={config.dragType} animation={config.animation} onClick={config.onClick} {...(config.onNodeHandle ? { onNodeHandle: config.onNodeHandle } : {})} loop={true} muted={false} onError={assetErrorHandler(asset, config, "Video")} {...(config.dragType
+    return (<ViroVideo key={asset.id} {...(nodeRef ? { ref: nodeRef } : {})} source={{ uri: asset.file_url }} position={config.position} rotation={config.rotation} scale={config.scale} dragType={config.dragType} animation={config.animation} onClick={config.onClick} {...(config.onNodeHandle ? { onNodeHandle: config.onNodeHandle } : {})} loop={true} muted={false} onError={assetErrorHandler(asset, config, "Video")} {...(config.dragType
         ? { onDrag: (to) => notifyPhysicsDrag?.(asset.id, to) }
         : {})} {...(config.physicsBody
         ? { physicsBody: config.physicsBody, viroTag: config.viroTag }
         : {})} {...(onCollision ? { onCollision: onCollision } : {})} {...(config.onGaze ? { onGaze: config.onGaze } : {})}/>);
 }
-function createNode(asset, sceneNavigator, animations, scene, onAnimationTrigger, animationStates, onAssetLoaded, onCollision, isDragActive, notifyPhysicsDrag, onSceneChange, runtimeCtx, 
+export function createNode(asset, sceneNavigator, animations, scene, onAnimationTrigger, animationStates, onAssetLoaded, onCollision, isDragActive, notifyPhysicsDrag, onSceneChange, runtimeCtx, 
 // When set (proximity-target assets), captures the live Viro node so the host
 // can read its world transform for the distance check.
 registerProximityTarget, 
@@ -398,7 +360,7 @@ registerProximityNode, onAssetError) {
     // node at the tap point with the author position and rotation applied relative
     // to the user's facing, and wraps it in VisibleNode itself. A marker asset is
     // never gated this way, whatever the flag says (isTapToPlaceAsset).
-    if ((0, placementStore_1.isTapToPlaceAsset)(asset) && runtimeCtx?.placementStore) {
+    if (isTapToPlaceAsset(asset) && runtimeCtx?.placementStore) {
         return (<PlaceableNode key={asset.id} assetId={asset.id} store={runtimeCtx.placementStore} authorPosition={config.position} authorRotation={config.rotation} visibilityStore={runtimeCtx?.visibilityStore}>
         {node}
       </PlaceableNode>);

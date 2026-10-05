@@ -1,26 +1,20 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.StudioColocationController = exports.STUDIO_COLOCATION_OFF_FRAME = exports.STUDIO_COLOCATION_CONNECT_TIMEOUT_MS = exports.STUDIO_COLOCATION_ORIGIN_ENTITY = exports.STUDIO_COLOCATION_DEFAULT_RELAY_URL = void 0;
-exports.studioSceneRootsInAR = studioSceneRootsInAR;
-exports.resolveMatches = resolveMatches;
-exports.scanPoints = scanPoints;
-const react_native_1 = require("react-native");
-const ViroColocation_1 = require("../../AR/ViroColocation");
-const ViroColocationRooms_1 = require("../../AR/ViroColocationRooms");
-const ViroFrameSource_1 = require("../../AR/ViroFrameSource");
-const ViroLocationFrame_1 = require("../../AR/ViroLocationFrame");
-const ViroReplication_1 = require("../../AR/ViroReplication");
-const ViroPlatform_1 = require("../../Utilities/ViroPlatform");
-const studioApiError_1 = require("../domain/studioApiError");
-const VRTStudioModule_1 = require("../VRTStudioModule");
-const budget_1 = require("./budget");
-const errors_1 = require("./errors");
-const frameMath_1 = require("./frameMath");
-const navigation_1 = require("./navigation");
-const relayProbe_1 = require("./relayProbe");
-const sharedState_1 = require("./sharedState");
-exports.STUDIO_COLOCATION_DEFAULT_RELAY_URL = "https://colocation.reactvision.xyz";
-exports.STUDIO_COLOCATION_ORIGIN_ENTITY = "scene:origin";
+import { Alert } from "react-native";
+import { getColocationPeers, getColocationState, joinColocation, leaveColocation, setColocationLocalPose, VIRO_POSE_INTERVAL_MS, } from "../../AR/ViroColocation";
+import { createColocationRoom, lookupColocationRoom, } from "../../AR/ViroColocationRooms";
+import { cloudAnchorFrameSource, metaSpatialAnchorFrameSource, visionOSSharedSpaceFrameSource, } from "../../AR/ViroFrameSource";
+import { parseLocationTransform, poseCsv } from "../../AR/ViroLocationFrame";
+import { ViroReplicationClient, } from "../../AR/ViroReplication";
+import { isQuest } from "../../Utilities/ViroPlatform";
+import { studioApiError } from "../domain/studioApiError";
+import { VRTStudioModule } from "../VRTStudioModule";
+import { estimateSharedEntities, STUDIO_COLOCATION_ENTITY_LIMIT, } from "./budget";
+import { errorMessage, frameKindUnsupportedFailure, metaSharingUnavailableFailure, originRejectFailure, relayErrorCode, resolveErrorCode, ROOM_PEER_LIMIT, roomErrorCode, } from "./errors";
+import { fromPositionEuler, fromPositionQuat, IDENTITY, invert, multiply, parseOriginFields, rotateDirection, toPositionQuat, transformPoint, } from "./frameMath";
+import { roomSceneNeedsNavigation, STUDIO_COLOCATION_CURRENT_SCENE_ENTITY, StudioRoomSceneStore, } from "./navigation";
+import { probeRelayRoom } from "./relayProbe";
+import { StudioSharedState, } from "./sharedState";
+export const STUDIO_COLOCATION_DEFAULT_RELAY_URL = "https://colocation.reactvision.xyz";
+export const STUDIO_COLOCATION_ORIGIN_ENTITY = "scene:origin";
 const JOIN_URL_BASE = "https://studio.reactvision.xyz/j/";
 const SCAN_STATUS_POLL_MS = 500;
 const RESOLVE_PROGRESS_POLL_MS = 500;
@@ -44,7 +38,7 @@ const FOLLOW_RETRY_DELAY_MS = 1000;
  */
 const SHARED_FRAME_TIMEOUT_MS = 30000;
 /** The default `connectTimeoutMs`. */
-exports.STUDIO_COLOCATION_CONNECT_TIMEOUT_MS = 60000;
+export const STUDIO_COLOCATION_CONNECT_TIMEOUT_MS = 60000;
 /** Same set as ViroSharedFrame: a failure that another window can change. */
 const RETRYABLE_RESOLVE_STATES = new Set([
     "ErrorResolvingLocalizationNoMatch",
@@ -54,7 +48,7 @@ const RETRYABLE_RESOLVE_STATES = new Set([
     "TaskInProgress",
 ]);
 const IDLE = { status: "idle" };
-exports.STUDIO_COLOCATION_OFF_FRAME = {
+export const STUDIO_COLOCATION_OFF_FRAME = {
     phase: "off",
     role: null,
     authority: false,
@@ -73,7 +67,7 @@ exports.STUDIO_COLOCATION_OFF_FRAME = {
  * Quest navigator sends shared-frame calls to its first ViroARScene child, so
  * a scene under a push must stay ViroScene.
  */
-function studioSceneRootsInAR(frame, mount, quest) {
+export function studioSceneRootsInAR(frame, mount, quest) {
     if (!quest)
         return true;
     if (frame.phase === "off")
@@ -86,14 +80,14 @@ function defaultFrameSourceFor(room) {
     switch (room.frameKind) {
         case "cloud_anchor":
             return room.cloudAnchorId
-                ? (0, ViroFrameSource_1.cloudAnchorFrameSource)(room.cloudAnchorId)
+                ? cloudAnchorFrameSource(room.cloudAnchorId)
                 : null;
         case "meta_group":
             return room.frameRef
-                ? (0, ViroFrameSource_1.metaSpatialAnchorFrameSource)(room.frameRef, "join")
+                ? metaSpatialAnchorFrameSource(room.frameRef, "join")
                 : null;
         case "visionos_space":
-            return (0, ViroFrameSource_1.visionOSSharedSpaceFrameSource)(room.roomId);
+            return visionOSSharedSpaceFrameSource(room.roomId);
         default:
             return null;
     }
@@ -109,9 +103,9 @@ function randomUuid() {
     });
 }
 async function loadStudioScene(sceneId) {
-    const result = await VRTStudioModule_1.VRTStudioModule.rvGetScene(sceneId);
+    const result = await VRTStudioModule.rvGetScene(sceneId);
     if (!result?.success)
-        throw (0, studioApiError_1.studioApiError)("rvGetScene", result?.error);
+        throw studioApiError("rvGetScene", result?.error);
     if (typeof result.data !== "string") {
         throw new Error("rvGetScene returned no data");
     }
@@ -123,23 +117,23 @@ function outsideProjectError(sceneId) {
 /** As a NAVIGATE on its own reports a scene that failed to load. */
 function reportNavigationError(error) {
     console.error("[Studio] Error navigating to scene:", error);
-    react_native_1.Alert.alert("Navigation Error", "Failed to load scene");
+    Alert.alert("Navigation Error", "Failed to load scene");
 }
 const DEFAULT_DEPS = {
-    getAuth: () => VRTStudioModule_1.VRTStudioModule.rvGetAuthHeaders(),
-    setCloudAnchorProject: (projectId) => VRTStudioModule_1.VRTStudioModule.rvSetCloudAnchorProject(projectId),
-    createRoom: ViroColocationRooms_1.createColocationRoom,
-    lookupRoom: ViroColocationRooms_1.lookupColocationRoom,
-    probeRelay: relayProbe_1.probeRelayRoom,
-    joinChannel: ViroColocation_1.joinColocation,
-    leaveChannel: ViroColocation_1.leaveColocation,
-    setLocalPose: ViroColocation_1.setColocationLocalPose,
-    getChannelState: ViroColocation_1.getColocationState,
-    getPeers: ViroColocation_1.getColocationPeers,
-    createReplication: () => new ViroReplication_1.ViroReplicationClient(),
+    getAuth: () => VRTStudioModule.rvGetAuthHeaders(),
+    setCloudAnchorProject: (projectId) => VRTStudioModule.rvSetCloudAnchorProject(projectId),
+    createRoom: createColocationRoom,
+    lookupRoom: lookupColocationRoom,
+    probeRelay: probeRelayRoom,
+    joinChannel: joinColocation,
+    leaveChannel: leaveColocation,
+    setLocalPose: setColocationLocalPose,
+    getChannelState: getColocationState,
+    getPeers: getColocationPeers,
+    createReplication: () => new ViroReplicationClient(),
     frameSourceFor: defaultFrameSourceFor,
-    hostFrameKind: () => (ViroPlatform_1.isQuest ? "meta_group" : "cloud_anchor"),
-    hostSupport: () => (0, ViroFrameSource_1.cloudAnchorFrameSource)("").support,
+    hostFrameKind: () => (isQuest ? "meta_group" : "cloud_anchor"),
+    hostSupport: () => cloudAnchorFrameSource("").support,
     // Not a room: an id to describe, which runs the relay's gate and creates nothing.
     newProbeRoomId: randomUuid,
     newGroupId: randomUuid,
@@ -168,7 +162,7 @@ function headerValue(headers, name) {
  * The matches a resolve has reached. Native reports the count only inside its
  * progress message, as "Anchor seen, keep moving slowly (1/3)".
  */
-function resolveMatches(message) {
+export function resolveMatches(message) {
     const m = message ? /\((\d+)\/(\d+)\)\s*$/.exec(message) : null;
     if (!m)
         return null;
@@ -180,7 +174,7 @@ function isCount(v) {
     return typeof v === "number" && Number.isFinite(v) && v >= 0;
 }
 /** The scan's triangulated points and their floor, when native reports both. */
-function scanPoints(status) {
+export function scanPoints(status) {
     if (!status?.available)
         return null;
     const count = status.triangulatedPoints;
@@ -204,8 +198,8 @@ function scanGuidance(status) {
     return gates.length === 0 ? null : gates.every(Boolean);
 }
 function frameToLocation(frame) {
-    return ((0, ViroLocationFrame_1.parseLocationTransform)(frame.transform) ??
-        (0, frameMath_1.fromPositionEuler)(frame.position, frame.rotation, frame.scale));
+    return (parseLocationTransform(frame.transform) ??
+        fromPositionEuler(frame.position, frame.rotation, frame.scale));
 }
 function sameMatrix(a, b) {
     if (a === b)
@@ -242,7 +236,7 @@ function sameState(a, b) {
  * passProps. `request()` starts a session once per distinct `colocation`
  * value, so a re-render with an equal value, or a scene push, changes nothing.
  */
-class StudioColocationController {
+export class StudioColocationController {
     onStateChange;
     /** Once per room: when the host has its code, or when a joiner is in. */
     onRoom;
@@ -271,7 +265,7 @@ class StudioColocationController {
     announced = false;
     auth = null;
     projectId = null;
-    relayUrl = exports.STUDIO_COLOCATION_DEFAULT_RELAY_URL;
+    relayUrl = STUDIO_COLOCATION_DEFAULT_RELAY_URL;
     anchorProjectSet = false;
     /**
      * A scan, a host or a resolve is running natively. Leaving asks native to
@@ -297,7 +291,7 @@ class StudioColocationController {
     lastPoseAt = -Infinity;
     finishScanWaiter = null;
     originPrompt = null;
-    frame = exports.STUDIO_COLOCATION_OFF_FRAME;
+    frame = STUDIO_COLOCATION_OFF_FRAME;
     listeners = new Set();
     constructor(deps = {}) {
         this.deps = { ...DEFAULT_DEPS, ...deps };
@@ -486,10 +480,10 @@ class StudioColocationController {
         if (!inverse)
             return;
         const now = this.deps.now();
-        if (now - this.lastPoseAt < ViroColocation_1.VIRO_POSE_INTERVAL_MS)
+        if (now - this.lastPoseAt < VIRO_POSE_INTERVAL_MS)
             return;
         this.lastPoseAt = now;
-        const csv = (0, ViroLocationFrame_1.poseCsv)((0, frameMath_1.transformPoint)(inverse, position), (0, frameMath_1.rotateDirection)(inverse, forward), (0, frameMath_1.rotateDirection)(inverse, up));
+        const csv = poseCsv(transformPoint(inverse, position), rotateDirection(inverse, forward), rotateDirection(inverse, up));
         this.deps.setLocalPose(csv).catch(() => { });
     }
     // ── Flows ─────────────────────────────────────────────────────────────────
@@ -501,11 +495,11 @@ class StudioColocationController {
         this.pendingStart = false;
         this.active = true;
         const run = this.run;
-        this.relayUrl = options.relayUrl ?? exports.STUDIO_COLOCATION_DEFAULT_RELAY_URL;
+        this.relayUrl = options.relayUrl ?? STUDIO_COLOCATION_DEFAULT_RELAY_URL;
         const flow = options.mode === "host"
             ? this.host(run, scene)
             : this.join(run, options.code, scene);
-        flow.catch((e) => this.fail(run, { code: "UNKNOWN", message: (0, errors_1.errorMessage)(e) }));
+        flow.catch((e) => this.fail(run, { code: "UNKNOWN", message: errorMessage(e) }));
         this.updateFrame();
     }
     async host(run, scene) {
@@ -557,7 +551,7 @@ class StudioColocationController {
             return;
         if (!created.success) {
             return this.fail(run, {
-                code: (0, errors_1.roomErrorCode)(created.status, created.code),
+                code: roomErrorCode(created.status, created.code),
                 message: created.error,
             });
         }
@@ -584,14 +578,14 @@ class StudioColocationController {
             if (!this.isCurrent(run))
                 return null;
             this.nativeBusy = false;
-            this.fail(run, { code: "HOST_FAILED", message: (0, errors_1.errorMessage)(e) });
+            this.fail(run, { code: "HOST_FAILED", message: errorMessage(e) });
             return null;
         }
         // Left while hosting: this anchor belongs to nobody now.
         if (!this.isCurrent(run))
             return null;
         this.nativeBusy = false;
-        const location = (0, ViroLocationFrame_1.parseLocationTransform)(hosted?.locationTransform);
+        const location = parseLocationTransform(hosted?.locationTransform);
         if (!hosted?.success || !hosted.cloudAnchorId || !location) {
             this.fail(run, {
                 code: "HOST_FAILED",
@@ -608,7 +602,7 @@ class StudioColocationController {
      */
     async hostSharedFrame(run) {
         const groupId = this.deps.newGroupId();
-        const source = (0, ViroFrameSource_1.metaSpatialAnchorFrameSource)(groupId, "create");
+        const source = metaSpatialAnchorFrameSource(groupId, "create");
         if (!source.support.ok) {
             this.fail(run, {
                 code: "FRAME_KIND_UNSUPPORTED",
@@ -620,7 +614,7 @@ class StudioColocationController {
         if (!frame)
             return null;
         this.setLocation(frameToLocation(frame));
-        this.setOrigin(frameMath_1.IDENTITY);
+        this.setOrigin(IDENTITY);
         return { frameKind: "meta_group", frameRef: groupId };
     }
     async join(run, code, scene) {
@@ -634,7 +628,7 @@ class StudioColocationController {
             return;
         if (!found.success) {
             return this.fail(run, {
-                code: (0, errors_1.roomErrorCode)(found.status, found.code),
+                code: roomErrorCode(found.status, found.code),
                 message: found.error,
             });
         }
@@ -647,7 +641,7 @@ class StudioColocationController {
             });
         }
         if (!source.support.ok) {
-            return this.fail(run, (0, errors_1.frameKindUnsupportedFailure)(frameKind));
+            return this.fail(run, frameKindUnsupportedFailure(frameKind));
         }
         if (frameKind === "meta_group" && !isGroupUuid(found.room.frameRef ?? "")) {
             return this.fail(run, {
@@ -672,12 +666,12 @@ class StudioColocationController {
         await this.connect(run);
     }
     checkBudget(run, scene) {
-        const estimate = (0, budget_1.estimateSharedEntities)(scene);
-        if (estimate <= budget_1.STUDIO_COLOCATION_ENTITY_LIMIT)
+        const estimate = estimateSharedEntities(scene);
+        if (estimate <= STUDIO_COLOCATION_ENTITY_LIMIT)
             return true;
         this.fail(run, {
             code: "SCENE_TOO_LARGE",
-            message: `This scene needs about ${estimate} shared entities and a shared session holds ${budget_1.STUDIO_COLOCATION_ENTITY_LIMIT}.`,
+            message: `This scene needs about ${estimate} shared entities and a shared session holds ${STUDIO_COLOCATION_ENTITY_LIMIT}.`,
         });
         return false;
     }
@@ -807,7 +801,7 @@ class StudioColocationController {
             if (outcome.success)
                 return outcome.frame;
             const unavailable = frameKind === "meta_group"
-                ? (0, errors_1.metaSharingUnavailableFailure)(outcome.error)
+                ? metaSharingUnavailableFailure(outcome.error)
                 : null;
             if (unavailable) {
                 this.fail(run, unavailable);
@@ -822,7 +816,7 @@ class StudioColocationController {
                 continue;
             }
             this.fail(run, {
-                code: role === "host" ? "HOST_FAILED" : (0, errors_1.resolveErrorCode)(outcome.state),
+                code: role === "host" ? "HOST_FAILED" : resolveErrorCode(outcome.state),
                 message: outcome.error,
             });
             return null;
@@ -840,7 +834,7 @@ class StudioColocationController {
                 resolve(value);
             };
             this.cleanups.push(() => settle(null));
-            outcome.then(settle, (e) => settle({ success: false, error: (0, errors_1.errorMessage)(e) }));
+            outcome.then(settle, (e) => settle({ success: false, error: errorMessage(e) }));
             if (!this.isCurrent(run))
                 settle(null);
         });
@@ -913,7 +907,7 @@ class StudioColocationController {
         const isHost = this.options?.mode === "host";
         // Subscribed after the refresh above, so each change reaches it with the
         // origin already read.
-        const shared = new sharedState_1.StudioSharedState(client, {
+        const shared = new StudioSharedState(client, {
             origin: () => this.origin,
             worldToLocation: () => this.locationInverse,
             role: isHost ? "host" : "join",
@@ -921,7 +915,7 @@ class StudioColocationController {
         });
         // The host's scene is the room's first; a joiner's is its own until it
         // reads the room's.
-        const navigation = new navigation_1.StudioRoomSceneStore({ sceneId: this.scene?.scene.id ?? "", n: isHost ? 0 : null }, (next, prev) => this.followRoom(run, next, prev));
+        const navigation = new StudioRoomSceneStore({ sceneId: this.scene?.scene.id ?? "", n: isHost ? 0 : null }, (next, prev) => this.followRoom(run, next, prev));
         this.navigation = navigation;
         shared.bindNavigation(navigation);
         shared.bindScene(this.scene, this.sceneStores, this.sceneHooks);
@@ -1001,8 +995,8 @@ class StudioColocationController {
         }
     }
     syncOrigin(client) {
-        const entity = client.get(exports.STUDIO_COLOCATION_ORIGIN_ENTITY);
-        const remote = entity ? (0, frameMath_1.parseOriginFields)(entity.fields) : null;
+        const entity = client.get(STUDIO_COLOCATION_ORIGIN_ENTITY);
+        const remote = entity ? parseOriginFields(entity.fields) : null;
         if (remote) {
             if (!sameMatrix(remote, this.origin))
                 this.setOrigin(remote);
@@ -1022,7 +1016,7 @@ class StudioColocationController {
                 if (this.isCurrent(run) &&
                     this.replication === client &&
                     this.origin === origin &&
-                    !client.get(exports.STUDIO_COLOCATION_ORIGIN_ENTITY)) {
+                    !client.get(STUDIO_COLOCATION_ORIGIN_ENTITY)) {
                     this.writeOrigin(client, origin);
                 }
             });
@@ -1030,15 +1024,15 @@ class StudioColocationController {
         }
         if (!world)
             return;
-        const { p, q } = (0, frameMath_1.toPositionQuat)((0, frameMath_1.multiply)(inverse, world));
+        const { p, q } = toPositionQuat(multiply(inverse, world));
         // Stored as it will read back, so the echo is not a change.
-        const origin = (0, frameMath_1.fromPositionQuat)(p, q);
+        const origin = fromPositionQuat(p, q);
         this.setOrigin(origin);
         this.writeOrigin(client, origin);
     }
     writeOrigin(client, origin) {
-        const { p, q } = (0, frameMath_1.toPositionQuat)(origin);
-        client.set(exports.STUDIO_COLOCATION_ORIGIN_ENTITY, { p, q, sceneId: this.scene?.scene.id ?? null }, { optimistic: true });
+        const { p, q } = toPositionQuat(origin);
+        client.set(STUDIO_COLOCATION_ORIGIN_ENTITY, { p, q, sceneId: this.scene?.scene.id ?? null }, { optimistic: true });
     }
     /**
      * Only a refused origin ends the session, since joiners never go live without
@@ -1049,10 +1043,10 @@ class StudioColocationController {
         if (!this.isCurrent(run) || this.options?.mode !== "host" || !this.origin)
             return;
         const aboutOrigin = rejection.current
-            ? rejection.current.id === exports.STUDIO_COLOCATION_ORIGIN_ENTITY
-            : !client.get(exports.STUDIO_COLOCATION_ORIGIN_ENTITY);
+            ? rejection.current.id === STUDIO_COLOCATION_ORIGIN_ENTITY
+            : !client.get(STUDIO_COLOCATION_ORIGIN_ENTITY);
         if (aboutOrigin)
-            this.fail(run, (0, errors_1.originRejectFailure)(rejection.reason));
+            this.fail(run, originRejectFailure(rejection.reason));
     }
     /**
      * A socket gave up. The relay's gate says why when it refused (a plan that
@@ -1067,7 +1061,7 @@ class StudioColocationController {
             probe = await this.deps.probeRelay(this.relayUrl, this.room?.roomId ?? this.deps.newProbeRoomId(), this.relayHeaders());
         }
         catch (e) {
-            probe = { ok: false, message: (0, errors_1.errorMessage)(e) };
+            probe = { ok: false, message: errorMessage(e) };
         }
         if (!this.isCurrent(run))
             return;
@@ -1082,7 +1076,7 @@ class StudioColocationController {
      * waits on the person holding the device.
      */
     startConnectTimeout(run) {
-        const ms = this.options?.connectTimeoutMs ?? exports.STUDIO_COLOCATION_CONNECT_TIMEOUT_MS;
+        const ms = this.options?.connectTimeoutMs ?? STUDIO_COLOCATION_CONNECT_TIMEOUT_MS;
         if (!(ms > 0) || !Number.isFinite(ms))
             return;
         const id = setTimeout(() => {
@@ -1136,7 +1130,7 @@ class StudioColocationController {
         this.pushScene?.(sceneData, { skipOnLoadFunction: followed });
     }
     followRoom(run, next, prev) {
-        if (!this.pushScene || !(0, navigation_1.roomSceneNeedsNavigation)(prev, next))
+        if (!this.pushScene || !roomSceneNeedsNavigation(prev, next))
             return;
         void this.follow(run, ++this.navigationSeq, next.sceneId);
     }
@@ -1172,7 +1166,7 @@ class StudioColocationController {
         return !!project && sceneData.scene.belongs_to_project === project;
     }
     nextSceneNumber() {
-        const room = this.replication?.get(navigation_1.STUDIO_COLOCATION_CURRENT_SCENE_ENTITY)
+        const room = this.replication?.get(STUDIO_COLOCATION_CURRENT_SCENE_ENTITY)
             ?.fields.n;
         const roomN = typeof room === "number" && Number.isFinite(room) ? room : 0;
         return Math.max(this.navigation?.get().n ?? 0, roomN) + 1;
@@ -1238,7 +1232,7 @@ class StudioColocationController {
     }
     setLocation(location) {
         this.location = location;
-        this.locationInverse = (0, frameMath_1.invert)(location);
+        this.locationInverse = invert(location);
         this.updateFrame();
     }
     setOrigin(origin) {
@@ -1290,16 +1284,16 @@ class StudioColocationController {
         const sceneToWorld = sameMatrices
             ? prev.sceneToWorld
             : this.location && this.origin
-                ? (0, frameMath_1.multiply)(this.location, this.origin)
+                ? multiply(this.location, this.origin)
                 : null;
         const worldToScene = sameMatrices
             ? prev.worldToScene
             : sceneToWorld
-                ? (0, frameMath_1.invert)(sceneToWorld)
+                ? invert(sceneToWorld)
                 : null;
         this.frame =
             phase === "off"
-                ? exports.STUDIO_COLOCATION_OFF_FRAME
+                ? STUDIO_COLOCATION_OFF_FRAME
                 : {
                     phase,
                     role,
@@ -1379,13 +1373,12 @@ class StudioColocationController {
         });
     }
 }
-exports.StudioColocationController = StudioColocationController;
 function probeFailure(probe) {
     if (probe.ok) {
-        return probe.peers >= errors_1.ROOM_PEER_LIMIT
+        return probe.peers >= ROOM_PEER_LIMIT
             ? { code: "ROOM_FULL", message: "This room is full." }
             : null;
     }
-    const code = (0, errors_1.relayErrorCode)(probe.status, probe.code);
+    const code = relayErrorCode(probe.status, probe.code);
     return { code, message: probe.message };
 }

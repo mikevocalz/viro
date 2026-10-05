@@ -1,10 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.peek = peek;
-exports.setStick = setStick;
-exports.setButton = setButton;
-exports.subscribe = subscribe;
-exports.useVirtualController = useVirtualController;
 /**
  * viroVirtualController.ts
  *
@@ -20,7 +13,7 @@ exports.useVirtualController = useVirtualController;
  *
  * Copyright © 2026 ReactVision. All rights reserved.
  */
-const react_1 = require("react");
+import { useEffect, useState } from "react";
 const states = new Map();
 const listeners = new Map();
 function makeDefault() {
@@ -42,7 +35,7 @@ function emit(id) {
     subs.forEach((cb) => cb(snapshot));
 }
 /** Read-only snapshot of a controller's current aggregated state. */
-function peek(id) {
+export function peek(id) {
     const s = ensure(id);
     return {
         left: { ...s.left },
@@ -51,13 +44,13 @@ function peek(id) {
     };
 }
 /** Write a stick deflection (x/y in [-1, 1]) for one controller. */
-function setStick(id, side, x, y) {
+export function setStick(id, side, x, y) {
     const s = ensure(id);
     s[side] = { x, y };
     emit(id);
 }
 /** Write a button press/release for one controller. */
-function setButton(id, name, pressed) {
+export function setButton(id, name, pressed) {
     const s = ensure(id);
     if (pressed)
         s.buttons[name] = true;
@@ -66,7 +59,7 @@ function setButton(id, name, pressed) {
     emit(id);
 }
 /** Subscribe to a controller's state changes. Returns an unsubscribe fn. */
-function subscribe(id, cb) {
+export function subscribe(id, cb) {
     let subs = listeners.get(id);
     if (!subs) {
         subs = new Set();
@@ -83,9 +76,9 @@ function subscribe(id, cb) {
  * `controllerId` updates. This is the web read-path equivalent of native code
  * peeking VROVirtualControllerRegistry each frame.
  */
-function useVirtualController(id) {
-    const [state, setState] = (0, react_1.useState)(() => peek(id));
-    (0, react_1.useEffect)(() => {
+export function useVirtualController(id) {
+    const [state, setState] = useState(() => peek(id));
+    useEffect(() => {
         setState(peek(id));
         return subscribe(id, setState);
     }, [id]);

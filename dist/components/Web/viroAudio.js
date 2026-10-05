@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Shared Web Audio context for spatial sound, and the listener that follows the
  * camera.
@@ -6,12 +5,9 @@
  * Lazily created (browsers require a user gesture to resume it; callers should
  * catch play() rejections).
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAudioContext = getAudioContext;
-exports.trackAudioListener = trackAudioListener;
-const viroMath_1 = require("./viroMath");
+import { cameraBasis } from "./viroMath";
 let ctx = null;
-function getAudioContext() {
+export function getAudioContext() {
     if (!ctx) {
         const Ctor = window.AudioContext || window.webkitAudioContext;
         ctx = new Ctor();
@@ -21,7 +17,7 @@ function getAudioContext() {
 function setListenerPose(listener, position, quaternion) {
     // virocore's camera convention is the one Web Audio's forward/up vectors use,
     // so the basis carries over rotated with no axis swap.
-    const { forward, up } = (0, viroMath_1.cameraBasis)(quaternion);
+    const { forward, up } = cameraBasis(quaternion);
     const [fx, fy, fz] = forward;
     const [ux, uy, uz] = up;
     const [px, py, pz] = position;
@@ -51,7 +47,7 @@ function setListenerPose(listener, position, quaternion) {
  * several times a frame. Returns the release for this caller; the loop stops
  * when the last one releases.
  */
-function trackAudioListener(source) {
+export function trackAudioListener(source) {
     listenerSources.add(source);
     if (rafId === null) {
         const step = () => {

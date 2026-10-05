@@ -1,39 +1,3 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.StudioARScene = void 0;
 /**
  * Web host for Studio scenes. Mirrors StudioARScene (native) but adapted to the
  * web renderer: it reuses the entire shared runtime (domain/ — scheduler, stores,
@@ -53,34 +17,34 @@ exports.StudioARScene = void 0;
  *    reports them through `onUnsupported` so the caller can warn.
  *  - apiRequestExecutor + navigate are injected (no native VRTStudioModule).
  */
-const React = __importStar(require("react"));
-const react_1 = require("react");
-const ViroAmbientLight_web_1 = require("../ViroAmbientLight.web");
-const ViroDirectionalLight_web_1 = require("../ViroDirectionalLight.web");
-const ViroARPlane_web_1 = require("../AR/ViroARPlane.web");
-const ViroARScene_web_1 = require("../AR/ViroARScene.web");
-const ViroWebContext_1 = require("../Web/ViroWebContext");
-const viroMath_1 = require("../Web/viroMath");
-const ViroScene_web_1 = require("../ViroScene.web");
-const ViroText_web_1 = require("../ViroText.web");
-const animationRegistry_1 = require("./domain/animationRegistry");
-const viroNodeFactory_1 = require("./domain/viroNodeFactory");
-const assetPosition_1 = require("./domain/assetPosition");
-const sceneNavigationHandler_1 = require("./domain/sceneNavigationHandler");
-const variableStore_1 = require("./domain/variableStore");
-const visibilityStore_1 = require("./domain/visibilityStore");
-const placementStore_1 = require("./domain/placementStore");
-const soundManager_1 = require("./domain/soundManager");
-const StudioSounds_1 = require("./domain/StudioSounds");
-const studioMaterials_1 = require("./domain/studioMaterials");
-const webCapabilities_1 = require("./domain/webCapabilities");
-const collisionBindingsRuntime_1 = require("./domain/collisionBindingsRuntime");
-const collisionPairKey_1 = require("./domain/collisionPairKey");
-const physicsConfig_1 = require("./domain/physicsConfig");
-const ViroWebContext_2 = require("../Web/ViroWebContext");
-const studioRendererEffects_1 = require("./domain/studioRendererEffects");
-const proximityBindingsRuntime_1 = require("./domain/proximityBindingsRuntime");
-const studioLighting_1 = require("./domain/studioLighting");
+import * as React from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ViroAmbientLight } from "../ViroAmbientLight.web";
+import { ViroDirectionalLight } from "../ViroDirectionalLight.web";
+import { ViroARPlane } from "../AR/ViroARPlane.web";
+import { ViroARScene } from "../AR/ViroARScene.web";
+import { useViroAR } from "../Web/ViroWebContext";
+import { cameraBasis } from "../Web/viroMath";
+import { ViroScene } from "../ViroScene.web";
+import { ViroText } from "../ViroText.web";
+import { registerSceneAnimations } from "./domain/animationRegistry";
+import { createNode } from "./domain/viroNodeFactory";
+import { studioAssetPosition } from "./domain/assetPosition";
+import { executeOnLoadFunction, SequenceScheduler, } from "./domain/sceneNavigationHandler";
+import { StudioVariableStore } from "./domain/variableStore";
+import { StudioVisibilityStore } from "./domain/visibilityStore";
+import { StudioPlacementStore, isTapToPlaceAsset } from "./domain/placementStore";
+import { StudioSoundManager } from "./domain/soundManager";
+import { StudioSounds } from "./domain/StudioSounds";
+import { registerStudioMaterialsForAssets } from "./domain/studioMaterials";
+import { webUnsupportedFeatures, usesPlaneWrapper } from "./domain/webCapabilities";
+import { createPlacementCollisionHandler } from "./domain/collisionBindingsRuntime";
+import { collisionPairKey } from "./domain/collisionPairKey";
+import { parsePhysicsWorldConfig } from "./domain/physicsConfig";
+import { useViroScene } from "../Web/ViroWebContext";
+import { STUDIO_TONE_MAPPING_ENABLED } from "./domain/studioRendererEffects";
+import { evaluateProximityBindings, } from "./domain/proximityBindingsRuntime";
+import { STUDIO_AMBIENT_INTENSITY, STUDIO_DIRECTIONAL_DIRECTION, STUDIO_DIRECTIONAL_INTENSITY, } from "./domain/studioLighting";
 /** Native's throttle: the pose updates every frame, the distances need not. */
 const PROXIMITY_EVAL_INTERVAL_MS = 100;
 /**
@@ -101,65 +65,64 @@ function pickBestHit(results) {
     return best;
 }
 /** Outer gate: keep hooks out of the tree until sceneData exists. */
-const StudioARScene = (props) => {
+export const StudioARScene = (props) => {
     if (!props.sceneData) {
-        return props.mode === "3d" ? (<ViroScene_web_1.ViroScene toneMappingEnabled={studioRendererEffects_1.STUDIO_TONE_MAPPING_ENABLED}/>) : (<ViroARScene_web_1.ViroARScene toneMappingEnabled={studioRendererEffects_1.STUDIO_TONE_MAPPING_ENABLED}/>);
+        return props.mode === "3d" ? (<ViroScene toneMappingEnabled={STUDIO_TONE_MAPPING_ENABLED}/>) : (<ViroARScene toneMappingEnabled={STUDIO_TONE_MAPPING_ENABLED}/>);
     }
     return <StudioARSceneInner {...props} sceneData={props.sceneData}/>;
 };
-exports.StudioARScene = StudioARScene;
 const StudioARSceneInner = (props) => {
     const { sceneData, mode = "ar", apiRequestExecutor, navigate, onReady, onSceneChange, onPlaneDetected, onUnsupported, noAssetsMessage, variableStore, placementApiRef, placementStore, onAssetError, } = props;
     const { scene, assets, animations, functions } = sceneData;
     // ─── Runtime singletons (per scene) ───────────────────────────────────────
-    const schedulerRef = (0, react_1.useRef)(null);
+    const schedulerRef = useRef(null);
     if (schedulerRef.current === null)
-        schedulerRef.current = new sceneNavigationHandler_1.SequenceScheduler();
-    const soundManagerRef = (0, react_1.useRef)(null);
+        schedulerRef.current = new SequenceScheduler();
+    const soundManagerRef = useRef(null);
     if (soundManagerRef.current === null)
-        soundManagerRef.current = new soundManager_1.StudioSoundManager();
-    (0, react_1.useEffect)(() => {
+        soundManagerRef.current = new StudioSoundManager();
+    useEffect(() => {
         return () => {
             schedulerRef.current?.dispose();
             schedulerRef.current = null;
             soundManagerRef.current?.reset();
         };
     }, []);
-    const variableStoreRef = (0, react_1.useRef)(null);
+    const variableStoreRef = useRef(null);
     if (variableStoreRef.current === null) {
-        variableStoreRef.current = variableStore ?? new variableStore_1.StudioVariableStore();
+        variableStoreRef.current = variableStore ?? new StudioVariableStore();
         variableStoreRef.current.seed(sceneData.variables ?? []);
     }
-    const visibilityStoreRef = (0, react_1.useRef)(null);
+    const visibilityStoreRef = useRef(null);
     if (visibilityStoreRef.current === null) {
-        visibilityStoreRef.current = new visibilityStore_1.StudioVisibilityStore();
+        visibilityStoreRef.current = new StudioVisibilityStore();
         visibilityStoreRef.current.seed(assets);
     }
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         visibilityStoreRef.current?.reseed(assets);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [scene.id]);
-    const placementStoreRef = (0, react_1.useRef)(null);
+    const placementStoreRef = useRef(null);
     if (placementStoreRef.current === null) {
-        placementStoreRef.current = placementStore ?? new placementStore_1.StudioPlacementStore();
+        placementStoreRef.current = placementStore ?? new StudioPlacementStore();
         placementStoreRef.current.seed(assets);
     }
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         placementStoreRef.current?.reseed(assets);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [scene.id]);
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         soundManagerRef.current?.reset();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [scene.id]);
-    const sceneApi = (0, ViroWebContext_2.useViroScene)();
+    const sceneApi = useViroScene();
     // Live renderer handles for the assets a proximity binding names, kept by the
     // node factory's mount/unmount callback. An authored position is a world
     // position only while nothing above the node moves, which is false inside a
     // plane wrapper and after a tap-to-place; asking the renderer is the only way
     // to know where the node ended up.
-    const assetNodeHandlesRef = (0, react_1.useRef)(new Map());
-    const registerProximityNode = (0, react_1.useCallback)((assetId, handle) => {
+    const assetNodeHandlesRef = useRef(new Map());
+    const registerProximityNode = useCallback((assetId, handle) => {
         if (handle) {
             assetNodeHandlesRef.current.set(assetId, handle);
         }
@@ -167,7 +130,7 @@ const StudioARSceneInner = (props) => {
             assetNodeHandlesRef.current.delete(assetId);
         }
     }, []);
-    const getAssetPosition = (0, react_1.useCallback)((assetId) => {
+    const getAssetPosition = useCallback((assetId) => {
         const handle = assetNodeHandlesRef.current.get(assetId);
         if (handle) {
             const world = sceneApi.getNodeWorldPosition(handle);
@@ -176,9 +139,9 @@ const StudioARSceneInner = (props) => {
         }
         // Before the node mounts, and on a binary that predates the C API call.
         const a = assets.find((x) => x.id === assetId);
-        return a ? (0, assetPosition_1.studioAssetPosition)(a) : undefined;
+        return a ? studioAssetPosition(a) : undefined;
     }, [assets, sceneApi]);
-    const runtimeCtx = (0, react_1.useMemo)(() => ({
+    const runtimeCtx = useMemo(() => ({
         scheduler: schedulerRef.current,
         variableStore: variableStoreRef.current,
         apiRequestExecutor,
@@ -191,41 +154,41 @@ const StudioARSceneInner = (props) => {
         getAssetPosition,
         navigate,
     }), [getAssetPosition, apiRequestExecutor, navigate]);
-    const handleSceneChange = (0, react_1.useCallback)((sceneId, sceneName) => {
+    const handleSceneChange = useCallback((sceneId, sceneName) => {
         schedulerRef.current?.cancelAll();
         onSceneChange?.(sceneId, sceneName);
     }, [onSceneChange]);
     // ─── Material + animation registration ────────────────────────────────────
-    const materialsRegisteredRef = (0, react_1.useRef)(false);
+    const materialsRegisteredRef = useRef(false);
     if (!materialsRegisteredRef.current) {
-        (0, studioMaterials_1.registerStudioMaterialsForAssets)(assets);
+        registerStudioMaterialsForAssets(assets);
         materialsRegisteredRef.current = true;
     }
-    const registeredKeyRef = (0, react_1.useRef)(null);
+    const registeredKeyRef = useRef(null);
     const animationsKey = animations.map((a) => a.animation_key).join(",");
     if (animations.length > 0 && registeredKeyRef.current !== animationsKey) {
         registeredKeyRef.current = animationsKey;
-        (0, animationRegistry_1.registerSceneAnimations)(animations);
+        registerSceneAnimations(animations);
     }
     // ─── Animation runtime state ──────────────────────────────────────────────
-    const [animOverrides, setAnimOverrides] = (0, react_1.useState)({});
-    const [loadedAssetIds, setLoadedAssetIds] = (0, react_1.useState)({});
+    const [animOverrides, setAnimOverrides] = useState({});
+    const [loadedAssetIds, setLoadedAssetIds] = useState({});
     // Through a ref, so a host passing a fresh arrow each render does not rebuild
     // every node.
-    const onAssetErrorRef = (0, react_1.useRef)(onAssetError);
+    const onAssetErrorRef = useRef(onAssetError);
     onAssetErrorRef.current = onAssetError;
-    const onAssetErrorStable = (0, react_1.useCallback)((asset, error) => onAssetErrorRef.current?.(asset, error), []);
-    const handleAssetLoaded = (0, react_1.useCallback)((assetId) => {
+    const onAssetErrorStable = useCallback((asset, error) => onAssetErrorRef.current?.(asset, error), []);
+    const handleAssetLoaded = useCallback((assetId) => {
         setLoadedAssetIds((prev) => (prev[assetId] ? prev : { ...prev, [assetId]: true }));
     }, []);
-    const triggerHandlesRef = (0, react_1.useRef)(new Set());
-    (0, react_1.useEffect)(() => {
+    const triggerHandlesRef = useRef(new Set());
+    useEffect(() => {
         return () => {
             triggerHandlesRef.current.forEach((id) => cancelAnimationFrame(id));
             triggerHandlesRef.current.clear();
         };
     }, []);
-    const triggerAnimation = (0, react_1.useCallback)((targetAssetId, animationKey) => {
+    const triggerAnimation = useCallback((targetAssetId, animationKey) => {
         setAnimOverrides((prev) => ({ ...prev, [targetAssetId]: { key: animationKey, run: false } }));
         const handle = requestAnimationFrame(() => {
             triggerHandlesRef.current.delete(handle);
@@ -238,9 +201,9 @@ const StudioARSceneInner = (props) => {
         });
         triggerHandlesRef.current.add(handle);
     }, []);
-    const triggerAnimationRef = (0, react_1.useRef)(triggerAnimation);
+    const triggerAnimationRef = useRef(triggerAnimation);
     triggerAnimationRef.current = triggerAnimation;
-    const animationStates = (0, react_1.useMemo)(() => {
+    const animationStates = useMemo(() => {
         const states = {};
         const byAsset = new Map();
         for (const anim of animations) {
@@ -263,7 +226,7 @@ const StudioARSceneInner = (props) => {
                 activeAnim = anims[0];
                 run = false;
             }
-            const runOnLoad = (fnId) => (0, sceneNavigationHandler_1.executeOnLoadFunction)(fnId, functions, undefined, animations, (id, key) => triggerAnimationRef.current(id, key), handleSceneChange, runtimeCtx);
+            const runOnLoad = (fnId) => executeOnLoadFunction(fnId, functions, undefined, animations, (id, key) => triggerAnimationRef.current(id, key), handleSceneChange, runtimeCtx);
             states[assetId] = {
                 name: activeAnim.animation_key,
                 run,
@@ -277,11 +240,11 @@ const StudioARSceneInner = (props) => {
         return states;
     }, [animations, animOverrides, loadedAssetIds, functions, handleSceneChange, runtimeCtx]);
     // ─── on_load_function ─────────────────────────────────────────────────────
-    const onLoadExecutedRef = (0, react_1.useRef)(false);
-    (0, react_1.useEffect)(() => {
+    const onLoadExecutedRef = useRef(false);
+    useEffect(() => {
         if (scene.on_load_function && !onLoadExecutedRef.current) {
             onLoadExecutedRef.current = true;
-            (0, sceneNavigationHandler_1.executeOnLoadFunction)(scene.on_load_function, functions, undefined, animations, (id, key) => triggerAnimationRef.current(id, key), handleSceneChange, runtimeCtx);
+            executeOnLoadFunction(scene.on_load_function, functions, undefined, animations, (id, key) => triggerAnimationRef.current(id, key), handleSceneChange, runtimeCtx);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [scene.id]);
@@ -290,23 +253,23 @@ const StudioARSceneInner = (props) => {
     // Everything this host drops has to be listed here. The three trigger kinds
     // and tap-to-place used to be missing, so a scene built on them opened looking
     // fine and then did nothing, with no way to tell a web gap from a bug.
-    (0, react_1.useEffect)(() => {
-        const unsupported = (0, webCapabilities_1.webUnsupportedFeatures)(sceneData, mode);
+    useEffect(() => {
+        const unsupported = webUnsupportedFeatures(sceneData, mode);
         if (unsupported.length > 0)
             onUnsupported?.(unsupported);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [scene.id]);
     // ─── Ready ────────────────────────────────────────────────────────────────
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         onReady?.();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
     // ─── Tap to place ─────────────────────────────────────────────────────────
     // The AR session is the only thing that knows where the camera is, and the
     // scene handle is the only thing that can hit-test a screen point.
-    const { session } = (0, ViroWebContext_1.useViroAR)();
-    const arSceneRef = (0, react_1.useRef)(null);
-    const placeAtScreenPoint = (0, react_1.useCallback)(async (x, y) => {
+    const { session } = useViroAR();
+    const arSceneRef = useRef(null);
+    const placeAtScreenPoint = useCallback(async (x, y) => {
         const store = placementStoreRef.current;
         const activeId = store?.activeAssetId();
         if (!store || !activeId || !arSceneRef.current)
@@ -323,11 +286,11 @@ const StudioARSceneInner = (props) => {
             return "miss";
         // The author's rotation is relative to where the user was facing, so the
         // basis goes in with the point or the asset lands facing world forward.
-        const basis = session ? (0, viroMath_1.cameraBasis)(session.cameraPose.quaternion) : null;
+        const basis = session ? cameraBasis(session.cameraPose.quaternion) : null;
         store.place(activeId, best.position, basis?.forward, basis?.up);
         return "placed";
     }, [session]);
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         if (!placementApiRef)
             return;
         placementApiRef.current = { placeAtScreenPoint };
@@ -342,8 +305,8 @@ const StudioARSceneInner = (props) => {
     // scene switch is honoured explicitly because virocore creates a physics world
     // on demand at its own -9.81 and steps whatever it holds, so a scene with
     // physics off would simulate anyway.
-    const physicsWorldConfig = (0, react_1.useMemo)(() => (0, physicsConfig_1.parsePhysicsWorldConfig)(scene.physics_world_config), [scene.physics_world_config]);
-    (0, react_1.useEffect)(() => {
+    const physicsWorldConfig = useMemo(() => parsePhysicsWorldConfig(scene.physics_world_config), [scene.physics_world_config]);
+    useEffect(() => {
         const enabled = physicsWorldConfig?.enabled === true;
         sceneApi.setPhysicsWorld(enabled, physicsWorldConfig?.gravity ?? [0, -9.81, 0]);
         return () => {
@@ -355,19 +318,19 @@ const StudioARSceneInner = (props) => {
     // One scene-level callback, routed by tag. Each body reports its own
     // collisions, so `tag` is this node and `otherTag` the one it hit — the same
     // shape the native per-node handler takes.
-    const collisionBindings = (0, react_1.useMemo)(() => sceneData.collision_bindings ?? [], [sceneData]);
-    const collisionCooldownRef = (0, react_1.useRef)(new Map());
-    const bindingsByPairKey = (0, react_1.useMemo)(() => {
+    const collisionBindings = useMemo(() => sceneData.collision_bindings ?? [], [sceneData]);
+    const collisionCooldownRef = useRef(new Map());
+    const bindingsByPairKey = useMemo(() => {
         const m = new Map();
         for (const b of collisionBindings) {
-            const key = (0, collisionPairKey_1.collisionPairKey)(b.asset_x_id, b.asset_y_id);
+            const key = collisionPairKey(b.asset_x_id, b.asset_y_id);
             const list = m.get(key) ?? [];
             list.push(b);
             m.set(key, list);
         }
         return m;
     }, [collisionBindings]);
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         if (collisionBindings.length === 0)
             return;
         const bound = new Set();
@@ -378,7 +341,7 @@ const StudioARSceneInner = (props) => {
         sceneApi.setCollisionHandler((collision) => {
             if (!bound.has(collision.tag))
                 return;
-            const handler = (0, collisionBindingsRuntime_1.createPlacementCollisionHandler)(collision.tag, bindingsByPairKey, undefined, animations, collisionCooldownRef, (id, key) => triggerAnimationRef.current(id, key), handleSceneChange, runtimeCtx);
+            const handler = createPlacementCollisionHandler(collision.tag, bindingsByPairKey, undefined, animations, collisionCooldownRef, (id, key) => triggerAnimationRef.current(id, key), handleSceneChange, runtimeCtx);
             handler(collision.otherTag, collision.point, collision.normal);
         });
         return () => {
@@ -392,21 +355,21 @@ const StudioARSceneInner = (props) => {
     // camera side is the tracked pose; the asset side is its authored position,
     // which is its world position only outside a plane wrapper — hence the gate,
     // and hence webCapabilities reporting the wrapped case as unsupported.
-    const proximityBindings = (0, react_1.useMemo)(() => sceneData.proximity_bindings ?? [], [sceneData]);
-    const proximityTargetIds = (0, react_1.useMemo)(() => {
+    const proximityBindings = useMemo(() => sceneData.proximity_bindings ?? [], [sceneData]);
+    const proximityTargetIds = useMemo(() => {
         const ids = new Set();
         for (const b of proximityBindings)
             ids.add(b.target_asset_id);
         return ids;
     }, [proximityBindings]);
-    const proximityStateRef = (0, react_1.useRef)(new Map());
-    (0, react_1.useEffect)(() => {
+    const proximityStateRef = useRef(new Map());
+    useEffect(() => {
         proximityStateRef.current.clear();
     }, [scene.id]);
     // Runs wherever there are bindings: the distance is measured from the node's
     // world position, so a plane wrapper no longer changes what it means.
     const proximityLive = proximityBindings.length > 0;
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         if (!proximityLive || !session)
             return;
         let handle = 0;
@@ -417,7 +380,7 @@ const StudioARSceneInner = (props) => {
             if (now - last < PROXIMITY_EVAL_INTERVAL_MS)
                 return;
             last = now;
-            (0, proximityBindingsRuntime_1.evaluateProximityBindings)({
+            evaluateProximityBindings({
                 cameraPosition: session.cameraPose.position,
                 bindings: proximityBindings,
                 getTargetWorldPosition: getAssetPosition,
@@ -442,15 +405,15 @@ const StudioARSceneInner = (props) => {
     // ─── Node mapping (image-triggered assets are skipped on web) ─────────────
     // Tap-to-place assets are held out of the plane wrapper: once placed they live
     // in world space, and a plane wrapper would re-parent them to the plane.
-    const { planeAssets, tapToPlaceAssets } = (0, react_1.useMemo)(() => {
-        const placeable = assets.filter(placementStore_1.isTapToPlaceAsset);
+    const { planeAssets, tapToPlaceAssets } = useMemo(() => {
+        const placeable = assets.filter(isTapToPlaceAsset);
         return {
-            planeAssets: assets.filter((a) => !a.trigger_image_url && !(0, placementStore_1.isTapToPlaceAsset)(a)),
+            planeAssets: assets.filter((a) => !a.trigger_image_url && !isTapToPlaceAsset(a)),
             tapToPlaceAssets: placeable,
         };
     }, [assets]);
-    const buildNodes = (0, react_1.useCallback)((list) => list
-        .map((asset) => (0, viroNodeFactory_1.createNode)(asset, undefined, // sceneNavigator: web navigates via runtimeCtx.navigate
+    const buildNodes = useCallback((list) => list
+        .map((asset) => createNode(asset, undefined, // sceneNavigator: web navigates via runtimeCtx.navigate
     animations, scene, (id, key) => triggerAnimationRef.current(id, key), animationStates, handleAssetLoaded, undefined, // onCollision: no physics on web
     undefined, // isDragActive
     undefined, // notifyPhysicsDrag
@@ -471,30 +434,30 @@ const StudioARSceneInner = (props) => {
         registerProximityNode,
         onAssetErrorStable,
     ]);
-    const renderedAssets = (0, react_1.useMemo)(() => buildNodes(planeAssets), [buildNodes, planeAssets]);
-    const renderedPlacements = (0, react_1.useMemo)(() => buildNodes(tapToPlaceAssets), [buildNodes, tapToPlaceAssets]);
+    const renderedAssets = useMemo(() => buildNodes(planeAssets), [buildNodes, planeAssets]);
+    const renderedPlacements = useMemo(() => buildNodes(tapToPlaceAssets), [buildNodes, tapToPlaceAssets]);
     // ─── Plane wrapping (AR mode only) ────────────────────────────────────────
     const planeAlignment = (scene.plane_direction ?? "Horizontal");
-    const usePlane = (0, webCapabilities_1.usesPlaneWrapper)(scene.plane_detection, mode);
-    const body = usePlane ? (<ViroARPlane_web_1.ViroARPlane minHeight={0.1} minWidth={0.1} alignment={planeAlignment} onAnchorFound={() => onPlaneDetected?.()}>
+    const usePlane = usesPlaneWrapper(scene.plane_detection, mode);
+    const body = usePlane ? (<ViroARPlane minHeight={0.1} minWidth={0.1} alignment={planeAlignment} onAnchorFound={() => onPlaneDetected?.()}>
       {renderedAssets}
-    </ViroARPlane_web_1.ViroARPlane>) : (<>{renderedAssets}</>);
+    </ViroARPlane>) : (<>{renderedAssets}</>);
     const children = (<>
-      <ViroAmbientLight_web_1.ViroAmbientLight color="#ffffff" intensity={studioLighting_1.STUDIO_AMBIENT_INTENSITY}/>
-      <ViroDirectionalLight_web_1.ViroDirectionalLight color="#ffffff" intensity={studioLighting_1.STUDIO_DIRECTIONAL_INTENSITY} direction={studioLighting_1.STUDIO_DIRECTIONAL_DIRECTION}/>
+      <ViroAmbientLight color="#ffffff" intensity={STUDIO_AMBIENT_INTENSITY}/>
+      <ViroDirectionalLight color="#ffffff" intensity={STUDIO_DIRECTIONAL_INTENSITY} direction={STUDIO_DIRECTIONAL_DIRECTION}/>
       {body}
       {/* At scene root: a placed asset is in world space, and the plane wrapper
             would re-parent it to the plane it happened to be tapped on. */}
       {renderedPlacements}
-      <StudioSounds_1.StudioSounds manager={soundManagerRef.current}/>
-      {assets.length === 0 && (<ViroText_web_1.ViroText text={noAssetsMessage ?? "No assets to display"} position={[0, 0, -2]} style={{ fontFamily: "Arial", fontSize: 16, color: "#CCCCCC", textAlign: "center" }}/>)}
+      <StudioSounds manager={soundManagerRef.current}/>
+      {assets.length === 0 && (<ViroText text={noAssetsMessage ?? "No assets to display"} position={[0, 0, -2]} style={{ fontFamily: "Arial", fontSize: 16, color: "#CCCCCC", textAlign: "center" }}/>)}
     </>);
     return mode === "3d" ? (
     // The editor previews no tone curve, and virocore's default Hable
     // luminance-only pass renders pure white at about 0.77. Off here rather than
     // via the navigator's `hdrEnabled`, which would take PBR with it — the same
     // line StudioARScene draws natively.
-    <ViroScene_web_1.ViroScene toneMappingEnabled={studioRendererEffects_1.STUDIO_TONE_MAPPING_ENABLED}>{children}</ViroScene_web_1.ViroScene>) : (<ViroARScene_web_1.ViroARScene ref={arSceneRef} toneMappingEnabled={studioRendererEffects_1.STUDIO_TONE_MAPPING_ENABLED}>
+    <ViroScene toneMappingEnabled={STUDIO_TONE_MAPPING_ENABLED}>{children}</ViroScene>) : (<ViroARScene ref={arSceneRef} toneMappingEnabled={STUDIO_TONE_MAPPING_ENABLED}>
       {children}
-    </ViroARScene_web_1.ViroARScene>);
+    </ViroARScene>);
 };

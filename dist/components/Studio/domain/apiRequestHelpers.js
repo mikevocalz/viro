@@ -1,4 +1,3 @@
-"use strict";
 /**
  * API Request helpers: template validation + interpolation (URL / headers /
  * JSON body), allowlist host matching, dot-path response extraction, and
@@ -23,17 +22,15 @@
  *     string values are invalid JSON and rejected. Re-serialisation makes
  *     structural injection impossible.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.applyBindings = exports.coerceBindingValue = exports.extractByPath = exports.validateSelector = exports.isHostAllowlisted = exports.matchHostPattern = exports.interpolateJsonBody = exports.validateBodyTemplate = exports.interpolateHeaders = exports.validateHeaderTemplates = exports.isForbiddenHeaderName = exports.HEADER_NAME_PATTERN = exports.interpolateUrlTemplate = exports.validateUrlTemplate = exports.interpolateDisplayTemplate = exports.validateTemplateString = exports.extractPlaceholders = exports.API_REQUEST_METHODS = exports.API_REQUEST_MAX_VARIABLE_VALUE_LENGTH = exports.API_REQUEST_MAX_VARIABLES = exports.API_REQUEST_MAX_SELECTOR_LENGTH = exports.API_REQUEST_MAX_BODY_LENGTH = exports.API_REQUEST_MAX_URL_LENGTH = exports.API_REQUEST_TIMEOUT_DEFAULT_MS = exports.API_REQUEST_TIMEOUT_MAX_MS = exports.API_REQUEST_TIMEOUT_MIN_MS = void 0;
-exports.API_REQUEST_TIMEOUT_MIN_MS = 1000;
-exports.API_REQUEST_TIMEOUT_MAX_MS = 30000;
-exports.API_REQUEST_TIMEOUT_DEFAULT_MS = 10000;
-exports.API_REQUEST_MAX_URL_LENGTH = 2048;
-exports.API_REQUEST_MAX_BODY_LENGTH = 65536;
-exports.API_REQUEST_MAX_SELECTOR_LENGTH = 256;
-exports.API_REQUEST_MAX_VARIABLES = 32;
-exports.API_REQUEST_MAX_VARIABLE_VALUE_LENGTH = 4096;
-exports.API_REQUEST_METHODS = [
+export const API_REQUEST_TIMEOUT_MIN_MS = 1000;
+export const API_REQUEST_TIMEOUT_MAX_MS = 30000;
+export const API_REQUEST_TIMEOUT_DEFAULT_MS = 10000;
+export const API_REQUEST_MAX_URL_LENGTH = 2048;
+export const API_REQUEST_MAX_BODY_LENGTH = 65536;
+export const API_REQUEST_MAX_SELECTOR_LENGTH = 256;
+export const API_REQUEST_MAX_VARIABLES = 32;
+export const API_REQUEST_MAX_VARIABLE_VALUE_LENGTH = 4096;
+export const API_REQUEST_METHODS = [
     "GET",
     "POST",
     "PUT",
@@ -45,29 +42,27 @@ const PLACEHOLDER_GLOBAL = new RegExp(`\\{\\{(${PLACEHOLDER_NAME})\\}\\}`, "g");
 const WHOLE_PLACEHOLDER = new RegExp(`^\\{\\{(${PLACEHOLDER_NAME})\\}\\}$`);
 const fail = (error) => ({ ok: false, error });
 /** Names of every well-formed placeholder, in order of appearance. */
-const extractPlaceholders = (template) => {
+export const extractPlaceholders = (template) => {
     const names = [];
     for (const match of template.matchAll(PLACEHOLDER_GLOBAL)) {
         names.push(match[1]);
     }
     return names;
 };
-exports.extractPlaceholders = extractPlaceholders;
 /**
  * A template string is valid when every "{{" / "}}" belongs to a well-formed
  * placeholder. Malformed names ({{9x}}, {{a b}}) and stray braces are errors.
  */
-const validateTemplateString = (template) => {
-    const names = (0, exports.extractPlaceholders)(template);
+export const validateTemplateString = (template) => {
+    const names = extractPlaceholders(template);
     const residue = template.replace(PLACEHOLDER_GLOBAL, "");
     if (residue.includes("{{") || residue.includes("}}")) {
         return fail("Malformed placeholder; use {{variableName}}");
     }
     return { ok: true, names };
 };
-exports.validateTemplateString = validateTemplateString;
 const substitute = (template, get, encode) => {
-    const validation = (0, exports.validateTemplateString)(template);
+    const validation = validateTemplateString(template);
     if (!validation.ok)
         return validation;
     let missing = null;
@@ -91,11 +86,10 @@ const substitute = (template, get, encode) => {
  * rather than blanking the field or suppressing the whole alert. Malformed
  * braces (not a valid placeholder) are left untouched.
  */
-const interpolateDisplayTemplate = (template, get) => template.replace(PLACEHOLDER_GLOBAL, (whole, name) => {
+export const interpolateDisplayTemplate = (template, get) => template.replace(PLACEHOLDER_GLOBAL, (whole, name) => {
     const resolved = get(name);
     return resolved === undefined ? whole : String(resolved);
 });
-exports.interpolateDisplayTemplate = interpolateDisplayTemplate;
 // ── URL templates ───────────────────────────────────────────────────────────
 // Static origin grammar: https://host[:port] with >= 2 lowercase ASCII labels
 // (same grammar as allowlist patterns; IDNs must be pre-punycoded).
@@ -115,8 +109,8 @@ const splitOrigin = (template) => {
  * literal) and the placeholder syntax of the whole template. Returns the
  * pinned host (lowercase, no port) and explicit port if present.
  */
-const validateUrlTemplate = (template) => {
-    if (template.length > exports.API_REQUEST_MAX_URL_LENGTH) {
+export const validateUrlTemplate = (template) => {
+    if (template.length > API_REQUEST_MAX_URL_LENGTH) {
         return fail("URL is too long");
     }
     if (!/^https:\/\//i.test(template)) {
@@ -133,7 +127,7 @@ const validateUrlTemplate = (template) => {
     if (!originMatch) {
         return fail("Invalid URL host");
     }
-    const whole = (0, exports.validateTemplateString)(template);
+    const whole = validateTemplateString(template);
     if (!whole.ok)
         return whole;
     return {
@@ -143,14 +137,13 @@ const validateUrlTemplate = (template) => {
         names: whole.names,
     };
 };
-exports.validateUrlTemplate = validateUrlTemplate;
 /**
  * Substitutes placeholders percent-encoded into the path/query part. The
  * origin is template-static by validation; the post-substitution recheck is
  * belt-and-braces.
  */
-const interpolateUrlTemplate = (template, get) => {
-    const validation = (0, exports.validateUrlTemplate)(template);
+export const interpolateUrlTemplate = (template, get) => {
+    const validation = validateUrlTemplate(template);
     if (!validation.ok)
         return validation;
     const { origin, rest } = splitOrigin(template);
@@ -164,9 +157,8 @@ const interpolateUrlTemplate = (template, get) => {
     }
     return { ok: true, url };
 };
-exports.interpolateUrlTemplate = interpolateUrlTemplate;
 // ── Header templates ────────────────────────────────────────────────────────
-exports.HEADER_NAME_PATTERN = /^[A-Za-z0-9-]{1,64}$/;
+export const HEADER_NAME_PATTERN = /^[A-Za-z0-9-]{1,64}$/;
 // Never author-controllable: request framing, proxy semantics, and anything
 // the platform itself sets. The connection auth header is appended per call.
 const FORBIDDEN_HEADER_NAMES = new Set([
@@ -181,34 +173,32 @@ const FORBIDDEN_HEADER_NAMES = new Set([
     "forwarded",
 ]);
 const FORBIDDEN_HEADER_PREFIXES = ["proxy-", "sec-", "x-forwarded-"];
-const isForbiddenHeaderName = (name) => {
+export const isForbiddenHeaderName = (name) => {
     const lower = name.toLowerCase();
     if (FORBIDDEN_HEADER_NAMES.has(lower))
         return true;
     return FORBIDDEN_HEADER_PREFIXES.some((prefix) => lower.startsWith(prefix));
 };
-exports.isForbiddenHeaderName = isForbiddenHeaderName;
-const validateHeaderTemplates = (headers, options) => {
+export const validateHeaderTemplates = (headers, options) => {
     const reserved = new Set((options?.reservedNames ?? []).map((name) => name.toLowerCase()));
     for (const header of headers) {
-        if (!exports.HEADER_NAME_PATTERN.test(header.key)) {
+        if (!HEADER_NAME_PATTERN.test(header.key)) {
             return fail(`Invalid header name "${header.key}"`);
         }
-        if ((0, exports.isForbiddenHeaderName)(header.key)) {
+        if (isForbiddenHeaderName(header.key)) {
             return fail(`Header "${header.key}" is not allowed`);
         }
         if (reserved.has(header.key.toLowerCase())) {
             return fail(`Header "${header.key}" is set by the connection`);
         }
-        const value = (0, exports.validateTemplateString)(header.value_template);
+        const value = validateTemplateString(header.value_template);
         if (!value.ok)
             return value;
     }
     return { ok: true };
 };
-exports.validateHeaderTemplates = validateHeaderTemplates;
-const interpolateHeaders = (headers, get, options) => {
-    const validation = (0, exports.validateHeaderTemplates)(headers, options);
+export const interpolateHeaders = (headers, get, options) => {
+    const validation = validateHeaderTemplates(headers, options);
     if (!validation.ok)
         return validation;
     const result = [];
@@ -224,10 +214,9 @@ const interpolateHeaders = (headers, get, options) => {
     }
     return { ok: true, headers: result };
 };
-exports.interpolateHeaders = interpolateHeaders;
 const collectBodyPlaceholders = (node, names) => {
     if (typeof node === "string") {
-        const validation = (0, exports.validateTemplateString)(node);
+        const validation = validateTemplateString(node);
         if (!validation.ok)
             return validation;
         names.push(...validation.names);
@@ -257,8 +246,8 @@ const collectBodyPlaceholders = (node, names) => {
  * The body template must be JSON; placeholders may only appear inside string
  * values (a bare {{n}} outside a string is invalid JSON by construction).
  */
-const validateBodyTemplate = (template) => {
-    if (template.length > exports.API_REQUEST_MAX_BODY_LENGTH) {
+export const validateBodyTemplate = (template) => {
+    if (template.length > API_REQUEST_MAX_BODY_LENGTH) {
         return fail("Body is too long");
     }
     let parsed;
@@ -274,7 +263,6 @@ const validateBodyTemplate = (template) => {
         return error;
     return { ok: true, names };
 };
-exports.validateBodyTemplate = validateBodyTemplate;
 const interpolateBodyNode = (node, get) => {
     if (typeof node === "string") {
         const whole = WHOLE_PLACEHOLDER.exec(node);
@@ -316,8 +304,8 @@ const interpolateBodyNode = (node, get) => {
  * re-stringify. The serialiser guarantees escaping, so variable values can
  * never change the JSON structure.
  */
-const interpolateJsonBody = (template, get) => {
-    const validation = (0, exports.validateBodyTemplate)(template);
+export const interpolateJsonBody = (template, get) => {
+    const validation = validateBodyTemplate(template);
     if (!validation.ok)
         return validation;
     const parsed = JSON.parse(template);
@@ -326,7 +314,6 @@ const interpolateJsonBody = (template, get) => {
         return result;
     return { ok: true, body: JSON.stringify(result.value) };
 };
-exports.interpolateJsonBody = interpolateJsonBody;
 // ── Allowlist matching ──────────────────────────────────────────────────────
 /**
  * Pattern grammar: "host.tld" or "*.host.tld", optional ":port". A pattern
@@ -334,7 +321,7 @@ exports.interpolateJsonBody = interpolateJsonBody;
  * URL); a pattern with a port matches exactly that port. The wildcard matches
  * subdomains at a label boundary, never the apex itself.
  */
-const matchHostPattern = (host, port, pattern) => {
+export const matchHostPattern = (host, port, pattern) => {
     const colon = pattern.indexOf(":");
     const patternHost = colon === -1 ? pattern : pattern.slice(0, colon);
     const patternPort = colon === -1 ? null : pattern.slice(colon + 1);
@@ -348,16 +335,14 @@ const matchHostPattern = (host, port, pattern) => {
     }
     return lowerHost === patternHost;
 };
-exports.matchHostPattern = matchHostPattern;
-const isHostAllowlisted = (host, port, patterns) => patterns.some((pattern) => (0, exports.matchHostPattern)(host, port, pattern));
-exports.isHostAllowlisted = isHostAllowlisted;
+export const isHostAllowlisted = (host, port, patterns) => patterns.some((pattern) => matchHostPattern(host, port, pattern));
 // ── Response extraction (dot-path subset) ───────────────────────────────────
 // Segment: optional key followed by any number of [n] indices. The selector
 // field stays a plain string so richer JSONPath can be introduced later.
 const SELECTOR_SEGMENT_PATTERN = /^([A-Za-z0-9_$-]+)?((?:\[\d+\])*)$/;
 const parseSelector = (selector) => {
     if (selector.length === 0 ||
-        selector.length > exports.API_REQUEST_MAX_SELECTOR_LENGTH) {
+        selector.length > API_REQUEST_MAX_SELECTOR_LENGTH) {
         return null;
     }
     const tokens = [];
@@ -375,10 +360,9 @@ const parseSelector = (selector) => {
     }
     return tokens.length > 0 ? tokens : null;
 };
-const validateSelector = (selector) => parseSelector(selector) !== null;
-exports.validateSelector = validateSelector;
+export const validateSelector = (selector) => parseSelector(selector) !== null;
 /** Walks `data.items[0].name`-style selectors. Missing path -> not found. */
-const extractByPath = (value, selector) => {
+export const extractByPath = (value, selector) => {
     const tokens = parseSelector(selector);
     if (!tokens)
         return { found: false };
@@ -402,9 +386,8 @@ const extractByPath = (value, selector) => {
     }
     return { found: true, value: current };
 };
-exports.extractByPath = extractByPath;
 /** Primitive-only, lossless-ish coercion into the variable's declared type. */
-const coerceBindingValue = (value, type) => {
+export const coerceBindingValue = (value, type) => {
     if (type === "STRING") {
         if (typeof value === "string")
             return { ok: true, value };
@@ -434,7 +417,6 @@ const coerceBindingValue = (value, type) => {
         return { ok: true, value: false };
     return { ok: false };
 };
-exports.coerceBindingValue = coerceBindingValue;
 // Which sources are meaningful per outcome path.
 const SUCCESS_SOURCES = ["BODY", "STATUS", "OK"];
 const FAILURE_SOURCES = [
@@ -447,7 +429,7 @@ const FAILURE_SOURCES = [
  * variable writes plus warnings for skipped bindings (missing path, type
  * mismatch). The caller applies writes to its variable store.
  */
-const applyBindings = (bindings, outcome) => {
+export const applyBindings = (bindings, outcome) => {
     const applicable = outcome.ok ? SUCCESS_SOURCES : FAILURE_SOURCES;
     const writes = [];
     const warnings = [];
@@ -460,7 +442,7 @@ const applyBindings = (bindings, outcome) => {
                 warnings.push(`Binding to ${binding.variable_name}: missing selector`);
                 continue;
             }
-            const extracted = (0, exports.extractByPath)(outcome.body, binding.selector);
+            const extracted = extractByPath(outcome.body, binding.selector);
             if (!extracted.found) {
                 warnings.push(`Binding to ${binding.variable_name}: "${binding.selector}" not found in response`);
                 continue;
@@ -480,7 +462,7 @@ const applyBindings = (bindings, outcome) => {
         else {
             raw = outcome.error_message ?? "";
         }
-        const coerced = (0, exports.coerceBindingValue)(raw, binding.variable_type);
+        const coerced = coerceBindingValue(raw, binding.variable_type);
         if (!coerced.ok) {
             warnings.push(`Binding to ${binding.variable_name}: value is not a ${binding.variable_type}`);
             continue;
@@ -493,4 +475,3 @@ const applyBindings = (bindings, outcome) => {
     }
     return { writes, warnings };
 };
-exports.applyBindings = applyBindings;

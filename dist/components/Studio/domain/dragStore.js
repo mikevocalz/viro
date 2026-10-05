@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.StudioDragStore = void 0;
-const utils_1 = require("./utils");
+import { KeyedListeners } from "./utils";
 function samePosition(a, b) {
     return a === b || (!!a && !!b && a.every((v, i) => v === b[i]));
 }
@@ -15,11 +12,11 @@ function samePosition(a, b) {
  * the node, and feeding its position back as a prop would pull it behind the
  * finger.
  */
-class StudioDragStore {
+export class StudioDragStore {
     positions = new Map();
     locked = new Set();
     revisions = new Map();
-    keyed = new utils_1.KeyedListeners();
+    keyed = new KeyedListeners();
     moves = new Set();
     getPosition(assetId) {
         return this.positions.get(assetId);
@@ -76,4 +73,3 @@ class StudioDragStore {
         this.keyed.notifyAll();
     }
 }
-exports.StudioDragStore = StudioDragStore;

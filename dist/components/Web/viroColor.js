@@ -1,6 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.parseColorToRGBA = parseColorToRGBA;
 /**
  * Parse any CSS color string (hex, rgb(a), named, hsl…) into normalized RGBA
  * [0,1] components for the WASM material C API. Hex is read here; everything
@@ -13,7 +10,7 @@ exports.parseColorToRGBA = parseColorToRGBA;
  */
 const cache = new Map();
 let ctx = null;
-function parseColorToRGBA(color) {
+export function parseColorToRGBA(color) {
     // Numeric colors (react-native processColor style: 0xAARRGGBB) — rare on web.
     if (typeof color === "number") {
         const a = ((color >> 24) & 0xff) / 255;

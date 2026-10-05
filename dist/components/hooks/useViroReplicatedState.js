@@ -4,10 +4,8 @@
  * @providesModule useViroReplicatedState
  */
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.useViroReplicatedState = useViroReplicatedState;
-const react_1 = require("react");
-const ViroReplication_1 = require("../AR/ViroReplication");
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ViroReplicationClient, } from "../AR/ViroReplication";
 /**
  * Replicated room state, ordered and conflict-resolved by the server.
  *
@@ -25,19 +23,19 @@ const ViroReplication_1 = require("../AR/ViroReplication");
  * Positions stored here are **location-frame** coordinates, same as the
  * channel: world coordinates are per-session and mean nothing to a peer.
  */
-function useViroReplicatedState(options) {
+export function useViroReplicatedState(options) {
     const { roomId, apiKey, projectId, endpoint, headers, enabled = true, onReject, } = options;
-    const client = (0, react_1.useMemo)(() => new ViroReplication_1.ViroReplicationClient(), []);
-    const [, force] = (0, react_1.useState)(0);
+    const client = useMemo(() => new ViroReplicationClient(), []);
+    const [, force] = useState(0);
     // Kept in a ref so changing the handler does not tear down the connection.
-    const rejectRef = (0, react_1.useRef)(onReject);
+    const rejectRef = useRef(onReject);
     rejectRef.current = onReject;
     // Same for the header provider, which the client calls again on every
     // reconnect anyway.
-    const headersRef = (0, react_1.useRef)(headers);
+    const headersRef = useRef(headers);
     headersRef.current = headers;
     const hasHeaders = headers !== undefined;
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         client.onReject = (r) => rejectRef.current?.(r);
         const unsubscribe = client.subscribe(() => force((n) => n + 1));
         if (enabled && roomId) {

@@ -9,59 +9,24 @@
  * @providesModule ViroPortal
  */
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ViroPortal = void 0;
-const React = __importStar(require("react"));
-const react_native_1 = require("react-native");
-const ViroProps_1 = require("./Utilities/ViroProps");
-const ViroBase_1 = require("./ViroBase");
-const ViroPlatform_1 = require("./Utilities/ViroPlatform");
-const ViroUnsupported_1 = require("./Utilities/ViroUnsupported");
+import * as React from "react";
+import { requireNativeComponent } from "react-native";
+import { checkMisnamedProps } from "./Utilities/ViroProps";
+import { ViroBase } from "./ViroBase";
+import { isVisionOS } from "./Utilities/ViroPlatform";
+import { warnUnsupported } from "./Utilities/ViroUnsupported";
 /**
  * Frame that serves as a 'window' into a ViroPortal
  */
-class ViroPortal extends ViroBase_1.ViroBase {
+export class ViroPortal extends ViroBase {
     render() {
         // ViroPortal's view manager is excluded from the visionOS renderer, so React has no view
         // config for it and mounting fails with "View config not found".
-        if (ViroPlatform_1.isVisionOS) {
-            (0, ViroUnsupported_1.warnUnsupported)("ViroPortal", "Apple Vision Pro", "Portals are not traversed by the visionOS renderer.");
+        if (isVisionOS) {
+            warnUnsupported("ViroPortal", "Apple Vision Pro", "Portals are not traversed by the visionOS renderer.");
             return null;
         }
-        (0, ViroProps_1.checkMisnamedProps)("ViroPortal", this.props);
+        checkMisnamedProps("ViroPortal", this.props);
         // Since transformBehaviors can be either a string or an array, convert the string to a 1-element array.
         let transformBehaviors = typeof this.props.transformBehaviors === "string"
             ? new Array(this.props.transformBehaviors)
@@ -80,8 +45,7 @@ class ViroPortal extends ViroBase_1.ViroBase {
                 this.props.onClickState != undefined} canTouch={this.props.onTouch != undefined} canScroll={this.props.onScroll != undefined} canSwipe={this.props.onSwipe != undefined} canDrag={this.props.onDrag != undefined} canPinch={this.props.onPinch != undefined} canRotate={this.props.onRotate != undefined} canFuse={this.props.onFuse != undefined} onHoverViro={this._onHover} onClickViro={this._onClickState} onClick={undefined} onTouchViro={this._onTouch} onScrollViro={this._onScroll} onSwipeViro={this._onSwipe} onDragViro={this._onDrag} onPinchViro={this._onPinch} onRotateViro={this._onRotate} onFuseViro={this._onFuse} onAnimationStartViro={this._onAnimationStart} onAnimationFinishViro={this._onAnimationFinish} timeToFuse={timeToFuse} canCollide={this.props.onCollision != undefined} onCollisionViro={this._onCollision}/>);
     }
 }
-exports.ViroPortal = ViroPortal;
-var VRTPortal = (0, react_native_1.requireNativeComponent)("VRTPortal", 
+var VRTPortal = requireNativeComponent("VRTPortal", 
 // @ts-ignore
 ViroPortal, {
     nativeOnly: {

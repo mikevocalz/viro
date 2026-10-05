@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.questAlertStore = void 0;
-const utils_1 = require("./utils");
+import { GlobalListeners } from "./utils";
 /**
  * Quest has no 2D overlay surface, so ALERT (and the TAKE_PHOTO failure
  * alert, which shares this path) can't show a native Alert.alert dialog the
@@ -12,7 +9,7 @@ const utils_1 = require("./utils");
 class QuestAlertStore {
     activeTitle = null;
     activeMessage = null;
-    listeners = new utils_1.GlobalListeners();
+    listeners = new GlobalListeners();
     isActive() {
         return this.activeMessage !== null;
     }
@@ -42,4 +39,4 @@ class QuestAlertStore {
         this.dismiss();
     }
 }
-exports.questAlertStore = new QuestAlertStore();
+export const questAlertStore = new QuestAlertStore();

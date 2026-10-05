@@ -1,28 +1,25 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ViroMaterialVideo = void 0;
-const react_1 = require("react");
-const viro_web_renderer_1 = require("@reactvision/viro-web-renderer");
-const ViroWebContext_1 = require("./Web/ViroWebContext");
-const viroImageLoader_1 = require("./Web/viroImageLoader");
-const viroMaterialRegistry_1 = require("./Web/viroMaterialRegistry");
-const viroWebVideo_1 = require("./Web/viroWebVideo");
-exports.ViroMaterialVideo = (0, react_1.forwardRef)(function ViroMaterialVideo(props, ref) {
-    const scene = (0, ViroWebContext_1.useViroScene)();
-    const url = (0, viroImageLoader_1.resolveImageSource)(props.source);
+import { forwardRef, useEffect, useImperativeHandle, useRef, } from "react";
+import { ViroTextureChannel } from "@reactvision/viro-web-renderer";
+import { useViroScene } from "./Web/ViroWebContext";
+import { resolveImageSource } from "./Web/viroImageLoader";
+import { getSharedMaterialHandle } from "./Web/viroMaterialRegistry";
+import { attachWebVideoLifecycle, seekHtmlVideo, startWebVideoTexturePump, } from "./Web/viroWebVideo";
+export const ViroMaterialVideo = forwardRef(function ViroMaterialVideo(props, ref) {
+    const scene = useViroScene();
+    const url = resolveImageSource(props.source);
     const materialName = props.material;
-    const videoRef = (0, react_1.useRef)(null);
-    const propsRef = (0, react_1.useRef)(props);
+    const videoRef = useRef(null);
+    const propsRef = useRef(props);
     propsRef.current = props;
-    (0, react_1.useImperativeHandle)(ref, () => ({
+    useImperativeHandle(ref, () => ({
         seekToTime(timeInSeconds) {
-            (0, viroWebVideo_1.seekHtmlVideo)(videoRef.current, timeInSeconds);
+            seekHtmlVideo(videoRef.current, timeInSeconds);
         },
     }), []);
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         if (!url || !materialName)
             return;
-        const material = (0, viroMaterialRegistry_1.getSharedMaterialHandle)(scene, materialName);
+        const material = getSharedMaterialHandle(scene, materialName);
         if (!material)
             return;
         const video = document.createElement("video");
@@ -30,9 +27,9 @@ exports.ViroMaterialVideo = (0, react_1.forwardRef)(function ViroMaterialVideo(p
         video.playsInline = true;
         video.preload = "auto";
         videoRef.current = video;
-        const detachLifecycle = (0, viroWebVideo_1.attachWebVideoLifecycle)(video, () => propsRef.current);
-        const stopPump = (0, viroWebVideo_1.startWebVideoTexturePump)(scene, video, (texture) => {
-            scene.setMaterialTexture(material, viro_web_renderer_1.ViroTextureChannel.Diffuse, texture);
+        const detachLifecycle = attachWebVideoLifecycle(video, () => propsRef.current);
+        const stopPump = startWebVideoTexturePump(scene, video, (texture) => {
+            scene.setMaterialTexture(material, ViroTextureChannel.Diffuse, texture);
         });
         video.src = url;
         video.load();
@@ -45,7 +42,7 @@ exports.ViroMaterialVideo = (0, react_1.forwardRef)(function ViroMaterialVideo(p
             videoRef.current = null;
         };
     }, [scene, url, materialName]);
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         const video = videoRef.current;
         if (!video)
             return;

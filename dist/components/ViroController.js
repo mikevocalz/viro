@@ -7,47 +7,12 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ViroController = void 0;
-const React = __importStar(require("react"));
-const react_native_1 = require("react-native");
-const react_native_2 = require("react-native");
-const ViroEvents_1 = require("./Types/ViroEvents");
-const ViroControllerModule = react_native_2.NativeModules.VRTControllerModule;
-class ViroController extends React.Component {
+import * as React from "react";
+import { findNodeHandle, requireNativeComponent, } from "react-native";
+import { NativeModules } from "react-native";
+import { ViroClickStateTypes, } from "./Types/ViroEvents";
+const ViroControllerModule = NativeModules.VRTControllerModule;
+export class ViroController extends React.Component {
     _component = null;
     _onClick = (event) => {
         this.props.onClick &&
@@ -56,7 +21,7 @@ class ViroController extends React.Component {
     _onClickState = (event) => {
         this.props.onClickState &&
             this.props.onClickState(event.nativeEvent.clickState, event.nativeEvent.position, event.nativeEvent.source);
-        let CLICKED = ViroEvents_1.ViroClickStateTypes.CLICKED; // Value representation of Clicked ClickState within EventDelegateJni.
+        let CLICKED = ViroClickStateTypes.CLICKED; // Value representation of Clicked ClickState within EventDelegateJni.
         if (event.nativeEvent.clickState == CLICKED) {
             this._onClick(event);
         }
@@ -96,7 +61,7 @@ class ViroController extends React.Component {
             this.props.onRotate(event.nativeEvent.rotateState, event.nativeEvent.rotationFactor, event.nativeEvent.source);
     };
     async getControllerForwardAsync() {
-        return await ViroControllerModule.getForwardVectorAsync((0, react_native_1.findNodeHandle)(this));
+        return await ViroControllerModule.getForwardVectorAsync(findNodeHandle(this));
     }
     setNativeProps(nativeProps) {
         this._component?.setNativeProps(nativeProps);
@@ -114,8 +79,7 @@ class ViroController extends React.Component {
                 this.props.onClickState != undefined} canTouch={this.props.onTouch != undefined} canScroll={this.props.onScroll != undefined} canSwipe={this.props.onSwipe != undefined} canGetControllerStatus={this.props.onControllerStatus != undefined} canDrag={this.props.onDrag != undefined} canPinch={this.props.onPinch != undefined} canRotate={this.props.onRotate != undefined} canFuse={this.props.onFuse != undefined} onClickViro={this._onClickState} onClick={undefined} onTouchViro={this._onTouch} onScrollViro={this._onScroll} onSwipeViro={this._onSwipe} onDragViro={this._onDrag} onPinchViro={this._onPinch} onRotateViro={this._onRotate} onFuseViro={this._onFuse} onControllerStatusViro={this._onControllerStatus}/>);
     }
 }
-exports.ViroController = ViroController;
-var VRTController = (0, react_native_1.requireNativeComponent)("VRTController", 
+var VRTController = requireNativeComponent("VRTController", 
 // @ts-ignore
 ViroController, {
     nativeOnly: {

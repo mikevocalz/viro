@@ -1,6 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ViroAnimatedImage = ViroAnimatedImage;
 /**
  * ViroAnimatedImage.web.tsx
  *
@@ -18,27 +15,27 @@ exports.ViroAnimatedImage = ViroAnimatedImage;
  *
  * Copyright © 2026 ReactVision. All rights reserved.
  */
-const react_1 = require("react");
-const viro_web_renderer_1 = require("@reactvision/viro-web-renderer");
-const useViroNode_1 = require("./Web/useViroNode");
-const ViroWebContext_1 = require("./Web/ViroWebContext");
-const viroImageLoader_1 = require("./Web/viroImageLoader");
-function ViroAnimatedImage(props) {
-    const scene = (0, ViroWebContext_1.useViroScene)();
+import { useEffect, useRef } from "react";
+import { ViroLightingModel, ViroTextureChannel, ViroBlendMode, } from "@reactvision/viro-web-renderer";
+import { useViroNode } from "./Web/useViroNode";
+import { useViroScene } from "./Web/ViroWebContext";
+import { resolveImageSource } from "./Web/viroImageLoader";
+export function ViroAnimatedImage(props) {
+    const scene = useViroScene();
     const width = props.width ?? 1;
     const height = props.height ?? 1;
-    const url = (0, viroImageLoader_1.resolveImageSource)(props.source);
-    const geometryRef = (0, react_1.useRef)(0);
-    (0, useViroNode_1.useViroNode)(props, (s) => {
+    const url = resolveImageSource(props.source);
+    const geometryRef = useRef(0);
+    useViroNode(props, (s) => {
         const geo = s.createSurface(width, height);
         geometryRef.current = geo;
         return geo;
     });
-    const propsRef = (0, react_1.useRef)(props);
+    const propsRef = useRef(props);
     propsRef.current = props;
-    const pausedRef = (0, react_1.useRef)(props.paused ?? false);
+    const pausedRef = useRef(props.paused ?? false);
     pausedRef.current = props.paused ?? false;
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         const geo = geometryRef.current;
         if (!geo || !url)
             return;
@@ -47,8 +44,8 @@ function ViroAnimatedImage(props) {
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d", { willReadFrequently: true });
         const material = scene.createMaterial();
-        scene.setMaterialLightingModel(material, viro_web_renderer_1.ViroLightingModel.Constant);
-        scene.setMaterialBlendMode(material, viro_web_renderer_1.ViroBlendMode.Alpha);
+        scene.setMaterialLightingModel(material, ViroLightingModel.Constant);
+        scene.setMaterialBlendMode(material, ViroBlendMode.Alpha);
         // Blended, so no depth write: virocore defaults it on and only discards under
         // an alpha cutoff, so a fully transparent border still wrote depth and punched
         // a hole in whatever was drawn behind it after it.
@@ -71,7 +68,7 @@ function ViroAnimatedImage(props) {
                 ctx.drawImage(img, 0, 0, w, h);
                 const rgba = ctx.getImageData(0, 0, w, h).data;
                 const tex = scene.createTextureRGBA(new Uint8Array(rgba), w, h, true);
-                scene.setMaterialTexture(material, viro_web_renderer_1.ViroTextureChannel.Diffuse, tex);
+                scene.setMaterialTexture(material, ViroTextureChannel.Diffuse, tex);
                 scene.setGeometryMaterial(geo, material);
                 if (currentTex)
                     scene.destroyTexture(currentTex);

@@ -1,6 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ViroLightingEnvironment = ViroLightingEnvironment;
 /**
  * Web implementation of ViroLightingEnvironment — applies an HDR image-based
  * lighting environment to the scene (diffuse irradiance + specular reflections
@@ -9,13 +6,13 @@ exports.ViroLightingEnvironment = ViroLightingEnvironment;
  * `source` must be a radiance `.hdr` (equirectangular). The renderer fetches it,
  * writes it to the WASM FS, and loads it via VROHDRLoader.
  */
-const react_1 = require("react");
-const ViroWebContext_1 = require("./Web/ViroWebContext");
-const viroImageLoader_1 = require("./Web/viroImageLoader");
-function ViroLightingEnvironment(props) {
-    const renderer = (0, ViroWebContext_1.useViroRenderer)();
-    const url = (0, viroImageLoader_1.resolveImageSource)(props.source);
-    (0, react_1.useEffect)(() => {
+import { useEffect } from "react";
+import { useViroRenderer } from "./Web/ViroWebContext";
+import { resolveImageSource } from "./Web/viroImageLoader";
+export function ViroLightingEnvironment(props) {
+    const renderer = useViroRenderer();
+    const url = resolveImageSource(props.source);
+    useEffect(() => {
         if (!url)
             return;
         let cancelled = false;

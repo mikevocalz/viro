@@ -1,8 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.VIRO_PARTICLE_INTERVAL_STRIDE = void 0;
-exports.resolveFactor = resolveFactor;
-exports.resolveParticleAppearance = resolveParticleAppearance;
 /**
  * Turning a `particleAppearance` prop into the calls the C API takes.
  *
@@ -19,18 +14,17 @@ exports.resolveParticleAppearance = resolveParticleAppearance;
  * behave differently from an absent one, which is how particles end up
  * mysteriously half-transparent.
  */
-const viro_web_renderer_1 = require("@reactvision/viro-web-renderer");
-Object.defineProperty(exports, "VIRO_PARTICLE_INTERVAL_STRIDE", { enumerable: true, get: function () { return viro_web_renderer_1.VIRO_PARTICLE_INTERVAL_STRIDE; } });
-const viroColor_1 = require("./viroColor");
-function resolveFactor(factor) {
+import { ViroParticleFactor, ViroParticleProperty, VIRO_PARTICLE_INTERVAL_STRIDE, } from "@reactvision/viro-web-renderer";
+import { parseColorToRGBA } from "./viroColor";
+export function resolveFactor(factor) {
     switch ((factor ?? "").toLowerCase()) {
         case "distance":
-            return viro_web_renderer_1.ViroParticleFactor.Distance;
+            return ViroParticleFactor.Distance;
         case "velocity":
-            return viro_web_renderer_1.ViroParticleFactor.Velocity;
+            return ViroParticleFactor.Velocity;
         default:
             // Native's own default, and what every Studio scene relies on.
-            return viro_web_renderer_1.ViroParticleFactor.Time;
+            return ViroParticleFactor.Time;
     }
 }
 /** A scalar reaches virocore as a vector; only x is read for alpha and rotation. */
@@ -41,24 +35,24 @@ const arrayToVec3 = (a) => Array.isArray(a)
 const colorToVec3 = (c) => {
     if (typeof c !== "string" && typeof c !== "number")
         return [1, 1, 1];
-    const [r, g, b] = (0, viroColor_1.parseColorToRGBA)(c);
+    const [r, g, b] = parseColorToRGBA(c);
     // Alpha is dropped: virocore has a separate alpha modifier, and folding a
     // colour's alpha in here would fight it.
     return [r, g, b];
 };
 /** How each property reads one of its values, initial range and endValue alike. */
 const READERS = {
-    opacity: { property: viro_web_renderer_1.ViroParticleProperty.Alpha, read: scalarToVec3 },
-    color: { property: viro_web_renderer_1.ViroParticleProperty.Color, read: colorToVec3 },
-    scale: { property: viro_web_renderer_1.ViroParticleProperty.Scale, read: arrayToVec3 },
-    rotation: { property: viro_web_renderer_1.ViroParticleProperty.Rotation, read: scalarToVec3 },
+    opacity: { property: ViroParticleProperty.Alpha, read: scalarToVec3 },
+    color: { property: ViroParticleProperty.Color, read: colorToVec3 },
+    scale: { property: ViroParticleProperty.Scale, read: arrayToVec3 },
+    rotation: { property: ViroParticleProperty.Rotation, read: scalarToVec3 },
 };
 const DEG2RAD = Math.PI / 180;
 /**
  * The modifier calls an appearance prop asks for, in prop order. A property the
  * prop does not name produces no call at all.
  */
-function resolveParticleAppearance(appearance) {
+export function resolveParticleAppearance(appearance) {
     if (!appearance)
         return [];
     const calls = [];
@@ -99,3 +93,4 @@ function resolveParticleAppearance(appearance) {
     }
     return calls;
 }
+export { VIRO_PARTICLE_INTERVAL_STRIDE };

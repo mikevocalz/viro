@@ -15,13 +15,6 @@
  * @providesModule ViroLocationFrame
  */
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.parseLocationTransform = parseLocationTransform;
-exports.locationToWorld = locationToWorld;
-exports.worldToLocation = worldToLocation;
-exports.transformDirection = transformDirection;
-exports.poseCsv = poseCsv;
-exports.invertTransform = invertTransform;
 /**
  * Parse the opaque transform token handed back by `resolveCloudAnchor()` or
  * `finishScan()`.
@@ -32,7 +25,7 @@ exports.invertTransform = invertTransform;
  *
  * @returns the 16 floats, or `null` when the token is malformed.
  */
-function parseLocationTransform(token) {
+export function parseLocationTransform(token) {
     if (!token)
         return null;
     const parts = token.split(",");
@@ -50,7 +43,7 @@ function parseLocationTransform(token) {
 /**
  * Location frame → world. Use on a position that arrived from another device.
  */
-function locationToWorld(transform, point) {
+export function locationToWorld(transform, point) {
     const [x, y, z] = point;
     return [
         transform[0] * x + transform[4] * y + transform[8] * z + transform[12],
@@ -61,7 +54,7 @@ function locationToWorld(transform, point) {
 /**
  * World → location frame. Use on a position before sending it to another device.
  */
-function worldToLocation(transform, point) {
+export function worldToLocation(transform, point) {
     const inv = invertTransform(transform);
     if (!inv)
         return null;
@@ -75,7 +68,7 @@ function worldToLocation(transform, point) {
  * the origin, so an avatar built from it faces a direction that drifts with the
  * frame. Only the rotation applies to a direction, which is the upper 3x3.
  */
-function transformDirection(transform, direction) {
+export function transformDirection(transform, direction) {
     const [x, y, z] = direction;
     return [
         transform[0] * x + transform[4] * y + transform[8] * z,
@@ -110,7 +103,7 @@ function cross(a, b) {
  * The camera looks down its own -Z, so the +Z basis is the negated forward.
  * Reversing that points every avatar away from where its device is pointing.
  */
-function poseCsv(position, forward, up) {
+export function poseCsv(position, forward, up) {
     const z = normalise([-forward[0], -forward[1], -forward[2]]);
     let x = cross(up, z);
     if (Math.hypot(x[0], x[1], x[2]) < 1e-6) {
@@ -150,7 +143,7 @@ function poseCsv(position, forward, up) {
  *
  * @returns null for a singular matrix.
  */
-function invertTransform(m) {
+export function invertTransform(m) {
     const inv = new Array(16);
     inv[0] = m[5] * m[10] * m[15] - m[5] * m[11] * m[14] - m[9] * m[6] * m[15]
         + m[9] * m[7] * m[14] + m[13] * m[6] * m[11] - m[13] * m[7] * m[10];

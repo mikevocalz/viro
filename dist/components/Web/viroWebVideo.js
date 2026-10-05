@@ -1,12 +1,7 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.attachWebVideoLifecycle = attachWebVideoLifecycle;
-exports.startWebVideoTexturePump = startWebVideoTexturePump;
-exports.seekHtmlVideo = seekHtmlVideo;
 function finiteDuration(video) {
     return Number.isFinite(video.duration) ? video.duration : 0;
 }
-function attachWebVideoLifecycle(video, getCallbacks) {
+export function attachWebVideoLifecycle(video, getCallbacks) {
     let buffering = false;
     const bufferStart = () => {
         if (buffering)
@@ -61,7 +56,7 @@ function cancelVideoFrame(video, id) {
  * Pump video frames into one reusable Viro texture when the current WASM
  * renderer supports source textures. Older binaries fall back to RGBA upload.
  */
-function startWebVideoTexturePump(scene, video, applyTexture) {
+export function startWebVideoTexturePump(scene, video, applyTexture) {
     let cancelled = false;
     let rafId = 0;
     let vfcId = 0;
@@ -122,7 +117,7 @@ function startWebVideoTexturePump(scene, video, applyTexture) {
             scene.destroyTexture(texture);
     };
 }
-function seekHtmlVideo(video, seconds) {
+export function seekHtmlVideo(video, seconds) {
     if (!video)
         return;
     const duration = finiteDuration(video);

@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.useAnySourcePressed = useAnySourcePressed;
-const react_1 = require("react");
-const ViroEvents_1 = require("../Types/ViroEvents");
+import { useCallback, useRef, useState } from "react";
+import { ViroClickStateTypes, } from "../Types/ViroEvents";
 /**
  * Aggregate `onClickState` "is being pressed" state across all input sources.
  *
@@ -34,15 +31,15 @@ const ViroEvents_1 = require("../Types/ViroEvents");
  * Internally deduplicates per source so a sequence of `(CLICK_DOWN, src=A)`
  * events from the same source produces at most one re-render.
  */
-function useAnySourcePressed() {
-    const sourcesRef = (0, react_1.useRef)({});
-    const [pressed, setPressed] = (0, react_1.useState)(false);
-    const onClickState = (0, react_1.useCallback)((clickState, _position, source) => {
+export function useAnySourcePressed() {
+    const sourcesRef = useRef({});
+    const [pressed, setPressed] = useState(false);
+    const onClickState = useCallback((clickState, _position, source) => {
         let next;
-        if (clickState === ViroEvents_1.ViroClickStateTypes.CLICK_DOWN) {
+        if (clickState === ViroClickStateTypes.CLICK_DOWN) {
             next = true;
         }
-        else if (clickState === ViroEvents_1.ViroClickStateTypes.CLICK_UP) {
+        else if (clickState === ViroClickStateTypes.CLICK_UP) {
             next = false;
         }
         else {

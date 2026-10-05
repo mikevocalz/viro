@@ -1,9 +1,6 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.StreamingAudioManager = void 0;
-const react_native_1 = require("react-native");
+import { NativeModules } from "react-native";
 // RCT_EXPORT_MODULE() in newer RN (0.76+) keeps the "Module" suffix in NativeModules.
-const native = (react_native_1.NativeModules.VRTStreamingAudioModule ?? react_native_1.NativeModules.VRTStreamingAudio);
+const native = (NativeModules.VRTStreamingAudioModule ?? NativeModules.VRTStreamingAudio);
 function noop(..._args) { }
 /**
  * StreamingAudioManager — imperative API for streaming PCM audio.
@@ -17,7 +14,7 @@ function noop(..._args) { }
  *   // when done:
  *   StreamingAudioManager.destroy('tts');
  */
-exports.StreamingAudioManager = {
+export const StreamingAudioManager = {
     create: native
         ? (id) => native.create(id)
         : noop,
