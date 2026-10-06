@@ -11,9 +11,22 @@
 
     <meta-data android:name="com.google.ar.core" android:value="optional" />
 
+    <!-- Android XR (Google runtime) — merged into every consuming app.
+         android.software.xr.api.openxr is the Play-track feature tag for
+         OpenXR apps; xr.immersive is its deprecated predecessor still declared
+         by first-gen Android XR system images. Both are required=false so one
+         APK stays installable on phones, PICO and Quest.
+         EYE_TRACKING_FINE gates XR_EXT_eye_gaze_interaction on Android XR. -->
+    <uses-feature android:name="android.software.xr.api.openxr" android:required="false" />
+    <uses-feature android:name="android.software.xr.immersive" android:required="false" />
+    <uses-permission android:name="android.permission.EYE_TRACKING_FINE" />
+
     <application android:label="@string/app_name"
         android:supportsRtl="true">
-
+        <!-- Lets the dynamic linker resolve Google's OpenXR runtime
+             (libopenxr.google.so) on Android XR devices. required=false:
+             absent on PICO/Quest/phones, which keep their own loaders. -->
+        <uses-native-library android:name="libopenxr.google.so" android:required="false" />
     </application>
 
 </manifest>

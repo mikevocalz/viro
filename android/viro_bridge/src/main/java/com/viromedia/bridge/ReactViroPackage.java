@@ -124,7 +124,11 @@ public class ReactViroPackage implements ReactPackage {
         AR,
         QUEST,
         // PICO OS OpenXR headsets, same backend as QUEST.
-        PICO
+        PICO,
+        // Android XR (Google runtime — Galaxy XR, XR glasses). Same OpenXR
+        // backend; kept as its own enum value so apps can declare intent and
+        // gate Android-XR-only manifest pieces (start mode, boundary) cleanly.
+        ANDROID_XR
     }
 
     private final ViroPlatform mViroPlatform;
@@ -134,7 +138,9 @@ public class ReactViroPackage implements ReactPackage {
     }
 
     private boolean isOpenXR() {
-        return mViroPlatform == ViroPlatform.QUEST || mViroPlatform == ViroPlatform.PICO;
+        return mViroPlatform == ViroPlatform.QUEST
+                || mViroPlatform == ViroPlatform.PICO
+                || mViroPlatform == ViroPlatform.ANDROID_XR;
     }
 
     @Override

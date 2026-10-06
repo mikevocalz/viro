@@ -1,6 +1,12 @@
 import { type MetaHorizonFormFactor } from "./ViroXRRuntime";
 /** True when running through react-native-web. */
 export declare const isWeb: boolean;
+/**
+ * True on Android XR (Google runtime — Galaxy XR, XR glasses). Source of truth
+ * is the PackageManager feature check VRModuleOpenXR exposes as a native
+ * constant; build strings can't see the runtime and are never trusted.
+ */
+export declare const isAndroidXR: boolean;
 /** True for Android XR devices in the Meta Horizon OS / OpenXR family. */
 export declare const isMetaHorizonXR: boolean;
 /**
@@ -23,6 +29,7 @@ export declare const isKnownQuest: boolean;
 export declare const isQuest: boolean;
 /** True for PICO standalone OpenXR hardware. */
 export declare const isPico: boolean;
+/** True on Android XR hardware (declared above, before classification). */
 /** True when Viro should use its Android OpenXR immersive path. */
 export declare const isXRHeadset: boolean;
 /** Build capability, not device identity. */

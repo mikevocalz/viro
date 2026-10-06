@@ -1,5 +1,5 @@
 export type MetaHorizonFormFactor = "quest" | "unknown";
-export type ViroAndroidXRVendor = "meta-horizon" | "pico" | null;
+export type ViroAndroidXRVendor = "meta-horizon" | "pico" | "android-xr" | null;
 export type AndroidXRBuildInfo = {
     manufacturer?: string | null;
     brand?: string | null;

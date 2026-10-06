@@ -164,6 +164,7 @@ public class VRTVRSceneNavigator extends VRT3DSceneNavigator {
                         new StartupListenerOVR(this));
             case PICO:
             case QUEST:
+            case ANDROID_XR:
                 return new ViroViewOpenXR(reactContext.getCurrentActivity(),
                         new StartupListenerOpenXR(this));
             case GVR:
