@@ -574,8 +574,12 @@ describe("the scene root", () => {
     );
     expect(source).toMatch(/colocation\.attachScene\([^;]*sceneMount\s*\);/);
     expect(source).toMatch(
-      /if \(!studioSceneRootsInAR\(colocationFrame, sceneMount, isQuest\)\) \{\s*return \(\s*<ViroScene/
+      /if \(!studioSceneRootsInAR\(colocationFrame, sceneMount, rootsOutsideAR\)\) \{\s*return \(\s*<ViroScene/
     );
     expect(source).not.toMatch(/if \(isQuest\) \{\s*return \(\s*<ViroScene/);
+    // visionOS has to travel with Quest here: its ImmersiveSpace cannot host a
+    // ViroARScene either, and ViroARScene renders null there.
+    expect(source).toMatch(/const rootsOutsideAR = isQuest \|\| isVisionOS;/);
+    expect(source).not.toMatch(/return isQuest \? \(\s*<ViroScene/);
   });
 });

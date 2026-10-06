@@ -18,7 +18,13 @@ import { ViroNode } from "../ViroNode";
 import { ViroScene } from "../ViroScene";
 import { ViroText } from "../ViroText";
 import { ViroController } from "../ViroController";
-import { isQuest } from "../Utilities/ViroPlatform";
+import { isQuest, isVisionOS } from "../Utilities/ViroPlatform";
+
+// Platforms that host a Studio scene outside a ViroARScene: Quest in its OpenXR VR root, and
+// visionOS in the ImmersiveSpace, where ViroARScene renders null. StudioSceneNavigator already
+// pairs the two (isQuest || isVisionOS); this is the half that was left behind. Every other
+// isQuest in this file is Quest-only behaviour — OpenXR, head-locked overlays — and stays as is.
+const rootsOutsideAR = isQuest || isVisionOS;
 import { ViroTrackingStateConstants } from "../ViroConstants";
 import type {
   ViroAmbientLightInfo,
@@ -259,9 +265,9 @@ interface StudioARSceneProps {
  */
 export const StudioARScene: React.FC<StudioARSceneProps> = (props) => {
   if (!props.sceneData) {
-    // Quest keeps its own root here for the reason spelled out at the main
-    // return below.
-    return isQuest ? (
+    // Quest and visionOS keep their own root here for the reason spelled out at
+    // the main return below.
+    return rootsOutsideAR ? (
       <ViroScene toneMappingEnabled={false} />
     ) : (
       <ViroARScene toneMappingEnabled={false} />
@@ -1777,7 +1783,7 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
   // planes, so the AR root changes nothing it renders, and the scene returns to
   // ViroScene when the session ends. Changing the root remounts everything
   // below it, which is the cost the `colocation` prop doc states.
-  if (!studioSceneRootsInAR(colocationFrame, sceneMount, isQuest)) {
+  if (!studioSceneRootsInAR(colocationFrame, sceneMount, rootsOutsideAR)) {
     return (
       <ViroScene
         {...physicsProps}
