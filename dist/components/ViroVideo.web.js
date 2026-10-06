@@ -1,36 +1,33 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ViroVideo = void 0;
-const react_1 = require("react");
-const viro_web_renderer_1 = require("@reactvision/viro-web-renderer");
-const useViroNode_1 = require("./Web/useViroNode");
-const ViroFlexSlotContext_1 = require("./Web/ViroFlexSlotContext");
-const ViroWebContext_1 = require("./Web/ViroWebContext");
-const viroImageLoader_1 = require("./Web/viroImageLoader");
-const viroWebVideo_1 = require("./Web/viroWebVideo");
-exports.ViroVideo = (0, react_1.forwardRef)(function ViroVideo(props, ref) {
-    const scene = (0, ViroWebContext_1.useViroScene)();
-    const url = (0, viroImageLoader_1.resolveImageSource)(props.source);
-    const [aspect, setAspect] = (0, react_1.useState)(1);
-    const slot = (0, ViroFlexSlotContext_1.useViroFlexSlot)();
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState, } from "react";
+import { ViroLightingModel, ViroTextureChannel, } from "@reactvision/viro-web-renderer";
+import { useViroNode } from "./Web/useViroNode";
+import { useViroFlexSlot } from "./Web/ViroFlexSlotContext";
+import { useViroScene } from "./Web/ViroWebContext";
+import { resolveImageSource } from "./Web/viroImageLoader";
+import { attachWebVideoLifecycle, seekHtmlVideo, startWebVideoTexturePump, } from "./Web/viroWebVideo";
+export const ViroVideo = forwardRef(function ViroVideo(props, ref) {
+    const scene = useViroScene();
+    const url = resolveImageSource(props.source);
+    const [aspect, setAspect] = useState(1);
+    const slot = useViroFlexSlot();
     const sizePropSet = slot != null || props.width != null || props.height != null;
     const width = slot?.width ?? props.width ?? 1;
     const height = slot?.height ?? props.height ?? (sizePropSet ? 1 : width / aspect);
-    const geometryRef = (0, react_1.useRef)(0);
-    (0, useViroNode_1.useViroNode)(props, (s) => {
+    const geometryRef = useRef(0);
+    useViroNode(props, (s) => {
         const geo = s.createSurface(width, height);
         geometryRef.current = geo;
         return geo;
     }, true, sizePropSet ? undefined : aspect);
-    const videoRef = (0, react_1.useRef)(null);
-    const propsRef = (0, react_1.useRef)(props);
+    const videoRef = useRef(null);
+    const propsRef = useRef(props);
     propsRef.current = props;
-    (0, react_1.useImperativeHandle)(ref, () => ({
+    useImperativeHandle(ref, () => ({
         seekToTime(timeInSeconds) {
-            (0, viroWebVideo_1.seekHtmlVideo)(videoRef.current, timeInSeconds);
+            seekHtmlVideo(videoRef.current, timeInSeconds);
         },
     }), []);
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         if (!url)
             return;
         const video = document.createElement("video");
@@ -39,13 +36,13 @@ exports.ViroVideo = (0, react_1.forwardRef)(function ViroVideo(props, ref) {
         video.preload = "auto";
         videoRef.current = video;
         const material = scene.createMaterial();
-        scene.setMaterialLightingModel(material, viro_web_renderer_1.ViroLightingModel.Constant);
-        const detachLifecycle = (0, viroWebVideo_1.attachWebVideoLifecycle)(video, () => propsRef.current);
-        const stopPump = (0, viroWebVideo_1.startWebVideoTexturePump)(scene, video, (texture) => {
+        scene.setMaterialLightingModel(material, ViroLightingModel.Constant);
+        const detachLifecycle = attachWebVideoLifecycle(video, () => propsRef.current);
+        const stopPump = startWebVideoTexturePump(scene, video, (texture) => {
             const geo = geometryRef.current;
             if (!geo)
                 return;
-            scene.setMaterialTexture(material, viro_web_renderer_1.ViroTextureChannel.Diffuse, texture);
+            scene.setMaterialTexture(material, ViroTextureChannel.Diffuse, texture);
             scene.setGeometryMaterial(geo, material);
         });
         const onMetadata = () => {
@@ -67,7 +64,7 @@ exports.ViroVideo = (0, react_1.forwardRef)(function ViroVideo(props, ref) {
             scene.destroyMaterial(material);
         };
     }, [scene, url]);
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         const video = videoRef.current;
         if (!video)
             return;

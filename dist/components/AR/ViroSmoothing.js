@@ -4,15 +4,8 @@
  * @providesModule ViroSmoothing
  */
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.DEFAULT_SNAP_EPSILON = void 0;
-exports.approachFactor = approachFactor;
-exports.isVec3 = isVec3;
-exports.isQuat = isQuat;
-exports.approachVec3 = approachVec3;
-exports.approachQuat = approachQuat;
 /** Metres, and the radian-ish quaternion distance, below which a value is there. */
-exports.DEFAULT_SNAP_EPSILON = 0.001;
+export const DEFAULT_SNAP_EPSILON = 0.001;
 /**
  * How far to move toward a target this frame, as a fraction.
  *
@@ -22,17 +15,17 @@ exports.DEFAULT_SNAP_EPSILON = 0.001;
  * long enough to cover several half-lives returns 1, so an app coming back from
  * the background snaps rather than gliding in from wherever it was.
  */
-function approachFactor(dtMs, halfLifeMs) {
+export function approachFactor(dtMs, halfLifeMs) {
     if (!(halfLifeMs > 0) || !(dtMs > 0))
         return 1;
     return 1 - Math.pow(2, -dtMs / halfLifeMs);
 }
-function isVec3(value) {
+export function isVec3(value) {
     return (Array.isArray(value) &&
         value.length === 3 &&
         value.every((n) => Number.isFinite(n)));
 }
-function isQuat(value) {
+export function isQuat(value) {
     return (Array.isArray(value) &&
         value.length === 4 &&
         value.every((n) => Number.isFinite(n)));
@@ -45,7 +38,7 @@ function isQuat(value) {
  * a millimetre off the authoritative position for the life of the session, and
  * the frame loop would keep re-rendering to get there.
  */
-function approachVec3(current, target, factor, snapEpsilon = exports.DEFAULT_SNAP_EPSILON) {
+export function approachVec3(current, target, factor, snapEpsilon = DEFAULT_SNAP_EPSILON) {
     const dx = target[0] - current[0];
     const dy = target[1] - current[1];
     const dz = target[2] - current[2];
@@ -66,7 +59,7 @@ function approachVec3(current, target, factor, snapEpsilon = exports.DEFAULT_SNA
  * lerp rather than true slerp: at the angles between two samples a tenth of a
  * second apart the difference is not visible, and it costs no trigonometry.
  */
-function approachQuat(current, target, factor, snapEpsilon = exports.DEFAULT_SNAP_EPSILON) {
+export function approachQuat(current, target, factor, snapEpsilon = DEFAULT_SNAP_EPSILON) {
     let dot = current[0] * target[0] +
         current[1] * target[1] +
         current[2] * target[2] +

@@ -1,14 +1,6 @@
-"use strict";
 /**
  * Studio physics_config and physics_world_config parsing and Viro prop building.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.parsePhysicsWorldConfig = parsePhysicsWorldConfig;
-exports.isPhysicsWorldEnabled = isPhysicsWorldEnabled;
-exports.parsePhysicsBodyConfig = parsePhysicsBodyConfig;
-exports.buildViroPhysicsWorld = buildViroPhysicsWorld;
-exports.buildViroPhysicsBody = buildViroPhysicsBody;
-exports.shouldUseKinematicPhysicsDrag = shouldUseKinematicPhysicsDrag;
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function isVec3(v) {
     return (Array.isArray(v) && v.length === 3 && v.every((n) => typeof n === "number"));
@@ -80,7 +72,7 @@ function normalizeForce(force) {
 /**
  * Parses `scene.physics_world_config` JSON. Returns null if missing or invalid.
  */
-function parsePhysicsWorldConfig(raw) {
+export function parsePhysicsWorldConfig(raw) {
     if (raw == null || typeof raw !== "object" || Array.isArray(raw))
         return null;
     const r = raw;
@@ -106,14 +98,14 @@ function parsePhysicsWorldConfig(raw) {
  * while the Studio editor drew it standing still. `StudioARScene` reads the same
  * flag for the `physicsWorld` prop, where it also carries the gravity.
  */
-function isPhysicsWorldEnabled(scene) {
+export function isPhysicsWorldEnabled(scene) {
     return (parsePhysicsWorldConfig(scene?.physics_world_config ?? null)?.enabled ===
         true);
 }
 /**
  * Parses `asset.physics_config` JSON. Returns null if missing or invalid.
  */
-function parsePhysicsBodyConfig(raw) {
+export function parsePhysicsBodyConfig(raw) {
     if (raw == null || typeof raw !== "object" || Array.isArray(raw))
         return null;
     const r = raw;
@@ -153,14 +145,14 @@ function parsePhysicsBodyConfig(raw) {
     }
 }
 /** Viro `ViroARScene` physicsWorld prop. */
-function buildViroPhysicsWorld(config) {
+export function buildViroPhysicsWorld(config) {
     return {
         gravity: [...config.gravity],
         ...(config.drawBounds ? { drawBounds: true } : {}),
     };
 }
 /** Maps validated Studio physics_config to Viro `physicsBody` prop. */
-function buildViroPhysicsBody(config, options) {
+export function buildViroPhysicsBody(config, options) {
     const kinematicDrag = options?.kinematicDragOverride === true &&
         config.type === "Dynamic" &&
         config.enabled;
@@ -204,7 +196,7 @@ function buildViroPhysicsBody(config, options) {
  * Draggable Dynamic bodies need kinematic override during drag so the simulation
  * doesn't fight the gesture.
  */
-function shouldUseKinematicPhysicsDrag(asset, config) {
+export function shouldUseKinematicPhysicsDrag(asset, config) {
     return (asset.is_draggable === true &&
         config != null &&
         config.enabled === true &&

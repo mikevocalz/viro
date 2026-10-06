@@ -1,54 +1,18 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Viro3DObject = void 0;
-const React = __importStar(require("react"));
-const react_native_1 = require("react-native");
-const ViroProps_1 = require("./Utilities/ViroProps");
-const ViroBase_1 = require("./ViroBase");
+import * as React from "react";
+import { findNodeHandle, NativeModules, requireNativeComponent, } from "react-native";
+import { checkMisnamedProps } from "./Utilities/ViroProps";
+import { ViroBase } from "./ViroBase";
 // The visionOS-safe resolver. Image.resolveAssetSource returns an empty uri there;
 // see ViroAssetSource.ts for why, and what it falls back to.
-const ViroAssetSource_1 = require("./Utilities/ViroAssetSource");
+import { resolveViroAssetSource as resolveAssetSource } from "./Utilities/ViroAssetSource";
 /**
  * Viro3DObject is a component that is used to render 3D models in the scene.
  */
-class Viro3DObject extends ViroBase_1.ViroBase {
+export class Viro3DObject extends ViroBase {
     render() {
-        (0, ViroProps_1.checkMisnamedProps)("Viro3DObject", this.props);
-        const modelsrc = (0, ViroAssetSource_1.resolveViroAssetSource)(this.props.source);
-        const resources = this.props.resources?.map((resource) => (0, ViroAssetSource_1.resolveViroAssetSource)(resource));
+        checkMisnamedProps("Viro3DObject", this.props);
+        const modelsrc = resolveAssetSource(this.props.source);
+        const resources = this.props.resources?.map((resource) => resolveAssetSource(resource));
         // Since materials and transformBehaviors can be either a string or an array, convert the string to a 1-element array.
         const materials = typeof this.props.materials === "string"
             ? [this.props.materials]
@@ -86,10 +50,10 @@ class Viro3DObject extends ViroBase_1.ViroBase {
         this.props.onLoadEnd && this.props.onLoadEnd(event);
     };
     getBoundingBoxAsync = () => {
-        return react_native_1.NativeModules.VRTNodeModule.getBoundingBox((0, react_native_1.findNodeHandle)(this));
+        return NativeModules.VRTNodeModule.getBoundingBox(findNodeHandle(this));
     };
     getMorphTargets = () => {
-        return react_native_1.NativeModules.VRTNodeModule.getMorphTargets((0, react_native_1.findNodeHandle)(this));
+        return NativeModules.VRTNodeModule.getMorphTargets(findNodeHandle(this));
     };
     /**
      * Set several morph target weights in one native call. Positionally paired
@@ -97,14 +61,14 @@ class Viro3DObject extends ViroBase_1.ViroBase {
      * React render or a Promise per frame.
      */
     setMorphTargetWeights = (names, weights) => {
-        react_native_1.NativeModules.VRTNodeModule.setMorphTargetWeights((0, react_native_1.findNodeHandle)(this), names, weights);
+        NativeModules.VRTNodeModule.setMorphTargetWeights(findNodeHandle(this), names, weights);
     };
     /**
      * The model's skeleton bone names, in skeleton order. Resolves to
      * `{ bones: string[] }`; empty for an unskinned model. Android only today.
      */
     getSkeletonBoneKeys = () => {
-        return react_native_1.NativeModules.VRTNodeModule.getSkeletonBoneKeys((0, react_native_1.findNodeHandle)(this));
+        return NativeModules.VRTNodeModule.getSkeletonBoneKeys(findNodeHandle(this));
     };
     /**
      * The named bones' current world transforms, as `{ matrices: number[] }` —
@@ -113,7 +77,7 @@ class Viro3DObject extends ViroBase_1.ViroBase {
      * against them, and drive with setSkeletonBoneTransforms.
      */
     getSkeletonBoneTransforms = (names) => {
-        return react_native_1.NativeModules.VRTNodeModule.getSkeletonBoneTransforms((0, react_native_1.findNodeHandle)(this), names);
+        return NativeModules.VRTNodeModule.getSkeletonBoneTransforms(findNodeHandle(this), names);
     };
     /**
      * Set bone world transforms — 16 column-major floats per name — in one native
@@ -121,12 +85,11 @@ class Viro3DObject extends ViroBase_1.ViroBase {
      * a procedural head turn or breath wants. Fire-and-forget, frame-rate safe.
      */
     setSkeletonBoneTransforms = (names, matrices, recurse) => {
-        react_native_1.NativeModules.VRTNodeModule.setSkeletonBoneTransforms((0, react_native_1.findNodeHandle)(this), names, matrices, recurse);
+        NativeModules.VRTNodeModule.setSkeletonBoneTransforms(findNodeHandle(this), names, matrices, recurse);
     };
 }
-exports.Viro3DObject = Viro3DObject;
 // We can probably give a better type for this, but it's not exposed ouside this file so not urgent
-const VRT3DObject = (0, react_native_1.requireNativeComponent)("VRT3DObject", 
+const VRT3DObject = requireNativeComponent("VRT3DObject", 
 // @ts-ignore type signature incorrect, or extra arguments are ignored?
 Viro3DObject, {
     nativeOnly: {

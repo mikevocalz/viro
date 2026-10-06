@@ -10,55 +10,20 @@
  * @flow
  */
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ViroSound = void 0;
-const React = __importStar(require("react"));
-const react_native_1 = require("react-native");
+import * as React from "react";
+import { findNodeHandle, NativeModules, Platform, requireNativeComponent, } from "react-native";
 // @ts-ignore
 // The visionOS-safe resolver. Image.resolveAssetSource returns an empty uri there;
 // see ViroAssetSource.ts for why, and what it falls back to.
-const ViroAssetSource_1 = require("./Utilities/ViroAssetSource");
-const ViroProps_1 = require("./Utilities/ViroProps");
-const ViroPlatform_1 = require("./Utilities/ViroPlatform");
-const ViroUnsupported_1 = require("./Utilities/ViroUnsupported");
-const SoundModule = react_native_1.NativeModules.VRTSoundModule;
+import { resolveViroAssetSource as resolveAssetSource } from "./Utilities/ViroAssetSource";
+import { checkMisnamedProps } from "./Utilities/ViroProps";
+import { isVisionOS } from "./Utilities/ViroPlatform";
+import { warnUnsupported } from "./Utilities/ViroUnsupported";
+const SoundModule = NativeModules.VRTSoundModule;
 /**
  * ViroSound is a component that plays a sound file.
  */
-class ViroSound extends React.Component {
+export class ViroSound extends React.Component {
     _component = null;
     static preloadSounds = async (soundMap) => {
         var results = {};
@@ -85,14 +50,14 @@ class ViroSound extends React.Component {
     render() {
         // ViroSound's view manager is excluded from the visionOS renderer, so React has no view
         // config for it and mounting fails with "View config not found".
-        if (ViroPlatform_1.isVisionOS) {
-            (0, ViroUnsupported_1.warnUnsupported)("ViroSound", "Apple Vision Pro", "Audio playback is not part of the visionOS renderer.");
+        if (isVisionOS) {
+            warnUnsupported("ViroSound", "Apple Vision Pro", "Audio playback is not part of the visionOS renderer.");
             return null;
         }
-        (0, ViroProps_1.checkMisnamedProps)("ViroSound", this.props);
+        checkMisnamedProps("ViroSound", this.props);
         var soundSrc = this.props.source;
         if (typeof soundSrc === "number") {
-            soundSrc = (0, ViroAssetSource_1.resolveViroAssetSource)(soundSrc);
+            soundSrc = resolveAssetSource(soundSrc);
         }
         else if (typeof soundSrc === "string") {
             /**
@@ -119,18 +84,17 @@ class ViroSound extends React.Component {
         return <VRTSound {...nativeProps}/>;
     }
     seekToTime = (timeInSeconds) => {
-        switch (react_native_1.Platform.OS) {
+        switch (Platform.OS) {
             case "ios":
-                react_native_1.NativeModules.VRTSoundManager.seekToTime((0, react_native_1.findNodeHandle)(this), timeInSeconds);
+                NativeModules.VRTSoundManager.seekToTime(findNodeHandle(this), timeInSeconds);
                 break;
             case "android":
-                react_native_1.NativeModules.UIManager.dispatchViewManagerCommand((0, react_native_1.findNodeHandle)(this), react_native_1.NativeModules.UIManager.VRTSound.Commands.seekToTime, [timeInSeconds]);
+                NativeModules.UIManager.dispatchViewManagerCommand(findNodeHandle(this), NativeModules.UIManager.VRTSound.Commands.seekToTime, [timeInSeconds]);
                 break;
         }
     };
 }
-exports.ViroSound = ViroSound;
-var VRTSound = (0, react_native_1.requireNativeComponent)("VRTSound", 
+var VRTSound = requireNativeComponent("VRTSound", 
 // @ts-ignore
 ViroSound, {
     nativeOnly: {

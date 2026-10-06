@@ -1,15 +1,6 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.registerViroMaterials = registerViroMaterials;
-exports.getViroMaterialDef = getViroMaterialDef;
-exports.deleteViroMaterials = deleteViroMaterials;
-exports.resetMaterialCache = resetMaterialCache;
-exports.createMaterialFromRegistry = createMaterialFromRegistry;
-exports.getSharedMaterialHandle = getSharedMaterialHandle;
-exports.updateMaterialShaderUniform = updateMaterialShaderUniform;
-const viro_web_renderer_1 = require("@reactvision/viro-web-renderer");
-const viroColor_1 = require("./viroColor");
-const viroImageLoader_1 = require("./viroImageLoader");
+import { ViroLightingModel, ViroCullMode, ViroBlendMode, ViroWrapMode, ViroFilterMode, ViroTextureChannel, } from "@reactvision/viro-web-renderer";
+import { parseColorToRGBA } from "./viroColor";
+import { loadImageRGBA, resolveImageSource } from "./viroImageLoader";
 const registry = new Map();
 // One material handle per name (shared, like native): lets geometries and
 // ViroMaterialVideo reference the same material. Cleared on renderer teardown.
@@ -18,12 +9,12 @@ const handleCache = new Map();
 // native bridges' static material registry) — track the scene a material was
 // last built against so it can be resolved without one being passed in.
 let lastScene = null;
-function registerViroMaterials(materials) {
+export function registerViroMaterials(materials) {
     for (const name of Object.keys(materials)) {
         registry.set(name, materials[name]);
     }
 }
-function getViroMaterialDef(name) {
+export function getViroMaterialDef(name) {
     return registry.get(name);
 }
 /**
@@ -32,7 +23,7 @@ function getViroMaterialDef(name) {
  * handle before dropping it; either way, drop the definition so a later
  * createMaterials() for the same name starts clean.
  */
-function deleteViroMaterials(materialNames) {
+export function deleteViroMaterials(materialNames) {
     for (const name of materialNames) {
         const handle = handleCache.get(name);
         if (handle) {
@@ -43,58 +34,58 @@ function deleteViroMaterials(materialNames) {
     }
 }
 /** Drop cached material handles (call when the renderer/module is disposed). */
-function resetMaterialCache() {
+export function resetMaterialCache() {
     handleCache.clear();
     lastScene = null;
 }
 function lightingModelValue(model) {
     switch (model) {
-        case "Constant": return viro_web_renderer_1.ViroLightingModel.Constant;
-        case "Lambert": return viro_web_renderer_1.ViroLightingModel.Lambert;
-        case "Phong": return viro_web_renderer_1.ViroLightingModel.Phong;
+        case "Constant": return ViroLightingModel.Constant;
+        case "Lambert": return ViroLightingModel.Lambert;
+        case "Phong": return ViroLightingModel.Phong;
         case "PBR":
-        case "PhysicallyBased": return viro_web_renderer_1.ViroLightingModel.PhysicallyBased;
+        case "PhysicallyBased": return ViroLightingModel.PhysicallyBased;
         case "Blinn":
-        default: return viro_web_renderer_1.ViroLightingModel.Blinn;
+        default: return ViroLightingModel.Blinn;
     }
 }
 function cullModeValue(mode) {
     switch (mode) {
-        case "None": return viro_web_renderer_1.ViroCullMode.None;
-        case "Front": return viro_web_renderer_1.ViroCullMode.Front;
-        case "Back": return viro_web_renderer_1.ViroCullMode.Back;
+        case "None": return ViroCullMode.None;
+        case "Front": return ViroCullMode.Front;
+        case "Back": return ViroCullMode.Back;
         default: return undefined;
     }
 }
 function blendModeValue(mode) {
     switch (mode) {
-        case "None": return viro_web_renderer_1.ViroBlendMode.None;
-        case "Alpha": return viro_web_renderer_1.ViroBlendMode.Alpha;
-        case "Add": return viro_web_renderer_1.ViroBlendMode.Add;
-        case "Subtract": return viro_web_renderer_1.ViroBlendMode.Subtract;
-        case "Multiply": return viro_web_renderer_1.ViroBlendMode.Multiply;
-        case "Screen": return viro_web_renderer_1.ViroBlendMode.Screen;
+        case "None": return ViroBlendMode.None;
+        case "Alpha": return ViroBlendMode.Alpha;
+        case "Add": return ViroBlendMode.Add;
+        case "Subtract": return ViroBlendMode.Subtract;
+        case "Multiply": return ViroBlendMode.Multiply;
+        case "Screen": return ViroBlendMode.Screen;
         default: return undefined;
     }
 }
 function wrapValue(mode) {
     switch (mode) {
-        case "Repeat": return viro_web_renderer_1.ViroWrapMode.Repeat;
-        case "Mirror": return viro_web_renderer_1.ViroWrapMode.Mirror;
-        default: return viro_web_renderer_1.ViroWrapMode.Clamp;
+        case "Repeat": return ViroWrapMode.Repeat;
+        case "Mirror": return ViroWrapMode.Mirror;
+        default: return ViroWrapMode.Clamp;
     }
 }
 function filterValue(mode) {
-    return mode === "Nearest" ? viro_web_renderer_1.ViroFilterMode.Nearest : viro_web_renderer_1.ViroFilterMode.Linear;
+    return mode === "Nearest" ? ViroFilterMode.Nearest : ViroFilterMode.Linear;
 }
 // Texture channels: (material def key, C API channel, is-color/sRGB).
 const TEXTURE_CHANNELS = [
-    ["diffuseTexture", viro_web_renderer_1.ViroTextureChannel.Diffuse, true],
-    ["specularTexture", viro_web_renderer_1.ViroTextureChannel.Specular, false],
-    ["normalTexture", viro_web_renderer_1.ViroTextureChannel.Normal, false],
-    ["roughnessTexture", viro_web_renderer_1.ViroTextureChannel.Roughness, false],
-    ["metalnessTexture", viro_web_renderer_1.ViroTextureChannel.Metalness, false],
-    ["ambientOcclusionTexture", viro_web_renderer_1.ViroTextureChannel.AmbientOcclusion, false],
+    ["diffuseTexture", ViroTextureChannel.Diffuse, true],
+    ["specularTexture", ViroTextureChannel.Specular, false],
+    ["normalTexture", ViroTextureChannel.Normal, false],
+    ["roughnessTexture", ViroTextureChannel.Roughness, false],
+    ["metalnessTexture", ViroTextureChannel.Metalness, false],
+    ["ambientOcclusionTexture", ViroTextureChannel.AmbientOcclusion, false],
 ];
 // Mirrors MaterialManager.java::parseShaderModifiers: each key of the
 // shaderModifiers dict is a shader entry point, whose value is either the
@@ -135,10 +126,10 @@ function applyTextures(scene, material, def) {
     const magF = filterValue(def.magnificationFilter);
     const mipF = filterValue(def.mipFilter);
     for (const [key, channel, sRGB] of TEXTURE_CHANNELS) {
-        const url = (0, viroImageLoader_1.resolveImageSource)(def[key]);
+        const url = resolveImageSource(def[key]);
         if (!url)
             continue;
-        (0, viroImageLoader_1.loadImageRGBA)(url)
+        loadImageRGBA(url)
             .then((img) => {
             const tex = scene.createTextureRGBA(img.pixels, img.width, img.height, sRGB);
             scene.setTextureWrap(tex, wrapS, wrapT);
@@ -152,7 +143,7 @@ function applyTextures(scene, material, def) {
  * Build a native material from a registered definition and return its handle,
  * or 0 if the name isn't registered. Textures apply asynchronously.
  */
-function createMaterialFromRegistry(scene, name) {
+export function createMaterialFromRegistry(scene, name) {
     lastScene = scene;
     // Return the shared handle if this material was already built (named materials
     // are shared, so ViroMaterialVideo can update the diffuse across all users).
@@ -167,7 +158,7 @@ function createMaterialFromRegistry(scene, name) {
     const material = scene.createMaterial();
     scene.setMaterialLightingModel(material, lightingModelValue(def.lightingModel));
     if (def.diffuseColor !== undefined) {
-        const [r, g, b, a] = (0, viroColor_1.parseColorToRGBA)(def.diffuseColor);
+        const [r, g, b, a] = parseColorToRGBA(def.diffuseColor);
         scene.setMaterialDiffuseColor(material, r, g, b, a);
     }
     // Scalar properties.
@@ -205,7 +196,7 @@ function createMaterialFromRegistry(scene, name) {
  * Get (creating if needed) the shared material handle for a registered name.
  * Used by ViroMaterialVideo to drive video frames onto a named material.
  */
-function getSharedMaterialHandle(scene, name) {
+export function getSharedMaterialHandle(scene, name) {
     return createMaterialFromRegistry(scene, name);
 }
 /**
@@ -221,7 +212,7 @@ function getSharedMaterialHandle(scene, name) {
  * written here won't do anything on native until those bridges add a
  * matching branch.
  */
-function updateMaterialShaderUniform(materialName, uniformName, uniformType, value) {
+export function updateMaterialShaderUniform(materialName, uniformName, uniformType, value) {
     const material = handleCache.get(materialName);
     if (!material) {
         console.warn(`[Viro web] updateShaderUniform: material "${materialName}" hasn't been built yet (no node uses it)`);
@@ -279,12 +270,12 @@ function updateMaterialShaderUniform(materialName, uniformName, uniformType, val
             break;
         }
         case "sampler2D": {
-            const url = (0, viroImageLoader_1.resolveImageSource)(value);
+            const url = resolveImageSource(value);
             if (!url) {
                 console.warn(`[Viro web] updateShaderUniform: couldn't resolve an image source for sampler2D "${uniformName}"`);
                 break;
             }
-            (0, viroImageLoader_1.loadImageRGBA)(url)
+            loadImageRGBA(url)
                 .then((img) => {
                 const tex = scene.createTextureRGBA(img.pixels, img.width, img.height, true);
                 scene.setMaterialShaderUniformTexture(material, uniformName, tex);

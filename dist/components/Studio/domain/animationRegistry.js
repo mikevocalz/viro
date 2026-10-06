@@ -1,8 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.buildViroAnimationRegistry = buildViroAnimationRegistry;
-exports.registerSceneAnimations = registerSceneAnimations;
-const ViroAnimations_1 = require("../../Animation/ViroAnimations");
+import { ViroAnimations } from "../../Animation/ViroAnimations";
 const MAX_CONCURRENT_ANIMATIONS = 10;
 const MAX_DURATION_MS = 30_000;
 const MAX_POSITION_ABS = 1_000;
@@ -12,7 +8,7 @@ const MIN_SCALE = 0.01;
  * Builds the Viro animation registry object from StudioAnimation rows.
  * The properties field is already in Viro's native keyframe format.
  */
-function buildViroAnimationRegistry(animations) {
+export function buildViroAnimationRegistry(animations) {
     const registry = {};
     for (const anim of animations) {
         // MODEL_CLIP animations play an embedded clip by name via the object's
@@ -37,7 +33,7 @@ function buildViroAnimationRegistry(animations) {
  * Registers all scene animations with ViroReact.
  * Must be called before any animated Viro components mount.
  */
-function registerSceneAnimations(animations) {
+export function registerSceneAnimations(animations) {
     if (animations.length === 0)
         return;
     if (animations.length > MAX_CONCURRENT_ANIMATIONS) {
@@ -45,7 +41,7 @@ function registerSceneAnimations(animations) {
             `Recommended max is ${MAX_CONCURRENT_ANIMATIONS} for smooth performance.`);
     }
     const registry = buildViroAnimationRegistry(animations);
-    ViroAnimations_1.ViroAnimations.registerAnimations(registry);
+    ViroAnimations.registerAnimations(registry);
     console.log(`[Studio/Animation] Registered ${Object.keys(registry).length} animation(s): ${Object.keys(registry).join(", ")}`);
 }
 function warnAnimationPerformance(anim) {

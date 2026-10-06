@@ -1,9 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.dispatchCollisionBindingActions = dispatchCollisionBindingActions;
-exports.createPlacementCollisionHandler = createPlacementCollisionHandler;
-const collisionPairKey_1 = require("./collisionPairKey");
-const sceneNavigationHandler_1 = require("./sceneNavigationHandler");
+import { canonicalizeCollisionAssetIds, collisionPairKey } from "./collisionPairKey";
+import { executeFunctionWithRelations, } from "./sceneNavigationHandler";
 const DEFAULT_COOLDOWN_MS = 750;
 function pairCooldownKey(pairKey, functionId) {
     return `${pairKey}::${functionId}`;
@@ -12,14 +8,14 @@ function pairCooldownKey(pairKey, functionId) {
  * Dispatches scene functions for collision bindings matching the canonical pair.
  * Cooldown prevents per-frame spam while physics contacts overlap.
  */
-function dispatchCollisionBindingActions(params) {
+export function dispatchCollisionBindingActions(params) {
     const { selfPlacementId, otherTag, bindingsByPairKey, sceneNavigator, animations, onSceneChange, onAnimationTrigger, cooldownMs = DEFAULT_COOLDOWN_MS, lastFiredRef, runtimeCtx, canDispatch, } = params;
     if (!otherTag)
         return;
     if (canDispatch && !canDispatch())
         return;
-    const { asset_x_id, asset_y_id } = (0, collisionPairKey_1.canonicalizeCollisionAssetIds)(selfPlacementId, otherTag);
-    const pKey = (0, collisionPairKey_1.collisionPairKey)(asset_x_id, asset_y_id);
+    const { asset_x_id, asset_y_id } = canonicalizeCollisionAssetIds(selfPlacementId, otherTag);
+    const pKey = collisionPairKey(asset_x_id, asset_y_id);
     const rows = bindingsByPairKey.get(pKey);
     if (!rows?.length)
         return;
@@ -34,13 +30,13 @@ function dispatchCollisionBindingActions(params) {
         if (now - last < cooldownMs)
             continue;
         map.set(ck, now);
-        (0, sceneNavigationHandler_1.executeFunctionWithRelations)(fn, sceneNavigator, animations, onAnimationTrigger, 0, onSceneChange, runtimeCtx);
+        executeFunctionWithRelations(fn, sceneNavigator, animations, onAnimationTrigger, 0, onSceneChange, runtimeCtx);
     }
 }
 /**
  * Returns an onCollision handler for a given placement asset ID.
  */
-function createPlacementCollisionHandler(placementId, bindingsByPairKey, sceneNavigator, animations, lastFiredRef, onAnimationTrigger, onSceneChange, runtimeCtx, canDispatch) {
+export function createPlacementCollisionHandler(placementId, bindingsByPairKey, sceneNavigator, animations, lastFiredRef, onAnimationTrigger, onSceneChange, runtimeCtx, canDispatch) {
     return (viroTag) => {
         dispatchCollisionBindingActions({
             selfPlacementId: placementId,

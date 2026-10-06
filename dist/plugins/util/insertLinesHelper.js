@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.insertLinesHelper = void 0;
-const insertLinesHelper = (insert, target, contents, offset = 1, replace = 0) => {
+export const insertLinesHelper = (insert, target, contents, offset = 1, replace = 0) => {
     // Check that what you want to insert does not already exist
     if (!contents.includes(insert)) {
         const array = contents.split("\n");
@@ -30,4 +27,3 @@ const insertLinesHelper = (insert, target, contents, offset = 1, replace = 0) =>
         return contents;
     }
 };
-exports.insertLinesHelper = insertLinesHelper;

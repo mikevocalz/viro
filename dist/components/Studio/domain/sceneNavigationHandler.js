@@ -1,17 +1,11 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.SequenceScheduler = void 0;
-exports.resetVideoRecordingState = resetVideoRecordingState;
-exports.executeFunctionWithRelations = executeFunctionWithRelations;
-exports.executeOnLoadFunction = executeOnLoadFunction;
-const react_native_1 = require("react-native");
-const ViroPlatform_1 = require("../../Utilities/ViroPlatform");
-const VRTStudioModule_1 = require("../VRTStudioModule");
-const apiRequestHelpers_1 = require("./apiRequestHelpers");
-const expressionEvaluator_1 = require("./expressionEvaluator");
-const recordingStore_1 = require("./recordingStore");
-const questAlertStore_1 = require("./questAlertStore");
-const studioApiError_1 = require("./studioApiError");
+import { Alert, AppState } from "react-native";
+import { isQuest } from "../../Utilities/ViroPlatform";
+import { VRTStudioModule } from "../VRTStudioModule";
+import { applyBindings, interpolateDisplayTemplate } from "./apiRequestHelpers";
+import { evaluate, evaluateBranchCondition, parseExpression, valueMatchesType, } from "./expressionEvaluator";
+import { studioRecordingStore } from "./recordingStore";
+import { questAlertStore } from "./questAlertStore";
+import { studioApiError } from "./studioApiError";
 const ANIMATION_CHAIN_MAX_DEPTH = 10;
 // The proxy enforces the authored timeout server-side; the client backstop
 // only covers an unreachable/unresponsive proxy.
@@ -19,10 +13,10 @@ const API_REQUEST_CLIENT_GRACE_MS = 5000;
 // Recording state lives in the device-global studioRecordingStore (the RECORD_VIDEO
 // arm toggles it, the REC indicator subscribes). Reset on scene unmount so a
 // recording torn down mid-flight can't wedge the flag (and indicator) on.
-function resetVideoRecordingState() {
-    recordingStore_1.studioRecordingStore.reset();
+export function resetVideoRecordingState() {
+    studioRecordingStore.reset();
 }
-class SequenceScheduler {
+export class SequenceScheduler {
     timers = new Set();
     appStateSub = null;
     backgrounded = false;
@@ -37,7 +31,7 @@ class SequenceScheduler {
         return this.generationCounter;
     }
     constructor() {
-        this.appStateSub = react_native_1.AppState.addEventListener("change", (state) => {
+        this.appStateSub = AppState.addEventListener("change", (state) => {
             if (state === "active")
                 this.resumeAll();
             else
@@ -107,7 +101,6 @@ class SequenceScheduler {
         this.appStateSub = null;
     }
 }
-exports.SequenceScheduler = SequenceScheduler;
 function resolveById(id, fns) {
     return fns.find((f) => f.id === id);
 }
@@ -288,7 +281,7 @@ function runBranch(fn, deps, onDone, onAbort) {
     }
     const conditions = [...branch.conditions].sort((a, b) => a.eval_order - b.eval_order);
     for (const condition of conditions) {
-        const result = (0, expressionEvaluator_1.evaluateBranchCondition)({
+        const result = evaluateBranchCondition({
             comparison: condition.comparison,
             variable_name: condition.variable_name,
             compare_literal: condition.compare_literal,
@@ -414,7 +407,7 @@ function runApiRequest(fn, deps, onDone, onAbort) {
             return;
         settled = true;
         if (store) {
-            const { writes, warnings } = (0, apiRequestHelpers_1.applyBindings)(apiRequest.bindings ?? [], outcome);
+            const { writes, warnings } = applyBindings(apiRequest.bindings ?? [], outcome);
             for (const warning of warnings) {
                 console.warn(`[Studio] API_REQUEST ${apiRequest.id}: ${warning}`);
             }
@@ -463,7 +456,7 @@ function resolveAnimationTargetAssetId(animationId, animations) {
     return animations.find((a) => a.id === animationId)?.target_asset_id;
 }
 /** Used by onClick, onCollision, and on_load_function triggers. */
-function executeFunctionWithRelations(fn, sceneNavigator, animations, onAnimationTrigger, depth = 0, onSceneChange, runtimeCtx) {
+export function executeFunctionWithRelations(fn, sceneNavigator, animations, onAnimationTrigger, depth = 0, onSceneChange, runtimeCtx) {
     if (depth > ANIMATION_CHAIN_MAX_DEPTH) {
         console.warn(`[Studio] Max chain depth (${ANIMATION_CHAIN_MAX_DEPTH}) exceeded for function ${fn.id}.`);
         return;
@@ -515,18 +508,18 @@ function executeFunctionWithRelations(fn, sceneNavigator, animations, onAnimatio
         // Fail-soft {{variable}} interpolation: unresolved names stay literal so a
         // stale reference never blanks or suppresses the alert.
         const store = runtimeCtx?.variableStore;
-        const fill = (s) => s ? (0, apiRequestHelpers_1.interpolateDisplayTemplate)(s, (name) => store?.get(name)) : "";
+        const fill = (s) => s ? interpolateDisplayTemplate(s, (name) => store?.get(name)) : "";
         const title = fill(alert.alert_title);
         const message = fill(alert.alert_message);
-        if (ViroPlatform_1.isQuest) {
+        if (isQuest) {
             // Alert.alert shows a 2D panel dialog — invisible in the VR compositor.
             // questAlertStore drives an in-scene head-locked panel instead (see
             // StudioQuestAlertOverlay), dismissed by a controller click, same as
             // tapping "OK" dismisses the native dialog on phones.
-            questAlertStore_1.questAlertStore.show(title, message);
+            questAlertStore.show(title, message);
             return;
         }
-        react_native_1.Alert.alert(title || "Alert", message, [{ text: "OK", style: "default" }]);
+        Alert.alert(title || "Alert", message, [{ text: "OK", style: "default" }]);
     }
     else if (fn.function_type === "ANIMATION") {
         const anim = fn.scene_animation;
@@ -550,17 +543,17 @@ function executeFunctionWithRelations(fn, sceneNavigator, animations, onAnimatio
             console.warn(`[Studio] SET_VARIABLE function ${fn.id} needs a runtime context (variable store); skipping.`);
             return;
         }
-        const parsed = (0, expressionEvaluator_1.parseExpression)(sv.expression);
+        const parsed = parseExpression(sv.expression);
         if (!parsed.ok) {
             console.warn(`[Studio] SET_VARIABLE "${sv.name}": ${parsed.error}; skipping.`);
             return;
         }
-        const result = (0, expressionEvaluator_1.evaluate)(parsed.ast, (name) => store.get(name));
+        const result = evaluate(parsed.ast, (name) => store.get(name));
         if (!result.ok) {
             console.warn(`[Studio] SET_VARIABLE "${sv.name}": ${result.error}; skipping.`);
             return;
         }
-        if (!(0, expressionEvaluator_1.valueMatchesType)(result.value, sv.type)) {
+        if (!valueMatchesType(result.value, sv.type)) {
             console.warn(`[Studio] SET_VARIABLE "${sv.name}": result is a ${typeof result.value}, expected ${sv.type}; skipping.`);
             return;
         }
@@ -641,11 +634,11 @@ function executeFunctionWithRelations(fn, sceneNavigator, animations, onAnimatio
             if (result?.success)
                 return;
             console.warn(`[Studio] TAKE_PHOTO function ${fn.id} failed (errorCode=${result?.errorCode}).`);
-            react_native_1.Alert.alert("Couldn't Save Photo", "The photo could not be saved. Check that photo access is allowed and try again.", [{ text: "OK" }]);
+            Alert.alert("Couldn't Save Photo", "The photo could not be saved. Check that photo access is allowed and try again.", [{ text: "OK" }]);
         })
             .catch((err) => {
             console.warn(`[Studio] TAKE_PHOTO function ${fn.id} error:`, err);
-            react_native_1.Alert.alert("Couldn't Save Photo", "The photo could not be saved. Check that photo access is allowed and try again.", [{ text: "OK" }]);
+            Alert.alert("Couldn't Save Photo", "The photo could not be saved. Check that photo access is allowed and try again.", [{ text: "OK" }]);
         });
     }
     else if (fn.function_type === "RECORD_VIDEO") {
@@ -660,39 +653,39 @@ function executeFunctionWithRelations(fn, sceneNavigator, animations, onAnimatio
             console.warn(`[Studio] RECORD_VIDEO function ${fn.id}: navigator has no video recording (Quest / unmounted); skipping.`);
             return;
         }
-        if (!recordingStore_1.studioRecordingStore.isRecording()) {
-            recordingStore_1.studioRecordingStore.start();
+        if (!studioRecordingStore.isRecording()) {
+            studioRecordingStore.start();
             const fileName = `studio_video_${Date.now()}`;
             try {
                 sceneNavigator.startVideoRecording(fileName, true, (errorCode) => {
-                    recordingStore_1.studioRecordingStore.stop();
+                    studioRecordingStore.stop();
                     console.warn(`[Studio] RECORD_VIDEO function ${fn.id} failed to start (errorCode=${errorCode}).`);
-                    react_native_1.Alert.alert("Couldn't Record Video", "Video recording could not start. Check that camera and microphone access are allowed and try again.", [{ text: "OK" }]);
+                    Alert.alert("Couldn't Record Video", "Video recording could not start. Check that camera and microphone access are allowed and try again.", [{ text: "OK" }]);
                 });
             }
             catch (err) {
-                recordingStore_1.studioRecordingStore.stop();
+                studioRecordingStore.stop();
                 console.warn(`[Studio] RECORD_VIDEO function ${fn.id} start error:`, err);
-                react_native_1.Alert.alert("Couldn't Record Video", "Video recording could not start. Check that camera and microphone access are allowed and try again.", [{ text: "OK" }]);
+                Alert.alert("Couldn't Record Video", "Video recording could not start. Check that camera and microphone access are allowed and try again.", [{ text: "OK" }]);
             }
         }
         else {
-            recordingStore_1.studioRecordingStore.stop();
+            studioRecordingStore.stop();
             void Promise.resolve(sceneNavigator.stopVideoRecording())
                 .then((result) => {
                 if (result?.success)
                     return;
                 console.warn(`[Studio] RECORD_VIDEO function ${fn.id} failed to save (errorCode=${result?.errorCode}).`);
-                react_native_1.Alert.alert("Couldn't Save Video", "The video could not be saved. Check that photo access is allowed and try again.", [{ text: "OK" }]);
+                Alert.alert("Couldn't Save Video", "The video could not be saved. Check that photo access is allowed and try again.", [{ text: "OK" }]);
             })
                 .catch((err) => {
                 console.warn(`[Studio] RECORD_VIDEO function ${fn.id} stop error:`, err);
-                react_native_1.Alert.alert("Couldn't Save Video", "The video could not be saved. Check that photo access is allowed and try again.", [{ text: "OK" }]);
+                Alert.alert("Couldn't Save Video", "The video could not be saved. Check that photo access is allowed and try again.", [{ text: "OK" }]);
             });
         }
     }
 }
-function executeOnLoadFunction(functionId, functions, sceneNavigator, animations, onAnimationTrigger, onSceneChange, runtimeCtx) {
+export function executeOnLoadFunction(functionId, functions, sceneNavigator, animations, onAnimationTrigger, onSceneChange, runtimeCtx) {
     const fn = resolveById(functionId, functions);
     if (!fn) {
         console.warn(`[Studio] on_load_function ${functionId} not found.`);
@@ -710,14 +703,14 @@ function executeOnLoadFunction(functionId, functions, sceneNavigator, animations
 async function navigateToScene(sceneNavigator, targetSceneId, currentAnimations, onSceneChange, variableStore, colocation) {
     if (!sceneNavigator) {
         console.error("[Studio] SceneNavigator not available for navigation");
-        react_native_1.Alert.alert("Navigation Error", "Unable to navigate to scene");
+        Alert.alert("Navigation Error", "Unable to navigate to scene");
         return;
     }
     console.log(`[Studio] Navigating to scene: ${targetSceneId}`);
     try {
-        const result = await VRTStudioModule_1.VRTStudioModule.rvGetScene(targetSceneId);
+        const result = await VRTStudioModule.rvGetScene(targetSceneId);
         if (!result?.success) {
-            throw (0, studioApiError_1.studioApiError)("rvGetScene", result?.error);
+            throw studioApiError("rvGetScene", result?.error);
         }
         const sceneData = JSON.parse(result.data);
         // Lazy import to avoid circular dependency
@@ -740,6 +733,6 @@ async function navigateToScene(sceneNavigator, targetSceneId, currentAnimations,
     }
     catch (error) {
         console.error("[Studio] Error navigating to scene:", error);
-        react_native_1.Alert.alert("Navigation Error", "Failed to load scene");
+        Alert.alert("Navigation Error", "Failed to load scene");
     }
 }

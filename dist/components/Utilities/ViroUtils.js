@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Copyright (c) 2016-present, Viro Media, Inc.
  * All rights reserved.
@@ -9,14 +8,6 @@
  *
  * @providesModule polarToCartesian
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.polarToCartesian = polarToCartesian;
-exports.polarToCartesianActual = polarToCartesianActual;
-exports.latLngToMercator = latLngToMercator;
-exports.gpsToArWorld = gpsToArWorld;
-exports.requestRequiredPermissions = requestRequiredPermissions;
-exports.checkPermissions = checkPermissions;
-exports.isARSupportedOnDevice = isARSupportedOnDevice;
 /**
  * Convert the given polar coords of the form [r, theta, phi] to cartesian
  * coordinates based on the default user location of (0, 0, 0) w/ viewing vector
@@ -26,7 +17,7 @@ exports.isARSupportedOnDevice = isARSupportedOnDevice;
  * theta - angle to the right of the viewing vector
  * phi - angle up from the viewing vector
  */
-function polarToCartesian(polarcoords) {
+export function polarToCartesian(polarcoords) {
     var cartesianCoords = [];
     var radius = polarcoords[0];
     var theta = polarcoords[1];
@@ -50,7 +41,7 @@ function polarToCartesian(polarcoords) {
  * theta - the xz-plane angle starting from x = 0 degrees
  * phi - the yz-plane angle starting from y = 0 degrees
  */
-function polarToCartesianActual(polarcoords) {
+export function polarToCartesianActual(polarcoords) {
     var cartesianCoords = [];
     var radius = polarcoords[0];
     var theta = polarcoords[1]; //in degrees
@@ -65,7 +56,7 @@ function polarToCartesianActual(polarcoords) {
     cartesianCoords.push(z);
     return cartesianCoords;
 }
-const react_native_1 = require("react-native");
+import { Platform, NativeModules } from "react-native";
 // ---------------------------------------------------------------------------
 // Geospatial utilities — GPS ↔ AR world-space conversion
 // ---------------------------------------------------------------------------
@@ -74,7 +65,7 @@ const EARTH_RADIUS_M = 6378137; // WGS84 equatorial radius in metres
  * Convert a lat/lng pair to Web Mercator coordinates (metres).
  * Returns [x (Easting), y (Northing)].
  */
-function latLngToMercator(lat, lng) {
+export function latLngToMercator(lat, lng) {
     const x = EARTH_RADIUS_M * (lng * Math.PI) / 180;
     const y = EARTH_RADIUS_M *
         Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360));
@@ -94,7 +85,7 @@ function latLngToMercator(lat, lng) {
  * @param anchorAlt   Target altitude in metres (WGS84)
  * @returns [arX, arY, arZ] position in metres relative to the device
  */
-function gpsToArWorld(devicePose, anchorLat, anchorLng, anchorAlt) {
+export function gpsToArWorld(devicePose, anchorLat, anchorLng, anchorAlt) {
     const [devX, devY] = latLngToMercator(devicePose.latitude, devicePose.longitude);
     const [ancX, ancY] = latLngToMercator(anchorLat, anchorLng);
     // Delta in metres: East (X) and North (Y)
@@ -126,16 +117,16 @@ const ALL_PERMISSIONS = [
  * Omit `permissions` to request all four (camera, microphone, storage, location).
  * Only the requested keys are present in the resolved result.
  */
-function requestRequiredPermissions(permissions = ALL_PERMISSIONS) {
-    if (react_native_1.Platform.OS === "ios") {
-        if (!react_native_1.NativeModules.VRTARUtils)
+export function requestRequiredPermissions(permissions = ALL_PERMISSIONS) {
+    if (Platform.OS === "ios") {
+        if (!NativeModules.VRTARUtils)
             return Promise.resolve({});
-        return react_native_1.NativeModules.VRTARUtils.requestRequiredPermissions(permissions);
+        return NativeModules.VRTARUtils.requestRequiredPermissions(permissions);
     }
     else {
-        if (!react_native_1.NativeModules.VRTARSceneNavigatorModule)
+        if (!NativeModules.VRTARSceneNavigatorModule)
             return Promise.resolve({});
-        return react_native_1.NativeModules.VRTARSceneNavigatorModule.requestRequiredPermissions(permissions);
+        return NativeModules.VRTARSceneNavigatorModule.requestRequiredPermissions(permissions);
     }
 }
 /**
@@ -143,26 +134,26 @@ function requestRequiredPermissions(permissions = ALL_PERMISSIONS) {
  * Omit `permissions` to check all four (camera, microphone, storage, location).
  * Only the requested keys are present in the resolved result.
  */
-function checkPermissions(permissions = ALL_PERMISSIONS) {
-    if (react_native_1.Platform.OS === "ios") {
-        if (!react_native_1.NativeModules.VRTARUtils)
+export function checkPermissions(permissions = ALL_PERMISSIONS) {
+    if (Platform.OS === "ios") {
+        if (!NativeModules.VRTARUtils)
             return Promise.resolve({});
-        return react_native_1.NativeModules.VRTARUtils.checkPermissions(permissions);
+        return NativeModules.VRTARUtils.checkPermissions(permissions);
     }
     else {
-        if (!react_native_1.NativeModules.VRTARSceneNavigatorModule)
+        if (!NativeModules.VRTARSceneNavigatorModule)
             return Promise.resolve({});
-        return react_native_1.NativeModules.VRTARSceneNavigatorModule.checkPermissions(permissions);
+        return NativeModules.VRTARSceneNavigatorModule.checkPermissions(permissions);
     }
 }
-function isARSupportedOnDevice() {
+export function isARSupportedOnDevice() {
     return new Promise((resolve, reject) => {
-        if (react_native_1.Platform.OS == "ios") {
-            if (!react_native_1.NativeModules.VRTARUtils) {
+        if (Platform.OS == "ios") {
+            if (!NativeModules.VRTARUtils) {
                 resolve({ isARSupported: false });
                 return;
             }
-            react_native_1.NativeModules.VRTARUtils.isARSupported((error, result) => {
+            NativeModules.VRTARUtils.isARSupported((error, result) => {
                 if (error)
                     reject(error);
                 if (result)
@@ -171,11 +162,11 @@ function isARSupportedOnDevice() {
             });
         }
         else {
-            if (!react_native_1.NativeModules.VRTARSceneNavigatorModule) {
+            if (!NativeModules.VRTARSceneNavigatorModule) {
                 resolve({ isARSupported: false });
                 return;
             }
-            react_native_1.NativeModules.VRTARSceneNavigatorModule.isARSupportedOnDevice((result) => {
+            NativeModules.VRTARSceneNavigatorModule.isARSupportedOnDevice((result) => {
                 if (result == "SUPPORTED")
                     resolve({ isARSupported: true });
                 if (result)

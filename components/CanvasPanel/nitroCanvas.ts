@@ -7,6 +7,8 @@
  */
 export type CanvasBackingRoute = "ahb" | "surface-texture";
 export type CanvasPointerPhase = "down" | "move" | "up";
+/** Rive pointer delivery adds "cancel" (capture lost) to the surface phases. */
+export type RivePointerPhase = CanvasPointerPhase | "cancel";
 export type RiveFit = "contain" | "cover" | "fill";
 
 export interface CanvasSurface {
@@ -42,25 +44,40 @@ export interface GLES3ProducerInit {
 }
 export interface GLES3Producer extends CanvasProducer {}
 
+/* The panel contract below mirrors nitro-canvas-in-Vision's
+ * `specs/RivePanel.nitro` member-for-member (plus the HybridObject base
+ * members `name`/`equals`/`dispose`). Consumers hold the real Nitro panel
+ * through this type — a "minimal" version here reads fine until their code
+ * calls `getNumber`/`observeNumber` or hands the panel to a Nitro-typed API,
+ * at which point both directions of assignability must hold. */
 export interface RivePanel {
+  readonly name: string;
   readonly artboardWidth: number;
   readonly artboardHeight: number;
+  readonly surfaceAttached: boolean;
+  readonly renderedFrames: number;
+  readonly error: string | undefined;
   readonly managesOwnFrames?: boolean;
-  setActive?(active: boolean): void;
-  setString?(path: string, value: string): void;
-  setNumber?(path: string, value: number): void;
-  setBoolean?(path: string, value: boolean): void;
+  pointer(phase: RivePointerPhase, x: number, y: number): void;
+  setActive(active: boolean): void;
+  setString(path: string, value: string): void;
+  setNumber(path: string, value: number): void;
+  setBoolean(path: string, value: boolean): void;
   setEnum?(path: string, value: string): void;
   setColor?(path: string, value: number): void;
-  fireTrigger?(path: string): void;
-  [key: string]: unknown;
+  getNumber(path: string): number;
+  getBoolean(path: string): boolean;
+  getString(path: string): string;
+  observeNumber(path: string, callback: ((value: number) => void) | undefined): void;
+  fireTrigger(path: string): void;
+  equals(other: unknown): boolean;
+  dispose(): void;
 }
 export interface RiveCanvasOptions {
   rivBytes: ArrayBuffer;
   artboard?: string;
   stateMachine?: string;
   fit?: RiveFit;
-  [key: string]: unknown;
 }
 export interface RiveProducerInit {
   createRuntime(surface: CanvasSurface): Promise<any>;
@@ -74,7 +91,7 @@ export interface RiveProducer extends CanvasProducer {
   setEnum?(path: string, value: string): void;
   setColor?(path: string, value: number): void;
   fireTrigger?(path: string): void;
-  onPointer(phase: CanvasPointerPhase, x: number, y: number): void;
+  onPointer(phase: RivePointerPhase, x: number, y: number): void;
 }
 export interface CanvasInViroInputOptions {
   [key: string]: any;
@@ -107,7 +124,7 @@ export interface NitroCanvasModule {
       surface: { width: number; height: number };
       fit: RiveFit;
     },
-    dispatch: (event: { phase: CanvasPointerPhase; x: number; y: number }) => void
+    dispatch: (event: { phase: RivePointerPhase; x: number; y: number }) => void
   ): (event: any) => void;
   useCanvasInViroInput(
     options: CanvasInViroInputOptions & {

@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Copyright (c) 2017-present, Viro, Inc.
  * All rights reserved.
@@ -11,9 +10,7 @@
  * @providesModule ViroRecordingErrorConstants
  * @providesModule ViroARTrackingReasonConstants
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ViroARTrackingReasonConstants = exports.ViroTrackingStateConstants = exports.ViroRecordingErrorConstants = void 0;
-var ViroRecordingErrorConstants;
+export var ViroRecordingErrorConstants;
 (function (ViroRecordingErrorConstants) {
     // Viro recording error constants
     ViroRecordingErrorConstants[ViroRecordingErrorConstants["RECORD_ERROR_NONE"] = -1] = "RECORD_ERROR_NONE";
@@ -34,18 +31,18 @@ var ViroRecordingErrorConstants;
      * there is no frame to capture. Retry once the scene is rendering.
      */
     ViroRecordingErrorConstants[ViroRecordingErrorConstants["RECORD_ERROR_NOT_READY"] = 7] = "RECORD_ERROR_NOT_READY";
-})(ViroRecordingErrorConstants || (exports.ViroRecordingErrorConstants = ViroRecordingErrorConstants = {}));
-var ViroTrackingStateConstants;
+})(ViroRecordingErrorConstants || (ViroRecordingErrorConstants = {}));
+export var ViroTrackingStateConstants;
 (function (ViroTrackingStateConstants) {
     // Viro AR Tracking constants,
     ViroTrackingStateConstants[ViroTrackingStateConstants["TRACKING_UNAVAILABLE"] = 1] = "TRACKING_UNAVAILABLE";
     ViroTrackingStateConstants[ViroTrackingStateConstants["TRACKING_LIMITED"] = 2] = "TRACKING_LIMITED";
     ViroTrackingStateConstants[ViroTrackingStateConstants["TRACKING_NORMAL"] = 3] = "TRACKING_NORMAL";
-})(ViroTrackingStateConstants || (exports.ViroTrackingStateConstants = ViroTrackingStateConstants = {}));
-var ViroARTrackingReasonConstants;
+})(ViroTrackingStateConstants || (ViroTrackingStateConstants = {}));
+export var ViroARTrackingReasonConstants;
 (function (ViroARTrackingReasonConstants) {
     // Viro AR Tracking reason constants,
     ViroARTrackingReasonConstants[ViroARTrackingReasonConstants["TRACKING_REASON_NONE"] = 1] = "TRACKING_REASON_NONE";
     ViroARTrackingReasonConstants[ViroARTrackingReasonConstants["TRACKING_REASON_EXCESSIVE_MOTION"] = 2] = "TRACKING_REASON_EXCESSIVE_MOTION";
     ViroARTrackingReasonConstants[ViroARTrackingReasonConstants["TRACKING_REASON_INSUFFICIENT_FEATURES"] = 3] = "TRACKING_REASON_INSUFFICIENT_FEATURES";
-})(ViroARTrackingReasonConstants || (exports.ViroARTrackingReasonConstants = ViroARTrackingReasonConstants = {}));
+})(ViroARTrackingReasonConstants || (ViroARTrackingReasonConstants = {}));

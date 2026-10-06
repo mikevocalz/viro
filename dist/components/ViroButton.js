@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Copyright (c) 2017-present, Viro Media, Inc.
  * All rights reserved.
@@ -10,56 +9,21 @@
  * @providesModule ViroButton
  */
 "user strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ViroButton = exports.ViroButtonStateTypes = void 0;
-const React = __importStar(require("react"));
-const ViroAnimations_1 = require("./Animation/ViroAnimations");
-const ViroProps_1 = require("./Utilities/ViroProps");
-const ViroImage_1 = require("./ViroImage");
-const ViroNode_1 = require("./ViroNode");
-var ViroButtonStateTypes;
+import * as React from "react";
+import { ViroAnimations } from "./Animation/ViroAnimations";
+import { checkMisnamedProps } from "./Utilities/ViroProps";
+import { ViroImage } from "./ViroImage";
+import { ViroNode } from "./ViroNode";
+export var ViroButtonStateTypes;
 (function (ViroButtonStateTypes) {
     ViroButtonStateTypes["BTN_TYPE_HOVER"] = "hovering";
     ViroButtonStateTypes["BTN_TYPE_NORMAL"] = "normal";
     ViroButtonStateTypes["BTN_TYPE_CLICKED"] = "clicked";
-})(ViroButtonStateTypes || (exports.ViroButtonStateTypes = ViroButtonStateTypes = {}));
+})(ViroButtonStateTypes || (ViroButtonStateTypes = {}));
 /**
  * Composite controle for 2D button
  */
-class ViroButton extends React.Component {
+export class ViroButton extends React.Component {
     _component = null;
     state = {
         buttonType: ViroButtonStateTypes.BTN_TYPE_NORMAL,
@@ -90,7 +54,7 @@ class ViroButton extends React.Component {
         return await this._component?.getBoundingBoxAsync();
     };
     render() {
-        (0, ViroProps_1.checkMisnamedProps)("ViroButton", this.props);
+        checkMisnamedProps("ViroButton", this.props);
         // We default to showing the button if it's undefined
         const { visible = true } = this.props;
         var normalSrcVisible;
@@ -123,14 +87,14 @@ class ViroButton extends React.Component {
         }
         // TODO: rather than manually expanding/setting props, we should do
         // {...this.props} which will save us time when adding new properties
-        return (<ViroNode_1.ViroNode ref={(component) => {
+        return (<ViroNode ref={(component) => {
                 this._component = component;
             }} visible={visible} physicsBody={this.props.physicsBody} position={this.props.position} onTransformUpdate={this.props.onTransformUpdate} onClickState={this.props.onClickState} onTouch={this.props.onTouch} onScroll={this.props.onScroll} onSwipe={this.props.onSwipe} onHover={this._onButtonHover} onClick={this._onButtonClicked} onDrag={this.props.onDrag} onPinch={this.props.onPinch} onRotate={this.props.onRotate} onCollision={this.props.onCollision} viroTag={this.props.viroTag} onFuse={this.props.onFuse} animation={this.props.animation} onAnimationStartViro={this._onAnimationStart} onAnimationFinishViro={this._onAnimationFinish} ignoreEventHandling={this.props.ignoreEventHandling} dragType={this.props.dragType}>
-        <ViroImage_1.ViroImage source={this.props.source} rotation={this.props.rotation} rotationPivot={this.props.rotationPivot} scale={buttonScale} scalePivot={this.props.scalePivot} opacity={this.props.opacity} transformBehaviors={this.props.transformBehaviors} visible={normalSrcVisible} renderingOrder={this.props.renderingOrder} height={this.props.height} width={this.props.width} materials={this.props.materials}/>
+        <ViroImage source={this.props.source} rotation={this.props.rotation} rotationPivot={this.props.rotationPivot} scale={buttonScale} scalePivot={this.props.scalePivot} opacity={this.props.opacity} transformBehaviors={this.props.transformBehaviors} visible={normalSrcVisible} renderingOrder={this.props.renderingOrder} height={this.props.height} width={this.props.width} materials={this.props.materials}/>
 
-        <ViroImage_1.ViroImage source={hoverSource ? hoverSource : this.props.source} rotation={this.props.rotation} rotationPivot={this.props.rotationPivot} scale={buttonScale} scalePivot={this.props.scalePivot} opacity={this.props.opacity} transformBehaviors={this.props.transformBehaviors} visible={hoverSrcVisible} renderingOrder={this.props.renderingOrder} height={this.props.height} width={this.props.width} materials={this.props.materials}/>
+        <ViroImage source={hoverSource ? hoverSource : this.props.source} rotation={this.props.rotation} rotationPivot={this.props.rotationPivot} scale={buttonScale} scalePivot={this.props.scalePivot} opacity={this.props.opacity} transformBehaviors={this.props.transformBehaviors} visible={hoverSrcVisible} renderingOrder={this.props.renderingOrder} height={this.props.height} width={this.props.width} materials={this.props.materials}/>
 
-        <ViroImage_1.ViroImage source={clickSource
+        <ViroImage source={clickSource
                 ? clickSource
                 : hoverSource
                     ? hoverSource
@@ -139,7 +103,7 @@ class ViroButton extends React.Component {
                 run: clickSrcVisible,
                 onFinish: this._onAnimationFinished,
             }}/>
-      </ViroNode_1.ViroNode>);
+      </ViroNode>);
     }
     _onButtonHover = (isHovering, position, source) => {
         if (isHovering) {
@@ -171,8 +135,7 @@ class ViroButton extends React.Component {
         });
     };
 }
-exports.ViroButton = ViroButton;
-ViroAnimations_1.ViroAnimations.registerAnimations({
+ViroAnimations.registerAnimations({
     clickAnimation: {
         properties: {
             scaleX: "/=0.9",

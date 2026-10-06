@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Internal TypeScript facade for the language-neutral Viro engine contract.
  *
@@ -6,17 +5,8 @@
  * a JavaScript number. React Native/JS numbers cannot safely represent arbitrary
  * 64-bit integers, so native bridges transport the mask as two uint32 words.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.VIRO_ENGINE_ABI_MIN_MINOR = exports.VIRO_ENGINE_ABI_MAJOR = void 0;
-exports.viroEngineDomainCode = viroEngineDomainCode;
-exports.viroEnginePreferenceCode = viroEnginePreferenceCode;
-exports.viroEnginePreferenceFromCode = viroEnginePreferenceFromCode;
-exports.decodeViroEngineCapabilities = decodeViroEngineCapabilities;
-exports.normalizeViroEngineAbiInfo = normalizeViroEngineAbiInfo;
-exports.queryViroEngineContract = queryViroEngineContract;
-exports.hasViroEngineCapability = hasViroEngineCapability;
-exports.VIRO_ENGINE_ABI_MAJOR = 0;
-exports.VIRO_ENGINE_ABI_MIN_MINOR = 1;
+export const VIRO_ENGINE_ABI_MAJOR = 0;
+export const VIRO_ENGINE_ABI_MIN_MINOR = 1;
 const DOMAIN_CODE = {
     input: 0,
     spatial: 1,
@@ -36,13 +26,13 @@ const CODE_PREFERENCE = {
     1: "cpp",
     2: "eskiu",
 };
-function viroEngineDomainCode(domain) {
+export function viroEngineDomainCode(domain) {
     return DOMAIN_CODE[domain];
 }
-function viroEnginePreferenceCode(preference) {
+export function viroEnginePreferenceCode(preference) {
     return PREFERENCE_CODE[preference];
 }
-function viroEnginePreferenceFromCode(code) {
+export function viroEnginePreferenceFromCode(code) {
     return CODE_PREFERENCE[code] ?? "auto";
 }
 const CAPABILITY_BITS = [
@@ -75,7 +65,7 @@ function backendFromNative(kind) {
 function wordHasBit(word, bit) {
     return (((word >>> 0) >>> bit) & 1) === 1;
 }
-function decodeViroEngineCapabilities(low, high) {
+export function decodeViroEngineCapabilities(low, high) {
     const result = new Set();
     for (const [name, bit] of CAPABILITY_BITS) {
         const present = bit < 32 ? wordHasBit(low, bit) : wordHasBit(high, bit - 32);
@@ -84,10 +74,10 @@ function decodeViroEngineCapabilities(low, high) {
     }
     return result;
 }
-function normalizeViroEngineAbiInfo(native) {
+export function normalizeViroEngineAbiInfo(native) {
     const backend = backendFromNative(native.backendKind);
     const capabilities = decodeViroEngineCapabilities(native.capabilitiesLow, native.capabilitiesHigh);
-    if (native.abiMajor !== exports.VIRO_ENGINE_ABI_MAJOR) {
+    if (native.abiMajor !== VIRO_ENGINE_ABI_MAJOR) {
         return {
             available: true,
             compatible: false,
@@ -98,7 +88,7 @@ function normalizeViroEngineAbiInfo(native) {
             reason: "abi-major-mismatch",
         };
     }
-    if (native.abiMinor < exports.VIRO_ENGINE_ABI_MIN_MINOR) {
+    if (native.abiMinor < VIRO_ENGINE_ABI_MIN_MINOR) {
         return {
             available: true,
             compatible: false,
@@ -119,7 +109,7 @@ function normalizeViroEngineAbiInfo(native) {
         reason: "ok",
     };
 }
-async function queryViroEngineContract(nativeModule) {
+export async function queryViroEngineContract(nativeModule) {
     if (!nativeModule) {
         return {
             available: false,
@@ -137,6 +127,6 @@ async function queryViroEngineContract(nativeModule) {
  * Capability helper for app/runtime feature gates.
  * Only compatible contract snapshots are considered usable.
  */
-function hasViroEngineCapability(info, capability) {
+export function hasViroEngineCapability(info, capability) {
     return !!info?.compatible && info.capabilities.has(capability);
 }

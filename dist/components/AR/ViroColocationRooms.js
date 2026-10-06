@@ -21,12 +21,6 @@
  * @providesModule ViroColocationRooms
  */
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.CODE_ALPHABET = void 0;
-exports.normaliseJoinCode = normaliseJoinCode;
-exports.formatJoinCode = formatJoinCode;
-exports.createColocationRoom = createColocationRoom;
-exports.lookupColocationRoom = lookupColocationRoom;
 const DEFAULT_ENDPOINT = "https://platform.reactvision.xyz";
 /**
  * The 30 characters a code can hold. O and 0, I and 1 and L, and U against V
@@ -34,23 +28,23 @@ const DEFAULT_ENDPOINT = "https://platform.reactvision.xyz";
  * The platform mints them; this copy exists so a typo costs no request.
  */
 const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTVWXYZ23456789";
-exports.CODE_ALPHABET = CODE_ALPHABET;
 const CODE_PATTERN = /^[ABCDEFGHJKMNPQRSTVWXYZ23456789]{6,8}$/;
 /** What someone typed, as the platform stores it, or null if it cannot be a code. */
-function normaliseJoinCode(input) {
+export function normaliseJoinCode(input) {
     const stripped = input.replace(/[\s-]+/g, "").toUpperCase();
     return CODE_PATTERN.test(stripped) ? stripped : null;
 }
 /** `K7M2QX` as `K7M 2QX`, which is how it is shown and read out. */
-function formatJoinCode(code) {
+export function formatJoinCode(code) {
     const half = Math.ceil(code.length / 2);
     return `${code.slice(0, half)} ${code.slice(half)}`;
 }
+export { CODE_ALPHABET };
 /**
  * Create a room for a frame this device has already established, and get back
  * the code for the others to type.
  */
-async function createColocationRoom(config, frame) {
+export async function createColocationRoom(config, frame) {
     const body = {
         frame_kind: frame.frameKind,
         name: frame.name,
@@ -63,7 +57,7 @@ async function createColocationRoom(config, frame) {
     return await request(config, "POST", "/rooms", body);
 }
 /** Look a room up by the code someone typed. */
-async function lookupColocationRoom(config, code) {
+export async function lookupColocationRoom(config, code) {
     const normalised = normaliseJoinCode(code);
     if (!normalised) {
         return {

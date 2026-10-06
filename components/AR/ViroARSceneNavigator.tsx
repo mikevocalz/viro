@@ -59,6 +59,7 @@ import {
   ViroMonocularDepthPreferenceResult,
   ViroDepthOcclusionSupportResult,
   ViroGeospatialSetupStatusResult,
+  ViroRecordingStatus,
 } from "../Types/ViroEvents";
 import {
   Viro3DPoint,
@@ -235,13 +236,11 @@ type Props = ViewProps & {
   /**
    * Use the front (selfie) camera as the AR session background.
    *
-   * Requires the optional `@reactvision/react-viro-face-tracking` package to be
-   * installed — it provides the native front-camera AR configuration and, on
-   * iOS, declares TrueDepth usage. Without it, this prop has no effect.
+   * On iOS, requires the optional `@reactvision/react-viro-face-tracking` package,
+   * which provides the native TrueDepth configuration. On Android, front-camera
+   * AR is provided by core and does not require that package.
    *
-   * On iOS the package uses the front TrueDepth camera; on Android it uses
-   * ARCore Augmented Faces mode. World tracking, plane detection, and LiDAR are
-   * unavailable in this mode.
+   * World tracking, plane detection, and LiDAR are unavailable in this mode.
    *
    * For a plain selfie feed without face tracking (no TrueDepth), use
    * `ViroCameraTexture` with `cameraPosition="front"` instead.
@@ -869,9 +868,10 @@ export class ViroARSceneNavigator extends React.Component<Props, State> {
   };
 
   /**
-   * The current recording state: "None" | "Recording" | "IOError" | "Unsupported".
+   * The current recording state. Both bridges answer in the same vocabulary; see
+   * {@link ViroRecordingStatus}.
    */
-  _getRecordingStatus = async () => {
+  _getRecordingStatus = async (): Promise<ViroRecordingStatus> => {
     return await ViroARSceneNavigatorModule.getRecordingStatus(
       findNodeHandle(this)
     );

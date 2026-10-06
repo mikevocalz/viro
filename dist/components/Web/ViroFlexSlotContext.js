@@ -1,7 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ViroFlexSlotContext = void 0;
-exports.useViroFlexSlot = useViroFlexSlot;
 /**
  * The frame a ViroFlexView measured for one of its children.
  *
@@ -14,8 +10,8 @@ exports.useViroFlexSlot = useViroFlexSlot;
  * Null outside a ViroFlexView, which is the common case: a child then keeps the
  * width and height it was written with.
  */
-const react_1 = require("react");
-exports.ViroFlexSlotContext = (0, react_1.createContext)(null);
-function useViroFlexSlot() {
-    return (0, react_1.useContext)(exports.ViroFlexSlotContext);
+import { createContext, useContext } from "react";
+export const ViroFlexSlotContext = createContext(null);
+export function useViroFlexSlot() {
+    return useContext(ViroFlexSlotContext);
 }

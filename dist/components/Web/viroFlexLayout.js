@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Flexbox layout for ViroFlexView on web.
  *
@@ -15,36 +14,31 @@
  * React Native lays out in a column, stretches on the cross axis, and never
  * shrinks, none of which is what CSS does on its own.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.FLEX_CHILD_Z = exports.FLEX_POINTS_PER_METER = void 0;
-exports.rectToSlot = rectToSlot;
-exports.styleToCss = styleToCss;
-exports.measureFlexChildren = measureFlexChildren;
 /** What virocore's world unit is worth in layout points. Native's k2DPointsPerSpatialUnit. */
-exports.FLEX_POINTS_PER_METER = 1000;
+export const FLEX_POINTS_PER_METER = 1000;
 /**
  * How far in front of the container a child sits. Native's own nudge: coplanar
  * quads z-fight, and the child has to win the hit test against its background.
  */
-exports.FLEX_CHILD_Z = 0.01;
+export const FLEX_CHILD_Z = 0.01;
 /**
  * A measured child frame, in points with the origin at the container's top-left
  * and y going down, as a position and size in metres about the container's
  * centre with y going up.
  */
-function rectToSlot(rect, containerWidthPoints, containerHeightPoints) {
+export function rectToSlot(rect, containerWidthPoints, containerHeightPoints) {
     // A Viro node's geometry is centred on the node, and a layout frame is a
     // top-left box, so the centre is what crosses over.
     const centerX = rect.x + rect.width / 2;
     const centerY = rect.y + rect.height / 2;
     return {
         position: [
-            (centerX - containerWidthPoints / 2) / exports.FLEX_POINTS_PER_METER,
-            (containerHeightPoints / 2 - centerY) / exports.FLEX_POINTS_PER_METER,
-            exports.FLEX_CHILD_Z,
+            (centerX - containerWidthPoints / 2) / FLEX_POINTS_PER_METER,
+            (containerHeightPoints / 2 - centerY) / FLEX_POINTS_PER_METER,
+            FLEX_CHILD_Z,
         ],
-        width: rect.width / exports.FLEX_POINTS_PER_METER,
-        height: rect.height / exports.FLEX_POINTS_PER_METER,
+        width: rect.width / FLEX_POINTS_PER_METER,
+        height: rect.height / FLEX_POINTS_PER_METER,
     };
 }
 /** Style keys whose numbers are lengths, and so are points here rather than CSS pixels. */
@@ -118,7 +112,7 @@ function cssValue(key, value) {
  * difference is not cosmetic: CSS lays out in a row and shrinks items to fit, so
  * a column of fixed-height children would come out as a squashed row.
  */
-function styleToCss(style, isContainer) {
+export function styleToCss(style, isContainer) {
     const out = {};
     if (isContainer) {
         out.display = "flex";
@@ -162,11 +156,11 @@ function applyStyle(el, style) {
  * no document, or a zero-sized container — and the caller should leave the
  * children as they authored themselves rather than stack them all at the origin.
  */
-function measureFlexChildren(containerStyle, childStyles, widthMeters, heightMeters) {
+export function measureFlexChildren(containerStyle, childStyles, widthMeters, heightMeters) {
     if (typeof document === "undefined" || childStyles.length === 0)
         return [];
-    const widthPoints = widthMeters * exports.FLEX_POINTS_PER_METER;
-    const heightPoints = heightMeters * exports.FLEX_POINTS_PER_METER;
+    const widthPoints = widthMeters * FLEX_POINTS_PER_METER;
+    const heightPoints = heightMeters * FLEX_POINTS_PER_METER;
     if (!(widthPoints > 0) || !(heightPoints > 0))
         return [];
     const host = document.createElement("div");

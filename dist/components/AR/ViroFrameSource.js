@@ -22,45 +22,8 @@
  * @providesModule ViroFrameSource
  */
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.cloudAnchorFrameSource = cloudAnchorFrameSource;
-exports.metaSpatialAnchorFrameSource = metaSpatialAnchorFrameSource;
-exports.visionOSSharedSpaceFrameSource = visionOSSharedSpaceFrameSource;
-const ViroPlatform_1 = require("../Utilities/ViroPlatform");
-const ViroLocationFrame_1 = require("./ViroLocationFrame");
+import { isQuest, isVisionOS } from "../Utilities/ViroPlatform";
+import { parseLocationTransform } from "./ViroLocationFrame";
 /**
  * Frame from a ReactVision cloud anchor — the phone path.
  *
@@ -72,7 +35,7 @@ const ViroLocationFrame_1 = require("./ViroLocationFrame");
  *
  * Use `metaSpatialAnchorFrameSource` / `visionOSSharedSpaceFrameSource` there.
  */
-function cloudAnchorFrameSource(cloudAnchorId) {
+export function cloudAnchorFrameSource(cloudAnchorId) {
     return {
         key: cloudAnchorId,
         name: "cloud anchor",
@@ -141,14 +104,14 @@ function cloudAnchorFrameSource(cloudAnchorId) {
  * @param groupId  UUID shared out-of-band, exactly like a cloud anchor id.
  * @param mode     `"create"` publishes a new frame; `"join"` recovers one.
  */
-function metaSpatialAnchorFrameSource(groupId, mode = "join") {
+export function metaSpatialAnchorFrameSource(groupId, mode = "join") {
     return {
         key: groupId,
         name: "Meta spatial anchor",
         // Platform-level only. Whether the runtime actually exposes group sharing
         // cannot be answered synchronously from JS, so that surfaces as an acquire
         // error rather than a support flag — see the `acquire` failure below.
-        support: ViroPlatform_1.isQuest
+        support: isQuest
             ? { ok: true }
             : {
                 ok: false,
@@ -216,11 +179,11 @@ const IDENTITY_CSV = "1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1";
  *                   has a room key, like the other sources.
  * @param timeoutMs  How long to wait for convergence before giving up.
  */
-function visionOSSharedSpaceFrameSource(sessionId, timeoutMs = 30000) {
+export function visionOSSharedSpaceFrameSource(sessionId, timeoutMs = 30000) {
     return {
         key: sessionId,
         name: "visionOS shared space",
-        support: ViroPlatform_1.isVisionOS
+        support: isVisionOS
             ? { ok: true }
             : {
                 ok: false,
@@ -229,7 +192,7 @@ function visionOSSharedSpaceFrameSource(sessionId, timeoutMs = 30000) {
         async acquire() {
             // Imported lazily: this module is loaded on every platform, and the
             // visionOS module pulls in native lookups that are pointless elsewhere.
-            const { sharedSpaceState } = await Promise.resolve().then(() => __importStar(require("../VisionOS/ViroVisionOSModule")));
+            const { sharedSpaceState } = await import("../VisionOS/ViroVisionOSModule");
             const deadline = Date.now() + timeoutMs;
             while (Date.now() < deadline) {
                 const state = await sharedSpaceState();
@@ -269,7 +232,7 @@ function visionOSSharedSpaceFrameSource(sessionId, timeoutMs = 30000) {
  * rather than adding a second native shape for one platform.
  */
 function decomposeCsv(csv) {
-    const t = (0, ViroLocationFrame_1.parseLocationTransform)(csv);
+    const t = parseLocationTransform(csv);
     if (!t) {
         return { position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1] };
     }
@@ -303,13 +266,13 @@ function decomposeCsv(csv) {
     };
 }
 function cloudAnchorSupport() {
-    if (ViroPlatform_1.isQuest) {
+    if (isQuest) {
         return {
             ok: false,
             reason: "Meta Quest has no camera frames for the SIFT localiser and OpenXR stubs cloud anchors.",
         };
     }
-    if (ViroPlatform_1.isVisionOS) {
+    if (isVisionOS) {
         return {
             ok: false,
             reason: "visionOS builds exclude the AR subsystem, and passthrough camera access needs an enterprise entitlement.",

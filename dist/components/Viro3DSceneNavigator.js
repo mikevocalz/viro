@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Copyright (c) 2018-present, Viro Media, Inc.
  * All rights reserved.
@@ -10,51 +9,16 @@
  * @providesModule Viro3DSceneNavigator
  * @flow
  */
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Viro3DSceneNavigator = void 0;
-const React = __importStar(require("react"));
-const react_native_1 = require("react-native");
-const ViroPlatform_1 = require("./Utilities/ViroPlatform");
-const ViroUnsupported_1 = require("./Utilities/ViroUnsupported");
-const Viro3DSceneNavigatorModule = react_native_1.NativeModules.VRT3DSceneNavigatorModule;
+import * as React from "react";
+import { findNodeHandle, NativeModules, requireNativeComponent, StyleSheet, Text, View, } from "react-native";
+import { isVisionOS } from "./Utilities/ViroPlatform";
+import { warnUnsupported } from "./Utilities/ViroUnsupported";
+const Viro3DSceneNavigatorModule = NativeModules.VRT3DSceneNavigatorModule;
 var mathRandomOffset = 0;
 /**
  * Viro3DSceneNavigator is used to transition between multiple scenes.
  */
-class Viro3DSceneNavigator extends React.Component {
+export class Viro3DSceneNavigator extends React.Component {
     _component = null;
     /**
      * Pushes a scene and reference it with the given key if provided.
@@ -337,7 +301,7 @@ class Viro3DSceneNavigator extends React.Component {
         return -1;
     }
     _recenterTracking() {
-        Viro3DSceneNavigatorModule.recenterTracking((0, react_native_1.findNodeHandle)(this));
+        Viro3DSceneNavigatorModule.recenterTracking(findNodeHandle(this));
     }
     _renderSceneStackItems() {
         let views = [];
@@ -352,10 +316,10 @@ class Viro3DSceneNavigator extends React.Component {
         return views;
     }
     async _project(point) {
-        return await Viro3DSceneNavigatorModule.project((0, react_native_1.findNodeHandle)(this), point);
+        return await Viro3DSceneNavigatorModule.project(findNodeHandle(this), point);
     }
     async _unproject(point) {
-        return await Viro3DSceneNavigatorModule.unproject((0, react_native_1.findNodeHandle)(this), point);
+        return await Viro3DSceneNavigatorModule.unproject(findNodeHandle(this), point);
     }
     sceneNavigator = {
         push: this.push,
@@ -373,13 +337,13 @@ class Viro3DSceneNavigator extends React.Component {
         // Viro3DSceneNavigator's view manager is excluded from the visionOS renderer, so React has no view
         // config for it and mounting fails with "View config not found". A message rather than
         // null: this is the root of a screen, and a blank one says nothing about why.
-        if (ViroPlatform_1.isVisionOS) {
-            (0, ViroUnsupported_1.warnUnsupported)("Viro3DSceneNavigator", "Apple Vision Pro", "Use ViroXRSceneNavigator: on visionOS the ImmersiveSpace is the presentation path, not an OpenGL view.");
-            return (<react_native_1.View style={styles.viroVisionOSFallback}>
-          <react_native_1.Text style={styles.viroVisionOSFallbackText}>
+        if (isVisionOS) {
+            warnUnsupported("Viro3DSceneNavigator", "Apple Vision Pro", "Use ViroXRSceneNavigator: on visionOS the ImmersiveSpace is the presentation path, not an OpenGL view.");
+            return (<View style={styles.viroVisionOSFallback}>
+          <Text style={styles.viroVisionOSFallbackText}>
             Viro3DSceneNavigator is not supported on Apple Vision Pro.
-          </react_native_1.Text>
-        </react_native_1.View>);
+          </Text>
+        </View>);
         }
         // Uncomment this line to check for misnamed props
         //checkMisnamedProps("Viro3DSceneNavigator", this.props);
@@ -401,8 +365,7 @@ class Viro3DSceneNavigator extends React.Component {
       </VRT3DSceneNavigator>);
     }
 }
-exports.Viro3DSceneNavigator = Viro3DSceneNavigator;
-var styles = react_native_1.StyleSheet.create({
+var styles = StyleSheet.create({
     viroVisionOSFallback: {
         flex: 1,
         justifyContent: "center",
@@ -421,7 +384,7 @@ var styles = react_native_1.StyleSheet.create({
         alignItems: "center",
     },
 });
-var VRT3DSceneNavigator = (0, react_native_1.requireNativeComponent)("VRT3DSceneNavigator", 
+var VRT3DSceneNavigator = requireNativeComponent("VRT3DSceneNavigator", 
 // @ts-ignore
 Viro3DSceneNavigator, {
     nativeOnly: {

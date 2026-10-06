@@ -10,55 +10,20 @@
  * @flow
  */
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Viro360Video = void 0;
-const React = __importStar(require("react"));
-const react_native_1 = require("react-native");
+import * as React from "react";
+import { findNodeHandle, Platform, requireNativeComponent, } from "react-native";
 // @ts-ignore
 // The visionOS-safe resolver. Image.resolveAssetSource returns an empty uri there;
 // see ViroAssetSource.ts for why, and what it falls back to.
-const ViroAssetSource_1 = require("./Utilities/ViroAssetSource");
-const ViroProps_1 = require("./Utilities/ViroProps");
-const ViroPlatform_1 = require("./Utilities/ViroPlatform");
-const ViroUnsupported_1 = require("./Utilities/ViroUnsupported");
+import { resolveViroAssetSource as resolveAssetSource } from "./Utilities/ViroAssetSource";
+import { checkMisnamedProps } from "./Utilities/ViroProps";
+import { isVisionOS } from "./Utilities/ViroPlatform";
+import { warnUnsupported } from "./Utilities/ViroUnsupported";
 var NativeModules = require("react-native").NativeModules;
 /**
  * Used to render a 360 video on the background sphere.
  */
-class Viro360Video extends React.Component {
+export class Viro360Video extends React.Component {
     _component = null;
     _onBufferStart = (event) => {
         this.props.onBufferStart && this.props.onBufferStart(event);
@@ -82,12 +47,12 @@ class Viro360Video extends React.Component {
     render() {
         // Viro360Video's view manager is excluded from the visionOS renderer, so React has no view
         // config for it and mounting fails with "View config not found".
-        if (ViroPlatform_1.isVisionOS) {
-            (0, ViroUnsupported_1.warnUnsupported)("Viro360Video", "Apple Vision Pro", "Video textures are not part of the visionOS renderer.");
+        if (isVisionOS) {
+            warnUnsupported("Viro360Video", "Apple Vision Pro", "Video textures are not part of the visionOS renderer.");
             return null;
         }
-        (0, ViroProps_1.checkMisnamedProps)("Viro360Video", this.props);
-        var vidsrc = (0, ViroAssetSource_1.resolveViroAssetSource)(this.props.source);
+        checkMisnamedProps("Viro360Video", this.props);
+        var vidsrc = resolveAssetSource(this.props.source);
         let nativeProps = Object.assign({}, this.props);
         nativeProps.source = vidsrc;
         nativeProps.onBufferStartViro = this._onBufferStart;
@@ -101,18 +66,17 @@ class Viro360Video extends React.Component {
         return <VRO360Video {...nativeProps}/>;
     }
     seekToTime = (timeInSeconds) => {
-        switch (react_native_1.Platform.OS) {
+        switch (Platform.OS) {
             case "ios":
-                NativeModules.VRT360VideoManager.seekToTime((0, react_native_1.findNodeHandle)(this), timeInSeconds);
+                NativeModules.VRT360VideoManager.seekToTime(findNodeHandle(this), timeInSeconds);
                 break;
             case "android":
-                NativeModules.UIManager.dispatchViewManagerCommand((0, react_native_1.findNodeHandle)(this), NativeModules.UIManager.VRT360Video.Commands.seekToTime, [timeInSeconds]);
+                NativeModules.UIManager.dispatchViewManagerCommand(findNodeHandle(this), NativeModules.UIManager.VRT360Video.Commands.seekToTime, [timeInSeconds]);
                 break;
         }
     };
 }
-exports.Viro360Video = Viro360Video;
-var VRO360Video = (0, react_native_1.requireNativeComponent)("VRT360Video", 
+var VRO360Video = requireNativeComponent("VRT360Video", 
 // @ts-ignore
 Viro360Video, {
     nativeOnly: {

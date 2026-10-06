@@ -7,52 +7,17 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ViroAnimatedImage = void 0;
-const React = __importStar(require("react"));
-const react_native_1 = require("react-native");
+import * as React from "react";
+import { Platform, requireNativeComponent, } from "react-native";
 // @ts-ignore
 // The visionOS-safe resolver. Image.resolveAssetSource returns an empty uri there;
 // see ViroAssetSource.ts for why, and what it falls back to.
-const ViroAssetSource_1 = require("./Utilities/ViroAssetSource");
-const ViroProps_1 = require("./Utilities/ViroProps");
-const ViroBase_1 = require("./ViroBase");
-const ViroPlatform_1 = require("./Utilities/ViroPlatform");
-const ViroUnsupported_1 = require("./Utilities/ViroUnsupported");
-class ViroAnimatedImage extends ViroBase_1.ViroBase {
+import { resolveViroAssetSource as resolveAssetSource } from "./Utilities/ViroAssetSource";
+import { checkMisnamedProps } from "./Utilities/ViroProps";
+import { ViroBase } from "./ViroBase";
+import { isVisionOS } from "./Utilities/ViroPlatform";
+import { warnUnsupported } from "./Utilities/ViroUnsupported";
+export class ViroAnimatedImage extends ViroBase {
     _component = null;
     _onLoadStart = (event) => {
         this.props.onLoadStart && this.props.onLoadStart(event);
@@ -63,19 +28,19 @@ class ViroAnimatedImage extends ViroBase_1.ViroBase {
     render() {
         // ViroAnimatedImage's view manager is excluded from the visionOS renderer, so React has no view
         // config for it and mounting fails with "View config not found".
-        if (ViroPlatform_1.isVisionOS) {
-            (0, ViroUnsupported_1.warnUnsupported)("ViroAnimatedImage", "Apple Vision Pro", "Animated images need the OpenGL texture path, which visionOS does not have.");
+        if (isVisionOS) {
+            warnUnsupported("ViroAnimatedImage", "Apple Vision Pro", "Animated images need the OpenGL texture path, which visionOS does not have.");
             return null;
         }
-        (0, ViroProps_1.checkMisnamedProps)("ViroAnimatedImage", this.props);
+        checkMisnamedProps("ViroAnimatedImage", this.props);
         var defaultPlaceholder = require("./Resources/viro_blank.png");
-        var imgsrc = (0, ViroAssetSource_1.resolveViroAssetSource)(this.props.source);
+        var imgsrc = resolveAssetSource(this.props.source);
         var placeholderSrc;
         if (this.props.placeholderSource) {
-            placeholderSrc = (0, ViroAssetSource_1.resolveViroAssetSource)(this.props.placeholderSource);
+            placeholderSrc = resolveAssetSource(this.props.placeholderSource);
         }
         else {
-            switch (react_native_1.Platform.OS) {
+            switch (Platform.OS) {
                 case "ios":
                     /*
                     On iOS in dev mode, it takes time to download the default placeholder,
@@ -83,7 +48,7 @@ class ViroAnimatedImage extends ViroBase_1.ViroBase {
                     */
                     break;
                 case "android":
-                    placeholderSrc = (0, ViroAssetSource_1.resolveViroAssetSource)(defaultPlaceholder);
+                    placeholderSrc = resolveAssetSource(defaultPlaceholder);
                     break;
             }
         }
@@ -146,8 +111,7 @@ class ViroAnimatedImage extends ViroBase_1.ViroBase {
         return <VRTAnimatedImage {...nativeProps}/>;
     }
 }
-exports.ViroAnimatedImage = ViroAnimatedImage;
-var VRTAnimatedImage = (0, react_native_1.requireNativeComponent)("VRTAnimatedImage", 
+var VRTAnimatedImage = requireNativeComponent("VRTAnimatedImage", 
 // @ts-ignore
 ViroAnimatedImage, {
     nativeOnly: {

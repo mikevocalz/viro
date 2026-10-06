@@ -1,13 +1,9 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.resolveSurface = resolveSurface;
-exports.ViroImage = ViroImage;
-const react_1 = require("react");
-const viro_web_renderer_1 = require("@reactvision/viro-web-renderer");
-const useViroNode_1 = require("./Web/useViroNode");
-const ViroFlexSlotContext_1 = require("./Web/ViroFlexSlotContext");
-const ViroWebContext_1 = require("./Web/ViroWebContext");
-const viroImageLoader_1 = require("./Web/viroImageLoader");
+import { useEffect, useRef, useState } from "react";
+import { ViroLightingModel, ViroTextureChannel, ViroBlendMode, } from "@reactvision/viro-web-renderer";
+import { useViroNode } from "./Web/useViroNode";
+import { useViroFlexSlot } from "./Web/ViroFlexSlotContext";
+import { useViroScene } from "./Web/ViroWebContext";
+import { loadImageRGBA, resolveImageSource } from "./Web/viroImageLoader";
 /** VRTImage.mm's kDefaultWidth / kDefaultHeight. */
 const DEFAULT_SIZE = 1;
 const WHOLE_PICTURE = [0, 0, 1, 1];
@@ -17,7 +13,7 @@ const WHOLE_PICTURE = [0, 0, 1, 1];
  * `aspect` is null until the picture has been decoded, because every branch but
  * the first needs to know its shape.
  */
-function resolveSurface(width, height, sizeAuthored, resizeMode, resizeModeAuthored, aspect, clipMode = "ClipToBounds") {
+export function resolveSurface(width, height, sizeAuthored, resizeMode, resizeModeAuthored, aspect, clipMode = "ClipToBounds") {
     const whole = (w, h) => ({
         width: w,
         height: h,
@@ -69,12 +65,12 @@ function resolveSurface(width, height, sizeAuthored, resizeMode, resizeModeAutho
             return whole(width, height);
     }
 }
-function ViroImage(props) {
-    const scene = (0, ViroWebContext_1.useViroScene)();
+export function ViroImage(props) {
+    const scene = useViroScene();
     // Inside a ViroFlexView the layout decides the size, as it does natively —
     // and it counts as authored, so resizeMode fits the picture into the slot
     // rather than resizing the slot to the picture.
-    const slot = (0, ViroFlexSlotContext_1.useViroFlexSlot)();
+    const slot = useViroFlexSlot();
     const widthProp = slot?.width ?? props.width ?? props.style?.width;
     const heightProp = slot?.height ?? props.height ?? props.style?.height;
     const sizeAuthored = widthProp !== undefined || heightProp !== undefined;
@@ -83,46 +79,46 @@ function ViroImage(props) {
     const resizeModeAuthored = props.resizeMode !== undefined;
     const resizeMode = props.resizeMode ?? "StretchToFill";
     // The decoded picture's aspect, which only the load can supply.
-    const [aspect, setAspect] = (0, react_1.useState)(null);
+    const [aspect, setAspect] = useState(null);
     const surface = resolveSurface(width, height, sizeAuthored, resizeMode, resizeModeAuthored, aspect, props.imageClipMode ?? "ClipToBounds");
     const { width: surfaceWidth, height: surfaceHeight, uv } = surface;
     const uvKey = uv.join(",");
-    const geometryRef = (0, react_1.useRef)(0);
+    const geometryRef = useRef(0);
     // Keyed on the resolved size so the surface is rebuilt once the picture lands
     // and the height stops being a guess.
-    (0, useViroNode_1.useViroNode)(props, (s) => {
+    useViroNode(props, (s) => {
         const geo = s.createSurfaceUV(surfaceWidth, surfaceHeight, uv[0], uv[1], uv[2], uv[3]);
         geometryRef.current = geo;
         return geo;
     }, true, `${surfaceWidth}x${surfaceHeight}|${uvKey}`);
-    const url = (0, viroImageLoader_1.resolveImageSource)(props.source);
-    const materialRef = (0, react_1.useRef)(0);
-    const textureRef = (0, react_1.useRef)(0);
+    const url = resolveImageSource(props.source);
+    const materialRef = useRef(0);
+    const textureRef = useRef(0);
     // Load the image and apply it as the surface's diffuse texture. Re-runs when
     // the surface is rebuilt, since the material belongs to the geometry that was
     // just replaced. loadImageRGBA caches by URL, so the second pass costs a
     // texture upload rather than a download.
-    const propsRef = (0, react_1.useRef)(props);
+    const propsRef = useRef(props);
     propsRef.current = props;
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         const geo = geometryRef.current;
         if (!geo || !url)
             return;
         let cancelled = false;
         propsRef.current.onLoadStart?.();
-        (0, viroImageLoader_1.loadImageRGBA)(url)
+        loadImageRGBA(url)
             .then((img) => {
             if (cancelled)
                 return;
             const texture = scene.createTextureRGBA(img.pixels, img.width, img.height, true);
             const material = scene.createMaterial();
-            scene.setMaterialLightingModel(material, viro_web_renderer_1.ViroLightingModel.Constant);
-            scene.setMaterialBlendMode(material, viro_web_renderer_1.ViroBlendMode.Alpha);
+            scene.setMaterialLightingModel(material, ViroLightingModel.Constant);
+            scene.setMaterialBlendMode(material, ViroBlendMode.Alpha);
             // Blended, so no depth write: virocore defaults it on and only discards under
             // an alpha cutoff, so a fully transparent border still wrote depth and punched
             // a hole in whatever was drawn behind it after it.
             scene.setMaterialWritesToDepthBuffer(material, false);
-            scene.setMaterialTexture(material, viro_web_renderer_1.ViroTextureChannel.Diffuse, texture);
+            scene.setMaterialTexture(material, ViroTextureChannel.Diffuse, texture);
             scene.setGeometryMaterial(geo, material);
             textureRef.current = texture;
             materialRef.current = material;

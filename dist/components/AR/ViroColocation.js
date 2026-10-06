@@ -22,16 +22,8 @@
  * @providesModule ViroColocation
  */
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.VIRO_POSE_INTERVAL_MS = void 0;
-exports.isColocationAvailable = isColocationAvailable;
-exports.joinColocation = joinColocation;
-exports.leaveColocation = leaveColocation;
-exports.setColocationLocalPose = setColocationLocalPose;
-exports.getColocationState = getColocationState;
-exports.getColocationPeers = getColocationPeers;
-const react_native_1 = require("react-native");
-const { VRTColocationModule } = react_native_1.NativeModules;
+import { NativeModules } from "react-native";
+const { VRTColocationModule } = NativeModules;
 /** Native reports the state as an ordinal; this is that enum. */
 const STATES = [
     "idle",
@@ -44,19 +36,19 @@ const STATES = [
  * False when ReactVisionCCA is not linked, or the platform has no WebSocket
  * transport. Check before joining; every other call is inert in that case.
  */
-async function isColocationAvailable() {
+export async function isColocationAvailable() {
     if (!VRTColocationModule?.isAvailable)
         return false;
     return VRTColocationModule.isAvailable();
 }
 /** Join a room. Leaves any room already joined — a device is in one at a time. */
-async function joinColocation(config) {
+export async function joinColocation(config) {
     if (!VRTColocationModule?.join) {
         return { success: false, error: "Co-location channel unavailable" };
     }
     return VRTColocationModule.join(config.roomId, config.apiKey, config.projectId, config.endpoint ?? "");
 }
-async function leaveColocation() {
+export async function leaveColocation() {
     if (!VRTColocationModule?.leave)
         return;
     await VRTColocationModule.leave();
@@ -70,7 +62,7 @@ async function leaveColocation() {
  * camera callback at 90 Hz does not format 16 floats nine times per frame that
  * reaches the socket. **Keep in step with `RVCCAColocationSession.h`.**
  */
-exports.VIRO_POSE_INTERVAL_MS = 50;
+export const VIRO_POSE_INTERVAL_MS = 50;
 /**
  * Publish the local pose, **in the location frame**.
  *
@@ -79,12 +71,12 @@ exports.VIRO_POSE_INTERVAL_MS = 50;
  * position and a look direction. Safe to call every frame: the outbound rate
  * limit lives in native.
  */
-async function setColocationLocalPose(locationFramePoseCsv) {
+export async function setColocationLocalPose(locationFramePoseCsv) {
     if (!VRTColocationModule?.setLocalPose)
         return;
     await VRTColocationModule.setLocalPose(locationFramePoseCsv);
 }
-async function getColocationState() {
+export async function getColocationState() {
     if (!VRTColocationModule?.getState) {
         return { state: "idle", localPeerId: "" };
     }
@@ -95,7 +87,7 @@ async function getColocationState() {
     };
 }
 /** Peers currently in the room, excluding this device. */
-async function getColocationPeers() {
+export async function getColocationPeers() {
     if (!VRTColocationModule?.getPeers)
         return [];
     return VRTColocationModule.getPeers();

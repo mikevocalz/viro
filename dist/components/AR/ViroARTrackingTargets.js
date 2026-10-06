@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Copyright (c) 2018-present, Viro Media, Inc.
  * All rights reserved.
@@ -10,23 +9,21 @@
  * @providesModule VRTARTrackingTargets
  * @flow
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ViroARTrackingTargets = void 0;
-const react_native_1 = require("react-native");
+import { NativeModules } from "react-native";
 // @ts-ignore
 // The visionOS-safe resolver. Image.resolveAssetSource returns an empty uri there;
 // see ViroAssetSource.ts for why, and what it falls back to.
-const ViroAssetSource_1 = require("../Utilities/ViroAssetSource");
-const ViroNativeModule_1 = require("../Utilities/ViroNativeModule");
-const ARTrackingTargetsModule = (0, ViroNativeModule_1.withMissingModuleFallback)(react_native_1.NativeModules.VRTARTrackingTargetsModule, "VRTARTrackingTargetsModule");
-class ViroARTrackingTargets {
+import { resolveViroAssetSource as resolveAssetSource } from "../Utilities/ViroAssetSource";
+import { withMissingModuleFallback } from "../Utilities/ViroNativeModule";
+const ARTrackingTargetsModule = withMissingModuleFallback(NativeModules.VRTARTrackingTargetsModule, "VRTARTrackingTargetsModule");
+export class ViroARTrackingTargets {
     static createTargets(targets) {
         for (var key in targets) {
             var target = targets[key];
             // Check for required props
             ViroARTrackingTargets.checkForRequiredProps(key, target);
             // resolve asset source if applicable and update the object
-            var resultSource = (0, ViroAssetSource_1.resolveViroAssetSource)(target.source);
+            var resultSource = resolveAssetSource(target.source);
             target.source = resultSource;
         }
         // call the createTargets function in the native module
@@ -54,4 +51,3 @@ class ViroARTrackingTargets {
         }
     }
 }
-exports.ViroARTrackingTargets = ViroARTrackingTargets;

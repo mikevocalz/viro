@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.evaluateProximityBindings = evaluateProximityBindings;
-const sceneNavigationHandler_1 = require("./sceneNavigationHandler");
+import { executeFunctionWithRelations, } from "./sceneNavigationHandler";
 const DEFAULT_COOLDOWN_MS = 750;
 // Hysteresis: the user must retreat past distance + band before an "exit" (and
 // before a re-entry can fire), so jitter right at the threshold can't spam.
@@ -16,7 +13,7 @@ function distance3D(a, b) {
  * collision dispatch tail; the difference is the user-vs-object distance test
  * plus a hysteresis/direction/fire-mode state machine per binding.
  */
-function evaluateProximityBindings(params) {
+export function evaluateProximityBindings(params) {
     const { cameraPosition, bindings, getTargetWorldPosition, stateRef, sceneNavigator, animations, onSceneChange, onAnimationTrigger, cooldownMs = DEFAULT_COOLDOWN_MS, runtimeCtx, } = params;
     if (!bindings.length)
         return;
@@ -69,6 +66,6 @@ function evaluateProximityBindings(params) {
         const fn = binding.scene_function;
         if (!fn)
             continue;
-        (0, sceneNavigationHandler_1.executeFunctionWithRelations)(fn, sceneNavigator, animations, onAnimationTrigger, 0, onSceneChange, runtimeCtx);
+        executeFunctionWithRelations(fn, sceneNavigator, animations, onAnimationTrigger, 0, onSceneChange, runtimeCtx);
     }
 }

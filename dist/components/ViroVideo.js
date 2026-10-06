@@ -1,39 +1,3 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ViroVideo = void 0;
 /**
  * Copyright (c) 2015-present, Viro Media, Inc.
  * All rights reserved.
@@ -42,17 +6,17 @@ exports.ViroVideo = void 0;
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-const React = __importStar(require("react"));
-const react_native_1 = require("react-native");
+import * as React from "react";
+import { findNodeHandle, NativeModules, Platform, requireNativeComponent, } from "react-native";
 // @ts-ignore
 // The visionOS-safe resolver. Image.resolveAssetSource returns an empty uri there;
 // see ViroAssetSource.ts for why, and what it falls back to.
-const ViroAssetSource_1 = require("./Utilities/ViroAssetSource");
-const ViroProps_1 = require("./Utilities/ViroProps");
-const ViroBase_1 = require("./ViroBase");
-const ViroPlatform_1 = require("./Utilities/ViroPlatform");
-const ViroUnsupported_1 = require("./Utilities/ViroUnsupported");
-class ViroVideo extends ViroBase_1.ViroBase {
+import { resolveViroAssetSource as resolveAssetSource } from "./Utilities/ViroAssetSource";
+import { checkMisnamedProps } from "./Utilities/ViroProps";
+import { ViroBase } from "./ViroBase";
+import { isVisionOS } from "./Utilities/ViroPlatform";
+import { warnUnsupported } from "./Utilities/ViroUnsupported";
+export class ViroVideo extends ViroBase {
     _onBufferStart = (event) => {
         this.props.onBufferStart && this.props.onBufferStart(event);
     };
@@ -69,12 +33,12 @@ class ViroVideo extends ViroBase_1.ViroBase {
     render() {
         // ViroVideo's view manager is excluded from the visionOS renderer, so React has no view
         // config for it and mounting fails with "View config not found".
-        if (ViroPlatform_1.isVisionOS) {
-            (0, ViroUnsupported_1.warnUnsupported)("ViroVideo", "Apple Vision Pro", "Video textures are not part of the visionOS renderer.");
+        if (isVisionOS) {
+            warnUnsupported("ViroVideo", "Apple Vision Pro", "Video textures are not part of the visionOS renderer.");
             return null;
         }
-        (0, ViroProps_1.checkMisnamedProps)("ViroVideo", this.props);
-        var source = (0, ViroAssetSource_1.resolveViroAssetSource)(this.props.source);
+        checkMisnamedProps("ViroVideo", this.props);
+        var source = resolveAssetSource(this.props.source);
         // Since materials and transformBehaviors can be either a string or an array, convert the string to a 1-element array.
         let materials = typeof this.props.materials === "string"
             ? new Array(this.props.materials)
@@ -134,18 +98,17 @@ class ViroVideo extends ViroBase_1.ViroBase {
         return <VRTVideoSurface {...nativeProps}/>;
     }
     seekToTime = (timeInSeconds) => {
-        switch (react_native_1.Platform.OS) {
+        switch (Platform.OS) {
             case "ios":
-                react_native_1.NativeModules.VRTVideoSurfaceManager.seekToTime((0, react_native_1.findNodeHandle)(this), timeInSeconds);
+                NativeModules.VRTVideoSurfaceManager.seekToTime(findNodeHandle(this), timeInSeconds);
                 break;
             case "android":
-                react_native_1.NativeModules.UIManager.dispatchViewManagerCommand((0, react_native_1.findNodeHandle)(this), react_native_1.NativeModules.UIManager.VRTVideoSurface.Commands.seekToTime, [timeInSeconds]);
+                NativeModules.UIManager.dispatchViewManagerCommand(findNodeHandle(this), NativeModules.UIManager.VRTVideoSurface.Commands.seekToTime, [timeInSeconds]);
                 break;
         }
     };
 }
-exports.ViroVideo = ViroVideo;
-var VRTVideoSurface = (0, react_native_1.requireNativeComponent)("VRTVideoSurface", 
+var VRTVideoSurface = requireNativeComponent("VRTVideoSurface", 
 // @ts-ignore
 ViroVideo, {
     nativeOnly: {

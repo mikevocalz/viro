@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Copyright © 2026 ReactVision. All rights reserved.
  *
@@ -16,9 +15,6 @@
  * for effect and never awaited, and a rejected promise nobody catches is a second failure on top
  * of the first.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.withMissingModuleFallback = withMissingModuleFallback;
-exports.resetMissingModuleWarnings = resetMissingModuleWarnings;
 const warned = new Set();
 function warnMissing(moduleName, method) {
     const key = `${moduleName}.${method}`;
@@ -31,7 +27,7 @@ function warnMissing(moduleName, method) {
  * @param nativeModule what `NativeModules.<name>` gave back, which may be null or undefined
  * @param moduleName   the name it is registered under, for the warning
  */
-function withMissingModuleFallback(nativeModule, moduleName) {
+export function withMissingModuleFallback(nativeModule, moduleName) {
     if (nativeModule)
         return nativeModule;
     return new Proxy({}, {
@@ -53,6 +49,6 @@ function withMissingModuleFallback(nativeModule, moduleName) {
     });
 }
 /** Test seam: forgets what has already been warned about. */
-function resetMissingModuleWarnings() {
+export function resetMissingModuleWarnings() {
     warned.clear();
 }

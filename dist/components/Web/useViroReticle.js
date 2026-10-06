@@ -1,7 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.setViroReticleVisible = setViroReticleVisible;
-exports.useViroReticle = useViroReticle;
 /**
  * The gaze reticle, as a scene-navigator prop.
  *
@@ -14,17 +10,17 @@ exports.useViroReticle = useViroReticle;
  * renderer 1.0.1. Against an older WASM the prop does nothing and the reticle
  * stays as the renderer drew it.
  */
-const react_1 = require("react");
+import { useEffect } from "react";
 /** Returns false when the loaded WASM has no reticle switch. */
-function setViroReticleVisible(renderer, visible) {
+export function setViroReticleVisible(renderer, visible) {
     const module = renderer.wasmModule;
     if (typeof module?.viroSetReticleVisible !== "function")
         return false;
     module.viroSetReticleVisible(visible);
     return true;
 }
-function useViroReticle(renderer, { showReticle = false }) {
-    (0, react_1.useEffect)(() => {
+export function useViroReticle(renderer, { showReticle = false }) {
+    useEffect(() => {
         if (!renderer)
             return;
         setViroReticleVisible(renderer, showReticle);

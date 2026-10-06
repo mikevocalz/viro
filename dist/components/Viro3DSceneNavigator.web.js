@@ -1,39 +1,3 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Viro3DSceneNavigator = Viro3DSceneNavigator;
 /**
  * Web implementation of Viro3DSceneNavigator. Owns the <canvas> and the
  * ViroWebRenderer (WASM host), and provides the renderer + scene root node to
@@ -43,12 +7,12 @@ exports.Viro3DSceneNavigator = Viro3DSceneNavigator;
  * MVP scope: renders the initial scene; multi-scene push/pop navigation is a
  * follow-up (the API surface is stubbed so scenes can mount).
  */
-const React = __importStar(require("react"));
-const react_1 = require("react");
-const ViroWebContext_1 = require("./Web/ViroWebContext");
-const viroRendererHost_1 = require("./Web/viroRendererHost");
-const useViroRendererEffects_1 = require("./Web/useViroRendererEffects");
-const useViroReticle_1 = require("./Web/useViroReticle");
+import * as React from "react";
+import { useEffect, useMemo, useRef } from "react";
+import { ViroRendererContext, ViroParentNodeContext, } from "./Web/ViroWebContext";
+import { useViroWebRenderer } from "./Web/viroRendererHost";
+import { useViroRendererEffects, } from "./Web/useViroRendererEffects";
+import { useViroReticle } from "./Web/useViroReticle";
 const containerStyle = {
     position: "relative",
     width: "100%",
@@ -61,18 +25,18 @@ const canvasStyle = {
     height: "100%",
     touchAction: "none",
 };
-function Viro3DSceneNavigator(props) {
-    const canvasRef = (0, react_1.useRef)(null);
+export function Viro3DSceneNavigator(props) {
+    const canvasRef = useRef(null);
     // One renderer per canvas, kept across StrictMode's unmount/remount and torn
     // down (render loop included) on a real unmount. See viroRendererHost.
-    const renderer = (0, viroRendererHost_1.useViroWebRenderer)(canvasRef, props.webRendererOptions, (err) => console.error("[Viro web] failed to initialize renderer:", err));
-    (0, useViroRendererEffects_1.useViroRendererEffects)(renderer, props);
-    (0, useViroReticle_1.useViroReticle)(renderer, props);
-    const rootNode = (0, react_1.useMemo)(() => (renderer ? renderer.scene.getRootNode() : 0), [renderer]);
+    const renderer = useViroWebRenderer(canvasRef, props.webRendererOptions, (err) => console.error("[Viro web] failed to initialize renderer:", err));
+    useViroRendererEffects(renderer, props);
+    useViroReticle(renderer, props);
+    const rootNode = useMemo(() => (renderer ? renderer.scene.getRootNode() : 0), [renderer]);
     // Keep the renderer's viewport in sync with the canvas size (fixes aspect
     // distortion on layout/window resize). ResizeObserver catches container
     // changes, not just window resizes.
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         const canvas = canvasRef.current;
         if (!renderer || !canvas)
             return;
@@ -93,10 +57,10 @@ function Viro3DSceneNavigator(props) {
     const SceneComponent = props.initialScene?.scene;
     return (<div style={containerStyle}>
       <canvas ref={canvasRef} style={canvasStyle}/>
-      {renderer && rootNode && SceneComponent ? (<ViroWebContext_1.ViroRendererContext.Provider value={renderer}>
-          <ViroWebContext_1.ViroParentNodeContext.Provider value={rootNode}>
+      {renderer && rootNode && SceneComponent ? (<ViroRendererContext.Provider value={renderer}>
+          <ViroParentNodeContext.Provider value={rootNode}>
             <SceneComponent sceneNavigator={sceneNavigator} {...props.viroAppProps}/>
-          </ViroWebContext_1.ViroParentNodeContext.Provider>
-        </ViroWebContext_1.ViroRendererContext.Provider>) : null}
+          </ViroParentNodeContext.Provider>
+        </ViroRendererContext.Provider>) : null}
     </div>);
 }
