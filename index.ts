@@ -342,6 +342,7 @@ import {
   // Geospatial Types
   ViroGeospatialAnchorProvider,
   ViroEarthTrackingState,
+  ViroRecordingStatus,
   ViroVPSAvailability,
   ViroGeospatialAnchorType,
   ViroQuaternion,

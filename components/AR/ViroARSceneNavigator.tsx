@@ -59,6 +59,7 @@ import {
   ViroMonocularDepthPreferenceResult,
   ViroDepthOcclusionSupportResult,
   ViroGeospatialSetupStatusResult,
+  ViroRecordingStatus,
 } from "../Types/ViroEvents";
 import {
   Viro3DPoint,
@@ -869,9 +870,10 @@ export class ViroARSceneNavigator extends React.Component<Props, State> {
   };
 
   /**
-   * The current recording state: "None" | "Recording" | "IOError" | "Unsupported".
+   * The current recording state. Both bridges answer in the same vocabulary; see
+   * {@link ViroRecordingStatus}.
    */
-  _getRecordingStatus = async () => {
+  _getRecordingStatus = async (): Promise<ViroRecordingStatus> => {
     return await ViroARSceneNavigatorModule.getRecordingStatus(
       findNodeHandle(this)
     );
