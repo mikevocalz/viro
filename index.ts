@@ -754,4 +754,11 @@ export type {
 } from "./components/Specs/ViroSpecsAR";
 export type { ViroSpecsAnimationPlan } from "./components/Specs/ViroSpecsCompiler";
 
-export * from "./components/Utilities/ViroEsiku";
+export { usesViroEsikuOpenXR } from "./components/Utilities/ViroEsiku";
+export type {
+  ViroEsikuTarget,
+  ViroEsikuCapability,
+  ViroEsikuCapabilityState,
+  ViroEsikuCapabilities,
+  ViroEsikuRuntimeInfo,
+} from "./components/Utilities/ViroEsiku";
