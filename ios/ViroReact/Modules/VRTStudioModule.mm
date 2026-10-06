@@ -4,6 +4,7 @@
 #import <ViroKit/VROColocationBridge.h>
 
 static NSString *const kBaseUrl      = @"https://platform.reactvision.xyz";
+static NSString *const kFunctionRegion = @"eu-west-2";
 static NSString *const kApiKeyKey    = @"RVApiKey";
 static NSString *const kProjectIdKey = @"RVProjectId";
 static const NSTimeInterval kTimeout = 30.0;
@@ -45,11 +46,29 @@ RCT_EXPORT_MODULE(VRTStudio);
         headers[@"Authorization"] = [NSString stringWithFormat:@"Bearer %@", session[@"accessToken"]];
         NSString *clientTag = session[@"clientTag"];
         if (clientTag.length > 0) headers[@"x-rv-client"] = clientTag;
+        NSString *region = session[@"functionRegion"];
+        if (region.length == 0 && [session[@"baseUrl"] isEqualToString:kBaseUrl]) region = kFunctionRegion;
+        if (region.length > 0) headers[@"x-region"] = region;
         return @{@"mode": @"session", @"baseUrl": session[@"baseUrl"], @"headers": headers};
     }
     NSString *apiKey = [self readApiKey];
     if (!apiKey) return nil;
-    return @{@"mode": @"api_key", @"baseUrl": kBaseUrl, @"headers": @{@"x-api-key": apiKey}};
+    return @{@"mode": @"api_key", @"baseUrl": kBaseUrl, @"headers": @{@"x-api-key": apiKey, @"x-region": kFunctionRegion}};
+}
+
+static BOOL VRTUndelivered(NSHTTPURLResponse *http) {
+    switch (http.statusCode) {
+        case 502: case 503: case 521: case 522: case 523: case 525: case 526: case 530:
+            return ![http.MIMEType containsString:@"json"];
+        default:
+            return NO;
+    }
+}
+
+static NSDictionary *VRTUnpinned(NSDictionary *headers) {
+    NSMutableDictionary *unpinned = [headers mutableCopy];
+    [unpinned removeObjectForKey:@"x-region"];
+    return unpinned;
 }
 
 - (void)runGet:(NSString *)url headers:(NSDictionary *)headers resolve:(RCTPromiseResolveBlock)resolve {
@@ -72,6 +91,10 @@ RCT_EXPORT_MODULE(VRTStudio);
             return;
         }
         NSHTTPURLResponse *http = (NSHTTPURLResponse *)response;
+        if (headers[@"x-region"] && VRTUndelivered(http)) {
+            [self runGet:url headers:VRTUnpinned(headers) resolve:resolve];
+            return;
+        }
         BOOL ok = http.statusCode >= 200 && http.statusCode < 300;
         [r setObject:@(ok) forKey:@"success"];
         if (ok && data) {
@@ -111,6 +134,10 @@ RCT_EXPORT_MODULE(VRTStudio);
             return;
         }
         NSHTTPURLResponse *http = (NSHTTPURLResponse *)response;
+        if (headers[@"x-region"] && VRTUndelivered(http)) {
+            [self runPost:url body:bodyJson headers:VRTUnpinned(headers) resolve:resolve];
+            return;
+        }
         BOOL ok = http.statusCode >= 200 && http.statusCode < 300;
         [r setObject:@(ok) forKey:@"success"];
         if (ok && data) {
@@ -191,7 +218,7 @@ RCT_EXPORT_METHOD(rvGetProjectId:(RCTPromiseResolveBlock)resolve
 }
 
 // @internal — sets/clears the first-party session auth (see gStudioSession).
-// A dict { baseUrl, accessToken, clientTag? } enables session mode; null /
+// A dict { baseUrl, accessToken, clientTag?, functionRegion? } enables session mode; null /
 // NSNull / malformed reverts to manifest RVApiKey mode. The renderer keeps its
 // own copy, which cloud anchors and the co-location channel read.
 RCT_EXPORT_METHOD(rvSetStudioSession:(id)config
@@ -212,10 +239,13 @@ RCT_EXPORT_METHOD(rvSetStudioSession:(id)config
         [@{ @"baseUrl": baseUrl, @"accessToken": accessToken } mutableCopy];
     NSString *clientTag = config[@"clientTag"];
     if (clientTag.length > 0) snapshot[@"clientTag"] = clientTag;
+    NSString *functionRegion = config[@"functionRegion"];
+    if ([functionRegion isKindOfClass:[NSString class]] && functionRegion.length > 0) snapshot[@"functionRegion"] = functionRegion;
     gStudioSession = [snapshot copy];
     [VROColocationBridge setStudioSessionBaseUrl:baseUrl
                                      accessToken:accessToken
-                                       clientTag:snapshot[@"clientTag"]];
+                                       clientTag:snapshot[@"clientTag"]
+                                  functionRegion:snapshot[@"functionRegion"]];
     resolve([NSNull null]);
 }
 
