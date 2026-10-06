@@ -75,6 +75,7 @@ export type ViroColocationRoomResult =
     };
 
 const DEFAULT_ENDPOINT = "https://platform.reactvision.xyz";
+const DEFAULT_FUNCTION_REGION = "eu-west-2";
 
 /**
  * The 30 characters a code can hold. O and 0, I and 1 and L, and U against V
@@ -171,7 +172,7 @@ async function request(
 
   let response: Response;
   try {
-    response = await fetch(url, {
+    response = await fetchInRegion(base, url, {
       method,
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
@@ -197,6 +198,50 @@ async function request(
   }
 
   return { success: true, room: toRoom(parsed.room) };
+}
+
+const UNDELIVERED_STATUSES = new Set([502, 503, 521, 522, 523, 525, 526, 530]);
+
+function undelivered(response: Response): boolean {
+  return UNDELIVERED_STATUSES.has(response.status) &&
+    !/json/i.test(response.headers.get("content-type") ?? "");
+}
+
+async function fetchInRegion(
+  base: string,
+  url: string,
+  init: { method: string; headers: Record<string, string>; body?: string }
+): Promise<Response> {
+  const regionHeader = Object.keys(init.headers).find(
+    (name) => name.toLowerCase() === "x-region"
+  );
+  const region = regionHeader
+    ? init.headers[regionHeader]
+    : base === DEFAULT_ENDPOINT
+      ? DEFAULT_FUNCTION_REGION
+      : undefined;
+  if (!region) return fetch(url, init);
+
+  const pinned = base === DEFAULT_ENDPOINT
+    ? `${url}${url.includes("?") ? "&" : "?"}forceFunctionRegion=${DEFAULT_FUNCTION_REGION}`
+    : url;
+  try {
+    const response = await fetch(pinned, init);
+    if (!undelivered(response)) return response;
+  } catch (e) {
+    if (!(e instanceof TypeError) || (await regionAnswers(base, region))) throw e;
+  }
+  const headers = { ...init.headers };
+  if (regionHeader) delete headers[regionHeader];
+  return fetch(url, { ...init, headers });
+}
+
+async function regionAnswers(base: string, region: string): Promise<boolean> {
+  try {
+    return !undelivered(await fetch(`${base}/functions/v1/?forceFunctionRegion=${region}`));
+  } catch {
+    return false;
+  }
 }
 
 function toRoom(raw: any): ViroColocationRoom {
