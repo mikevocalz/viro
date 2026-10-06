@@ -15,6 +15,9 @@ import com.viro.core.ReactVisionAuth;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * VRTStudioModule
@@ -35,6 +38,7 @@ public class VRTStudioModule extends ReactContextBaseJavaModule {
 
     private static final String MODULE_NAME       = "VRTStudio";
     private static final String BASE_URL          = "https://platform.reactvision.xyz";
+    private static final String FUNCTION_REGION   = "eu-west-2";
     private static final String API_KEY_META      = "com.reactvision.RVApiKey";
     private static final String PROJECT_ID_META   = "com.reactvision.RVProjectId";
     private static final int    TIMEOUT_SEC       = 30;
@@ -50,10 +54,12 @@ public class VRTStudioModule extends ReactContextBaseJavaModule {
         final String baseUrl;
         final String accessToken;
         final String clientTag; // nullable
-        StudioSession(String baseUrl, String accessToken, String clientTag) {
+        final String functionRegion; // nullable
+        StudioSession(String baseUrl, String accessToken, String clientTag, String functionRegion) {
             this.baseUrl = baseUrl;
             this.accessToken = accessToken;
             this.clientTag = clientTag;
+            this.functionRegion = functionRegion;
         }
     }
 
@@ -137,7 +143,9 @@ public class VRTStudioModule extends ReactContextBaseJavaModule {
         }
         while (baseUrl.endsWith("/")) baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
         String clientTag = config.hasKey("clientTag") ? config.getString("clientTag") : null;
-        StudioSession session = new StudioSession(baseUrl, accessToken, clientTag);
+        String functionRegion = config.hasKey("functionRegion") && !config.isNull("functionRegion")
+                ? config.getString("functionRegion") : null;
+        StudioSession session = new StudioSession(baseUrl, accessToken, clientTag, functionRegion);
         studioSession = session;
         pushSessionToRenderer(session);
         promise.resolve(null);
@@ -199,11 +207,11 @@ public class VRTStudioModule extends ReactContextBaseJavaModule {
         String url = auth.baseUrl + "/functions/v1/scene-api-request";
         new Thread(() -> {
             try {
-                String[] result = RVHttpClient.send(
-                        "POST", url, auth.apiKey,
+                String[] result = send(
+                        "POST", url, auth,
                         "application/json",
                         bodyJson.getBytes(StandardCharsets.UTF_8),
-                        API_REQUEST_TIMEOUT_SEC, auth.headerNames, auth.headerValues);
+                        API_REQUEST_TIMEOUT_SEC);
                 int status = Integer.parseInt(result[0]);
                 boolean ok = status >= 200 && status < 300;
                 resolve(promise, ok, ok ? result[1] : null,
@@ -218,13 +226,35 @@ public class VRTStudioModule extends ReactContextBaseJavaModule {
     // Internals
     // -----------------------------------------------------------------------
 
+    private static boolean undelivered(String status, String body) {
+        switch (status) {
+            case "502": case "503": case "521": case "522": case "523":
+            case "525": case "526": case "530":
+                return body == null || !body.trim().startsWith("{");
+            default:
+                return false;
+        }
+    }
+
+    private static String[] send(String method, String url, RequestAuth auth,
+                                 String contentType, byte[] body, int timeoutSec) {
+        String[] result = RVHttpClient.send(method, url, auth.apiKey, contentType, body,
+                timeoutSec, auth.headerNames, auth.headerValues);
+        if (auth.headerNames == null) return result;
+        int region = Arrays.asList(auth.headerNames).indexOf("x-region");
+        if (region < 0 || !undelivered(result[0], result[1])) return result;
+        List<String> names = new ArrayList<>(Arrays.asList(auth.headerNames));
+        List<String> values = new ArrayList<>(Arrays.asList(auth.headerValues));
+        names.remove(region);
+        values.remove(region);
+        return RVHttpClient.send(method, url, auth.apiKey, contentType, body, timeoutSec,
+                names.toArray(new String[0]), values.toArray(new String[0]));
+    }
+
     private void runGet(String url, RequestAuth auth, Promise promise, boolean parseWatermark) {
         new Thread(() -> {
             try {
-                String[] result = RVHttpClient.send(
-                        "GET", url, auth.apiKey,
-                        null, null,
-                        TIMEOUT_SEC, auth.headerNames, auth.headerValues);
+                String[] result = send("GET", url, auth, null, null, TIMEOUT_SEC);
                 int status = Integer.parseInt(result[0]);
                 boolean ok = status >= 200 && status < 300;
                 if (parseWatermark && ok) {
@@ -244,20 +274,29 @@ public class VRTStudioModule extends ReactContextBaseJavaModule {
     private RequestAuth resolveAuth() {
         StudioSession session = studioSession;
         if (session != null) {
-            String[] names;
-            String[] values;
+            List<String> names = new ArrayList<>();
+            List<String> values = new ArrayList<>();
+            names.add("Authorization");
+            values.add("Bearer " + session.accessToken);
             if (session.clientTag != null && !session.clientTag.isEmpty()) {
-                names  = new String[]{"Authorization", "x-rv-client"};
-                values = new String[]{"Bearer " + session.accessToken, session.clientTag};
-            } else {
-                names  = new String[]{"Authorization"};
-                values = new String[]{"Bearer " + session.accessToken};
+                names.add("x-rv-client");
+                values.add(session.clientTag);
             }
-            return new RequestAuth(session.baseUrl, null, names, values);
+            String region = session.functionRegion;
+            if ((region == null || region.isEmpty()) && BASE_URL.equals(session.baseUrl)) {
+                region = FUNCTION_REGION;
+            }
+            if (region != null && !region.isEmpty()) {
+                names.add("x-region");
+                values.add(region);
+            }
+            return new RequestAuth(session.baseUrl, null,
+                    names.toArray(new String[0]), values.toArray(new String[0]));
         }
         String apiKey = readApiKey();
         if (apiKey == null) return null;
-        return new RequestAuth(BASE_URL, apiKey, null, null);
+        return new RequestAuth(BASE_URL, apiKey,
+                new String[]{"x-region"}, new String[]{FUNCTION_REGION});
     }
 
     // Throwable, not Exception: a missing renderer library surfaces as
@@ -268,7 +307,7 @@ public class VRTStudioModule extends ReactContextBaseJavaModule {
             if (session == null) {
                 ReactVisionAuth.clearSession();
             } else {
-                ReactVisionAuth.setSession(session.baseUrl, session.accessToken, session.clientTag);
+                ReactVisionAuth.setSession(session.baseUrl, session.accessToken, session.clientTag, session.functionRegion);
             }
         } catch (Throwable ignored) {
         }
