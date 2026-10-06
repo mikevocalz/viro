@@ -223,7 +223,7 @@ async function fetchInRegion(
   if (!region) return fetch(url, init);
 
   const pinned = base === DEFAULT_ENDPOINT
-    ? `${url}${url.includes("?") ? "&" : "?"}forceFunctionRegion=${DEFAULT_FUNCTION_REGION}`
+    ? `${url}${url.includes("?") ? "&" : "?"}forceFunctionRegion=${encodeURIComponent(region)}`
     : url;
   try {
     const response = await fetch(pinned, init);
@@ -238,7 +238,7 @@ async function fetchInRegion(
 
 async function regionAnswers(base: string, region: string): Promise<boolean> {
   try {
-    return !undelivered(await fetch(`${base}/functions/v1/?forceFunctionRegion=${region}`));
+    return !undelivered(await fetch(`${base}/functions/v1/?forceFunctionRegion=${encodeURIComponent(region)}`));
   } catch {
     return false;
   }
