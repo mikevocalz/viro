@@ -753,3 +753,5 @@ export type {
   ViroSpecsPlacementPose,
 } from "./components/Specs/ViroSpecsAR";
 export type { ViroSpecsAnimationPlan } from "./components/Specs/ViroSpecsCompiler";
+
+export * from "./components/Utilities/ViroEsiku";
