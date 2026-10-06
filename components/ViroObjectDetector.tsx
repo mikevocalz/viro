@@ -145,6 +145,11 @@ type NativeErrorEvent = NativeSyntheticEvent<ViroDetectorErrorEvent>;
 
 const VRTObjectDetectorView = requireNativeComponent<any>("VRTObjectDetectorView");
 
+/** The error `onError` reports when the native view is not in this build. */
+export const VIRO_OBJECT_DETECTOR_UNAVAILABLE_ERROR =
+  "VRTObjectDetectorView is not registered with React Native. @reactvision/react-viro up to " +
+  "3.0.2 shipped iOS builds without it; update the package, run pod install and rebuild the app.";
+
 /**
  * ViroObjectDetector — on-device open-vocabulary object detection powered by YOLOE.
  *
