@@ -3,6 +3,17 @@
 #import <React/RCTUtils.h>
 #import <ViroKit/VROColocationBridge.h>
 
+// The vendored ViroKit headers predate the functionRegion parameter. Declaring
+// the selector in a category keeps this file compiling against either binary;
+// rvSetStudioSession falls back to the three-argument form when the linked
+// framework does not implement it.
+@interface VROColocationBridge (VRTStudioFunctionRegion)
++ (void)setStudioSessionBaseUrl:(nullable NSString *)baseUrl
+                    accessToken:(nullable NSString *)accessToken
+                      clientTag:(nullable NSString *)clientTag
+                 functionRegion:(nullable NSString *)functionRegion;
+@end
+
 static NSString *const kBaseUrl      = @"https://platform.reactvision.xyz";
 static NSString *const kFunctionRegion = @"eu-west-2";
 static NSString *const kApiKeyKey    = @"RVApiKey";
@@ -242,10 +253,16 @@ RCT_EXPORT_METHOD(rvSetStudioSession:(id)config
     NSString *functionRegion = config[@"functionRegion"];
     if ([functionRegion isKindOfClass:[NSString class]] && functionRegion.length > 0) snapshot[@"functionRegion"] = functionRegion;
     gStudioSession = [snapshot copy];
-    [VROColocationBridge setStudioSessionBaseUrl:baseUrl
-                                     accessToken:accessToken
-                                       clientTag:snapshot[@"clientTag"]
-                                  functionRegion:snapshot[@"functionRegion"]];
+    if ([VROColocationBridge respondsToSelector:@selector(setStudioSessionBaseUrl:accessToken:clientTag:functionRegion:)]) {
+        [VROColocationBridge setStudioSessionBaseUrl:baseUrl
+                                         accessToken:accessToken
+                                           clientTag:snapshot[@"clientTag"]
+                                      functionRegion:snapshot[@"functionRegion"]];
+    } else {
+        [VROColocationBridge setStudioSessionBaseUrl:baseUrl
+                                         accessToken:accessToken
+                                           clientTag:snapshot[@"clientTag"]];
+    }
     resolve([NSNull null]);
 }
 
