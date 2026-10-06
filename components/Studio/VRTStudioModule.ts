@@ -15,6 +15,7 @@ export interface StudioSessionConfig {
   baseUrl: string;
   accessToken: string;
   clientTag?: string;
+  functionRegion?: string;
 }
 
 /** @internal */
