@@ -1,5 +1,4 @@
 apply plugin: 'com.android.library'
-apply plugin: "kotlin-android"
 // This handwritten bridge has no codegen specs. Applying the React plugin here
 // generates and bundles duplicate React Native core classes.
 
@@ -86,7 +85,6 @@ dependencies {
     androidTestImplementation('androidx.test.espresso:espresso-core:3.1.0', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.6.0"
 
     compileOnly("com.facebook.react:react-android:${reactNativeVersion}")
 
@@ -97,6 +95,12 @@ dependencies {
     implementation 'com.google.android.gms:play-services-location:21.0.1'
     implementation project(':gvr_common')
     implementation project(':viro_renderer')
+    // The renderer AAR is opaque to javac (its classes live inside a nested
+    // classes.jar), so the bridge compiles against the extracted main-branch
+    // jar — the same renderer surface the shipped bridge AAR was built
+    // against. Bridge code paths that reach main-only symbols (cloud anchors,
+    // scan callbacks) stay inert on the Pico renderer.
+    compileOnly files('../viro_renderer/main-classes/viro-renderer-main-classes.jar')
     implementation 'com.google.android.exoplayer:exoplayer:2.19.1'
     implementation 'com.google.protobuf.nano:protobuf-javanano:3.1.0'
     implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.1.0'
