@@ -1,7 +1,9 @@
 module.exports = {
   presets: [
     ['@babel/preset-env', {targets: {node: 'current'}}],
-    '@babel/preset-typescript',
+    // React Native source can use TypeScript declare fields. Babel must erase
+    // those fields when preparing the package for web bundlers.
+    ['@babel/preset-typescript', {allowDeclareFields: true}],
   ],
   overrides: [
     {
