@@ -11,8 +11,6 @@
  */
 import * as React from "react";
 
-// Type-only re-exports (erased at compile time) so other code importing these
-// from "@reactvision/react-viro" still type-checks on web.
 export type {
   ViroDetectorMode,
   ViroDetectionBoundingBox,
@@ -21,6 +19,10 @@ export type {
   ViroDetectorReadyEvent,
   ViroDetectorErrorEvent,
 } from "./ViroObjectDetector";
+
+export const VIRO_OBJECT_DETECTOR_UNAVAILABLE_ERROR =
+  "VRTObjectDetectorView is not registered with React Native. @reactvision/react-viro up to " +
+  "3.0.2 shipped iOS builds without it; update the package, run pod install and rebuild the app.";
 
 export const ViroObjectDetector: React.FC<any> = () => {
   if (__DEV__) {
