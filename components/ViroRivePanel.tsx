@@ -42,6 +42,8 @@ type ViroRivePanelCommonProps = {
   lightingModel?: "Constant" | "Lambert" | "Blinn" | "Phong" | "PBR";
   fallbackColor?: string;
   materialName?: string;
+  /** "None" renders the panel face fully opaque — see `useCanvasPanel`. */
+  blendMode?: "None" | "Alpha" | "Add" | "Subtract" | "Multiply" | "Screen";
   onReady?: () => void;
   onError?: (error: Error) => void;
   autoTick?: boolean;
@@ -81,6 +83,7 @@ export const ViroRivePanel = React.forwardRef<
     lightingModel,
     fallbackColor,
     materialName,
+    blendMode,
     onReady,
     onError,
     autoTick,
@@ -111,6 +114,7 @@ export const ViroRivePanel = React.forwardRef<
     lightingModel,
     fallbackColor,
     materialName,
+    blendMode,
     onReady: ({ producer }) => {
       const value = producer.runtime;
       runtime.current =
