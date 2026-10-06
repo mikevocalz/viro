@@ -1,4 +1,3 @@
-"use strict";
 /**
  * VRQuestNavigatorBridge
  *
@@ -24,9 +23,7 @@
  * uses key={intentKey} on ViroVRSceneNavigator, guaranteeing a clean navigator
  * stack whenever a different panel screen activates VR.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.VRQuestNavigatorBridge = void 0;
-const react_native_1 = require("react-native");
+import { DeviceEventEmitter } from "react-native";
 // ── Intent store ────────────────────────────────────────────────────────────
 let _intent = null;
 const _intentListeners = new Set();
@@ -46,7 +43,7 @@ let _opCounter = 0;
 // the flag stayed true, the AppState relaunch resurrected VRActivity on the
 // next foreground edge, and the user had to quit the OS dialog repeatedly.
 let _vrActive = false;
-react_native_1.DeviceEventEmitter?.addListener?.("VRLauncher.vrDestroyed", () => {
+DeviceEventEmitter?.addListener?.("VRLauncher.vrDestroyed", () => {
     _vrActive = false;
 });
 // ── ViewTag store ─────────────────────────────────────────────────────────────
@@ -64,7 +61,7 @@ const _viewTagListeners = new Set();
 // its end. Fire-and-forget (no replay-on-subscribe like onIntent/onViewTag) —
 // a crash is an event, not state a late subscriber should see again.
 const _questErrorListeners = new Set();
-exports.VRQuestNavigatorBridge = {
+export const VRQuestNavigatorBridge = {
     // ── Called by ViroXRSceneNavigator when mounting on Quest ──────────────────
     /**
      * Record the scene and renderer config that VRActivity should use, and

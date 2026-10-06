@@ -1,4 +1,3 @@
-"use strict";
 /**
  * useGameLoop — convenience hook that wraps <ViroGameLoop />.
  *
@@ -12,24 +11,20 @@
  *
  * Copyright © 2026 ReactVision. All rights reserved.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.useGameLoop = useGameLoop;
-exports.useLateUpdate = useLateUpdate;
-exports.useFixedUpdate = useFixedUpdate;
-const react_1 = require("react");
+import { useEffect, useRef } from "react";
 /**
  * Subscribe to the variable-step update from the nearest <ViroGameLoop>.
  *
  * The callback is always current (uses a ref internally) so it is safe to
  * reference component state without adding it to a dependency array.
  */
-function useGameLoop(callback, _options) {
-    const cbRef = (0, react_1.useRef)(callback);
-    (0, react_1.useEffect)(() => {
+export function useGameLoop(callback, _options) {
+    const cbRef = useRef(callback);
+    useEffect(() => {
         cbRef.current = callback;
     });
     // Return a stable handler to pass to ViroGameLoop's onUpdate prop
-    const handlerRef = (0, react_1.useRef)((event) => {
+    const handlerRef = useRef((event) => {
         cbRef.current(event);
     });
     return handlerRef.current;
@@ -37,12 +32,12 @@ function useGameLoop(callback, _options) {
 /**
  * Subscribe to the late-update (post-physics) callback.
  */
-function useLateUpdate(callback) {
-    const cbRef = (0, react_1.useRef)(callback);
-    (0, react_1.useEffect)(() => {
+export function useLateUpdate(callback) {
+    const cbRef = useRef(callback);
+    useEffect(() => {
         cbRef.current = callback;
     });
-    const handlerRef = (0, react_1.useRef)((event) => {
+    const handlerRef = useRef((event) => {
         cbRef.current(event);
     });
     return handlerRef.current;
@@ -51,12 +46,12 @@ function useLateUpdate(callback) {
  * Subscribe to the fixed-step callback.
  * Requires a <ViroGameLoop fixedHz={N}> in the scene.
  */
-function useFixedUpdate(callback) {
-    const cbRef = (0, react_1.useRef)(callback);
-    (0, react_1.useEffect)(() => {
+export function useFixedUpdate(callback) {
+    const cbRef = useRef(callback);
+    useEffect(() => {
         cbRef.current = callback;
     });
-    const handlerRef = (0, react_1.useRef)((event) => {
+    const handlerRef = useRef((event) => {
         cbRef.current(event);
     });
     return handlerRef.current;

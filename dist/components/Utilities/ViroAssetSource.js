@@ -1,12 +1,9 @@
-"use strict";
 /**
  * Copyright © 2026 ReactVision
  *
  * Asset resolution that survives visionOS.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.resolveViroAssetSource = resolveViroAssetSource;
-const react_native_1 = require("react-native");
+import { Image, NativeModules } from "react-native";
 /**
  * `Image.resolveAssetSource` returns `{ uri: "" }` on visionOS.
  *
@@ -25,8 +22,8 @@ const react_native_1 = require("react-native");
  * normal path, and when it comes back empty, rebuild the source with React Native's resolver from
  * the registry entry and the dev-server URL. Verified on device and in the Simulator.
  */
-function resolveViroAssetSource(source) {
-    const resolved = react_native_1.Image.resolveAssetSource(source);
+export function resolveViroAssetSource(source) {
+    const resolved = Image.resolveAssetSource(source);
     // The ordinary case on every other platform, and on visionOS once the resolver is fixed
     // upstream: nothing to repair.
     if (resolved && typeof resolved.uri === "string" && resolved.uri.length > 0) {
@@ -44,7 +41,7 @@ function resolveViroAssetSource(source) {
         }
         const AssetSourceResolver = require("react-native/Libraries/Image/AssetSourceResolver").default;
         // The dev-server origin, taken the same way React Native takes it.
-        const scriptURL = react_native_1.NativeModules.SourceCode?.getConstants?.().scriptURL ?? "";
+        const scriptURL = NativeModules.SourceCode?.getConstants?.().scriptURL ?? "";
         const match = scriptURL.match(/^https?:\/\/.*?\//);
         const serverUrl = match ? match[0] : null;
         // No dev server means an embedded bundle, where the bundle-relative path is correct and

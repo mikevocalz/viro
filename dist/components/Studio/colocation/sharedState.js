@@ -1,17 +1,13 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.StudioSharedState = exports.STUDIO_PRESENCE_PREFIX = exports.STUDIO_SHARED_PENDING_TIMEOUT_MS = void 0;
-exports.collisionBindingsRunHere = collisionBindingsRunHere;
-const expressionEvaluator_1 = require("../domain/expressionEvaluator");
-const drags_1 = require("./drags");
-const events_1 = require("./events");
-const frameMath_1 = require("./frameMath");
-const navigation_1 = require("./navigation");
-const outbox_1 = require("./outbox");
+import { valueMatchesType, } from "../domain/expressionEvaluator";
+import { STUDIO_DRAG_PREFIX, StudioDragBridge } from "./drags";
+import { sceneAudioUrls, STUDIO_EVENT_PREFIX, StudioEventRing } from "./events";
+import { invert, isVec3, rotateDirection, transformPoint, } from "./frameMath";
+import { STUDIO_COLOCATION_CURRENT_SCENE_ENTITY, } from "./navigation";
+import { StudioReplicationOutbox } from "./outbox";
 /** The rows that belong to one scene's assets, which leave with it. */
-const SCENE_ROW_PREFIXES = ["vis:", "place:", drags_1.STUDIO_DRAG_PREFIX];
+const SCENE_ROW_PREFIXES = ["vis:", "place:", STUDIO_DRAG_PREFIX];
 /** A write not seen back by then was refused or lost, so the room's copy wins. */
-exports.STUDIO_SHARED_PENDING_TIMEOUT_MS = 5000;
+export const STUDIO_SHARED_PENDING_TIMEOUT_MS = 5000;
 const SIZE_REFUSALS = new Set([
     "too-many-entities",
     "field-too-large",
@@ -25,7 +21,7 @@ const SIZE_REFUSALS = new Set([
  * Gaze and proximity follow each device's own camera and run everywhere, and
  * what they change is shared like any other change.
  */
-function collisionBindingsRunHere(frame) {
+export function collisionBindingsRunHere(frame) {
     return frame.phase !== "shared" || frame.authority;
 }
 /**
@@ -33,11 +29,11 @@ function collisionBindingsRunHere(frame) {
  * releases a departed peer's claims, so an owned row is a connected device.
  * The role is in the id so a claim alone announces it.
  */
-exports.STUDIO_PRESENCE_PREFIX = "peer:";
+export const STUDIO_PRESENCE_PREFIX = "peer:";
 function parsePresence(id) {
-    if (!id.startsWith(exports.STUDIO_PRESENCE_PREFIX))
+    if (!id.startsWith(STUDIO_PRESENCE_PREFIX))
         return null;
-    const rest = id.slice(exports.STUDIO_PRESENCE_PREFIX.length);
+    const rest = id.slice(STUDIO_PRESENCE_PREFIX.length);
     const at = rest.indexOf(":");
     if (at <= 0 || at === rest.length - 1)
         return null;
@@ -260,7 +256,7 @@ class StudioVariableBridge extends StudioStoreBridge {
         if (!isVariableValue(v))
             return;
         const decl = this.declared.get(name);
-        if (decl && !(0, expressionEvaluator_1.valueMatchesType)(v, decl.type))
+        if (decl && !valueMatchesType(v, decl.type))
             return;
         this.store?.set(name, v, "remote");
     }
@@ -347,24 +343,24 @@ class StudioPlacementBridge extends StudioStoreBridge {
         if (!placement || !origin)
             return null;
         return {
-            p: (0, frameMath_1.transformPoint)(origin, placement.position),
+            p: transformPoint(origin, placement.position),
             // Always sent: a set merges fields, so an absent one keeps an old value.
-            f: placement.forward ? (0, frameMath_1.rotateDirection)(origin, placement.forward) : null,
-            u: placement.up ? (0, frameMath_1.rotateDirection)(origin, placement.up) : null,
+            f: placement.forward ? rotateDirection(origin, placement.forward) : null,
+            u: placement.up ? rotateDirection(origin, placement.up) : null,
         };
     }
     apply(assetId, fields) {
         const store = this.store;
-        if (!store?.isTracked(assetId) || !(0, frameMath_1.isVec3)(fields.p))
+        if (!store?.isTracked(assetId) || !isVec3(fields.p))
             return;
         const origin = this.host.origin();
-        const inverse = origin ? (0, frameMath_1.invert)(origin) : null;
+        const inverse = origin ? invert(origin) : null;
         if (!inverse)
             return;
         const next = {
-            position: (0, frameMath_1.transformPoint)(inverse, fields.p),
-            forward: (0, frameMath_1.isVec3)(fields.f) ? (0, frameMath_1.rotateDirection)(inverse, fields.f) : null,
-            up: (0, frameMath_1.isVec3)(fields.u) ? (0, frameMath_1.rotateDirection)(inverse, fields.u) : null,
+            position: transformPoint(inverse, fields.p),
+            forward: isVec3(fields.f) ? rotateDirection(inverse, fields.f) : null,
+            up: isVec3(fields.u) ? rotateDirection(inverse, fields.u) : null,
         };
         if (samePlacement(store.getPlacement(assetId), next))
             return;
@@ -390,7 +386,7 @@ class StudioPlacementBridge extends StudioStoreBridge {
 }
 /** `scene:current` = `{ sceneId, n }`, under the one key "". */
 class StudioNavigationBridge extends StudioStoreBridge {
-    prefix = navigation_1.STUDIO_COLOCATION_CURRENT_SCENE_ENTITY;
+    prefix = STUDIO_COLOCATION_CURRENT_SCENE_ENTITY;
     subscribeTo(store, listener) {
         return store.subscribeChanges(listener);
     }
@@ -431,7 +427,7 @@ class StudioNavigationBridge extends StudioStoreBridge {
  * disposed with it; the stores it bridges follow the scene on screen. Drags
  * write outside the outbox, in the half of the relay's rate it leaves them.
  */
-class StudioSharedState {
+export class StudioSharedState {
     client;
     context;
     outbox;
@@ -465,7 +461,7 @@ class StudioSharedState {
         this.client = client;
         this.context = context;
         this.now = options.now ?? (() => Date.now());
-        this.outbox = new outbox_1.StudioReplicationOutbox((id, fields) => this.send(id, fields), options);
+        this.outbox = new StudioReplicationOutbox((id, fields) => this.send(id, fields), options);
         const host = {
             isSynced: () => this.synced,
             isHost: () => this.context.role === "host",
@@ -490,7 +486,7 @@ class StudioSharedState {
             this.placement,
             this.navigation,
         ];
-        this.drags = new drags_1.StudioDragBridge({
+        this.drags = new StudioDragBridge({
             isSynced: () => this.synced,
             localPeerId: () => this.client.localPeerId,
             claim: (id) => {
@@ -508,7 +504,7 @@ class StudioSharedState {
             worldToLocation: () => this.context.worldToLocation?.() ?? null,
             now: this.now,
         });
-        this.events = new events_1.StudioEventRing({
+        this.events = new StudioEventRing({
             isSynced: () => this.synced,
             localPeerId: () => this.client.localPeerId,
             write: (id, fields) => this.outbox.write(id, fields),
@@ -538,7 +534,7 @@ class StudioSharedState {
                 sceneId: sceneData.scene.id,
                 playAnimation: hooks?.playAnimation,
                 sounds: stores.sounds ?? null,
-                audioUrls: (0, events_1.sceneAudioUrls)(sceneData),
+                audioUrls: sceneAudioUrls(sceneData),
             }
             : null);
     }
@@ -583,9 +579,9 @@ class StudioSharedState {
         const current = rejection.current;
         if (current)
             this.removing.delete(current.id);
-        if (current?.id.startsWith(drags_1.STUDIO_DRAG_PREFIX)) {
+        if (current?.id.startsWith(STUDIO_DRAG_PREFIX)) {
             this.versions.set(current.id, current.version);
-            this.drags.rejected(current.id.slice(drags_1.STUDIO_DRAG_PREFIX.length), rejection.reason, current);
+            this.drags.rejected(current.id.slice(STUDIO_DRAG_PREFIX.length), rejection.reason, current);
             return;
         }
         if (current) {
@@ -638,12 +634,12 @@ class StudioSharedState {
                 if (this.tracked(e.id))
                     this.versions.set(e.id, e.version);
                 // What the room did before this welcome is not replayed.
-                if (e.id.startsWith(events_1.STUDIO_EVENT_PREFIX)) {
-                    this.events.seen(e.id.slice(events_1.STUDIO_EVENT_PREFIX.length), e.fields);
+                if (e.id.startsWith(STUDIO_EVENT_PREFIX)) {
+                    this.events.seen(e.id.slice(STUDIO_EVENT_PREFIX.length), e.fields);
                 }
             }
             // This device's events row under its last connection's peer id.
-            const stale = events_1.STUDIO_EVENT_PREFIX + previousPeer;
+            const stale = STUDIO_EVENT_PREFIX + previousPeer;
             if (previousPeer && previousPeer !== peerId && this.client.get(stale)) {
                 this.outbox.remove(stale);
             }
@@ -670,11 +666,11 @@ class StudioSharedState {
             if (present.has(id))
                 continue;
             this.versions.delete(id);
-            if (id.startsWith(drags_1.STUDIO_DRAG_PREFIX)) {
-                this.drags.removed(id.slice(drags_1.STUDIO_DRAG_PREFIX.length));
+            if (id.startsWith(STUDIO_DRAG_PREFIX)) {
+                this.drags.removed(id.slice(STUDIO_DRAG_PREFIX.length));
             }
-            else if (id.startsWith(events_1.STUDIO_EVENT_PREFIX)) {
-                this.events.forget(id.slice(events_1.STUDIO_EVENT_PREFIX.length));
+            else if (id.startsWith(STUDIO_EVENT_PREFIX)) {
+                this.events.forget(id.slice(STUDIO_EVENT_PREFIX.length));
             }
         }
         for (const id of this.removing.keys()) {
@@ -684,7 +680,7 @@ class StudioSharedState {
     }
     /** Claimed at each welcome, under that connection's peer id. */
     announcePresence() {
-        this.client.claim(`${exports.STUDIO_PRESENCE_PREFIX}${this.context.role}:${this.peerId}`);
+        this.client.claim(`${STUDIO_PRESENCE_PREFIX}${this.context.role}:${this.peerId}`);
     }
     /** Connected peers by id, with the role each announced. */
     presentPeers(entities) {
@@ -730,13 +726,13 @@ class StudioSharedState {
             if (this.collecting.has(e.id))
                 continue;
             const presence = parsePresence(e.id);
-            const events = e.id.startsWith(events_1.STUDIO_EVENT_PREFIX);
+            const events = e.id.startsWith(STUDIO_EVENT_PREFIX);
             if (!presence && !events)
                 continue;
             // A presence row is gone once released; an event row once its peer is.
             const departed = presence
                 ? e.owner === null
-                : !peers.has(e.id.slice(events_1.STUDIO_EVENT_PREFIX.length));
+                : !peers.has(e.id.slice(STUDIO_EVENT_PREFIX.length));
             if (!departed)
                 continue;
             this.collecting.add(e.id);
@@ -744,12 +740,12 @@ class StudioSharedState {
         }
     }
     deliver(e, skipped) {
-        if (e.id.startsWith(drags_1.STUDIO_DRAG_PREFIX)) {
-            this.drags.receive(e.id.slice(drags_1.STUDIO_DRAG_PREFIX.length), e);
+        if (e.id.startsWith(STUDIO_DRAG_PREFIX)) {
+            this.drags.receive(e.id.slice(STUDIO_DRAG_PREFIX.length), e);
         }
-        else if (e.id.startsWith(events_1.STUDIO_EVENT_PREFIX)) {
+        else if (e.id.startsWith(STUDIO_EVENT_PREFIX)) {
             // The row carries its own history, so a version jump loses nothing.
-            this.events.receive(e.id.slice(events_1.STUDIO_EVENT_PREFIX.length), e.fields);
+            this.events.receive(e.id.slice(STUDIO_EVENT_PREFIX.length), e.fields);
         }
         else {
             const bridge = this.bridgeFor(e.id);
@@ -798,15 +794,15 @@ class StudioSharedState {
     }
     tracked(id) {
         return (!!this.bridgeFor(id) ||
-            id.startsWith(drags_1.STUDIO_DRAG_PREFIX) ||
-            id.startsWith(events_1.STUDIO_EVENT_PREFIX));
+            id.startsWith(STUDIO_DRAG_PREFIX) ||
+            id.startsWith(STUDIO_EVENT_PREFIX));
     }
     scheduleSweep() {
         if (this.sweepTimer !== null)
             return;
         this.sweepTimer = setTimeout(() => {
             this.sweepTimer = null;
-            const cutoff = this.now() - exports.STUDIO_SHARED_PENDING_TIMEOUT_MS;
+            const cutoff = this.now() - STUDIO_SHARED_PENDING_TIMEOUT_MS;
             let remaining = this.expireRemovals(cutoff);
             this.bridges.forEach((b) => {
                 if (b.expire(cutoff))
@@ -814,7 +810,7 @@ class StudioSharedState {
             });
             if (remaining)
                 this.scheduleSweep();
-        }, exports.STUDIO_SHARED_PENDING_TIMEOUT_MS);
+        }, STUDIO_SHARED_PENDING_TIMEOUT_MS);
     }
     cancelSweep() {
         if (this.sweepTimer !== null)
@@ -822,4 +818,3 @@ class StudioSharedState {
         this.sweepTimer = null;
     }
 }
-exports.StudioSharedState = StudioSharedState;

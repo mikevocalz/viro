@@ -30,7 +30,8 @@
     "harness:assets": "bash scripts/sync-harness-assets.sh",
     "preharness": "npm run harness:assets",
     "audit:events": "node scripts/audit-events.cjs",
-    "test:specs-compiler": "node scripts/test-viro-specs-compiler.cjs"
+    "test:specs-compiler": "node scripts/test-viro-specs-compiler.cjs",
+    "test:rive-contract": "node scripts/test-rive-local-contract.cjs"
   },
   "peerDependencies": {
     "@reactvision/react-native-visionos": ">=0.86.0 <0.89.0",

@@ -10,46 +10,11 @@
  * @flow
  */
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ViroSceneNavigator = void 0;
-const React = __importStar(require("react"));
-const react_native_1 = require("react-native");
-const ViroPlatform_1 = require("./Utilities/ViroPlatform");
-const VRModuleOpenXR_1 = require("./Utilities/VRModuleOpenXR");
-var ViroSceneNavigatorModule = react_native_1.NativeModules.VRTSceneNavigatorModule;
+import * as React from "react";
+import { findNodeHandle, requireNativeComponent, StyleSheet, NativeModules, } from "react-native";
+import { isVisionOS } from "./Utilities/ViroPlatform";
+import { unsupportedCapture } from "./Utilities/VRModuleOpenXR";
+var ViroSceneNavigatorModule = NativeModules.VRTSceneNavigatorModule;
 var mathRandomOffset = 0;
 /**
  * ##### DEPRECATION WARNING - ViroSceneNavigator may be removed in future releases. Use ViroVRSceneNavigator instead #####
@@ -57,7 +22,7 @@ var mathRandomOffset = 0;
  *
  * @deprecated
  */
-class ViroSceneNavigator extends React.Component {
+export class ViroSceneNavigator extends React.Component {
     // TODO: type of this component (native component)
     _component;
     sceneNavigator = {
@@ -73,9 +38,9 @@ class ViroSceneNavigator extends React.Component {
         // No capture on this navigator (visionOS, iOS VR): the names are here so a
         // scene written for AR or Quest gets RECORD_ERROR_UNSUPPORTED_PLATFORM
         // back instead of calling something undefined.
-        takeScreenshot: VRModuleOpenXR_1.unsupportedCapture.takeScreenshot,
-        startVideoRecording: VRModuleOpenXR_1.unsupportedCapture.startVideoRecording,
-        stopVideoRecording: VRModuleOpenXR_1.unsupportedCapture.stopVideoRecording,
+        takeScreenshot: unsupportedCapture.takeScreenshot,
+        startVideoRecording: unsupportedCapture.startVideoRecording,
+        stopVideoRecording: unsupportedCapture.stopVideoRecording,
         viroAppProps: this.props.viroAppProps || {},
     };
     /**
@@ -358,13 +323,13 @@ class ViroSceneNavigator extends React.Component {
         return -1;
     }
     async _project(point) {
-        return await ViroSceneNavigatorModule.project((0, react_native_1.findNodeHandle)(this), point);
+        return await ViroSceneNavigatorModule.project(findNodeHandle(this), point);
     }
     async _unproject(point) {
-        return await ViroSceneNavigatorModule.unproject((0, react_native_1.findNodeHandle)(this), point);
+        return await ViroSceneNavigatorModule.unproject(findNodeHandle(this), point);
     }
     _recenterTracking() {
-        ViroSceneNavigatorModule.recenterTracking((0, react_native_1.findNodeHandle)(this));
+        ViroSceneNavigatorModule.recenterTracking(findNodeHandle(this));
     }
     _renderSceneStackItems() {
         let views = [];
@@ -386,7 +351,7 @@ class ViroSceneNavigator extends React.Component {
         // build, while VRTSceneNavigator — this component — is the one that is registered. Sending
         // visionOS users to a component that cannot mount would be worse than saying nothing, and
         // the warning would fire on every render of a supported configuration.
-        if (!ViroPlatform_1.isVisionOS) {
+        if (!isVisionOS) {
             console.warn("<ViroSceneNavigator> has been DEPRECATED. Please use <ViroVRSceneNavigator> instead.");
         }
         var items = this._renderSceneStackItems();
@@ -408,15 +373,14 @@ class ViroSceneNavigator extends React.Component {
       </VRTSceneNavigator>);
     }
 }
-exports.ViroSceneNavigator = ViroSceneNavigator;
-var styles = react_native_1.StyleSheet.create({
+var styles = StyleSheet.create({
     container: {
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
     },
 });
-var VRTSceneNavigator = (0, react_native_1.requireNativeComponent)("VRTSceneNavigator", 
+var VRTSceneNavigator = requireNativeComponent("VRTSceneNavigator", 
 // @ts-ignore
 ViroSceneNavigator, {
     nativeOnly: {

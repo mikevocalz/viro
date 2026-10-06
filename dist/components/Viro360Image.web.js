@@ -1,24 +1,21 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Viro360Image = Viro360Image;
 /**
  * Web implementation of Viro360Image — sets the scene background to a textured
  * sphere from an equirectangular image. Scene-level (renders no node).
  */
-const react_1 = require("react");
-const ViroWebContext_1 = require("./Web/ViroWebContext");
-const viroImageLoader_1 = require("./Web/viroImageLoader");
-function Viro360Image(props) {
-    const scene = (0, ViroWebContext_1.useViroScene)();
-    const url = (0, viroImageLoader_1.resolveImageSource)(props.source);
+import { useEffect } from "react";
+import { useViroScene } from "./Web/ViroWebContext";
+import { loadImageRGBA, resolveImageSource } from "./Web/viroImageLoader";
+export function Viro360Image(props) {
+    const scene = useViroScene();
+    const url = resolveImageSource(props.source);
     const [rx, ry, rz] = props.rotation ?? [0, 0, 0];
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         if (!url)
             return;
         let cancelled = false;
         let texture = 0;
         props.onLoadStart?.();
-        (0, viroImageLoader_1.loadImageRGBA)(url)
+        loadImageRGBA(url)
             .then((img) => {
             if (cancelled)
                 return;

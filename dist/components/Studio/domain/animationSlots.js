@@ -1,6 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.StudioAnimationSlots = void 0;
 /**
  * A node has one animation slot, so two animations on one asset cannot overlap
  * the way they do in the editor. This tracks what is playing on each asset,
@@ -9,7 +6,7 @@ exports.StudioAnimationSlots = void 0;
  * nor on_finish here: that device ran them, and what they changed arrives as
  * shared state. A `device` play runs both, and what they play stays here too.
  */
-class StudioAnimationSlots {
+export class StudioAnimationSlots {
     live = new Map();
     queued = new Map();
     started = new Set();
@@ -83,4 +80,3 @@ class StudioAnimationSlots {
         });
     }
 }
-exports.StudioAnimationSlots = StudioAnimationSlots;

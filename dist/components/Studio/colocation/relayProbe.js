@@ -1,6 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.probeRelayRoom = probeRelayRoom;
 /**
  * A plain GET on the relay's channel path. The relay runs its whole admission
  * gate for it (credentials, membership, plan) and answers with the room's peer
@@ -8,7 +5,7 @@ exports.probeRelayRoom = probeRelayRoom;
  * WebSocket upgrade hides its status and body from JS, so this is how a
  * refusal reaches the app with its code.
  */
-async function probeRelayRoom(endpoint, roomId, headers) {
+export async function probeRelayRoom(endpoint, roomId, headers) {
     const base = endpoint.replace(/\/+$/, "");
     const url = `${base}/functions/v1/colocation/${encodeURIComponent(roomId)}`;
     let response;

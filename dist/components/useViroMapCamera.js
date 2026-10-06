@@ -1,4 +1,3 @@
-"use strict";
 /**
  * useViroMapCamera — pan, zoom and orbit for a non-AR map or floor-plan view.
  *
@@ -19,12 +18,9 @@
  *
  * Copyright © 2026 ReactVision
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.viroMapCameraTransform = viroMapCameraTransform;
-exports.useViroMapCamera = useViroMapCamera;
-const react_1 = require("react");
-const react_native_1 = require("react-native");
-const ViroGameLoopUtils_1 = require("./ViroGameLoopUtils");
+import { useCallback, useMemo, useRef, useState } from "react";
+import { PanResponder } from "react-native";
+import { ViroGameLoopUtils } from "./ViroGameLoopUtils";
 const DEG = Math.PI / 180;
 const DEFAULTS = {
     target: [0, 0, 0],
@@ -35,7 +31,7 @@ const DEFAULTS = {
 };
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 /** Camera position for a target/distance/yaw/pitch, and the Euler rotation that looks back at it. */
-function viroMapCameraTransform(s) {
+export function viroMapCameraTransform(s) {
     const y = s.yaw * DEG;
     const p = s.pitch * DEG;
     const horizontal = Math.cos(p) * s.distance;
@@ -48,16 +44,16 @@ function viroMapCameraTransform(s) {
         rotation: [-s.pitch, s.yaw, 0],
     };
 }
-function useViroMapCamera(options = {}) {
+export function useViroMapCamera(options = {}) {
     const { orthographic = false, bounds, distanceRange = [2, 200], scaleRange = [1, 200], pitchRange = [15, 90], fieldOfView = 45, enabled = true, orbitWithTwoFingers = true, onChange, } = options;
-    const nodeRef = (0, react_1.useRef)(null);
-    const state = (0, react_1.useRef)({ ...DEFAULTS, ...options.initial });
-    const viewport = (0, react_1.useRef)({ width: 0, height: 0 });
-    const flight = (0, react_1.useRef)(null);
+    const nodeRef = useRef(null);
+    const state = useRef({ ...DEFAULTS, ...options.initial });
+    const viewport = useRef({ width: 0, height: 0 });
+    const flight = useRef(null);
     // The only value that cannot bypass the reconciler, so the only one held as
     // React state. Under perspective it never changes.
-    const [scale, setScale] = (0, react_1.useState)(state.current.orthographicScale);
-    const commit = (0, react_1.useCallback)(() => {
+    const [scale, setScale] = useState(state.current.orthographicScale);
+    const commit = useCallback(() => {
         const s = state.current;
         if (bounds) {
             s.target[0] = clamp(s.target[0], bounds.min[0], bounds.max[0]);
@@ -67,8 +63,8 @@ function useViroMapCamera(options = {}) {
         s.distance = clamp(s.distance, distanceRange[0], distanceRange[1]);
         s.orthographicScale = clamp(s.orthographicScale, scaleRange[0], scaleRange[1]);
         const { position, rotation } = viroMapCameraTransform(s);
-        ViroGameLoopUtils_1.ViroGameLoopUtils.setPosition(nodeRef, position);
-        ViroGameLoopUtils_1.ViroGameLoopUtils.setRotation(nodeRef, rotation);
+        ViroGameLoopUtils.setPosition(nodeRef, position);
+        ViroGameLoopUtils.setRotation(nodeRef, rotation);
         if (orthographic) {
             setScale(s.orthographicScale);
         }
@@ -79,7 +75,7 @@ function useViroMapCamera(options = {}) {
      * is exact and independent of distance; under perspective it is the size of
      * the view where it crosses the ground under the target.
      */
-    const unitsPerPixel = (0, react_1.useCallback)(() => {
+    const unitsPerPixel = useCallback(() => {
         const h = viewport.current.height;
         if (!h)
             return 0;
@@ -89,7 +85,7 @@ function useViroMapCamera(options = {}) {
             : 2 * s.distance * Math.tan((fieldOfView * DEG) / 2);
         return worldHeight / h;
     }, [orthographic, fieldOfView]);
-    const controls = (0, react_1.useMemo)(() => ({
+    const controls = useMemo(() => ({
         /** Drag the map by a screen delta in pixels. */
         panByPixels(dx, dy) {
             const upp = unitsPerPixel();
@@ -189,7 +185,7 @@ function useViroMapCamera(options = {}) {
      * PanResponder note in the docs — can drive `controls` from its own input and
      * lose nothing.
      */
-    const panResponder = (0, react_1.useMemo)(() => {
+    const panResponder = useMemo(() => {
         // gesture.dx/dy are cumulative over the gesture, so a per-move delta needs
         // the previous values. Pinch distance is tracked the same way.
         let lastDx = 0;
@@ -200,7 +196,7 @@ function useViroMapCamera(options = {}) {
             lastDy = 0;
             lastPinch = 0;
         };
-        return react_native_1.PanResponder.create({
+        return PanResponder.create({
             onStartShouldSetPanResponder: () => enabled,
             onMoveShouldSetPanResponder: () => enabled,
             onPanResponderGrant: reset,
@@ -233,13 +229,13 @@ function useViroMapCamera(options = {}) {
             onPanResponderTerminate: reset,
         });
     }, [enabled, orbitWithTwoFingers, controls]);
-    const onLayout = (0, react_1.useCallback)((e) => {
+    const onLayout = useCallback((e) => {
         viewport.current = {
             width: e.nativeEvent.layout.width,
             height: e.nativeEvent.layout.height,
         };
     }, []);
-    const initialTransform = (0, react_1.useMemo)(() => viroMapCameraTransform(state.current), 
+    const initialTransform = useMemo(() => viroMapCameraTransform(state.current), 
     // Only for the first render; every later update goes through commit().
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []);

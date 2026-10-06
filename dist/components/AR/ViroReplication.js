@@ -35,11 +35,9 @@
  * @providesModule ViroReplication
  */
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ViroReplicationClient = void 0;
-const react_native_1 = require("react-native");
-const ViroPlatform_1 = require("../Utilities/ViroPlatform");
-const ViroVersion_1 = require("../Utilities/ViroVersion");
+import { Platform } from "react-native";
+import { isWeb } from "../Utilities/ViroPlatform";
+import { VIRO_VERSION } from "../Utilities/ViroVersion";
 const BACKOFF_MS = [500, 1000, 2000, 4000, 8000];
 const DEFAULT_ENDPOINT = "https://colocation.reactvision.xyz";
 function isThenable(value) {
@@ -53,7 +51,7 @@ function toSocketScheme(endpoint) {
         return "ws://" + endpoint.slice(7);
     return endpoint;
 }
-class ViroReplicationClient {
+export class ViroReplicationClient {
     ws = null;
     config = null;
     entities = new Map();
@@ -189,7 +187,7 @@ class ViroReplicationClient {
         // browser cannot set them, and there the credentials go in the query
         // string, which the relay refuses unless it was started to allow it (a
         // browser client needs an Origin allowlist first).
-        if (ViroPlatform_1.isWeb) {
+        if (isWeb) {
             if (!cfg.apiKey) {
                 this.fail("a browser can only join with an apiKey");
                 return;
@@ -214,7 +212,7 @@ class ViroReplicationClient {
             // one client build from another when a refusal shows up in the relay log
             // and every device otherwise looks alike. An app tag from the provider
             // stays in front of it, as on the pose channel's handshake.
-            const build = `viro/${ViroVersion_1.VIRO_VERSION} (${react_native_1.Platform.OS})`;
+            const build = `viro/${VIRO_VERSION} (${Platform.OS})`;
             const app = headers["x-rv-client"];
             headers["x-rv-client"] = app ? `${app} ${build}` : build;
             this.attach(new WebSocket(path, null, { headers }));
@@ -456,4 +454,3 @@ class ViroReplicationClient {
             fn();
     }
 }
-exports.ViroReplicationClient = ViroReplicationClient;

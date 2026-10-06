@@ -1,22 +1,14 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.unsupportedCapture = exports.VRCapture = exports.VRModuleOpenXR = void 0;
-exports.exitVRScene = exitVRScene;
-exports.getOpenXRRuntimeCapabilities = getOpenXRRuntimeCapabilities;
-exports.triggerHaptic = triggerHaptic;
-exports.setPassthroughStyle = setPassthroughStyle;
-exports.useVRViewTag = useVRViewTag;
-const react_1 = require("react");
-const react_native_1 = require("react-native");
-const VRQuestNavigatorBridge_1 = require("./VRQuestNavigatorBridge");
-const ViroConstants_1 = require("../ViroConstants");
+import { useEffect, useState } from "react";
+import { NativeModules } from "react-native";
+import { VRQuestNavigatorBridge } from "./VRQuestNavigatorBridge";
+import { ViroRecordingErrorConstants } from "../ViroConstants";
 /**
  * Finishes VRActivity and returns the user to the panel (MainActivity).
  * Safe to call on any platform — no-op when VRLauncher is unavailable.
  */
-function exitVRScene() {
-    VRQuestNavigatorBridge_1.VRQuestNavigatorBridge.setVRActive(false);
-    react_native_1.NativeModules.VRLauncher
+export function exitVRScene() {
+    VRQuestNavigatorBridge.setVRActive(false);
+    NativeModules.VRLauncher
         ?.exitVRScene?.();
 }
 /**
@@ -24,8 +16,8 @@ function exitVRScene() {
  * the headset model. Returns null until the immersive view has initialized or
  * when the current backend is not ViroViewOpenXR.
  */
-async function getOpenXRRuntimeCapabilities(viewTag) {
-    return exports.VRModuleOpenXR?.getRuntimeCapabilities?.(viewTag) ?? null;
+export async function getOpenXRRuntimeCapabilities(viewTag) {
+    return VRModuleOpenXR?.getRuntimeCapabilities?.(viewTag) ?? null;
 }
 const HAND_CODE = {
     left: 0,
@@ -42,9 +34,9 @@ const HAND_CODE = {
  * if (viewTag != null) triggerHaptic(viewTag);            // quick tick, active hand
  * ```
  */
-function triggerHaptic(viewTag, opts = {}) {
+export function triggerHaptic(viewTag, opts = {}) {
     const hand = HAND_CODE[opts.hand ?? "active"];
-    exports.VRModuleOpenXR?.triggerHaptic?.(viewTag, hand, opts.amplitude ?? 0.6, opts.durationSec ?? 0.03);
+    VRModuleOpenXR?.triggerHaptic?.(viewTag, hand, opts.amplitude ?? 0.6, opts.durationSec ?? 0.03);
 }
 /**
  * Style the Quest passthrough layer (XR_FB_passthrough). No-op off-Quest.
@@ -56,16 +48,16 @@ function triggerHaptic(viewTag, opts = {}) {
  * }
  * ```
  */
-function setPassthroughStyle(viewTag, style) {
+export function setPassthroughStyle(viewTag, style) {
     const opacity = style.opacity ?? 1;
     const [r, g, b, a] = style.edgeColor ?? [0, 0, 0, 0];
-    exports.VRModuleOpenXR?.setPassthroughStyle?.(viewTag, opacity, r, g, b, a);
+    VRModuleOpenXR?.setPassthroughStyle?.(viewTag, opacity, r, g, b, a);
 }
 /**
  * Typed reference to the VRModuleOpenXR native module.
  * undefined when this build does not include the Android OpenXR module (no-op calls are safe via optional chaining).
  */
-exports.VRModuleOpenXR = react_native_1.NativeModules.VRModuleOpenXR ?? undefined;
+export const VRModuleOpenXR = NativeModules.VRModuleOpenXR ?? undefined;
 /**
  * Returns the live viewTag of the ViroVRSceneNavigator running in VRActivity,
  * kept in sync via VRQuestNavigatorBridge.  null until ViroQuestEntryPoint has
@@ -83,9 +75,9 @@ exports.VRModuleOpenXR = react_native_1.NativeModules.VRModuleOpenXR ?? undefine
  * }
  * ```
  */
-function useVRViewTag() {
-    const [tag, setTag] = (0, react_1.useState)(() => VRQuestNavigatorBridge_1.VRQuestNavigatorBridge.getViewTag());
-    (0, react_1.useEffect)(() => VRQuestNavigatorBridge_1.VRQuestNavigatorBridge.onViewTag(setTag), []);
+export function useVRViewTag() {
+    const [tag, setTag] = useState(() => VRQuestNavigatorBridge.getViewTag());
+    useEffect(() => VRQuestNavigatorBridge.onViewTag(setTag), []);
     return tag;
 }
 function captureFailure(errorCode) {
@@ -106,25 +98,25 @@ function captureFailure(errorCode) {
  * composited by the OS beneath the app's layer, so a mixed-reality capture
  * holds the virtual content only, over black.
  */
-exports.VRCapture = {
+export const VRCapture = {
     takeScreenshot(viewTag, fileName, saveToCameraRoll) {
-        const fn = exports.VRModuleOpenXR?.takeScreenshot;
+        const fn = VRModuleOpenXR?.takeScreenshot;
         if (typeof fn !== "function") {
-            return Promise.resolve(captureFailure(ViroConstants_1.ViroRecordingErrorConstants.RECORD_ERROR_UNSUPPORTED_PLATFORM));
+            return Promise.resolve(captureFailure(ViroRecordingErrorConstants.RECORD_ERROR_UNSUPPORTED_PLATFORM));
         }
         if (viewTag == null) {
-            return Promise.resolve(captureFailure(ViroConstants_1.ViroRecordingErrorConstants.RECORD_ERROR_NOT_READY));
+            return Promise.resolve(captureFailure(ViroRecordingErrorConstants.RECORD_ERROR_NOT_READY));
         }
         return fn(viewTag, fileName, saveToCameraRoll);
     },
     startVideoRecording(viewTag, fileName, saveToCameraRoll, onError) {
-        const fn = exports.VRModuleOpenXR?.startVideoRecording;
+        const fn = VRModuleOpenXR?.startVideoRecording;
         if (typeof fn !== "function") {
-            onError?.(ViroConstants_1.ViroRecordingErrorConstants.RECORD_ERROR_UNSUPPORTED_PLATFORM);
+            onError?.(ViroRecordingErrorConstants.RECORD_ERROR_UNSUPPORTED_PLATFORM);
             return;
         }
         if (viewTag == null) {
-            onError?.(ViroConstants_1.ViroRecordingErrorConstants.RECORD_ERROR_NOT_READY);
+            onError?.(ViroRecordingErrorConstants.RECORD_ERROR_NOT_READY);
             return;
         }
         // Native invokes the callback on failure only; a caller without one still
@@ -132,12 +124,12 @@ exports.VRCapture = {
         fn(viewTag, fileName, saveToCameraRoll, onError ?? (() => { }));
     },
     stopVideoRecording(viewTag) {
-        const fn = exports.VRModuleOpenXR?.stopVideoRecording;
+        const fn = VRModuleOpenXR?.stopVideoRecording;
         if (typeof fn !== "function") {
-            return Promise.resolve(captureFailure(ViroConstants_1.ViroRecordingErrorConstants.RECORD_ERROR_UNSUPPORTED_PLATFORM));
+            return Promise.resolve(captureFailure(ViroRecordingErrorConstants.RECORD_ERROR_UNSUPPORTED_PLATFORM));
         }
         if (viewTag == null) {
-            return Promise.resolve(captureFailure(ViroConstants_1.ViroRecordingErrorConstants.RECORD_ERROR_NOT_READY));
+            return Promise.resolve(captureFailure(ViroRecordingErrorConstants.RECORD_ERROR_NOT_READY));
         }
         return fn(viewTag);
     },
@@ -148,10 +140,10 @@ exports.VRCapture = {
  * `RECORD_ERROR_UNSUPPORTED_PLATFORM` rather than leaving a scene written for
  * AR or Quest to call something undefined.
  */
-exports.unsupportedCapture = {
-    takeScreenshot: (_fileName, _saveToCameraRoll) => Promise.resolve(captureFailure(ViroConstants_1.ViroRecordingErrorConstants.RECORD_ERROR_UNSUPPORTED_PLATFORM)),
+export const unsupportedCapture = {
+    takeScreenshot: (_fileName, _saveToCameraRoll) => Promise.resolve(captureFailure(ViroRecordingErrorConstants.RECORD_ERROR_UNSUPPORTED_PLATFORM)),
     startVideoRecording: (_fileName, _saveToCameraRoll, onError) => {
-        onError?.(ViroConstants_1.ViroRecordingErrorConstants.RECORD_ERROR_UNSUPPORTED_PLATFORM);
+        onError?.(ViroRecordingErrorConstants.RECORD_ERROR_UNSUPPORTED_PLATFORM);
     },
-    stopVideoRecording: () => Promise.resolve(captureFailure(ViroConstants_1.ViroRecordingErrorConstants.RECORD_ERROR_UNSUPPORTED_PLATFORM)),
+    stopVideoRecording: () => Promise.resolve(captureFailure(ViroRecordingErrorConstants.RECORD_ERROR_UNSUPPORTED_PLATFORM)),
 };

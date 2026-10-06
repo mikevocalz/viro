@@ -1,6 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.useViroAnimation = useViroAnimation;
 /**
  * Drives a node's animation from the Viro `animation` prop
  * ({ name, run, loop, onStart, onFinish }). Resolves the name against two
@@ -12,18 +9,18 @@ exports.useViroAnimation = useViroAnimation;
  * `ready` gates model animations (which only exist after a model loads). If
  * `name` is omitted or "*", the model's first animation is used.
  */
-const react_1 = require("react");
-const ViroWebContext_1 = require("./ViroWebContext");
-const viroAnimationRegistry_1 = require("./viroAnimationRegistry");
-function useViroAnimation(node, animation, base, ready) {
-    const scene = (0, ViroWebContext_1.useViroScene)();
-    const renderer = (0, ViroWebContext_1.useViroRenderer)();
+import { useEffect } from "react";
+import { useViroScene, useViroRenderer } from "./ViroWebContext";
+import { runDeclarativeAnimation } from "./viroAnimationRegistry";
+export function useViroAnimation(node, animation, base, ready) {
+    const scene = useViroScene();
+    const renderer = useViroRenderer();
     const name = animation?.name;
     const run = animation?.run;
     const loop = animation?.loop;
     const delay = animation?.delay;
     const baseKey = `${base.position.join()}|${base.rotation.join()}|${base.scale.join()}|${base.opacity}`;
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         if (!ready || !animation)
             return;
         renderer.setNodeAnimationHandlers(node, {
@@ -32,7 +29,7 @@ function useViroAnimation(node, animation, base, ready) {
         });
         if (run !== false) {
             // Try a registered declarative animation first, then a model animation.
-            if (!name || !(0, viroAnimationRegistry_1.runDeclarativeAnimation)(scene, node, name, base, !!loop, delay)) {
+            if (!name || !runDeclarativeAnimation(scene, node, name, base, !!loop, delay)) {
                 let animName = name;
                 if (!animName || animName === "*") {
                     animName = scene.getAnimationKeys(node)[0];

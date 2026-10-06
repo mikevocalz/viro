@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.useAnySourceHover = useAnySourceHover;
-const react_1 = require("react");
+import { useCallback, useRef, useState } from "react";
 /**
  * Aggregate `onHover` state across all input sources.
  *
@@ -33,10 +30,10 @@ const react_1 = require("react");
  * source so a sequence of `(true, …, src=A)` events from the same source
  * produces at most one re-render.
  */
-function useAnySourceHover() {
-    const sourcesRef = (0, react_1.useRef)({});
-    const [hovered, setHovered] = (0, react_1.useState)(false);
-    const onHover = (0, react_1.useCallback)((isHovering, _position, source) => {
+export function useAnySourceHover() {
+    const sourcesRef = useRef({});
+    const [hovered, setHovered] = useState(false);
+    const onHover = useCallback((isHovering, _position, source) => {
         const key = String(source ?? "default");
         if (sourcesRef.current[key] === isHovering)
             return;

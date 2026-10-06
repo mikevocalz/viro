@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Studio expression evaluator: parses and evaluates the literal-or-expression
  * values written by SET_VARIABLE steps (and, later, reused by Branch
@@ -20,19 +19,8 @@
  *   unary      := ("!"|"-") unary | primary
  *   primary    := NUMBER | STRING | "true" | "false" | IDENT | "(" or ")"
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.VARIABLE_NAME_PATTERN = exports.MAX_EXPRESSION_LENGTH = void 0;
-exports.parseExpression = parseExpression;
-exports.checkTypes = checkTypes;
-exports.validateExpressionForTarget = validateExpressionForTarget;
-exports.compare = compare;
-exports.evaluateBranchCondition = evaluateBranchCondition;
-exports.evaluate = evaluate;
-exports.valueMatchesType = valueMatchesType;
-exports.formatLiteral = formatLiteral;
-exports.renameIdentifier = renameIdentifier;
-exports.MAX_EXPRESSION_LENGTH = 500;
-exports.VARIABLE_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]{0,63}$/;
+export const MAX_EXPRESSION_LENGTH = 500;
+export const VARIABLE_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]{0,63}$/;
 class ExpressionError extends Error {
 }
 const IDENT_START = /[A-Za-z_]/;
@@ -214,12 +202,12 @@ function collectRefs(node, acc) {
         collectRefs(node.right, acc);
     }
 }
-function parseExpression(src) {
+export function parseExpression(src) {
     if (typeof src !== "string" || src.trim().length === 0) {
         return { ok: false, error: "Expression is empty" };
     }
-    if (src.length > exports.MAX_EXPRESSION_LENGTH) {
-        return { ok: false, error: `Expression exceeds ${exports.MAX_EXPRESSION_LENGTH} characters` };
+    if (src.length > MAX_EXPRESSION_LENGTH) {
+        return { ok: false, error: `Expression exceeds ${MAX_EXPRESSION_LENGTH} characters` };
     }
     try {
         const ast = new Parser(tokenize(src)).parse();
@@ -300,7 +288,7 @@ function inferType(node, declared) {
         }
     }
 }
-function checkTypes(node, declared) {
+export function checkTypes(node, declared) {
     try {
         return { ok: true, type: inferType(node, declared) };
     }
@@ -309,7 +297,7 @@ function checkTypes(node, declared) {
     }
 }
 /** Parse + type-check an expression against a target variable's type in one call. */
-function validateExpressionForTarget(src, targetType, declared) {
+export function validateExpressionForTarget(src, targetType, declared) {
     const parsed = parseExpression(src);
     if (!parsed.ok)
         return parsed;
@@ -325,7 +313,7 @@ function validateExpressionForTarget(src, targetType, declared) {
     return { ok: true };
 }
 /** Typed comparison shared with Branch conditions. Throws on operand mismatch. */
-function compare(op, left, right) {
+export function compare(op, left, right) {
     if (op === "==" || op === "!=") {
         if (typeof left !== typeof right) {
             throw new ExpressionError(`"${op}" needs operands of the same type`);
@@ -371,7 +359,7 @@ function likeMatch(text, pattern, caseInsensitive) {
  * Evaluates a structured Branch condition against the runtime store.
  * Never throws; callers warn + skip both arms on { ok: false }.
  */
-function evaluateBranchCondition(cond, get) {
+export function evaluateBranchCondition(cond, get) {
     const left = get(cond.variable_name);
     if (left === undefined) {
         return { ok: false, error: `Variable "${cond.variable_name}" is not defined` };
@@ -474,7 +462,7 @@ function evalNode(node, get) {
         }
     }
 }
-function evaluate(node, get) {
+export function evaluate(node, get) {
     try {
         return { ok: true, value: evalNode(node, get) };
     }
@@ -483,13 +471,13 @@ function evaluate(node, get) {
     }
 }
 // ─── Editor helpers ───────────────────────────────────────────────────────────
-function valueMatchesType(value, type) {
+export function valueMatchesType(value, type) {
     return ((type === "BOOLEAN" && typeof value === "boolean") ||
         (type === "NUMBER" && typeof value === "number") ||
         (type === "STRING" && typeof value === "string"));
 }
 /** Serialize a literal value into expression syntax (the editor's literal mode). */
-function formatLiteral(value) {
+export function formatLiteral(value) {
     if (typeof value === "string") {
         return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
     }
@@ -500,7 +488,7 @@ function formatLiteral(value) {
  * other formatting (token-span splicing). Returns the source unchanged if it
  * does not tokenize. Powers variable rename in the editor.
  */
-function renameIdentifier(src, oldName, newName) {
+export function renameIdentifier(src, oldName, newName) {
     let tokens;
     try {
         tokens = tokenize(src);

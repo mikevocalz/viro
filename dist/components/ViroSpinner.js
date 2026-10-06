@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Copyright (c) 2017-present, Viro Media, Inc.
  * All rights reserved.
@@ -10,47 +9,12 @@
  * @providesModule ViroSpinner
  */
 "user strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ViroSpinner = void 0;
-const React = __importStar(require("react"));
-const ViroProps_1 = require("./Utilities/ViroProps");
-const ViroBase_1 = require("./ViroBase");
-const ViroAnimations_1 = require("./Animation/ViroAnimations");
-const ViroNode_1 = require("./ViroNode");
-const ViroImage_1 = require("./ViroImage");
+import * as React from "react";
+import { checkMisnamedProps } from "./Utilities/ViroProps";
+import { ViroBase } from "./ViroBase";
+import { ViroAnimations } from "./Animation/ViroAnimations";
+import { ViroNode } from "./ViroNode";
+import { ViroImage } from "./ViroImage";
 // Setup spinner assets
 const ViroSpinner_1 = require("./Resources/viro_spinner_1.png");
 const ViroSpinner_1a = require("./Resources/viro_spinner_1a.png");
@@ -59,15 +23,15 @@ const ViroSpinner_1a_w = require("./Resources/viro_spinner_1a_w.png");
 /**
  * Composite control for a 2D Spinner
  */
-class ViroSpinner extends ViroBase_1.ViroBase {
+export class ViroSpinner extends ViroBase {
     render() {
-        (0, ViroProps_1.checkMisnamedProps)("ViroSpinner", this.props);
+        checkMisnamedProps("ViroSpinner", this.props);
         // Since transformBehaviors can be either a string or an array, convert the string to a 1-element array.
         let transformBehaviors = typeof this.props.transformBehaviors === "string"
             ? new Array(this.props.transformBehaviors)
             : this.props.transformBehaviors;
-        return (<ViroNode_1.ViroNode {...this.props}>
-        <ViroImage_1.ViroImage source={this._getImage1()} materials={this.props.materials} animation={{
+        return (<ViroNode {...this.props}>
+        <ViroImage source={this._getImage1()} materials={this.props.materials} animation={{
                 name: "_ViroSpinner_clockwiseZ",
                 delay: 0,
                 loop: true,
@@ -76,13 +40,13 @@ class ViroSpinner extends ViroBase_1.ViroBase {
 
         {/* Set the position of this one to be .01 forward of the other view to help w/ z-fighting*/}
 
-        <ViroImage_1.ViroImage position={[0, 0, 0.01]} source={this._getImage1a()} materials={this.props.materials} animation={{
+        <ViroImage position={[0, 0, 0.01]} source={this._getImage1a()} materials={this.props.materials} animation={{
                 name: "_ViroSpinner_counterClockwiseZ",
                 delay: 0,
                 loop: true,
                 run: true,
             }}/>
-      </ViroNode_1.ViroNode>);
+      </ViroNode>);
     }
     _getImage1() {
         const { type = "Dark" } = this.props;
@@ -97,8 +61,7 @@ class ViroSpinner extends ViroBase_1.ViroBase {
             : ViroSpinner_1a_w;
     }
 }
-exports.ViroSpinner = ViroSpinner;
-ViroAnimations_1.ViroAnimations.registerAnimations({
+ViroAnimations.registerAnimations({
     _ViroSpinner_counterClockwiseZ: {
         properties: {
             rotateZ: "+=90",

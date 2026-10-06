@@ -1,6 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ViroSpatialSound = ViroSpatialSound;
 /**
  * Web implementation of ViroSpatialSound — positional audio via the Web Audio
  * PannerNode. The sound sits at `position` (world space); distance attenuation
@@ -11,10 +8,10 @@ exports.ViroSpatialSound = ViroSpatialSound;
  * to follow and it stays at the origin. Autoplay may be blocked until a user
  * gesture.
  */
-const react_1 = require("react");
-const viroImageLoader_1 = require("./Web/viroImageLoader");
-const viroAudio_1 = require("./Web/viroAudio");
-const ViroWebContext_1 = require("./Web/ViroWebContext");
+import { useEffect, useRef } from "react";
+import { resolveImageSource } from "./Web/viroImageLoader";
+import { getAudioContext, trackAudioListener } from "./Web/viroAudio";
+import { useViroAR } from "./Web/ViroWebContext";
 function distanceModel(rolloff) {
     switch (rolloff) {
         case "Logarithmic":
@@ -36,26 +33,26 @@ function setPannerPosition(panner, x, y, z) {
         panner.setPosition(x, y, z);
     }
 }
-function ViroSpatialSound(props) {
-    const url = (0, viroImageLoader_1.resolveImageSource)(props.source);
+export function ViroSpatialSound(props) {
+    const url = resolveImageSource(props.source);
     const [px, py, pz] = props.position ?? [0, 0, 0];
-    const { session } = (0, ViroWebContext_1.useViroAR)();
+    const { session } = useViroAR();
     // Move the listener with the camera while this sound exists. Ref-counted, so
     // several sounds share one loop and the last one to unmount stops it.
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         if (!session)
             return;
-        return (0, viroAudio_1.trackAudioListener)(session);
+        return trackAudioListener(session);
     }, [session]);
-    const audioRef = (0, react_1.useRef)(null);
-    const pannerRef = (0, react_1.useRef)(null);
-    const gainRef = (0, react_1.useRef)(null);
-    const propsRef = (0, react_1.useRef)(props);
+    const audioRef = useRef(null);
+    const pannerRef = useRef(null);
+    const gainRef = useRef(null);
+    const propsRef = useRef(props);
     propsRef.current = props;
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         if (!url)
             return;
-        const ctx = (0, viroAudio_1.getAudioContext)();
+        const ctx = getAudioContext();
         const audio = new Audio(url);
         audio.crossOrigin = "anonymous";
         audioRef.current = audio;
@@ -92,12 +89,12 @@ function ViroSpatialSound(props) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [url]);
     // Position updates.
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         if (pannerRef.current)
             setPannerPosition(pannerRef.current, px, py, pz);
     }, [px, py, pz]);
     // Playback controls.
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         const a = audioRef.current;
         if (!a)
             return;
@@ -109,7 +106,7 @@ function ViroSpatialSound(props) {
             a.pause();
         }
         else {
-            const ctx = (0, viroAudio_1.getAudioContext)();
+            const ctx = getAudioContext();
             if (ctx.state === "suspended")
                 void ctx.resume();
             a.play().catch((err) => propsRef.current.onError?.(err));

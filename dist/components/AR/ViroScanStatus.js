@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Copyright © 2026 ReactVision. All rights reserved.
  *
@@ -10,19 +9,13 @@
  * which can be malformed in ways a typed bridge could not be — so it is parsed here, in one
  * place, where the failure modes can be tested.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.parseScanStatus = parseScanStatus;
-exports.parseScanDiagnostics = parseScanDiagnostics;
-exports.withScanDiagnostics = withScanDiagnostics;
-exports.isLocationTransform = isLocationTransform;
-exports.parseWorldMeshStats = parseWorldMeshStats;
 /**
  * @param json what the native module resolved with
  * @returns the status, or an unavailable one carrying the reason — never a throw. A status poll
  *          runs on a timer while someone walks a room, and an exception there would take down the
  *          screen over a reading that is allowed to be missing.
  */
-function parseScanStatus(json) {
+export function parseScanStatus(json) {
     if (typeof json !== "string" || json.length === 0) {
         return { available: false, error: "No response from the renderer" };
     }
@@ -38,7 +31,7 @@ function parseScanStatus(json) {
     }
 }
 /** Same contract as {@link parseScanStatus}: never throws, absence is `valid: false`. */
-function parseScanDiagnostics(json) {
+export function parseScanDiagnostics(json) {
     if (typeof json !== "string" || json.length === 0) {
         return { valid: false };
     }
@@ -60,7 +53,7 @@ function parseScanDiagnostics(json) {
  * the caller needs, and `valid: false` means no scan has been through the gate yet, so attaching
  * it would dress up an absence as a measurement.
  */
-function withScanDiagnostics(result, diagnostics) {
+export function withScanDiagnostics(result, diagnostics) {
     if (result?.success)
         return result;
     if (!diagnostics?.valid)
@@ -79,7 +72,7 @@ function withScanDiagnostics(result, diagnostics) {
  * `VROMatrix4f::getArray()` produces. It is not a validity test for the matrix itself; it exists
  * to catch "nothing", "undefined" and a truncated value, which is what actually happens.
  */
-function isLocationTransform(value) {
+export function isLocationTransform(value) {
     if (typeof value !== "string" || value.trim().length === 0)
         return false;
     const parts = value.split(",");
@@ -100,7 +93,7 @@ function isLocationTransform(value) {
  *
  * Never throws, on the same reasoning as {@link parseScanStatus}: this is polled on a timer.
  */
-function parseWorldMeshStats(raw) {
+export function parseWorldMeshStats(raw) {
     if (raw == null) {
         return { available: false, reason: "No response from the renderer" };
     }

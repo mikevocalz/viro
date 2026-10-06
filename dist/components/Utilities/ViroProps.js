@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Copyright (c) 2018-present, Viro Media, Inc.
  * All rights reserved.
@@ -7,8 +6,6 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.checkMisnamedProps = checkMisnamedProps;
 /*
  This function is a simple helper function that attempts to check
  for misnamed props. Returns whether or not a prop was misnamed.
@@ -36,7 +33,7 @@ exports.checkMisnamedProps = checkMisnamedProps;
  AR/ViroARSceneNavigator
 
  */
-function checkMisnamedProps(component, props) {
+export function checkMisnamedProps(component, props) {
     var upperCaseComponent = component.toUpperCase();
     if (props.transformBehavior) {
         console.warn("The <" +

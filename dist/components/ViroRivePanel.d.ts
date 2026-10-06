@@ -60,4 +60,6 @@ export type ViroRivePanelHandle = {
     engineSurface: ViroPanelSurfaceSnapshot | null;
 };
 export declare const ViroRivePanel: React.ForwardRefExoticComponent<ViroRivePanelProps & React.RefAttributes<ViroRivePanelHandle>>;
+export declare function bindingFingerprint(value: ViroRiveBindingValue): string;
+export declare function applyBindings(panel: RivePanel, bindings: ViroRiveBindings | undefined, applied: Map<string, string>): void;
 export {};

@@ -1,28 +1,25 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ViroSkyBox = ViroSkyBox;
 /**
  * Web implementation of ViroSkyBox — sets the scene background to a cube map
  * from six images (`source` = { px, nx, py, ny, pz, nz }). Scene-level (renders
  * no node). Falls back to nothing if any face fails to load.
  */
-const react_1 = require("react");
-const ViroWebContext_1 = require("./Web/ViroWebContext");
-const viroImageLoader_1 = require("./Web/viroImageLoader");
+import { useEffect } from "react";
+import { useViroScene } from "./Web/ViroWebContext";
+import { loadImageRGBA, resolveImageSource } from "./Web/viroImageLoader";
 const FACE_ORDER = ["px", "nx", "py", "ny", "pz", "nz"];
-function ViroSkyBox(props) {
-    const scene = (0, ViroWebContext_1.useViroScene)();
+export function ViroSkyBox(props) {
+    const scene = useViroScene();
     const src = props.source;
-    const key = src ? FACE_ORDER.map((f) => (0, viroImageLoader_1.resolveImageSource)(src[f]) ?? "").join("|") : "";
-    (0, react_1.useEffect)(() => {
+    const key = src ? FACE_ORDER.map((f) => resolveImageSource(src[f]) ?? "").join("|") : "";
+    useEffect(() => {
         if (!src)
             return;
-        const urls = FACE_ORDER.map((f) => (0, viroImageLoader_1.resolveImageSource)(src[f]));
+        const urls = FACE_ORDER.map((f) => resolveImageSource(src[f]));
         if (urls.some((u) => !u))
             return;
         let cancelled = false;
         let texture = 0;
-        Promise.all(urls.map((u) => (0, viroImageLoader_1.loadImageRGBA)(u)))
+        Promise.all(urls.map((u) => loadImageRGBA(u)))
             .then((faces) => {
             if (cancelled)
                 return;

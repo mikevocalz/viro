@@ -1,6 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.useDeferredRelease = useDeferredRelease;
 /**
  * Release a renderer handle on unmount, unless the same component mounts again
  * right away.
@@ -13,9 +10,9 @@ exports.useDeferredRelease = useDeferredRelease;
  * drew. The cleanup schedules the destroy instead, and the effect cancels
  * whatever is pending when it runs.
  */
-const react_1 = require("react");
-function useDeferredRelease() {
-    const ref = (0, react_1.useRef)(null);
+import { useRef } from "react";
+export function useDeferredRelease() {
+    const ref = useRef(null);
     if (ref.current === null) {
         let timer = null;
         ref.current = {

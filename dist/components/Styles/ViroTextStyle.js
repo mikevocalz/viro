@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Copyright (c) 2016-present, Viro Media, Inc.
  * All rights reserved.
@@ -10,4 +9,3 @@
  * @providesModule ViroTextStyle
  * @flow
  */
-Object.defineProperty(exports, "__esModule", { value: true });

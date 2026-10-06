@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.DEFAULTS = void 0;
-const withViroAndroid_1 = require("./withViroAndroid");
-const withViroIos_1 = require("./withViroIos");
+import { withViroAndroid } from "./withViroAndroid";
+import { withViroIos } from "./withViroIos";
 const CAMERA_USAGE = "Allow $(PRODUCT_NAME) to use your camera";
 const MICROPHONE_USAGE = "Allow $(PRODUCT_NAME) to use your microphone";
 const READ_PHOTOS_USAGE = "Allow $(PRODUCT_NAME) to access your photos";
@@ -11,7 +8,7 @@ const LOCATION_USAGE = "Allow $(PRODUCT_NAME) to use your location for AR experi
 /**
  * Default options
  */
-exports.DEFAULTS = {
+export const DEFAULTS = {
     ios: {
         cameraUsagePermission: CAMERA_USAGE,
         microphoneUsagePermission: MICROPHONE_USAGE,
@@ -36,8 +33,8 @@ const withViro = (config, props) => {
     // New Architecture is the only architecture in Expo SDK 53+ (and the React
     // Native versions ViroReact supports), so there is nothing to validate here.
     // Apply platform-specific configurations
-    config = (0, withViroIos_1.withViroIos)(config, props);
-    config = (0, withViroAndroid_1.withViroAndroid)(config, props);
+    config = withViroIos(config, props);
+    config = withViroAndroid(config, props);
     return config;
 };
-exports.default = withViro;
+export default withViro;

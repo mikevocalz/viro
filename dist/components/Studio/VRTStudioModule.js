@@ -1,13 +1,10 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.VRTStudioModule = void 0;
-const react_native_1 = require("react-native");
-const native = react_native_1.NativeModules.VRTStudio;
+import { NativeModules } from "react-native";
+const native = NativeModules.VRTStudio;
 const NOT_AVAILABLE = {
     success: false,
     error: "VRTStudio native module not available",
 };
-exports.VRTStudioModule = {
+export const VRTStudioModule = {
     rvGetScene: (sceneId) => {
         if (!native)
             return Promise.resolve(NOT_AVAILABLE);

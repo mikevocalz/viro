@@ -1,22 +1,19 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.StudioReplicationOutbox = exports.STUDIO_SHARED_WRITE_BURST = exports.STUDIO_SHARED_WRITES_PER_SECOND = void 0;
-const useViroThrottledWrite_1 = require("../../hooks/useViroThrottledWrite");
+import { VIRO_REPLICATION_WRITE_INTERVAL_MS } from "../../hooks/useViroThrottledWrite";
 /**
  * Half the relay's 120 messages a second per peer, which closes the socket at
  * 1008 above it and refuses the credential for 30 s. The other half is for
  * drags, claims, releases and the scene origin.
  */
-exports.STUDIO_SHARED_WRITES_PER_SECOND = 60;
+export const STUDIO_SHARED_WRITES_PER_SECOND = 60;
 /** A host's first sync writes every changed row at once; this many go out unpaced. */
-exports.STUDIO_SHARED_WRITE_BURST = 30;
+export const STUDIO_SHARED_WRITE_BURST = 30;
 /**
  * Replicated writes, coalesced per entity: one goes out at once, and any made
  * within the next interval collapse into one trailing write of the latest value.
  * Across entities the rate is capped, so a burst queues rather than tripping
  * the relay's limit.
  */
-class StudioReplicationOutbox {
+export class StudioReplicationOutbox {
     send;
     queue = new Map();
     lastSentAt = new Map();
@@ -31,9 +28,9 @@ class StudioReplicationOutbox {
     constructor(send, options = {}) {
         this.send = send;
         this.now = options.now ?? (() => Date.now());
-        this.intervalMs = options.intervalMs ?? useViroThrottledWrite_1.VIRO_REPLICATION_WRITE_INTERVAL_MS;
-        this.perSecond = options.perSecond ?? exports.STUDIO_SHARED_WRITES_PER_SECOND;
-        this.burst = options.burst ?? exports.STUDIO_SHARED_WRITE_BURST;
+        this.intervalMs = options.intervalMs ?? VIRO_REPLICATION_WRITE_INTERVAL_MS;
+        this.perSecond = options.perSecond ?? STUDIO_SHARED_WRITES_PER_SECOND;
+        this.burst = options.burst ?? STUDIO_SHARED_WRITE_BURST;
         this.tokens = this.burst;
         this.refilledAt = this.now();
     }
@@ -107,4 +104,3 @@ class StudioReplicationOutbox {
         this.timer = null;
     }
 }
-exports.StudioReplicationOutbox = StudioReplicationOutbox;

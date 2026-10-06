@@ -1,6 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.describeCanvasSurface = describeCanvasSurface;
 /**
  * React-side snapshot of the generic renderer-surface concept.
  *
@@ -8,7 +5,7 @@ exports.describeCanvasSurface = describeCanvasSurface;
  * CanvasSurface id as the native VROEngineHandle. Native handle exchange stays
  * behind the bridge.
  */
-function describeCanvasSurface(surface, kind) {
+export function describeCanvasSurface(surface, kind) {
     if (!surface)
         return null;
     return {

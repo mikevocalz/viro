@@ -1,6 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.useViroToneMapping = useViroToneMapping;
 /**
  * Scene-level tone curve, shared by ViroScene.web and ViroARScene.web.
  *
@@ -14,11 +11,11 @@ exports.useViroToneMapping = useViroToneMapping;
  *
  * Undefined leaves the scene as built, which is the curve on.
  */
-const react_1 = require("react");
-const ViroWebContext_1 = require("./ViroWebContext");
-function useViroToneMapping(enabled) {
-    const scene = (0, ViroWebContext_1.useViroScene)();
-    (0, react_1.useEffect)(() => {
+import { useEffect } from "react";
+import { useViroScene } from "./ViroWebContext";
+export function useViroToneMapping(enabled) {
+    const scene = useViroScene();
+    useEffect(() => {
         if (!scene || enabled === undefined)
             return;
         scene.setToneMappingEnabled(enabled);
