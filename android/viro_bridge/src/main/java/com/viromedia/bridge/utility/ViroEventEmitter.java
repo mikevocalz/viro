@@ -103,10 +103,14 @@ public final class ViroEventEmitter {
         // drops ClickUp, leaving pointer capture and consumer drag state held.
         // Hover is also source-specific: merging both controllers can discard
         // an enter/exit edge from one hand.
+        // Drag positions are the stroke data itself: a batch that outlives a
+        // frame collapses every intermediate hit to the latest one, so a slow
+        // JS queue turns a drawn line into a begin/end dot.
         @Override
         public boolean canCoalesce() {
             return !ViroEvents.ON_CLICK.equals(mEventName)
-                    && !ViroEvents.ON_HOVER.equals(mEventName);
+                    && !ViroEvents.ON_HOVER.equals(mEventName)
+                    && !ViroEvents.ON_DRAG.equals(mEventName);
         }
 
         @Override
