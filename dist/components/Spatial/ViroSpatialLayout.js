@@ -34,6 +34,12 @@ function fallbackNode(children, fallback = "inline") {
         ? null
         : React.createElement(React.Fragment, null, children);
 }
+let windowScene;
+function defaultWindowScene(window) {
+    // The initializer's native type must not change while mounted, so reuse one.
+    windowScene ??= window.createWindowScene?.();
+    return windowScene;
+}
 export function getViroSpatialLayoutSupport() {
     const resolved = loadMetaSpatialModules();
     return {
@@ -52,7 +58,10 @@ export function ViroSpatialSceneProvider(props) {
     if (!resolved?.layout?.SpatialSceneProvider) {
         return React.createElement(React.Fragment, null, children);
     }
-    return React.createElement(resolved.layout.SpatialSceneProvider, rest, children);
+    // Meta's provider throws "does not allow configless initialization" without
+    // an initializer, so default to the Window scene that SpatialWindow needs.
+    const initializer = rest.initializer ?? defaultWindowScene(resolved.window);
+    return React.createElement(resolved.layout.SpatialSceneProvider, { ...rest, initializer }, children);
 }
 export function ViroSpatialWindow(props) {
     const { children, fallback = "inline", label, windowWidth, windowHeight, ...rest } = props;
