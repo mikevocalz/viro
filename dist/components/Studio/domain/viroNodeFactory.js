@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Platform } from "react-native";
 import { Viro3DObject } from "../../Viro3DObject";
 import { ViroImage } from "../../ViroImage";
 import { ViroText } from "../../ViroText";
@@ -10,6 +11,10 @@ import { DragConfiguration } from "./dragConfiguration";
 import { buildViroPhysicsBody, isPhysicsWorldEnabled, parsePhysicsBodyConfig, shouldUseKinematicPhysicsDrag, } from "./physicsConfig";
 import { isTapToPlaceAsset } from "./placementStore";
 import { studioAssetPosition } from "./assetPosition";
+// Android (phones and Quest) loads fonts from /system/fonts alone, which has no
+// Arial. Naming the system sans-serif renders what the failed Arial lookup fell
+// back to anyway, without the lookup and its warning on every text.
+export const STUDIO_TEXT_FONT_FAMILY = Platform.OS === "android" ? "sans-serif" : "Arial";
 /**
  * The asset's onError: logged as before, and handed to the host when it asked.
  * Before this the console was the only place a failure went, and a host's error
@@ -191,7 +196,7 @@ const VariableText = ({ asset, config, store, notifyPhysicsDrag, onCollision, no
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [store, template]);
     return (<ViroText {...(nodeRef ? { ref: nodeRef } : {})} text={text} position={position ?? config.position} rotation={rotation ?? config.rotation} scale={config.scale} dragType={config.dragType} animation={config.animation} onClick={config.onClick} {...(config.onNodeHandle ? { onNodeHandle: config.onNodeHandle } : {})} {...(visible === undefined ? {} : { visible })} style={{
-            fontFamily: "Arial",
+            fontFamily: STUDIO_TEXT_FONT_FAMILY,
             fontSize: 20,
             color: "#FFFFFF",
             textAlign: "center",

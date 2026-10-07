@@ -67,16 +67,14 @@ const _opQueue: VRNavigatorOp[] = [];
 let _opCounter = 0;
 
 // ── VR active flag ────────────────────────────────────────────────────────────
-// True while VRActivity is running. Set to true just before launchVRScene(),
-// set to false by exitVRScene(). The AppState-based relaunch in
-// ViroXRSceneNavigator checks this so it only fires for system-level
-// backgrounding (Quest menu / home), not for explicit exits.
+// True from launchVRScene() until the headset view closes, whether through
+// exitVRScene() or the OS ending VRActivity (ViroQuestEntryPoint clears it when
+// its surface unmounts). Nothing relaunches VR when it goes false.
 //
 // Horizon can also finish VRActivity itself — Meta-button quit confirm, OS
-// reclaim — without exitVRScene() ever running. VRActivity.onDestroy emits
-// "VRLauncher.vrDestroyed" for exactly that path; without this subscription
-// the flag stayed true, the AppState relaunch resurrected VRActivity on the
-// next foreground edge, and the user had to quit the OS dialog repeatedly.
+// reclaim — without the entry point's unmount necessarily running first.
+// VRActivity.onDestroy emits "VRLauncher.vrDestroyed" for exactly that path,
+// so the flag cannot outlive the activity it describes.
 
 let _vrActive = false;
 
