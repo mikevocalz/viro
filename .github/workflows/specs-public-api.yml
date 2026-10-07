@@ -52,5 +52,9 @@ jobs:
         run: npx tsc --noEmit
       - name: Specs compiler regression
         run: npx jest __test__/ViroSpecsCompiler.test.tsx --runInBand --config jest.specs.config.cjs
+      - name: Static Specs compiler regression
+        run: npm run test:specs-compiler
       - name: CLI syntax
-        run: node --check bin/viro-specs.cjs
+        run: |
+          node --check bin/viro-specs.cjs
+          node --check bin/viro-specs-compile.cjs

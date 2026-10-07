@@ -430,6 +430,7 @@ function compile(sourceText, entryPath) {
   const elementStack = [];
   let ordinal = 0;
   let specsDepth = 0;
+  let specsRoots = 0;
 
   traverse(ast, {
     JSXElement: {
@@ -439,6 +440,7 @@ function compile(sourceText, entryPath) {
 
         if (name === "ViroSpecsScene") {
           specsDepth += 1;
+          specsRoots += 1;
           elementStack.push({
             name,
             id: null,
@@ -848,6 +850,9 @@ function compile(sourceText, entryPath) {
     },
   });
 
+  if (specsRoots === 0) diagnostics.push("No ViroSpecsScene root found. Native/dynamic scenes must provide a static SPECS entry before compilation.");
+  else if (nodes.length === 0 && polylines.length === 0) diagnostics.push("ViroSpecsScene contains no supported static scene content.");
+
   return {
     version: 1,
     source: path.relative(process.cwd(), entryPath),
@@ -883,11 +888,20 @@ export class ViroGeneratedSceneHost extends BaseScriptComponent {
   @input animationHostObject: SceneObject;
   @input navigationHostObject: SceneObject;
 
+  private teardown: (() => void) | null = null;
+
   onAwake(): void {
-    this.createEvent("OnStartEvent").bind(() => this.startGeneratedScene());
+    this.createEvent("OnStartEvent").bind(() => this.restartGeneratedScene());
+    this.createEvent("OnDestroyEvent").bind(() => this.stopGeneratedScene());
   }
 
-  private startGeneratedScene(): void {
+  stopGeneratedScene(): void {
+    this.teardown?.();
+    this.teardown = null;
+  }
+
+  restartGeneratedScene(): void {
+    this.stopGeneratedScene();
     const runtime = this.runtimeHostObject.getComponent(
       ViroSpecsRuntimeHost.getTypeName()
     ) as ViroSpecsRuntimeHost | null;
@@ -905,6 +919,16 @@ export class ViroGeneratedSceneHost extends BaseScriptComponent {
       throw new Error("Generated Viro scene requires ViroSpecsRuntimeHost.");
     }
 
+    if (GENERATED_INTERACTIONS.length && !interaction) throw new Error("Generated Viro interactions require ViroSpecsInteractionHost.");
+    if (GENERATED_ANIMATIONS.length && !animation) throw new Error("Generated Viro animations require ViroSpecsAnimationHost.");
+    if (GENERATED_POLYLINES.length && !navigation) throw new Error("Generated Viro polylines require ViroSpecsNavigationHost.");
+
+    this.teardown = () => {
+      if (interaction && !isNull(interaction)) for (const item of GENERATED_INTERACTIONS) interaction.remove(item.nodeId);
+      if (animation && !isNull(animation)) for (const item of GENERATED_ANIMATIONS) animation.stop(item.nodeId);
+      if (navigation && !isNull(navigation)) navigation.clearRoute();
+      if (!isNull(runtime)) runtime.clear();
+    };
     runtime.applySceneSnapshot(GENERATED_SCENE);
 
     if (interaction) {
