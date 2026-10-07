@@ -144,3 +144,15 @@ assert.match(generated, /interaction\.setInteractable/);
 assert.match(generated, /interaction\.setManipulationEnabled/);
 assert.match(generated, /animation\.play/);
 assert.match(generated, /navigation\.presentPolyline/);
+
+for (const [source, expected] of [
+  ['<ViroARScene><ViroText text="Native only" /></ViroARScene>', /No ViroSpecsScene/],
+  ['<ViroSpecsScene />', /no supported static scene content/],
+]) {
+  assert.ok(compile(source, "/tmp/unsupported.tsx").diagnostics.some(d => expected.test(d)));
+}
+assert.match(generated, /OnDestroyEvent/);
+assert.match(generated, /interaction\.remove/);
+assert.match(generated, /animation\.stop/);
+assert.match(generated, /navigation\.clearRoute/);
+assert.match(generated, /runtime\.clear/);
