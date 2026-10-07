@@ -585,6 +585,7 @@ export type ViroGeospatialAnchorProvider = ViroProvider;
  * Maps to GARSessionEarthState (iOS) and Earth.EarthState (Android)
  */
 export type ViroEarthTrackingState = "Enabled" | "Paused" | "Stopped" | "Localizing";
+export type ViroRecordingStatus = "None" | "Recording" | "IOError" | "Unsupported";
 /**
  * VPS (Visual Positioning System) availability at a location.
  */

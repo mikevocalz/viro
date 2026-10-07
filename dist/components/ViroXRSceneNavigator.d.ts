@@ -1,4 +1,9 @@
 import * as React from "react";
+import { ViewProps } from "react-native";
+import { ImmersiveSpaceStyle } from "./VisionOS/ViroVisionOSModule";
+type SceneFactory = {
+    scene: () => React.JSX.Element;
+};
 /**
  * Cross-reality scene navigator. Picks the right underlying navigator at runtime:
  *
@@ -29,4 +34,64 @@ import * as React from "react";
  * ViroSceneNavigator does not take them. `passthroughEnabled`, `vrModeEnabled`
  * and `handTrackingEnabled` are Quest-only and go over the bridge alone.
  */
-export declare const ViroXRSceneNavigator: React.ForwardRefExoticComponent<any>;
+export declare const ViroXRSceneNavigator: React.ForwardRefExoticComponent<ViewProps & {
+    /**
+     * Scene used on both AR and VR platforms when no platform-specific scene is provided.
+     * Most apps want a different scene per platform — pass `arInitialScene` and
+     * `vrInitialScene` instead in that case.
+     */
+    initialScene?: SceneFactory;
+    /** Scene mounted on iOS / non-Quest Android (rendered via ViroARSceneNavigator). */
+    arInitialScene?: SceneFactory;
+    /**
+     * Scene mounted on Meta Quest (rendered via ViroVRSceneNavigator in VRActivity).
+     * On Quest, this scene is forwarded to VRActivity via VRQuestNavigatorBridge
+     * rather than rendered inline, because OpenXR exclusive display requires the
+     * VR intent category on the host Activity.
+     *
+     * The scene root may be either:
+     *  - `ViroScene`   → fully-virtual VR.
+     *  - `ViroARScene` → mixed reality: passthrough is enabled automatically and
+     *    real-time plane detection (XR_EXT_plane_detection, Quest 3 / 3S) drives
+     *    `onAnchorFound` and `ViroARPlane`, exactly as on phone AR. A single
+     *    AR-rooted `initialScene` therefore runs on phones (ARCore) and Quest (OpenXR)
+     *    with no per-platform changes. See docs/QUEST_SETUP.md §7b.
+     */
+    vrInitialScene?: SceneFactory;
+    worldAlignment?: "Gravity" | "GravityAndHeading" | "Camera";
+    autofocus?: boolean;
+    videoQuality?: "High" | "Low";
+    numberOfTrackedImages?: number;
+    /** AR depth/people occlusion. Flows via ...rest to ViroARSceneNavigator. */
+    occlusionMode?: "peopleOnly" | "depthBased";
+    vrModeEnabled?: boolean;
+    passthroughEnabled?: boolean;
+    handTrackingEnabled?: boolean;
+    /**
+     * Vertical origin for OpenXR headsets: `"eye"` (default, origin at head
+     * height — upstream behaviour) or `"floor"` (a node at y=0 sits on the
+     * physical floor). See ViroVRSceneNavigator.trackingOrigin.
+     */
+    trackingOrigin?: "eye" | "floor";
+    onExitViro?: () => void;
+    /**
+     * Immersion style used when the ImmersiveSpace is opened on visionOS.
+     *
+     *  - `"mixed"` (default) — virtual content blended over passthrough. This is the
+     *    closest analogue to phone AR, and the right default for a scene that expects
+     *    to sit in the user's room.
+     *  - `"full"` — fully virtual, passthrough hidden.
+     *  - `"progressive"` — graduated immersion, dialled by the Digital Crown.
+     *
+     * Ignored on every other platform.
+     */
+    visionOSImmersionStyle?: ImmersiveSpaceStyle;
+    viroAppProps?: any;
+    hdrEnabled?: boolean;
+    pbrEnabled?: boolean;
+    bloomEnabled?: boolean;
+    shadowsEnabled?: boolean;
+    multisamplingEnabled?: boolean;
+    debug?: boolean;
+} & React.RefAttributes<unknown>>;
+export {};

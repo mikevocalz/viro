@@ -17,6 +17,8 @@ import { findNodeHandle, NativeModules, Platform, requireNativeComponent, } from
 // see ViroAssetSource.ts for why, and what it falls back to.
 import { resolveViroAssetSource as resolveAssetSource } from "./Utilities/ViroAssetSource";
 import { checkMisnamedProps } from "./Utilities/ViroProps";
+import { isVisionOS } from "./Utilities/ViroPlatform";
+import { warnUnsupported } from "./Utilities/ViroUnsupported";
 export class ViroSoundField extends React.Component {
     _component = null;
     _onFinish = (event) => {
@@ -29,6 +31,13 @@ export class ViroSoundField extends React.Component {
         this._component?.setNativeProps(nativeProps);
     };
     render() {
+        // ViroSoundField's view manager lives in VRTSound.mm, which the podspec excludes from the
+        // visionOS renderer, so React has no view config for it and mounting fails with
+        // "View config not found".
+        if (isVisionOS) {
+            warnUnsupported("ViroSoundField", "Apple Vision Pro", "Ambisonic audio is not part of the visionOS renderer.");
+            return null;
+        }
         checkMisnamedProps("ViroSoundField", this.props);
         var soundSrc = this.props.source;
         if (typeof soundSrc === "number") {

@@ -11,6 +11,12 @@ export type CanvasPanelOpts<P extends CanvasProducer> = {
     lightingModel?: "Constant" | "Lambert" | "Blinn" | "Phong" | "PBR";
     fallbackColor?: string;
     materialName?: string;
+    /**
+     * Material blend mode. Defaults to the bridge's Alpha, which composites
+     * the surface's alpha against the scene behind — the see-through panel
+     * look on headsets. "None" renders the texture fully opaque.
+     */
+    blendMode?: "None" | "Alpha" | "Add" | "Subtract" | "Multiply" | "Screen";
     /** Producer initialized; native Surface/frame readiness is exposed by the runtime. */
     onReady?: (state: CanvasPanelState<P>) => void;
     onError?: (error: Error) => void;

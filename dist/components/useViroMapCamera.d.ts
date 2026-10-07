@@ -79,7 +79,7 @@ export declare function useViroMapCamera(options?: ViroMapCameraOptions): {
         orthographicScale: number;
     };
     /** Spread onto the overlay View, together with onLayout. */
-    panHandlers: any;
+    panHandlers: import("react-native").GestureResponderHandlers;
     onLayout: (e: LayoutChangeEvent) => void;
     controls: {
         /** Drag the map by a screen delta in pixels. */

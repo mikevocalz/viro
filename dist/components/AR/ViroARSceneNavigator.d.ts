@@ -11,7 +11,7 @@
  */
 import * as React from "react";
 import { ViewProps } from "react-native";
-import { ViroWorldOrigin, ViroProvider, ViroHostCloudAnchorResult, ViroSharedFrameResult, ViroCloudAnchorStatus, ViroResolveCloudAnchorResult, ViroFinishScanResult, ViroScanDiagnostics, ViroScanStatus, ViroWorldMeshSnapshotResult, ViroWorldMeshLoadResult, ViroGeospatialSupportResult, ViroLocationAccuracyResult, ViroEarthTrackingStateResult, ViroGeospatialPoseResult, ViroVPSAvailabilityResult, ViroCreateGeospatialAnchorResult, ViroQuaternion, ViroSemanticSupportResult, ViroSemanticLabelFractionsResult, ViroSemanticLabelFractionResult, ViroSemanticLabel, ViroMonocularDepthPreferenceResult, ViroDepthOcclusionSupportResult, ViroGeospatialSetupStatusResult } from "../Types/ViroEvents";
+import { ViroWorldOrigin, ViroProvider, ViroHostCloudAnchorResult, ViroSharedFrameResult, ViroCloudAnchorStatus, ViroResolveCloudAnchorResult, ViroFinishScanResult, ViroScanDiagnostics, ViroScanStatus, ViroWorldMeshSnapshotResult, ViroWorldMeshLoadResult, ViroGeospatialSupportResult, ViroLocationAccuracyResult, ViroEarthTrackingStateResult, ViroGeospatialPoseResult, ViroVPSAvailabilityResult, ViroCreateGeospatialAnchorResult, ViroQuaternion, ViroSemanticSupportResult, ViroSemanticLabelFractionsResult, ViroSemanticLabelFractionResult, ViroSemanticLabel, ViroMonocularDepthPreferenceResult, ViroDepthOcclusionSupportResult, ViroGeospatialSetupStatusResult, ViroRecordingStatus } from "../Types/ViroEvents";
 import { Viro3DPoint, ViroNativeRef, ViroScene, ViroSceneDictionary } from "../Types/ViroUtils";
 import { ViroWorldMeshConfig, ViroWorldMeshStats, ViroWorldMeshStatsResult } from "../Types/ViroWorldMesh";
 /**
@@ -156,13 +156,11 @@ type Props = ViewProps & {
     /**
      * Use the front (selfie) camera as the AR session background.
      *
-     * Requires the optional `@reactvision/react-viro-face-tracking` package to be
-     * installed — it provides the native front-camera AR configuration and, on
-     * iOS, declares TrueDepth usage. Without it, this prop has no effect.
+     * On iOS, requires the optional `@reactvision/react-viro-face-tracking` package,
+     * which provides the native TrueDepth configuration. On Android, front-camera
+     * AR is provided by core and does not require that package.
      *
-     * On iOS the package uses the front TrueDepth camera; on Android it uses
-     * ARCore Augmented Faces mode. World tracking, plane detection, and LiDAR are
-     * unavailable in this mode.
+     * World tracking, plane detection, and LiDAR are unavailable in this mode.
      *
      * For a plain selfie feed without face tracking (no TrueDepth), use
      * `ViroCameraTexture` with `cameraPosition="front"` instead.
@@ -431,9 +429,10 @@ export declare class ViroARSceneNavigator extends React.Component<Props, State> 
      */
     _stopRecording: () => Promise<any>;
     /**
-     * The current recording state: "None" | "Recording" | "IOError" | "Unsupported".
+     * The current recording state. Both bridges answer in the same vocabulary; see
+     * {@link ViroRecordingStatus}.
      */
-    _getRecordingStatus: () => Promise<any>;
+    _getRecordingStatus: () => Promise<ViroRecordingStatus>;
     _hostCloudAnchor: (anchorId: string, ttlDays?: number) => Promise<ViroHostCloudAnchorResult>;
     /**
      * Resolve a cloud anchor by its ID.
@@ -755,7 +754,7 @@ export declare class ViroARSceneNavigator extends React.Component<Props, State> 
         stopVideoRecording: () => Promise<any>;
         startRecording: (outputDir: string) => Promise<any>;
         stopRecording: () => Promise<any>;
-        getRecordingStatus: () => Promise<any>;
+        getRecordingStatus: () => Promise<ViroRecordingStatus>;
         takeScreenshot: (fileName: string, saveToCameraRoll: boolean) => Promise<any>;
         resetARSession: (resetTracking: any, removeAnchors: any) => void;
         setWorldOrigin: (worldOrigin: ViroWorldOrigin) => void;
@@ -823,7 +822,7 @@ export declare class ViroARSceneNavigator extends React.Component<Props, State> 
         stopVideoRecording: () => Promise<any>;
         startRecording: (outputDir: string) => Promise<any>;
         stopRecording: () => Promise<any>;
-        getRecordingStatus: () => Promise<any>;
+        getRecordingStatus: () => Promise<ViroRecordingStatus>;
         takeScreenshot: (fileName: string, saveToCameraRoll: boolean) => Promise<any>;
         resetARSession: (resetTracking: any, removeAnchors: any) => void;
         setWorldOrigin: (worldOrigin: ViroWorldOrigin) => void;
