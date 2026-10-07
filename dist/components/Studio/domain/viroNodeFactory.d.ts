@@ -3,6 +3,7 @@ import { StudioAnimation, StudioAsset, StudioSceneMeta, ViroAnimationProp } from
 import { SequenceRuntimeContext } from "./sceneNavigationHandler";
 import { type DragSurface } from "./dragConfiguration";
 import type { Vec3 } from "../colocation/frameMath";
+export declare const STUDIO_TEXT_FONT_FAMILY: string;
 type SceneNavigator = any;
 /** A drag reports its world position; the scene tracks and shares it. */
 type DragNotify = (assetId: string, worldPosition?: Vec3) => void;

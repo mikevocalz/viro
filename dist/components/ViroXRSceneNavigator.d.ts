@@ -14,7 +14,8 @@ type SceneFactory = {
  *  - **Meta Quest** → launches VRActivity via `VRLauncher.launchVRScene()` and
  *    forwards all navigator operations (push/pop/etc.) to the
  *    `ViroVRSceneNavigator` running there via `VRQuestNavigatorBridge`.
- *    Render output is null — VRActivity owns the display.
+ *    VRActivity owns the display; what renders here is the app's 2D panel
+ *    (`renderQuestPanel`).
  *
  * Pass `arInitialScene` / `vrInitialScene` when the AR and VR scenes differ.
  * When only `initialScene` is provided it is used for both modes.
@@ -74,6 +75,16 @@ export declare const ViroXRSceneNavigator: React.ForwardRefExoticComponent<ViewP
      */
     trackingOrigin?: "eye" | "floor";
     onExitViro?: () => void;
+    /**
+     * What the app's 2D panel shows on Meta Quest, where the scene runs in the
+     * headset view instead. Horizon OS brings the panel forward whenever the
+     * headset view closes: the Back button, quitting from the system menu, going
+     * Home or opening another app's panel. The headset view is not reopened on
+     * its own, because none of those can be told apart here from the wearer
+     * reopening the app. Call `enter` to reopen it. Defaults to an "Enter
+     * immersive view" button.
+     */
+    renderQuestPanel?: (enter: () => void) => React.ReactNode;
     /**
      * Immersion style used when the ImmersiveSpace is opened on visionOS.
      *

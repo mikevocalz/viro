@@ -246,6 +246,24 @@ const withViroManifest = (config) => withAndroidManifest(config, async (newConfi
         });
     }
     // Add Google Cloud API key for ARCore Cloud Anchors and Geospatial API if configured
+    // Derive active XR modes from the config at apply-time.
+    // `viroPluginConfig` (module-level) is updated by withBranchAndroid's
+    // withDangerousMod callback, which runs *after* withAndroidManifest
+    // callbacks — so it is still ["AR","GVR"] here. Read from config.plugins
+    // directly instead.
+    const activeXrModes = (() => {
+        const p = (newConfig.plugins ?? []).find((plugin) => Array.isArray(plugin) && plugin[0] === "@reactvision/react-viro");
+        if (Array.isArray(p) && p[1]?.android?.xRMode) {
+            const xrMode = p[1].android.xRMode;
+            return Array.isArray(xrMode) ? xrMode : [xrMode];
+        }
+        return viroPluginConfig;
+    })();
+    const questBuild = activeXrModes.includes("QUEST");
+    const questFeatures = Array.isArray(viroPlugin)
+        ? viroPlugin[1]?.android?.questFeatures
+        : undefined;
+    const questPassthroughCamera = questFeatures?.passthroughCamera !== false;
     if (Array.isArray(viroPlugin) && viroPlugin.length > 1) {
         const pluginOptions = viroPlugin[1];
         // Resolve unified provider prop; old geospatialAnchorProvider overrides for backward compat.
@@ -287,8 +305,11 @@ const withViroManifest = (config) => withAndroidManifest(config, async (newConfi
                 },
             });
         }
-        // Add location permissions when geospatial provider is active
-        if (geospatialAnchorProvider === "arcore" || geospatialAnchorProvider === "reactvision") {
+        // Add location permissions when geospatial provider is active. A Quest
+        // has no GPS, so a Quest build (headset-only, see android.hardware.vr.headtracking
+        // below) would declare location it can never use.
+        if ((geospatialAnchorProvider === "arcore" || geospatialAnchorProvider === "reactvision") &&
+            !questBuild) {
             const existingPermissions = (contents.manifest["uses-permission"] || [])
                 .map((p) => p.$?.["android:name"]);
             if (!existingPermissions.includes("android.permission.ACCESS_FINE_LOCATION")) {
@@ -303,19 +324,6 @@ const withViroManifest = (config) => withAndroidManifest(config, async (newConfi
             }
         }
     }
-    // Derive active XR modes from the config at apply-time.
-    // `viroPluginConfig` (module-level) is updated by withBranchAndroid's
-    // withDangerousMod callback, which runs *after* withAndroidManifest
-    // callbacks — so it is still ["AR","GVR"] here. Read from config.plugins
-    // directly instead.
-    const activeXrModes = (() => {
-        const p = (newConfig.plugins ?? []).find((plugin) => Array.isArray(plugin) && plugin[0] === "@reactvision/react-viro");
-        if (Array.isArray(p) && p[1]?.android?.xRMode) {
-            const xrMode = p[1].android.xRMode;
-            return Array.isArray(xrMode) ? xrMode : [xrMode];
-        }
-        return viroPluginConfig;
-    })();
     if (activeXrModes.includes("GVR") ||
         activeXrModes.includes("OVR_MOBILE")) {
         contents?.manifest?.application?.[0]?.activity[0]["intent-filter"][0].category.push({
@@ -354,15 +362,26 @@ const withViroManifest = (config) => withAndroidManifest(config, async (newConfi
         contents.manifest.queries = queries;
     }
     contents.manifest["uses-feature"] = [];
-    contents.manifest["uses-permission"].push({
-        $: {
-            "android:name": "android.permission.CAMERA",
-        },
-    });
+    // On a Quest build the camera is only the passthrough Camera2 feed, and
+    // not every Quest has one, so the feature is never required there.
+    const hasCameraPermission = contents.manifest["uses-permission"].some((p) => p.$?.["android:name"] === "android.permission.CAMERA");
+    if (!hasCameraPermission && (!questBuild || questPassthroughCamera)) {
+        contents.manifest["uses-permission"].push({
+            $: {
+                "android:name": "android.permission.CAMERA",
+            },
+        });
+    }
     contents.manifest["uses-feature"].push({
-        $: {
-            "android:name": "android.hardware.camera",
-        },
+        $: questBuild
+            ? {
+                "android:name": "android.hardware.camera",
+                "android:required": "false",
+                "tools:replace": "required",
+            }
+            : {
+                "android:name": "android.hardware.camera",
+            },
     });
     contents.manifest["uses-feature"].push({
         $: {
@@ -421,23 +440,29 @@ const withViroManifest = (config) => withAndroidManifest(config, async (newConfi
                 "android:required": "false",
             },
         });
-        // Required when com.oculus.permission.EYE_TRACKING is declared.
+        // Required when com.oculus.permission.EYE_TRACKING is declared. The
+        // viro_renderer AAR declares both, so opting out has to remove them
+        // from the merged manifest rather than leave them out here.
+        const eyeTracking = questFeatures?.eyeTracking !== false;
         contents.manifest["uses-feature"].push({
-            $: {
-                "android:name": "oculus.software.eye_tracking",
-                "android:required": "false",
-            },
+            $: eyeTracking
+                ? { "android:name": "oculus.software.eye_tracking", "android:required": "false" }
+                : { "android:name": "oculus.software.eye_tracking", "tools:node": "remove" },
         });
         const existingPermissions = (contents.manifest["uses-permission"] || [])
             .map((p) => p.$?.["android:name"]);
-        if (!existingPermissions.includes("com.oculus.permission.HAND_TRACKING")) {
+        // Horizon OS logs com.oculus.permission.HAND_TRACKING as deprecated and
+        // asks for this name instead.
+        if (!existingPermissions.includes("horizonos.permission.HAND_TRACKING")) {
             contents.manifest["uses-permission"].push({
-                $: { "android:name": "com.oculus.permission.HAND_TRACKING" },
+                $: { "android:name": "horizonos.permission.HAND_TRACKING" },
             });
         }
         if (!existingPermissions.includes("com.oculus.permission.EYE_TRACKING")) {
             contents.manifest["uses-permission"].push({
-                $: { "android:name": "com.oculus.permission.EYE_TRACKING" },
+                $: eyeTracking
+                    ? { "android:name": "com.oculus.permission.EYE_TRACKING" }
+                    : { "android:name": "com.oculus.permission.EYE_TRACKING", "tools:node": "remove" },
             });
         }
         // Spatial Data / Scene permissions — required for the Meta OpenXR runtime
@@ -451,7 +476,7 @@ const withViroManifest = (config) => withAndroidManifest(config, async (newConfi
             // Meta Passthrough Camera API (Quest 3 / 3S, Horizon OS v74+): grants the
             // app the headset RGB cameras via Camera2, used by ViroObjectDetector to
             // run on-device object detection over passthrough. Runtime-granted.
-            "horizonos.permission.HEADSET_CAMERA",
+            ...(questPassthroughCamera ? ["horizonos.permission.HEADSET_CAMERA"] : []),
             // Co-location (CL-H). Without this the Meta runtime does not merely
             // refuse the calls — it hides the extension from
             // xrEnumerateInstanceExtensionProperties entirely, logging
@@ -459,7 +484,12 @@ const withViroManifest = (config) => withAndroidManifest(config, async (newConfi
             // missing uses-permission string ...". So the app sees a headset that
             // does not support shared anchors, which is indistinguishable from an
             // older device. Found on a Quest 3; it is not visible from the code.
-            "horizonos.permission.IMPORT_EXPORT_IOT_MAP_DATA",
+            ...(questFeatures?.colocation !== false
+                ? ["horizonos.permission.IMPORT_EXPORT_IOT_MAP_DATA"]
+                : []),
+            // Hidden the same way without this: XR_META_boundary_visibility, which
+            // the renderer uses to hide the boundary while passthrough is on.
+            "com.oculus.permission.BOUNDARY_VISIBILITY",
         ];
         for (const perm of sceneAnchorPerms) {
             if (!existingPermissions.includes(perm)) {
@@ -593,8 +623,7 @@ class VRActivity : ReactActivity() {
     // single MainActivity.onPause that the NEW_TASK ordering schedules late.
     // Without one-shot semantics, every subsequent foreign pause would re-fire
     // ReactHostImpl.onHostResume, which re-fires every LifecycleEventListener
-    // (AppState → "active" → ViroXRSceneNavigator's AppState handler calls
-    // launchVRScene() again → visible scene flicker).
+    // and sends JS a spurious AppState "active".
     private var expectingForeignPause = false
 
     override fun getMainComponentName(): String = "VRQuestScene"
@@ -805,6 +834,24 @@ class VRActivity : ReactActivity() {
                     },
                 });
             }
+        }
+        // Horizon OS logs that an app without this "must fix this to continue to
+        // access this SDK" when it first reads a Horizon SDK manager. Meta now
+        // documents <metavr:uses-metavr-sdk> and still accepts this older element,
+        // which headsets on an OS from before the rename also read. 69 is the
+        // first version with hybrid (panel + immersive) apps.
+        const manifest = config.modResults.manifest;
+        manifest.$["xmlns:horizonos"] = "http://schemas.horizonos/sdk";
+        if (!manifest["horizonos:uses-horizonos-sdk"]) {
+            const minSdkVersion = props?.android?.questHorizonOsSdk?.minSdkVersion ?? 69;
+            manifest["horizonos:uses-horizonos-sdk"] = [
+                {
+                    $: {
+                        "horizonos:minSdkVersion": String(minSdkVersion),
+                        "horizonos:targetSdkVersion": String(props?.android?.questHorizonOsSdk?.targetSdkVersion ?? minSdkVersion),
+                    },
+                },
+            ];
         }
         return config;
     });

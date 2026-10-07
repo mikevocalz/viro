@@ -11,4 +11,5 @@
  */
 import * as React from "react";
 export type { ViroDetectorMode, ViroDetectionBoundingBox, ViroDetectedObject, ViroDetectionEvent, ViroDetectorReadyEvent, ViroDetectorErrorEvent, } from "./ViroObjectDetector";
+export declare const VIRO_OBJECT_DETECTOR_UNAVAILABLE_ERROR: string;
 export declare const ViroObjectDetector: React.FC<any>;

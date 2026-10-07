@@ -574,12 +574,34 @@ describe("the scene root", () => {
     );
     expect(source).toMatch(/colocation\.attachScene\([^;]*sceneMount\s*\);/);
     expect(source).toMatch(
-      /if \(!studioSceneRootsInAR\(colocationFrame, sceneMount, rootsOutsideAR\)\) \{\s*return \(\s*<ViroScene/
+      /const rootsInAR = studioSceneRootsInAR\(\s*colocationFrame,\s*sceneMount,\s*rootsOutsideAR\s*\);/
     );
+    expect(source).toMatch(/if \(!rootsInAR\) \{\s*return \(\s*<ViroScene/);
     expect(source).not.toMatch(/if \(isQuest\) \{\s*return \(\s*<ViroScene/);
     // visionOS has to travel with Quest here: its ImmersiveSpace cannot host a
     // ViroARScene either, and ViroARScene renders null there.
     expect(source).toMatch(/const rootsOutsideAR = isQuest \|\| isVisionOS;/);
     expect(source).not.toMatch(/return isQuest \? \(\s*<ViroScene/);
+  });
+
+  it("keeps plane components out of a ViroScene root", () => {
+    // VRTARPlane casts its scene to VRTARScene, so a plane under ViroScene
+    // crashed the app on Quest.
+    const source = fs.readFileSync(
+      path.resolve(
+        __dirname,
+        "..",
+        "components",
+        "Studio",
+        "StudioARScene.tsx"
+      ),
+      "utf-8"
+    );
+    expect(source).toMatch(
+      /const renderAssets = \(\) => \{\s*if \(!rootsInAR\) return <>\{renderedPlaneAssets\}<\/>;/
+    );
+    expect(source).toMatch(
+      /const renderOriginPicker = \(\) => \{\s*if \(!rootsInAR\) return null;/
+    );
   });
 });
