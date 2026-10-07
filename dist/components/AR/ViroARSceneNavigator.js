@@ -475,7 +475,8 @@ export class ViroARSceneNavigator extends React.Component {
         return await ViroARSceneNavigatorModule.stopRecording(findNodeHandle(this));
     };
     /**
-     * The current recording state: "None" | "Recording" | "IOError" | "Unsupported".
+     * The current recording state. Both bridges answer in the same vocabulary; see
+     * {@link ViroRecordingStatus}.
      */
     _getRecordingStatus = async () => {
         return await ViroARSceneNavigatorModule.getRecordingStatus(findNodeHandle(this));

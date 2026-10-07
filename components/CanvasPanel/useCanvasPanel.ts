@@ -15,6 +15,12 @@ export type CanvasPanelOpts<P extends CanvasProducer> = {
   lightingModel?: "Constant" | "Lambert" | "Blinn" | "Phong" | "PBR";
   fallbackColor?: string;
   materialName?: string;
+  /**
+   * Material blend mode. Defaults to the bridge's Alpha, which composites
+   * the surface's alpha against the scene behind — the see-through panel
+   * look on headsets. "None" renders the texture fully opaque.
+   */
+  blendMode?: "None" | "Alpha" | "Add" | "Subtract" | "Multiply" | "Screen";
   /** Producer initialized; native Surface/frame readiness is exposed by the runtime. */
   onReady?: (state: CanvasPanelState<P>) => void;
   onError?: (error: Error) => void;
@@ -38,7 +44,8 @@ export function useCanvasPanel<P extends CanvasProducer>(opts: CanvasPanelOpts<P
   latest.current = opts;
   const updateClock = React.useRef<(() => void) | null>(null);
   const { resolution: { width, height }, sRGB = true, androidRoute = "ahb",
-    materialName: override, lightingModel = "Constant", fallbackColor = "#ffffff" } = opts;
+    materialName: override, lightingModel = "Constant", fallbackColor = "#ffffff",
+    blendMode } = opts;
 
   React.useEffect(() => {
     let alive = true;
@@ -97,6 +104,7 @@ export function useCanvasPanel<P extends CanvasProducer>(opts: CanvasPanelOpts<P
       ViroMaterials.createMaterials({ [materialName]: {
         diffuseTexture: requireNitroCanvas().canvasSource(surface),
         diffuseColor: fallbackColor, lightingModel,
+        ...(blendMode ? { blendMode } : null),
       } });
       store.setState({ resource });
       void Promise.resolve().then(() => {
@@ -153,7 +161,7 @@ export function useCanvasPanel<P extends CanvasProducer>(opts: CanvasPanelOpts<P
         }
       }
     };
-  }, [width, height, sRGB, androidRoute, override, lightingModel, fallbackColor, opts.resourceKey]);
+  }, [width, height, sRGB, androidRoute, override, lightingModel, fallbackColor, blendMode, opts.resourceKey]);
 
   React.useEffect(() => { updateClock.current?.(); }, [opts.autoTick]);
   return state;

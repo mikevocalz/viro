@@ -9,7 +9,7 @@ export const ViroRivePanel = React.forwardRef(function ViroRivePanel(props, ref)
     const { init, source, input, onRuntimeReady, width, height, position = [0, 1.45, -2.0], rotation, resolution = { width: 1024, height: 1024 }, sRGB, 
     // The native Rive renderer draws into the panel's producer Surface; the
     // zero-copy AHardwareBuffer route is for GPU producers, not Rive.
-    androidRoute = "surface-texture", lightingModel, fallbackColor, materialName, onReady, onError, autoTick, bindings, } = props;
+    androidRoute = "surface-texture", lightingModel, fallbackColor, materialName, blendMode, onReady, onError, autoTick, bindings, } = props;
     const runtime = React.useRef(null);
     const latestBindings = React.useRef(bindings);
     latestBindings.current = bindings;
@@ -35,6 +35,7 @@ export const ViroRivePanel = React.forwardRef(function ViroRivePanel(props, ref)
         lightingModel,
         fallbackColor,
         materialName,
+        blendMode,
         onReady: ({ producer }) => {
             const value = producer.runtime;
             runtime.current =

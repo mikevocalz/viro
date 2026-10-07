@@ -7,6 +7,8 @@
  */
 import * as React from "react";
 import { requireNativeComponent, } from "react-native";
+import { isVisionOS } from "./Utilities/ViroPlatform";
+import { warnUnsupported } from "./Utilities/ViroUnsupported";
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -55,6 +57,14 @@ const VRTObjectDetectorView = requireNativeComponent("VRTObjectDetectorView");
  * ```
  */
 export const ViroObjectDetector = ({ model = "yoloe-26s", mode = "prompt-free", categories = [], confidenceThreshold = 0.4, iouThreshold = 0.45, maxFPS = 15, maxDetections = 20, projectToWorld = true, onDetection, onReady, onError, style, ...rest }) => {
+    // Its view manager is excluded from the visionOS renderer, so React has no view config for it
+    // and mounting fails with "View config not found". visionOS grants no passthrough camera access
+    // without an enterprise entitlement, so there is nothing for the detector to look at either.
+    // Safe above the hooks: isVisionOS is a module constant, so the hook order never varies.
+    if (isVisionOS) {
+        warnUnsupported("ViroObjectDetector", "Apple Vision Pro", "visionOS grants no passthrough camera access without an enterprise entitlement.");
+        return null;
+    }
     const handleDetection = React.useCallback((event) => {
         onDetection?.(event.nativeEvent);
     }, [onDetection]);

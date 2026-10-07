@@ -5,6 +5,9 @@ package com.viromedia.bridge.module;
 
 import android.view.View;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
@@ -51,6 +54,26 @@ public class VRModuleOpenXR extends ReactContextBaseJavaModule {
     @Override
     public String getName() {
         return "VRModuleOpenXR";
+    }
+
+    /**
+     * Platform facts JS can read synchronously at module load. The
+     * PackageManager feature check is the documented way to detect an Android
+     * XR device: android.software.xr.api.openxr is the current tag,
+     * android.software.xr.immersive its deprecated predecessor (still declared
+     * by first-gen Android XR system images). Model/manufacturer strings are
+     * deliberately not used — Horizon compatibility mode reports Quest
+     * identities on newer hardware.
+     */
+    @Override
+    public Map<String, Object> getConstants() {
+        android.content.pm.PackageManager pm =
+                getReactApplicationContext().getPackageManager();
+        Map<String, Object> constants = new HashMap<>();
+        constants.put("isAndroidXR",
+                pm.hasSystemFeature("android.software.xr.api.openxr")
+                        || pm.hasSystemFeature("android.software.xr.immersive"));
+        return constants;
     }
 
     /**

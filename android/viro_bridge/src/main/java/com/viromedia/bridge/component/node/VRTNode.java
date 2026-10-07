@@ -57,10 +57,12 @@ import com.viro.core.PhysicsShapeAutoCompound;
 import com.viro.core.PhysicsShapeBox;
 import com.viro.core.PhysicsShapeSphere;
 import com.viro.core.Vector;
+import com.viro.core.ViroViewOpenXR;
 import com.viromedia.bridge.component.VRTAnimatedComponent;
 import com.viromedia.bridge.component.VRTComponent;
 import com.viromedia.bridge.component.VRTLight;
 import com.viromedia.bridge.component.VRTManagedAnimation;
+import com.viromedia.bridge.component.VRT3DSceneNavigator;
 import com.viromedia.bridge.component.node.control.VRTAnimatedImage;
 import com.viromedia.bridge.component.node.control.VRTImage;
 import com.viromedia.bridge.component.node.control.VRTQuad;
@@ -617,10 +619,28 @@ public class VRTNode extends VRTComponent {
         /*
          If this node is at the root of an ARScene, then we will try to create an anchor for the
          VRONode and make the VRONode a child of the anchor. This ensures ARCore stability.
+         On a scene whose session cannot create manual anchors at all (OpenXR —
+         the node floats at its set position, which inside-out 6DoF tracking
+         already keeps stable), skip the attempt entirely: onTreeUpdate runs on
+         every scene-graph change, so spawning a doomed retry loop per update
+         produced a permanent main-thread "Failed to create an anchored node"
+         churn on Pico.
          */
         ViewParent parent = getParent();
         if (parent instanceof VRTARScene) {
-            if (mAnchor == null) {
+            /*
+             Manual world anchors are an ARCore feature. On an OpenXR runtime
+             the AR scene renders inside ViroViewOpenXR — nativeCreateAnchored
+             Node can never succeed there, and onTreeUpdate runs on every
+             scene-graph change, so each update spawned a fresh doomed retry
+             loop (the permanent "Failed to create an anchored node" churn on
+             Pico). The node floats at its set position instead, which
+             inside-out 6DoF tracking already keeps stable.
+             */
+            final ViewParent navigator = ((VRTARScene) parent).getParent();
+            final boolean openXR = navigator instanceof VRT3DSceneNavigator
+                    && ((VRT3DSceneNavigator) navigator).getViroView() instanceof ViroViewOpenXR;
+            if (mAnchor == null && !openXR) {
                 mAnchorAttempt = new AnchorAttempt(this, new Vector(mPosition));
                 mAnchorAttempt.makeAttempt();
             }
