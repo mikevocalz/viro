@@ -31,7 +31,9 @@
     "preharness": "npm run harness:assets",
     "audit:events": "node scripts/audit-events.cjs",
     "test:specs-compiler": "node scripts/test-viro-specs-compiler.cjs",
-    "test:rive-contract": "node scripts/test-rive-local-contract.cjs"
+    "test:rive-contract": "node scripts/test-rive-local-contract.cjs",
+    "perf:tracesift:init": "npx --yes @callstack/tracesift@0.3.1 init",
+    "perf:tracesift": "npx --yes @callstack/tracesift@0.3.1 start"
   },
   "peerDependencies": {
     "@reactvision/react-native-visionos": ">=0.86.0 <0.89.0",
