@@ -1,6 +1,17 @@
-import { AndroidConfig } from "@expo/config-plugins";
-import fs from "fs";
-import path from "path";
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.QUEST_FLAVOR_MANIFEST = void 0;
+exports.isMetaOnlyName = isMetaOnlyName;
+exports.routeMetaEntriesToQuest = routeMetaEntriesToQuest;
+exports.disabledQuestEntryNames = disabledQuestEntryNames;
+exports.hasQuestProductFlavor = hasQuestProductFlavor;
+exports.syncQuestFlavorManifest = syncQuestFlavorManifest;
+const config_plugins_1 = require("@expo/config-plugins");
+const fs_1 = __importDefault(require("fs"));
+const path_1 = __importDefault(require("path"));
 /**
  * Meta-only manifest entries and where they go.
  *
@@ -13,7 +24,7 @@ import path from "path";
  * a finalized mod moves the entries into app/src/quest/AndroidManifest.xml.
  * A single-variant app keeps them in main.
  */
-export const QUEST_FLAVOR_MANIFEST = path.join("app", "src", "quest", "AndroidManifest.xml");
+exports.QUEST_FLAVOR_MANIFEST = path_1.default.join("app", "src", "quest", "AndroidManifest.xml");
 const ANDROID_NS = "http://schemas.android.com/apk/res/android";
 const TOOLS_NS = "http://schemas.android.com/tools";
 const HORIZONOS_NS = "http://schemas.horizonos/sdk";
@@ -23,7 +34,7 @@ const META_NAME_PREFIXES = ["com.oculus.", "oculus.", "horizonos.", "com.meta."]
 /** Android feature that Viro writes only for Quest builds. */
 const HEADTRACKING_FEATURE = "android.hardware.vr.headtracking";
 /** True for an `android:name` that only means something on Meta Horizon OS. */
-export function isMetaOnlyName(name) {
+function isMetaOnlyName(name) {
     if (!name)
         return false;
     return name === HEADTRACKING_FEATURE || META_NAME_PREFIXES.some((p) => name.startsWith(p));
@@ -57,7 +68,7 @@ function applicationOf(root, create) {
  * rewrites that file on every prebuild with its own com.oculus.supportedDevices
  * and headtracking feature, which the user configured there. Idempotent.
  */
-export function routeMetaEntriesToQuest(main, quest, disabled = []) {
+function routeMetaEntriesToQuest(main, quest, disabled = []) {
     const m = main.manifest;
     const q = quest.manifest;
     q.$ ??= {};
@@ -170,7 +181,7 @@ function moveActivityMetaEntries(activity, q) {
  * from both manifests, so an opt-out also clears a copy an earlier prebuild
  * left behind.
  */
-export function disabledQuestEntryNames(questFeatures) {
+function disabledQuestEntryNames(questFeatures) {
     const names = [];
     if (questFeatures?.eyeTracking === false) {
         names.push("com.oculus.permission.EYE_TRACKING", "oculus.software.eye_tracking");
@@ -191,12 +202,12 @@ export function disabledQuestEntryNames(questFeatures) {
  * Gradle file decides which source sets exist, so app/src/quest alone does
  * not count.
  */
-export function hasQuestProductFlavor(platformProjectRoot) {
+function hasQuestProductFlavor(platformProjectRoot) {
     for (const file of ["build.gradle", "build.gradle.kts"]) {
-        const gradlePath = path.join(platformProjectRoot, "app", file);
-        if (!fs.existsSync(gradlePath))
+        const gradlePath = path_1.default.join(platformProjectRoot, "app", file);
+        if (!fs_1.default.existsSync(gradlePath))
             continue;
-        const contents = fs
+        const contents = fs_1.default
             .readFileSync(gradlePath, "utf8")
             .replace(/\/\*[\s\S]*?\*\//g, "")
             .replace(/\/\/[^\n]*/g, "");
@@ -212,26 +223,26 @@ export function hasQuestProductFlavor(platformProjectRoot) {
  * manifest on disk into the quest flavor manifest (created if missing). Does
  * nothing for a single-variant app.
  */
-export async function syncQuestFlavorManifest(platformProjectRoot, disabled = []) {
+async function syncQuestFlavorManifest(platformProjectRoot, disabled = []) {
     if (!hasQuestProductFlavor(platformProjectRoot))
         return false;
-    const mainPath = path.join(platformProjectRoot, "app", "src", "main", "AndroidManifest.xml");
-    if (!fs.existsSync(mainPath))
+    const mainPath = path_1.default.join(platformProjectRoot, "app", "src", "main", "AndroidManifest.xml");
+    if (!fs_1.default.existsSync(mainPath))
         return false;
-    const questPath = path.join(platformProjectRoot, QUEST_FLAVOR_MANIFEST);
-    const main = await AndroidConfig.Manifest.readAndroidManifestAsync(mainPath);
-    const quest = fs.existsSync(questPath)
-        ? await AndroidConfig.Manifest.readAndroidManifestAsync(questPath)
+    const questPath = path_1.default.join(platformProjectRoot, exports.QUEST_FLAVOR_MANIFEST);
+    const main = await config_plugins_1.AndroidConfig.Manifest.readAndroidManifestAsync(mainPath);
+    const quest = fs_1.default.existsSync(questPath)
+        ? await config_plugins_1.AndroidConfig.Manifest.readAndroidManifestAsync(questPath)
         : { manifest: { $: { "xmlns:android": ANDROID_NS } } };
     const mainBefore = JSON.stringify(main);
     const questBefore = JSON.stringify(quest);
     routeMetaEntriesToQuest(main, quest, disabled);
     if (JSON.stringify(main) !== mainBefore) {
-        await AndroidConfig.Manifest.writeAndroidManifestAsync(mainPath, main);
+        await config_plugins_1.AndroidConfig.Manifest.writeAndroidManifestAsync(mainPath, main);
     }
-    if (JSON.stringify(quest) !== questBefore || !fs.existsSync(questPath)) {
-        fs.mkdirSync(path.dirname(questPath), { recursive: true });
-        await AndroidConfig.Manifest.writeAndroidManifestAsync(questPath, quest);
+    if (JSON.stringify(quest) !== questBefore || !fs_1.default.existsSync(questPath)) {
+        fs_1.default.mkdirSync(path_1.default.dirname(questPath), { recursive: true });
+        await config_plugins_1.AndroidConfig.Manifest.writeAndroidManifestAsync(questPath, quest);
     }
     return true;
 }

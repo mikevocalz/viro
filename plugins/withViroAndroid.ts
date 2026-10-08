@@ -16,6 +16,11 @@ import path from "path";
 import { insertLinesHelper } from "./util/insertLinesHelper";
 import { addQuestRenderModelEntries } from "./util/questRenderModel";
 import {
+  META_SPATIAL_LAYOUT_FLAVOR_WARNING,
+  removeMetaSpatialLayoutFromFlavoredApp,
+  renderMetaSpatialLayoutDependencies,
+} from "./util/metaSpatialLayoutGradle";
+import {
   disabledQuestEntryNames,
   isMetaOnlyName,
   syncQuestFlavorManifest,
@@ -230,11 +235,7 @@ const withViroAppBuildGradle = (
       assertDirectAppDependency(config.modRequest.projectRoot, "@metavr/layout-window-compat");
       const bomVersion =
         props.android.metaSpatialLayoutBomVersion ?? "1.2026.0.0";
-      metaSpatialDependencies = `
-    // Meta VR Layout SDK (React Native spatial windows)
-    implementation platform('com.meta.metavrx:metavrx-bom:${bomVersion}')
-    implementation 'com.meta.metavrx.layout:layout-react-compat'
-    implementation 'com.meta.metavrx.layout:layout-window-react-compat'`;
+      metaSpatialDependencies = renderMetaSpatialLayoutDependencies(bomVersion);
     }
 
     // ViroReact New Architecture (Fabric) Dependencies
@@ -1094,6 +1095,27 @@ const withViroQuestFlavorManifest: ConfigPlugin<ViroConfigurationOptions> = (con
   ]);
 };
 
+/**
+ * Keeps android.metaSpatialLayout out of flavored apps. See
+ * util/metaSpatialLayoutGradle.ts for why a quest flavor needs @expo-pico/core's
+ * metaLayoutSdk instead of these lines.
+ */
+const withViroMetaSpatialLayoutFlavors: ConfigPlugin<ViroConfigurationOptions> = (
+  config,
+  props
+) => {
+  if (!props?.android?.metaSpatialLayout) return config;
+  return withFinalizedMod(config, [
+    "android",
+    async (config) => {
+      if (removeMetaSpatialLayoutFromFlavoredApp(config.modRequest.platformProjectRoot)) {
+        console.warn(META_SPATIAL_LAYOUT_FLAVOR_WARNING);
+      }
+      return config;
+    },
+  ]);
+};
+
 export const withViroAndroid: ConfigPlugin<ViroConfigurationOptions> = (
   config,
   props
@@ -1105,5 +1127,6 @@ export const withViroAndroid: ConfigPlugin<ViroConfigurationOptions> = (
   config = withViroAppBuildGradle(config, props) as typeof config;
   config = withViroQuestActivity(config, props) as typeof config;
   config = withViroQuestFlavorManifest(config, props) as typeof config;
+  config = withViroMetaSpatialLayoutFlavors(config, props) as typeof config;
   return config;
 };
