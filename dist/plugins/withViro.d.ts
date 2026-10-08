@@ -202,6 +202,12 @@ export interface ViroConfigurationOptions {
          * SDK is a Standard Android panel/window feature; Viro's immersive OpenXR
          * scene path remains separate.
          *
+         * The dependencies are plain `implementation`, for single-variant apps.
+         * An app with a `quest` product flavor (expo-horizon-core) should leave
+         * this off and enable `metaLayoutSdk` in @expo-pico/core, which links the
+         * SDK into the quest flavor only. When this is on and a quest flavor
+         * exists, prebuild drops Viro's lines from app/build.gradle and warns.
+         *
          * DEFAULTS TO: false
          */
         metaSpatialLayout?: boolean;

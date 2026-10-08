@@ -50,7 +50,7 @@ jobs:
           test -f dist/components/Spatial/ViroSpatialLayout.d.ts
           grep -q 'ViroSpatialWindow' dist/index.js
           grep -q 'metaSpatialLayout' dist/plugins/withViro.d.ts
-          grep -q 'layout-window-react-compat' dist/plugins/withViroAndroid.js
+          grep -q 'layout-window-react-compat' dist/plugins/util/metaSpatialLayoutGradle.js
 
       - name: Config plugin loads under plain Node require
         run: npm run test:plugin-load

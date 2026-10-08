@@ -10,6 +10,7 @@ const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const insertLinesHelper_1 = require("./util/insertLinesHelper");
 const questRenderModel_1 = require("./util/questRenderModel");
+const metaSpatialLayoutGradle_1 = require("./util/metaSpatialLayoutGradle");
 const questFlavorManifest_1 = require("./util/questFlavorManifest");
 const metaTargeting_1 = require("./metaTargeting");
 let viroPluginConfig = ["AR", "GVR"];
@@ -146,11 +147,7 @@ const withViroAppBuildGradle = (config, props) => (0, config_plugins_1.withAppBu
         assertDirectAppDependency(config.modRequest.projectRoot, "@metavr/layout-compat");
         assertDirectAppDependency(config.modRequest.projectRoot, "@metavr/layout-window-compat");
         const bomVersion = props.android.metaSpatialLayoutBomVersion ?? "1.2026.0.0";
-        metaSpatialDependencies = `
-    // Meta VR Layout SDK (React Native spatial windows)
-    implementation platform('com.meta.metavrx:metavrx-bom:${bomVersion}')
-    implementation 'com.meta.metavrx.layout:layout-react-compat'
-    implementation 'com.meta.metavrx.layout:layout-window-react-compat'`;
+        metaSpatialDependencies = (0, metaSpatialLayoutGradle_1.renderMetaSpatialLayoutDependencies)(bomVersion);
     }
     // ViroReact New Architecture (Fabric) Dependencies
     const viroNewArchDependencies = `
@@ -896,6 +893,24 @@ const withViroQuestFlavorManifest = (config, props) => {
         },
     ]);
 };
+/**
+ * Keeps android.metaSpatialLayout out of flavored apps. See
+ * util/metaSpatialLayoutGradle.ts for why a quest flavor needs @expo-pico/core's
+ * metaLayoutSdk instead of these lines.
+ */
+const withViroMetaSpatialLayoutFlavors = (config, props) => {
+    if (!props?.android?.metaSpatialLayout)
+        return config;
+    return (0, config_plugins_1.withFinalizedMod)(config, [
+        "android",
+        async (config) => {
+            if ((0, metaSpatialLayoutGradle_1.removeMetaSpatialLayoutFromFlavoredApp)(config.modRequest.platformProjectRoot)) {
+                console.warn(metaSpatialLayoutGradle_1.META_SPATIAL_LAYOUT_FLAVOR_WARNING);
+            }
+            return config;
+        },
+    ]);
+};
 const withViroAndroid = (config, props) => {
     config = withBranchAndroid(config, props);
     config = withViroProjectBuildGradle(config);
@@ -904,6 +919,7 @@ const withViroAndroid = (config, props) => {
     config = withViroAppBuildGradle(config, props);
     config = withViroQuestActivity(config, props);
     config = withViroQuestFlavorManifest(config, props);
+    config = withViroMetaSpatialLayoutFlavors(config, props);
     return config;
 };
 exports.withViroAndroid = withViroAndroid;
