@@ -1,36 +1,43 @@
-import { AndroidConfig, withAndroidManifest, withAppBuildGradle, withDangerousMod, withFinalizedMod, withGradleProperties, withProjectBuildGradle, withSettingsGradle, } from "@expo/config-plugins";
-import fs from "fs";
-import path from "path";
-import { insertLinesHelper } from "./util/insertLinesHelper";
-import { addQuestRenderModelEntries } from "./util/questRenderModel";
-import { disabledQuestEntryNames, isMetaOnlyName, syncQuestFlavorManifest, } from "./util/questFlavorManifest";
-import { assertMetaVrGlassesXrMode, resolveMetaDefaultDeviceTargets } from "./metaTargeting";
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.withViroAndroid = void 0;
+exports.resolveViroAndroidRelativePath = resolveViroAndroidRelativePath;
+const config_plugins_1 = require("@expo/config-plugins");
+const fs_1 = __importDefault(require("fs"));
+const path_1 = __importDefault(require("path"));
+const insertLinesHelper_1 = require("./util/insertLinesHelper");
+const questRenderModel_1 = require("./util/questRenderModel");
+const questFlavorManifest_1 = require("./util/questFlavorManifest");
+const metaTargeting_1 = require("./metaTargeting");
 let viroPluginConfig = ["AR", "GVR"];
 const withBranchAndroid = (config) => {
     // Directly edit MainApplication.java
-    return withDangerousMod(config, [
+    return (0, config_plugins_1.withDangerousMod)(config, [
         "android",
         async (config) => {
             let mainApplicationPath = "";
             let isJava;
-            const mainApplicationPrefix = path.join(config.modRequest.platformProjectRoot, "app", "src", "main", "java", ...(config?.android?.package?.split?.(".") || []));
-            const mainApplicationPathJava = path.join(mainApplicationPrefix, "MainApplication.java");
-            const mainApplicationPathKotlin = path.join(mainApplicationPrefix, "MainApplication.kt");
-            if (fs.existsSync(mainApplicationPathJava)) {
+            const mainApplicationPrefix = path_1.default.join(config.modRequest.platformProjectRoot, "app", "src", "main", "java", ...(config?.android?.package?.split?.(".") || []));
+            const mainApplicationPathJava = path_1.default.join(mainApplicationPrefix, "MainApplication.java");
+            const mainApplicationPathKotlin = path_1.default.join(mainApplicationPrefix, "MainApplication.kt");
+            if (fs_1.default.existsSync(mainApplicationPathJava)) {
                 isJava = true;
                 mainApplicationPath = mainApplicationPathJava;
             }
-            else if (fs.existsSync(mainApplicationPathKotlin)) {
+            else if (fs_1.default.existsSync(mainApplicationPathKotlin)) {
                 isJava = false;
                 mainApplicationPath = mainApplicationPathKotlin;
             }
             else {
                 throw new Error("MainApplication.kt or MainApplication.java file not found.");
             }
-            fs.readFile(mainApplicationPath, "utf-8", (err, data) => {
+            fs_1.default.readFile(mainApplicationPath, "utf-8", (err, data) => {
                 const packageName = config?.android?.package;
                 if (isJava) {
-                    data = insertLinesHelper("import com.viromedia.bridge.ReactViroPackage;", `package ${packageName};`, data);
+                    data = (0, insertLinesHelper_1.insertLinesHelper)("import com.viromedia.bridge.ReactViroPackage;", `package ${packageName};`, data);
                 }
                 else {
                     // Handle Backticks in package names for Kotlin
@@ -38,7 +45,7 @@ const withBranchAndroid = (config) => {
                     if (!packageMatch) {
                         throw new Error("Package declaration not found in MainApplication.kt");
                     }
-                    data = insertLinesHelper("import com.viromedia.bridge.ReactViroPackage", packageMatch[0], data);
+                    data = (0, insertLinesHelper_1.insertLinesHelper)("import com.viromedia.bridge.ReactViroPackage", packageMatch[0], data);
                 }
                 const viroPlugin = config?.plugins?.find((plugin) => Array.isArray(plugin) && plugin[0] === "@reactvision/react-viro");
                 if (Array.isArray(viroPlugin)) {
@@ -64,23 +71,23 @@ const withBranchAndroid = (config) => {
                     }
                 }
                 if (isJava) {
-                    data = insertLinesHelper(target, "List<ReactPackage> packages = new PackageList(this).getPackages();", data);
+                    data = (0, insertLinesHelper_1.insertLinesHelper)(target, "List<ReactPackage> packages = new PackageList(this).getPackages();", data);
                 }
                 else {
                     // Handle various MainApplication.kt formats
                     if (data.includes("// packages.add(new MyReactNativePackage());")) {
-                        data = insertLinesHelper(target, "// packages.add(new MyReactNativePackage());", data);
+                        data = (0, insertLinesHelper_1.insertLinesHelper)(target, "// packages.add(new MyReactNativePackage());", data);
                     }
                     else if (data.includes("// add(MyReactNativePackage())")) {
-                        data = insertLinesHelper(target, "// add(MyReactNativePackage())", data);
+                        data = (0, insertLinesHelper_1.insertLinesHelper)(target, "// add(MyReactNativePackage())", data);
                     }
                     else if (data.includes("// packages.add(MyReactNativePackage())")) {
                         // Handle newer Expo format: // packages.add(MyReactNativePackage())
-                        data = insertLinesHelper(target, "// packages.add(MyReactNativePackage())", data);
+                        data = (0, insertLinesHelper_1.insertLinesHelper)(target, "// packages.add(MyReactNativePackage())", data);
                     }
                     else if (data.includes("val packages = PackageList(this).packages")) {
                         // Handle newer format where packages is declared as val
-                        data = insertLinesHelper(target, "val packages = PackageList(this).packages", data);
+                        data = (0, insertLinesHelper_1.insertLinesHelper)(target, "val packages = PackageList(this).packages", data);
                     }
                     else {
                         throw new Error("Unable to insert Android packages into package list. Please create a new issue on GitHub and reference this message! " +
@@ -88,7 +95,7 @@ const withBranchAndroid = (config) => {
                             "'// packages.add(MyReactNativePackage())', or 'val packages = PackageList(this).packages'");
                     }
                 }
-                fs.writeFile(mainApplicationPath, data, "utf-8", function (err) {
+                fs_1.default.writeFile(mainApplicationPath, data, "utf-8", function (err) {
                     if (err)
                         console.log("Error writing MainApplication.java");
                 });
@@ -97,7 +104,7 @@ const withBranchAndroid = (config) => {
         },
     ]);
 };
-const withViroProjectBuildGradle = (config) => withProjectBuildGradle(config, async (newConfig) => {
+const withViroProjectBuildGradle = (config) => (0, config_plugins_1.withProjectBuildGradle)(config, async (newConfig) => {
     newConfig.modResults.contents = newConfig.modResults.contents.replace(/minSdkVersion.*/, `minSdkVersion = 24`);
     // Ensure New Architecture is enabled
     //if (!newConfig.modResults.contents.includes("newArchEnabled=true")) {
@@ -108,10 +115,10 @@ const withViroProjectBuildGradle = (config) => withProjectBuildGradle(config, as
     return newConfig;
 });
 function assertDirectAppDependency(projectRoot, packageName) {
-    const packageJsonPath = path.join(projectRoot, "package.json");
+    const packageJsonPath = path_1.default.join(projectRoot, "package.json");
     let appPackage;
     try {
-        appPackage = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
+        appPackage = JSON.parse(fs_1.default.readFileSync(packageJsonPath, "utf8"));
     }
     catch {
         throw new Error(`[Viro] metaSpatialLayout requires a readable app package.json at ${packageJsonPath}.`);
@@ -126,7 +133,7 @@ function assertDirectAppDependency(projectRoot, packageName) {
             "Install both @metavr/layout-compat and @metavr/layout-window-compat before expo prebuild.");
     }
 }
-const withViroAppBuildGradle = (config, props) => withAppBuildGradle(config, async (config) => {
+const withViroAppBuildGradle = (config, props) => (0, config_plugins_1.withAppBuildGradle)(config, async (config) => {
     let metaSpatialDependencies = "";
     if (props?.android?.metaSpatialLayout) {
         const configuredModes = props.android.xRMode ?? [];
@@ -190,22 +197,22 @@ const withViroAppBuildGradle = (config, props) => withAppBuildGradle(config, asy
  * without an existing directory is not allowed". Resolving via Node follows
  * symlinks/hoisting and works in both flat and workspace layouts.
  */
-export function resolveViroAndroidRelativePath(projectRoot, androidRoot) {
+function resolveViroAndroidRelativePath(projectRoot, androidRoot) {
     const fallback = "../node_modules/@reactvision/react-viro/android";
     try {
         const pkgJson = require.resolve("@reactvision/react-viro/package.json", {
             paths: [projectRoot],
         });
-        const viroAndroidDir = path.join(path.dirname(pkgJson), "android");
+        const viroAndroidDir = path_1.default.join(path_1.default.dirname(pkgJson), "android");
         // Gradle resolves relative File(...) against the settings.gradle dir (androidRoot).
         // Always emit POSIX separators — Gradle accepts them on every platform.
-        return path.relative(androidRoot, viroAndroidDir).split(path.sep).join("/");
+        return path_1.default.relative(androidRoot, viroAndroidDir).split(path_1.default.sep).join("/");
     }
     catch {
         return fallback;
     }
 }
-const withViroSettingsGradle = (config) => withSettingsGradle(config, async (config) => {
+const withViroSettingsGradle = (config) => (0, config_plugins_1.withSettingsGradle)(config, async (config) => {
     const viroAndroidRoot = resolveViroAndroidRelativePath(config.modRequest.projectRoot, config.modRequest.platformProjectRoot);
     config.modResults.contents += `
 include ':react_viro', ':arcore_client', ':gvr_common', ':viro_renderer'
@@ -216,7 +223,7 @@ project(':react_viro').projectDir = new File('${viroAndroidRoot}/react_viro')
     `;
     return config;
 });
-const withViroManifest = (config) => withAndroidManifest(config, async (newConfig) => {
+const withViroManifest = (config) => (0, config_plugins_1.withAndroidManifest)(config, async (newConfig) => {
     // TODO(pico): PICO manifest block + activity registration — see docs/pico, gated on device facts
     const contents = newConfig.modResults;
     contents.manifest.$["xmlns:tools"] = "http://schemas.android.com/tools";
@@ -454,9 +461,9 @@ const withViroManifest = (config) => withAndroidManifest(config, async (newConfi
         // Drop the opted-out entries, and the tools:node="remove" markers
         // older versions wrote for eye tracking, so a second prebuild without
         // --clean follows the current options.
-        const disabledNames = disabledQuestEntryNames(questFeatures);
+        const disabledNames = (0, questFlavorManifest_1.disabledQuestEntryNames)(questFeatures);
         contents.manifest["uses-permission"] = (contents.manifest["uses-permission"] || []).filter((p) => !disabledNames.includes(p.$?.["android:name"]) &&
-            !(isMetaOnlyName(p.$?.["android:name"]) && p.$?.["tools:node"] === "remove"));
+            !((0, questFlavorManifest_1.isMetaOnlyName)(p.$?.["android:name"]) && p.$?.["tools:node"] === "remove"));
         const existingPermissions = (contents.manifest["uses-permission"] || [])
             .map((p) => p.$?.["android:name"]);
         // Horizon OS logs com.oculus.permission.HAND_TRACKING as deprecated and
@@ -504,7 +511,7 @@ const withViroManifest = (config) => withAndroidManifest(config, async (newConfi
         }
         // XR_FB_render_model controller GLBs. Not in the viro_renderer AAR
         // manifest, which would carry them into PICO builds.
-        addQuestRenderModelEntries(contents.manifest, activeXrModes, questFeatures?.renderModel);
+        (0, questRenderModel_1.addQuestRenderModelEntries)(contents.manifest, activeXrModes, questFeatures?.renderModel);
     }
     return newConfig;
 });
@@ -540,22 +547,22 @@ const withViroQuestActivity = (config, props) => {
     // Meta Horizon immersive mode still uses the historical QUEST enum because
     // it selects Viro's Android OpenXR + Horizon launch path. Meta VR Glasses run
     // the same OS/SDK family; do not add a fake device id to supportedDevices.
-    assertMetaVrGlassesXrMode(xrModes, props?.android);
+    (0, metaTargeting_1.assertMetaVrGlassesXrMode)(xrModes, props?.android);
     if (!xrModes.includes("QUEST"))
         return config;
     // 1. Generate VRActivity.kt
-    config = withDangerousMod(config, [
+    config = (0, config_plugins_1.withDangerousMod)(config, [
         "android",
         async (config) => {
             const packageName = config?.android?.package ?? "";
             const packagePath = packageName.split(".");
-            const activityDir = path.join(config.modRequest.platformProjectRoot, "app", "src", "main", "java", ...packagePath);
-            if (!fs.existsSync(activityDir)) {
-                fs.mkdirSync(activityDir, { recursive: true });
+            const activityDir = path_1.default.join(config.modRequest.platformProjectRoot, "app", "src", "main", "java", ...packagePath);
+            if (!fs_1.default.existsSync(activityDir)) {
+                fs_1.default.mkdirSync(activityDir, { recursive: true });
             }
-            const activityPath = path.join(activityDir, "VRActivity.kt");
+            const activityPath = path_1.default.join(activityDir, "VRActivity.kt");
             // Only write if not already present (preserve manual edits)
-            if (!fs.existsSync(activityPath)) {
+            if (!fs_1.default.existsSync(activityPath)) {
                 const kotlinContent = `package ${packageName}
 
 import android.app.Activity
@@ -735,7 +742,7 @@ class VRActivity : ReactActivity() {
     }
 }
 `;
-                fs.writeFileSync(activityPath, kotlinContent, "utf-8");
+                fs_1.default.writeFileSync(activityPath, kotlinContent, "utf-8");
             }
             return config;
         },
@@ -747,19 +754,19 @@ class VRActivity : ReactActivity() {
     // store warns on 32-bit libraries.
     const questTargetSdk = props?.android?.questTargetSdkVersion ?? 34;
     const questArm64Only = props?.android?.questArm64Only ?? true;
-    config = withGradleProperties(config, (config) => {
+    config = (0, config_plugins_1.withGradleProperties)(config, (config) => {
         const current = config.modResults.find((item) => item.type === "property" && item.key === "android.targetSdkVersion");
         const currentSdk = current?.type === "property" ? parseInt(current.value, 10) : NaN;
         if (Number.isNaN(currentSdk) || currentSdk > questTargetSdk) {
-            AndroidConfig.BuildProperties.updateAndroidBuildProperty(config.modResults, "android.targetSdkVersion", String(questTargetSdk));
+            config_plugins_1.AndroidConfig.BuildProperties.updateAndroidBuildProperty(config.modResults, "android.targetSdkVersion", String(questTargetSdk));
         }
         if (questArm64Only) {
-            AndroidConfig.BuildProperties.updateAndroidBuildProperty(config.modResults, "reactNativeArchitectures", "arm64-v8a");
+            config_plugins_1.AndroidConfig.BuildProperties.updateAndroidBuildProperty(config.modResults, "reactNativeArchitectures", "arm64-v8a");
         }
         return config;
     });
     // 3. Add VRActivity to AndroidManifest
-    config = withAndroidManifest(config, async (config) => {
+    config = (0, config_plugins_1.withAndroidManifest)(config, async (config) => {
         const app = config.modResults.manifest.application?.[0];
         if (!app)
             return config;
@@ -832,7 +839,7 @@ class VRActivity : ReactActivity() {
         // Meta VR Glasses do not currently have a public com.oculus.supportedDevices
         // identifier. Meta documents "quest3+" as including Quest 3 family,
         // Meta VR Glasses, and future devices.
-        const metaDefaultDeviceTargets = resolveMetaDefaultDeviceTargets(props?.android);
+        const metaDefaultDeviceTargets = (0, metaTargeting_1.resolveMetaDefaultDeviceTargets)(props?.android);
         if (metaDefaultDeviceTargets) {
             const alreadyHasDefaultTargets = app["meta-data"].some((m) => m.$?.["android:name"] === "com.meta.store.defaultDeviceTargets");
             if (!alreadyHasDefaultTargets) {
@@ -880,16 +887,16 @@ const withViroQuestFlavorManifest = (config, props) => {
     const modes = Array.isArray(configured) ? configured : [configured];
     if (!modes.includes("QUEST"))
         return config;
-    const disabled = disabledQuestEntryNames(props?.android?.questFeatures);
-    return withFinalizedMod(config, [
+    const disabled = (0, questFlavorManifest_1.disabledQuestEntryNames)(props?.android?.questFeatures);
+    return (0, config_plugins_1.withFinalizedMod)(config, [
         "android",
         async (config) => {
-            await syncQuestFlavorManifest(config.modRequest.platformProjectRoot, disabled);
+            await (0, questFlavorManifest_1.syncQuestFlavorManifest)(config.modRequest.platformProjectRoot, disabled);
             return config;
         },
     ]);
 };
-export const withViroAndroid = (config, props) => {
+const withViroAndroid = (config, props) => {
     config = withBranchAndroid(config, props);
     config = withViroProjectBuildGradle(config);
     config = withViroManifest(config);
@@ -899,3 +906,4 @@ export const withViroAndroid = (config, props) => {
     config = withViroQuestFlavorManifest(config, props);
     return config;
 };
+exports.withViroAndroid = withViroAndroid;

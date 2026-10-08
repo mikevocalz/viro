@@ -1,8 +1,15 @@
-import { withDangerousMod, withPlugins, withXcodeProject, } from "@expo/config-plugins";
-import fs from "fs";
-import path from "path";
-import { insertLinesHelper } from "./util/insertLinesHelper";
-import { DEFAULTS } from "./withViro";
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.withViroIos = exports.withDefaultInfoPlist = void 0;
+exports.resolveViroIosRelativePath = resolveViroIosRelativePath;
+const config_plugins_1 = require("@expo/config-plugins");
+const fs_1 = __importDefault(require("fs"));
+const path_1 = __importDefault(require("path"));
+const insertLinesHelper_1 = require("./util/insertLinesHelper");
+const withViro_1 = require("./withViro");
 /**
  * Resolve the on-disk `@reactvision/react-viro/ios` directory as a path
  * relative to the iOS project root (where the Podfile lives).
@@ -14,7 +21,7 @@ import { DEFAULTS } from "./withViro";
  * Resolving via Node follows symlinks/hoisting and works in both flat and
  * workspace layouts.
  */
-export function resolveViroIosRelativePath(projectRoot, iosRoot) {
+function resolveViroIosRelativePath(projectRoot, iosRoot) {
     const fallback = "../node_modules/@reactvision/react-viro/ios";
     try {
         const pkgJson = require.resolve("@reactvision/react-viro/package.json", {
@@ -23,14 +30,14 @@ export function resolveViroIosRelativePath(projectRoot, iosRoot) {
         // CocoaPods resolves :path relative to the directory of the Podfile (iosRoot).
         // Always emit POSIX separators (split on the current platform's sep and
         // re-join with "/") so the generated paths are valid on Windows too.
-        return path.relative(iosRoot, path.join(path.dirname(pkgJson), "ios")).split(path.sep).join("/");
+        return path_1.default.relative(iosRoot, path_1.default.join(path_1.default.dirname(pkgJson), "ios")).split(path_1.default.sep).join("/");
     }
     catch {
         return fallback;
     }
 }
 const withViroPods = (config) => {
-    config = withDangerousMod(config, [
+    config = (0, config_plugins_1.withDangerousMod)(config, [
         "ios",
         async (newConfig) => {
             const root = newConfig.modRequest.platformProjectRoot;
@@ -56,7 +63,7 @@ const withViroPods = (config) => {
                     includeSemantics = options.ios?.includeSemantics;
                 }
             }
-            fs.readFile(`${root}/Podfile`, "utf-8", (err, data) => {
+            fs_1.default.readFile(`${root}/Podfile`, "utf-8", (err, data) => {
                 // ViroReact with integrated Fabric support
                 const viroIosRoot = resolveViroIosRelativePath(projectRoot, root);
                 let viroPods = `  # ViroReact with integrated New Architecture (Fabric) support\n` +
@@ -100,7 +107,7 @@ const withViroPods = (config) => {
                     else {
                         linkageComment = `# Framework linkage configured via app.json (iosLinkage: "${effectiveLinkage}")`;
                     }
-                    data = insertLinesHelper(`${linkageComment}\nuse_frameworks! :linkage => :${effectiveLinkage}\n`, "target '", data, -1);
+                    data = (0, insertLinesHelper_1.insertLinesHelper)(`${linkageComment}\nuse_frameworks! :linkage => :${effectiveLinkage}\n`, "target '", data, -1);
                 }
                 // Add New Architecture enforcement
                 viroPods +=
@@ -110,7 +117,7 @@ const withViroPods = (config) => {
                         `    raise "ViroReact requires New Architecture to be enabled. Please set RCT_NEW_ARCH_ENABLED=1 in ios/.xcode.env"\n` +
                         `  end`;
                 // Insert the pods into the Podfile
-                data = insertLinesHelper(viroPods, "post_install do |installer|", data, -1);
+                data = (0, insertLinesHelper_1.insertLinesHelper)(viroPods, "post_install do |installer|", data, -1);
                 // Add ViroKit ARCore weak linking post_install hook if ARCore is enabled
                 if (shouldIncludeARCore) {
                     const weakLinkingHook = `    # ViroKit ARCore weak linking - makes ARCore frameworks optional at runtime
@@ -145,9 +152,9 @@ const withViroPods = (config) => {
     end
 `;
                     // Insert weak linking hook inside post_install block (right after the block starts)
-                    data = insertLinesHelper(weakLinkingHook, "post_install do |installer|", data, 1);
+                    data = (0, insertLinesHelper_1.insertLinesHelper)(weakLinkingHook, "post_install do |installer|", data, 1);
                 }
-                fs.writeFile(`${root}/Podfile`, data, "utf-8", function (err) {
+                fs_1.default.writeFile(`${root}/Podfile`, data, "utf-8", function (err) {
                     if (err)
                         console.log("Error writing Podfile");
                 });
@@ -157,7 +164,7 @@ const withViroPods = (config) => {
     ]);
     return config;
 };
-const withEnabledBitcode = (config) => withXcodeProject(config, async (newConfig) => {
+const withEnabledBitcode = (config) => (0, config_plugins_1.withXcodeProject)(config, async (newConfig) => {
     newConfig.modResults.addBuildProperty("ENABLE_BITCODE", "NO", "Release");
     return newConfig;
 });
@@ -174,17 +181,17 @@ const setExcludedArchitectures = (project) => {
     return project;
 };
 const withExcludedSimulatorArchitectures = (config) => {
-    return withXcodeProject(config, (newConfig) => {
+    return (0, config_plugins_1.withXcodeProject)(config, (newConfig) => {
         newConfig.modResults = setExcludedArchitectures(newConfig.modResults);
         return newConfig;
     });
 };
-export const withDefaultInfoPlist = (config, _props) => {
-    let savePhotosPermission = DEFAULTS.ios.savePhotosPermission;
-    let photosPermission = DEFAULTS.ios.photosPermission;
-    let cameraUsagePermission = DEFAULTS.ios.cameraUsagePermission;
-    let microphoneUsagePermission = DEFAULTS.ios.microphoneUsagePermission;
-    let locationUsagePermission = DEFAULTS.ios.locationUsagePermission;
+const withDefaultInfoPlist = (config, _props) => {
+    let savePhotosPermission = withViro_1.DEFAULTS.ios.savePhotosPermission;
+    let photosPermission = withViro_1.DEFAULTS.ios.photosPermission;
+    let cameraUsagePermission = withViro_1.DEFAULTS.ios.cameraUsagePermission;
+    let microphoneUsagePermission = withViro_1.DEFAULTS.ios.microphoneUsagePermission;
+    let locationUsagePermission = withViro_1.DEFAULTS.ios.locationUsagePermission;
     let googleCloudApiKey;
     let rvApiKey;
     let rvProjectId;
@@ -255,10 +262,12 @@ export const withDefaultInfoPlist = (config, _props) => {
     }
     return config;
 };
-export const withViroIos = (config, props) => {
-    config = withPlugins(config, [[withViroPods, props]]);
-    withDefaultInfoPlist(config, props);
+exports.withDefaultInfoPlist = withDefaultInfoPlist;
+const withViroIos = (config, props) => {
+    config = (0, config_plugins_1.withPlugins)(config, [[withViroPods, props]]);
+    (0, exports.withDefaultInfoPlist)(config, props);
     withEnabledBitcode(config);
     withExcludedSimulatorArchitectures(config);
     return config;
 };
+exports.withViroIos = withViroIos;

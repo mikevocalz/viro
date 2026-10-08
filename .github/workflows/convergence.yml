@@ -52,6 +52,14 @@ jobs:
           grep -q 'metaSpatialLayout' dist/plugins/withViro.d.ts
           grep -q 'layout-window-react-compat' dist/plugins/withViroAndroid.js
 
+      - name: Config plugin loads under plain Node require
+        run: npm run test:plugin-load
+
+      # Consumers link this repo straight from git, so the committed
+      # dist/plugins is what expo prebuild loads.
+      - name: Committed dist/plugins matches the build
+        run: git diff --exit-code -- dist/plugins
+
       - name: Pack smoke test
         run: npm pack --dry-run
 
