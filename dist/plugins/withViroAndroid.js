@@ -2,6 +2,7 @@ import { AndroidConfig, withAndroidManifest, withAppBuildGradle, withDangerousMo
 import fs from "fs";
 import path from "path";
 import { insertLinesHelper } from "./util/insertLinesHelper";
+import { addQuestRenderModelEntries } from "./util/questRenderModel";
 import { assertMetaVrGlassesXrMode, resolveMetaDefaultDeviceTargets } from "./metaTargeting";
 let viroPluginConfig = ["AR", "GVR"];
 const withBranchAndroid = (config) => {
@@ -496,6 +497,9 @@ const withViroManifest = (config) => withAndroidManifest(config, async (newConfi
                 contents.manifest["uses-permission"].push({ $: { "android:name": perm } });
             }
         }
+        // XR_FB_render_model controller GLBs. Not in the viro_renderer AAR
+        // manifest, which would carry them into PICO builds.
+        addQuestRenderModelEntries(contents.manifest, activeXrModes, questFeatures?.renderModel);
     }
     return newConfig;
 });

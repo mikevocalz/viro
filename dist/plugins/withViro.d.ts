@@ -238,6 +238,14 @@ export interface ViroConfigurationOptions {
              * DEFAULTS TO: true
              */
             passthroughCamera?: boolean;
+            /**
+             * The runtime's own controller models (XR_FB_render_model):
+             * com.oculus.permission.RENDER_MODEL and the com.oculus.feature.RENDER_MODEL
+             * feature. Off, the renderer draws its bundled fallback controller mesh.
+             *
+             * DEFAULTS TO: true
+             */
+            renderModel?: boolean;
         };
         /**
          * The Horizon OS SDK versions written to the manifest as
