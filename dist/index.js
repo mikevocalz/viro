@@ -52,6 +52,7 @@ import { ViroMaterials, } from "./components/Material/ViroMaterials";
 import { ViroMaterialVideo } from "./components/ViroMaterialVideo";
 import { ViroCameraTexture } from "./components/ViroCameraTexture";
 import { ViroExternalVideo } from "./components/ViroExternalVideo";
+export { VIRO_EXTERNAL_VIDEO_UNAVAILABLE_ERROR } from "./components/Utilities/externalVideoUnavailableError";
 import { ViroObjectDetector } from "./components/ViroObjectDetector";
 export { VIRO_OBJECT_DETECTOR_UNAVAILABLE_ERROR } from "./components/ViroObjectDetector";
 import { ViroNode } from "./components/ViroNode";

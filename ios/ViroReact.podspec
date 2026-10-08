@@ -21,11 +21,18 @@ Pod::Spec.new do |s|
   s.visionos.deployment_target = '26.0'
 
   # visionOS: CompositorServices drives the immersive render loop.
-  s.visionos.frameworks = ['Metal', 'MetalKit', 'CompositorServices', 'ARKit']
+  s.visionos.frameworks = [
+    'Metal', 'MetalKit', 'CompositorServices', 'ARKit',
+    'CoreImage', 'CoreVideo', 'ImageIO'
+  ]
 
   # iOS: frameworks required by source files compiled from the pod
-  # (VRTObjectDetectorView uses AVFoundation + Accelerate; CoreVideo for CVPixelBuffer)
-  s.ios.frameworks = ['AVFoundation', 'Accelerate', 'CoreVideo']
+  # (VRTObjectDetectorView uses AVFoundation + Accelerate; CoreVideo for CVPixelBuffer;
+  # VRTExternalVideo converts producer frames with CoreImage and ImageIO orientations)
+  s.ios.frameworks = [
+    'AVFoundation', 'Accelerate', 'CoreVideo',
+    'CoreImage', 'ImageIO'
+  ]
 
   # Base source files (always included)
   source_files_array = ['ViroReact/**/*.{h,m,mm,swift}']
@@ -79,7 +86,21 @@ Pod::Spec.new do |s|
   # of the compile or every symbol would be defined twice — once here, once in the archive.
   # Headers stay: 32 files import them, and public_header_files still needs them present.
   if File.exist?(File.join(__dir__, 'dist/lib/libViroReact.a'))
-    ios_exclude_files << 'ViroReact/**/*.{m,mm}'
+    # The prebuilt iOS archive contains the legacy ViroReact implementations,
+    # so compile none of those source files twice. VRTExternalVideo is new and
+    # is intentionally source-built until the next archive refresh includes it.
+    implementation_files = Dir.glob(
+      File.join(__dir__, 'ViroReact/**/*.{m,mm}')
+    ).map { |path| path.delete_prefix(__dir__ + '/') }
+
+    external_video_sources = [
+      'ViroReact/Views/VRTExternalVideo.mm',
+      'ViroReact/VRTExternalVideoManager.mm',
+    ]
+
+    ios_exclude_files.concat(
+      implementation_files.reject { |path| external_video_sources.include?(path) }
+    )
   end
 
   s.ios.exclude_files = ios_exclude_files

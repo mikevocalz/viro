@@ -14,6 +14,10 @@
  * Copyright © 2026 ReactVision. All rights reserved.
  */
 import * as React from "react";
-export declare class ViroExternalVideo extends React.Component<any> {
+import type { ViroExternalVideoProps } from "./ViroExternalVideo";
+export { VIRO_EXTERNAL_VIDEO_UNAVAILABLE_ERROR } from "./Utilities/externalVideoUnavailableError";
+export declare function resetExternalVideoNativeViewCheck(): void;
+export declare class ViroExternalVideo extends React.Component<ViroExternalVideoProps> {
+    componentDidMount(): void;
     render(): null;
 }
