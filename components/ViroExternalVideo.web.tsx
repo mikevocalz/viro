@@ -14,12 +14,21 @@
  * Copyright © 2026 ReactVision. All rights reserved.
  */
 import * as React from "react";
+import type { ViroExternalVideoProps } from "./ViroExternalVideo";
+import { warnUnsupported } from "./Utilities/ViroUnsupported";
 
-export class ViroExternalVideo extends React.Component<any> {
-  render() {
+// Same export surface as the native file, so nothing that imports it breaks on web.
+export { VIRO_EXTERNAL_VIDEO_UNAVAILABLE_ERROR } from "./Utilities/externalVideoUnavailableError";
+export function resetExternalVideoNativeViewCheck(): void {}
+
+export class ViroExternalVideo extends React.Component<ViroExternalVideoProps> {
+  componentDidMount() {
     if (__DEV__) {
-      console.warn("[Viro web] ViroExternalVideo is not supported on web; rendering nothing.");
+      warnUnsupported("ViroExternalVideo", "web", "It renders nothing.");
     }
+  }
+
+  render() {
     return null;
   }
 }

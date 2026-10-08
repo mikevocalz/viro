@@ -121,6 +121,9 @@ import {
 import { ViroMaterialVideo } from "./components/ViroMaterialVideo";
 import { ViroCameraTexture } from "./components/ViroCameraTexture";
 import { ViroExternalVideo } from "./components/ViroExternalVideo";
+export type { ViroExternalVideoProps } from "./components/ViroExternalVideo";
+export { VIRO_EXTERNAL_VIDEO_UNAVAILABLE_ERROR } from "./components/Utilities/externalVideoUnavailableError";
+export type { ViroExternalVideoSourceClass } from "./components/Types/ViroExternalVideoSourceClass";
 export type {
   ViroCameraPosition,
   ViroCameraReadyEvent,
