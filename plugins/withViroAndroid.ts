@@ -5,6 +5,7 @@ import {
   withAndroidManifest,
   withAppBuildGradle,
   withDangerousMod,
+  withFinalizedMod,
   withGradleProperties,
   withProjectBuildGradle,
   withSettingsGradle,
@@ -14,6 +15,11 @@ import fs from "fs";
 import path from "path";
 import { insertLinesHelper } from "./util/insertLinesHelper";
 import { addQuestRenderModelEntries } from "./util/questRenderModel";
+import {
+  disabledQuestEntryNames,
+  isMetaOnlyName,
+  syncQuestFlavorManifest,
+} from "./util/questFlavorManifest";
 import { ViroConfigurationOptions, XrMode } from "./withViro";
 import { assertMetaVrGlassesXrMode, resolveMetaDefaultDeviceTargets } from "./metaTargeting";
 let viroPluginConfig = ["AR", "GVR"];
@@ -589,14 +595,23 @@ const withViroManifest = (config: ExpoConfig) =>
           },
         });
         // Required when com.oculus.permission.EYE_TRACKING is declared. The
-        // viro_renderer AAR declares both, so opting out has to remove them
-        // from the merged manifest rather than leave them out here.
+        // viro_renderer AAR no longer declares either (virocore #109), so an
+        // opt-out just leaves them out.
         const eyeTracking = questFeatures?.eyeTracking !== false;
-        contents.manifest["uses-feature"].push({
-          $: eyeTracking
-            ? { "android:name": "oculus.software.eye_tracking", "android:required": "false" }
-            : { "android:name": "oculus.software.eye_tracking", "tools:node": "remove" },
-        });
+        if (eyeTracking) {
+          contents.manifest["uses-feature"].push({
+            $: { "android:name": "oculus.software.eye_tracking", "android:required": "false" },
+          });
+        }
+        // Drop the opted-out entries, and the tools:node="remove" markers
+        // older versions wrote for eye tracking, so a second prebuild without
+        // --clean follows the current options.
+        const disabledNames = disabledQuestEntryNames(questFeatures);
+        contents.manifest["uses-permission"] = (contents.manifest["uses-permission"] || []).filter(
+          (p: any) =>
+            !disabledNames.includes(p.$?.["android:name"]) &&
+            !(isMetaOnlyName(p.$?.["android:name"]) && p.$?.["tools:node"] === "remove")
+        );
         const existingPermissions: string[] = (contents.manifest["uses-permission"] || [])
           .map((p: any) => p.$?.["android:name"]);
         // Horizon OS logs com.oculus.permission.HAND_TRACKING as deprecated and
@@ -606,11 +621,9 @@ const withViroManifest = (config: ExpoConfig) =>
             $: { "android:name": "horizonos.permission.HAND_TRACKING" },
           });
         }
-        if (!existingPermissions.includes("com.oculus.permission.EYE_TRACKING")) {
+        if (eyeTracking && !existingPermissions.includes("com.oculus.permission.EYE_TRACKING")) {
           contents.manifest["uses-permission"].push({
-            $: eyeTracking
-              ? { "android:name": "com.oculus.permission.EYE_TRACKING" }
-              : { "android:name": "com.oculus.permission.EYE_TRACKING", "tools:node": "remove" },
+            $: { "android:name": "com.oculus.permission.EYE_TRACKING" },
           });
         }
         // Spatial Data / Scene permissions — required for the Meta OpenXR runtime
@@ -1058,6 +1071,29 @@ class VRActivity : ReactActivity() {
   return config;
 };
 
+/**
+ * Moves the Meta-only entries the mods above wrote into main over to
+ * app/src/quest/AndroidManifest.xml when app/build.gradle has a quest flavor,
+ * so the mobile and pico flavors build without them.
+ *
+ * A finalized mod, because expo-horizon-core writes the quest manifest from
+ * scratch in a dangerous mod and the flavors in an app build.gradle mod; only
+ * a finalized mod is sure to see both on disk, and the main manifest written.
+ */
+const withViroQuestFlavorManifest: ConfigPlugin<ViroConfigurationOptions> = (config, props) => {
+  const configured = props?.android?.xRMode ?? [];
+  const modes = Array.isArray(configured) ? configured : [configured as XrMode];
+  if (!modes.includes("QUEST")) return config;
+  const disabled = disabledQuestEntryNames(props?.android?.questFeatures);
+  return withFinalizedMod(config, [
+    "android",
+    async (config) => {
+      await syncQuestFlavorManifest(config.modRequest.platformProjectRoot, disabled);
+      return config;
+    },
+  ]);
+};
+
 export const withViroAndroid: ConfigPlugin<ViroConfigurationOptions> = (
   config,
   props
@@ -1068,5 +1104,6 @@ export const withViroAndroid: ConfigPlugin<ViroConfigurationOptions> = (
   config = withViroSettingsGradle(config) as typeof config;
   config = withViroAppBuildGradle(config, props) as typeof config;
   config = withViroQuestActivity(config, props) as typeof config;
+  config = withViroQuestFlavorManifest(config, props) as typeof config;
   return config;
 };
