@@ -3,6 +3,7 @@ name: Specs public API
 on:
   push:
     branches:
+      - main
       - "feat/specs-*"
     paths:
       - "components/Specs/**"

@@ -3,6 +3,7 @@ name: Viro convergence
 on:
   push:
     branches:
+      - main
       - upgrade/viro-3.0.1
       - decax9-three-panel
       - feat/xr-platform-foundation
@@ -13,6 +14,7 @@ on:
     branches:
       - main
       - decax9-three-panel
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -27,7 +29,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - name: Install public dependencies
