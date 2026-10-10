@@ -86,20 +86,16 @@ Pod::Spec.new do |s|
   # of the compile or every symbol would be defined twice — once here, once in the archive.
   # Headers stay: 32 files import them, and public_header_files still needs them present.
   if File.exist?(File.join(__dir__, 'dist/lib/libViroReact.a'))
-    # The prebuilt iOS archive contains the legacy ViroReact implementations,
-    # so compile none of those source files twice. VRTExternalVideo is new and
-    # is intentionally source-built until the next archive refresh includes it.
-    implementation_files = Dir.glob(
-      File.join(__dir__, 'ViroReact/**/*.{m,mm}')
-    ).map { |path| path.delete_prefix(__dir__ + '/') }
-
-    external_video_sources = [
-      'ViroReact/Views/VRTExternalVideo.mm',
-      'ViroReact/VRTExternalVideoManager.mm',
-    ]
-
+    # With the prebuilt archive present, iOS compiles none of these files: the
+    # archive is the whole implementation. The pod must stay header-only on
+    # iOS. If it compiled even one file, CocoaPods would build a second
+    # libViroReact.a next to the vendored one and `pod install` would stop
+    # with "target has libraries with conflicting names: libviroreact.a".
+    # VRTExternalVideo is newer than the archive, so it is built by the
+    # ViroReactExternalVideo pod (ViroReactExternalVideo.podspec) instead.
     ios_exclude_files.concat(
-      implementation_files.reject { |path| external_video_sources.include?(path) }
+      Dir.glob(File.join(__dir__, 'ViroReact/**/*.{m,mm}'))
+        .map { |path| path.delete_prefix(__dir__ + '/') }
     )
   end
 
