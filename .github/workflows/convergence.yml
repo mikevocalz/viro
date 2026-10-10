@@ -33,12 +33,15 @@ jobs:
           cache: npm
 
       - name: Install public dependencies
-        run: npm install
+        run: npm ci
 
       - name: Reject workspace-only renderer assumptions
         run: |
-          ! grep -R '"file:../viro-web-renderer"' package.json package-lock.json
-          ! grep -R '<rootDir>/../viro-web-renderer' jest.config.ts
+          if grep -F '"file:../viro-web-renderer"' package.json package-lock.json ||
+             grep -F '<rootDir>/../viro-web-renderer' jest.config.ts; then
+            echo "::error::Viro must resolve the published renderer without a sibling checkout."
+            exit 1
+          fi
 
       - name: Test
         run: npm test -- --runInBand

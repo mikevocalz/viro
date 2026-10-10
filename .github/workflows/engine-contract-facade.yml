@@ -27,7 +27,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Run engine-contract unit tests
         run: npm test -- --runInBand __test__/engineContract.test.ts
