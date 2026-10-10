@@ -97,6 +97,7 @@
     "ios/*.mm",
     "ios/ViroReact.podspec",
     "ios/ViroReactUI.podspec",
+    "ios/ViroReactExternalVideo.podspec",
     "bin",
     "LICENSE"
   ],

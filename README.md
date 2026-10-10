@@ -48,6 +48,20 @@ For Expo projects, the easiest way to start is to clone the official starter kit
 
 For step-by-step setup instructions, including platform-specific permissions and build configuration, see the full installation guide in the docs: <https://viro-community.readme.io/docs/installation-instructions>
 
+### iOS Simulator builds
+
+Viro's iOS binaries (`ios/dist/lib/libViroReact.a` and `ViroKit.framework`) are built for arm64 devices only and have no simulator slice. The Expo config plugin writes every Viro pod into the Podfile inside an `if ENV['VIRO_IOS_PODS'] != 'skip'` block, so a simulator build can leave them out:
+
+```bash
+cd ios
+VIRO_IOS_PODS=skip pod install   # before a simulator build
+pod install                      # before a device build, to bring the Viro pods back
+```
+
+With the pods skipped, the app has no Viro native modules. Viro's JS still imports, but scenes cannot render, so guard Viro screens behind a check such as `isARSupportedOnDevice()` (it resolves `{ isARSupported: false }` when the native module is missing).
+
+The block is regenerated on every `expo prebuild`; there is no need to edit the Podfile by hand. Earlier plugin versions also set `EXCLUDED_ARCHS[sdk=iphonesimulator*] = arm64` on the app target, which made Apple-silicon simulators reject the app. The plugin now removes that setting on the next prebuild.
+
 ## MCP Server
 
 If you're building AR, VR or XR apps with ViroReact, our MCP server is the fastest way to get moving. Think of it as a living guide to ViroReact, always current, that plugs straight into the tools you already use.
