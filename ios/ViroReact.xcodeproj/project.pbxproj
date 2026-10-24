@@ -15,10 +15,13 @@
 		13F6302D205761B100A74EFC /* VRT3DSceneNavigatorModule.mm in Sources */ = {isa = PBXBuildFile; fileRef = 13F6302C205761B100A74EFC /* VRT3DSceneNavigatorModule.mm */; };
 		13F63033205762CB00A74EFC /* VRT3DSceneNavigatorManager.mm in Sources */ = {isa = PBXBuildFile; fileRef = 13F63032205762CB00A74EFC /* VRT3DSceneNavigatorManager.mm */; };
 		13F630362057644D00A74EFC /* VRT3DSceneNavigator.mm in Sources */ = {isa = PBXBuildFile; fileRef = 13F630352057644D00A74EFC /* VRT3DSceneNavigator.mm */; };
+		1FE9703E048130AC965AFDB6 /* VRTObjectDetectorViewManager.mm in Sources */ = {isa = PBXBuildFile; fileRef = 13D07BA766FA1838342EE99B /* VRTObjectDetectorViewManager.mm */; };
 		59B520CD9761AD39BC81C7CB /* libPods-ViroReact.a in Frameworks */ = {isa = PBXBuildFile; fileRef = AB1E81C536C9046803693831 /* libPods-ViroReact.a */; };
 		7127551CAB844856B739EA0C /* VRTStreamingAudioModule.h in Copy Headers to ios/dist/include */ = {isa = PBXBuildFile; fileRef = 08AC1A55DE3440AA88215308 /* VRTStreamingAudioModule.h */; };
 		7B722EBB0BE44CE1AA7B27E7 /* VRTCameraTextureModule.h in Copy Headers to ios/dist/include */ = {isa = PBXBuildFile; fileRef = 2AF018FC09EE4E59888B5326 /* VRTCameraTextureModule.h */; };
 		7E0523EAEBF248789C000C3B /* VRTCameraTextureManager.mm in Sources */ = {isa = PBXBuildFile; fileRef = 57CF2B561ADD4A318A7E0025 /* VRTCameraTextureManager.mm */; };
+		80216F851360FEF4CF8641E0 /* VRTObjectDetectorView.h in Copy Headers to ios/dist/include */ = {isa = PBXBuildFile; fileRef = 0871E522F33E82BD8D556061 /* VRTObjectDetectorView.h */; };
+		83696E7BE83BBB28FDB02942 /* VRTObjectDetectorView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0C1D1085FA290AAD5625E47F /* VRTObjectDetectorView.mm */; };
 		83AD6FC66A21499F9172158A /* VRTCameraTextureModule.mm in Sources */ = {isa = PBXBuildFile; fileRef = CAB21D4BF1444EEDB020B69C /* VRTCameraTextureModule.mm */; };
 		8A04D4E02023EDDF00FD5F68 /* VRTARTrackingTargetsModule.mm in Sources */ = {isa = PBXBuildFile; fileRef = 8A04D4DF2023EDDF00FD5F68 /* VRTARTrackingTargetsModule.mm */; };
 		8A04D5182024F6B200FD5F68 /* VRTARImageMarkerManager.mm in Sources */ = {isa = PBXBuildFile; fileRef = 8A04D5172024F6B200FD5F68 /* VRTARImageMarkerManager.mm */; };
@@ -227,6 +230,7 @@
 		A5F6D4051E4B179700655F60 /* VRTControllerManager.mm in Sources */ = {isa = PBXBuildFile; fileRef = A5F6D4041E4B179700655F60 /* VRTControllerManager.mm */; };
 		D1A0010000000000000000B2 /* RVStudioWatermarkState.mm in Sources */ = {isa = PBXBuildFile; fileRef = D1A0010000000000000000A2 /* RVStudioWatermarkState.mm */; };
 		D4AB408111BB4BD180017D7A /* VRTCameraTextureManager.h in Copy Headers to ios/dist/include */ = {isa = PBXBuildFile; fileRef = 59F2ABC13A6A45E0A96EA94E /* VRTCameraTextureManager.h */; };
+		E016F47DBB02CDD80FDE8352 /* VRTExternalVideo.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5725F603B6DA58A37795CC42 /* VRTExternalVideo.mm */; };
 		E139A8EB2E0B9C6A0050EC9A /* BuildFile in Sources */ = {isa = PBXBuildFile; };
 		E139A8EC2E0B9C6A0050EC9A /* BuildFile in Sources */ = {isa = PBXBuildFile; };
 		E139A8ED2E0B9C6A0050EC9A /* BuildFile in Sources */ = {isa = PBXBuildFile; };
@@ -238,6 +242,7 @@
 		E139A8F42E0B9C6A0050EC9A /* BuildFile in Sources */ = {isa = PBXBuildFile; };
 		E139A8F52E0B9C6A0050EC9A /* BuildFile in Sources */ = {isa = PBXBuildFile; };
 		E139A9402E0BAF2D0050EC9A /* BuildFile in Sources */ = {isa = PBXBuildFile; };
+		E16D1CF03A66465E184324FB /* VRTObjectDetectorViewManager.h in Copy Headers to ios/dist/include */ = {isa = PBXBuildFile; fileRef = 38DEFB207E8A89190102DFCD /* VRTObjectDetectorViewManager.h */; };
 		E1BD618F2FBBEC56008FDF74 /* VRTVirtualJoystickView.mm in Sources */ = {isa = PBXBuildFile; fileRef = E1BD618C2FBBEC56008FDF74 /* VRTVirtualJoystickView.mm */; };
 		E1BD61902FBBEC56008FDF74 /* VRTVirtualJoystickViewManager.mm in Sources */ = {isa = PBXBuildFile; fileRef = E1BD618E2FBBEC56008FDF74 /* VRTVirtualJoystickViewManager.mm */; };
 		E1BD61A42FC1A002008FDF74 /* VRTGameLoopView.mm in Sources */ = {isa = PBXBuildFile; fileRef = E1BD61A12FC1A002008FDF74 /* VRTGameLoopView.mm */; };
@@ -250,6 +255,7 @@
 		E1C0100D2FB100A000DBE1E8 /* VRTColocationModule.h in Copy Headers to ios/dist/include */ = {isa = PBXBuildFile; fileRef = E1C0100A2FB100A000DBE1E8 /* VRTColocationModule.h */; };
 		E1F9E5512FA39DEB00DBE1E8 /* VRTStudioModule.mm in Sources */ = {isa = PBXBuildFile; fileRef = E1F9E5502FA39DEB00DBE1E8 /* VRTStudioModule.mm */; };
 		E1F9E5B22FA39E0300DBE1E8 /* VRTStudioModule.h in Copy Headers to ios/dist/include */ = {isa = PBXBuildFile; fileRef = E1F9E54F2FA39DEB00DBE1E8 /* VRTStudioModule.h */; };
+		FCD566F8509C2522A94C9CF2 /* VRTExternalVideoManager.mm in Sources */ = {isa = PBXBuildFile; fileRef = 73A3E7191087FBC85005428A /* VRTExternalVideoManager.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -865,6 +871,8 @@
 				8BDDA16D1E5BF02E00A42870 /* VRTBoxManager.h in Copy Headers to ios/dist/include */,
 				A26DF14FD2544F45BAECEC28 /* VRTCameraTexture.h in Copy Headers to ios/dist/include */,
 				D4AB408111BB4BD180017D7A /* VRTCameraTextureManager.h in Copy Headers to ios/dist/include */,
+				80216F851360FEF4CF8641E0 /* VRTObjectDetectorView.h in Copy Headers to ios/dist/include */,
+				E16D1CF03A66465E184324FB /* VRTObjectDetectorViewManager.h in Copy Headers to ios/dist/include */,
 				7B722EBB0BE44CE1AA7B27E7 /* VRTCameraTextureModule.h in Copy Headers to ios/dist/include */,
 				8BDDA16E1E5BF02E00A42870 /* VRTCameraManager.h in Copy Headers to ios/dist/include */,
 				8BDDA16F1E5BF02E00A42870 /* VRTFlexViewManager.h in Copy Headers to ios/dist/include */,
@@ -910,13 +918,16 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0871E522F33E82BD8D556061 /* VRTObjectDetectorView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VRTObjectDetectorView.h; path = ViroReact/Views/VRTObjectDetectorView.h; sourceTree = "<group>"; };
 		08AC1A55DE3440AA88215308 /* VRTStreamingAudioModule.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = VRTStreamingAudioModule.h; path = ViroReact/Modules/VRTStreamingAudioModule.h; sourceTree = "<group>"; };
+		0C1D1085FA290AAD5625E47F /* VRTObjectDetectorView.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = VRTObjectDetectorView.mm; path = ViroReact/Views/VRTObjectDetectorView.mm; sourceTree = "<group>"; };
 		133FE284206EE2FC00FB6F34 /* VRTVRSceneNavigatorManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = VRTVRSceneNavigatorManager.h; sourceTree = "<group>"; };
 		133FE28A206EE35300FB6F34 /* VRTVRSceneNavigatorManager.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = VRTVRSceneNavigatorManager.mm; sourceTree = "<group>"; };
 		133FE28C206EE4A500FB6F34 /* VRTVRSceneNavigator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = VRTVRSceneNavigator.h; sourceTree = "<group>"; };
 		133FE28D206EE4FD00FB6F34 /* VRTVRSceneNavigator.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = VRTVRSceneNavigator.mm; sourceTree = "<group>"; };
 		137E9D7D1F50E8C0008238E5 /* VRTPhotoLibraryAsyncLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VRTPhotoLibraryAsyncLoader.h; path = ViroReact/Utility/VRTPhotoLibraryAsyncLoader.h; sourceTree = "<group>"; };
 		137E9D801F50E8C0008238E5 /* VRTPhotoLibraryAsyncLoader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = VRTPhotoLibraryAsyncLoader.m; path = ViroReact/Utility/VRTPhotoLibraryAsyncLoader.m; sourceTree = "<group>"; };
+		13D07BA766FA1838342EE99B /* VRTObjectDetectorViewManager.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = VRTObjectDetectorViewManager.mm; path = ViroReact/Views/VRTObjectDetectorViewManager.mm; sourceTree = "<group>"; };
 		13F6301E2057616000A74EFC /* VRT3DSceneNavigatorModule.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = VRT3DSceneNavigatorModule.h; sourceTree = "<group>"; };
 		13F6302C205761B100A74EFC /* VRT3DSceneNavigatorModule.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = VRT3DSceneNavigatorModule.mm; sourceTree = "<group>"; };
 		13F63031205762AE00A74EFC /* VRT3DSceneNavigatorManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = VRT3DSceneNavigatorManager.h; sourceTree = "<group>"; };
@@ -924,9 +935,13 @@
 		13F630342057642500A74EFC /* VRT3DSceneNavigator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = VRT3DSceneNavigator.h; sourceTree = "<group>"; };
 		13F630352057644D00A74EFC /* VRT3DSceneNavigator.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = VRT3DSceneNavigator.mm; sourceTree = "<group>"; };
 		2AF018FC09EE4E59888B5326 /* VRTCameraTextureModule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VRTCameraTextureModule.h; path = ViroReact/VRTCameraTextureModule.h; sourceTree = "<group>"; };
+		38DEFB207E8A89190102DFCD /* VRTObjectDetectorViewManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VRTObjectDetectorViewManager.h; path = ViroReact/Views/VRTObjectDetectorViewManager.h; sourceTree = "<group>"; };
 		47F4064B745B414CB04314CB /* VRTCameraTexture.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VRTCameraTexture.h; path = ViroReact/Views/VRTCameraTexture.h; sourceTree = "<group>"; };
+		5725F603B6DA58A37795CC42 /* VRTExternalVideo.mm */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.cpp.objcpp; path = ViroReact/Views/VRTExternalVideo.mm; sourceTree = "<group>"; };
 		57CF2B561ADD4A318A7E0025 /* VRTCameraTextureManager.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = VRTCameraTextureManager.mm; path = ViroReact/VRTCameraTextureManager.mm; sourceTree = "<group>"; };
 		59F2ABC13A6A45E0A96EA94E /* VRTCameraTextureManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VRTCameraTextureManager.h; path = ViroReact/VRTCameraTextureManager.h; sourceTree = "<group>"; };
+		73A3E7191087FBC85005428A /* VRTExternalVideoManager.mm */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.cpp.objcpp; path = ViroReact/VRTExternalVideoManager.mm; sourceTree = "<group>"; };
+		756112FD61B724010775CDC2 /* VRTExternalVideo.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = ViroReact/Views/VRTExternalVideo.h; sourceTree = "<group>"; };
 		8A04D4DE2023EDDF00FD5F68 /* VRTARTrackingTargetsModule.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = VRTARTrackingTargetsModule.h; path = ViroReact/AR/Modules/VRTARTrackingTargetsModule.h; sourceTree = "<group>"; };
 		8A04D4DF2023EDDF00FD5F68 /* VRTARTrackingTargetsModule.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = VRTARTrackingTargetsModule.mm; path = ViroReact/AR/Modules/VRTARTrackingTargetsModule.mm; sourceTree = "<group>"; };
 		8A04D5162024F6B200FD5F68 /* VRTARImageMarkerManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = VRTARImageMarkerManager.h; path = ViroReact/AR/Managers/VRTARImageMarkerManager.h; sourceTree = "<group>"; };
@@ -1449,6 +1464,7 @@
 				8BE0D4F31DFA3D9B0032AB99 /* VRTViewContainerManager.h */,
 				8BE0D4F41DFA3D9B0032AB99 /* VRTViewContainerManager.mm */,
 				D36A8CD2C4DBF931585756EA /* Frameworks */,
+				73A3E7191087FBC85005428A /* VRTExternalVideoManager.mm */,
 			);
 			sourceTree = "<group>";
 		};
@@ -1498,6 +1514,10 @@
 			children = (
 				47F4064B745B414CB04314CB /* VRTCameraTexture.h */,
 				A0549ED8CB564EB0A6BFC513 /* VRTCameraTexture.mm */,
+				0871E522F33E82BD8D556061 /* VRTObjectDetectorView.h */,
+				0C1D1085FA290AAD5625E47F /* VRTObjectDetectorView.mm */,
+				38DEFB207E8A89190102DFCD /* VRTObjectDetectorViewManager.h */,
+				13D07BA766FA1838342EE99B /* VRTObjectDetectorViewManager.mm */,
 				94C35AD02FC0DE1F0064C011 /* VRTVirtualButtonView.h */,
 				94C35AD12FC0DE1F0064C011 /* VRTVirtualButtonView.mm */,
 				94C35AD22FC0DE1F0064C011 /* VRTVirtualButtonViewManager.h */,
@@ -1594,6 +1614,8 @@
 				8BE0D4F01DFA3D9B0032AB99 /* VRTVideoSurface.mm */,
 				8BE0D4F11DFA3D9B0032AB99 /* VRTView.h */,
 				8BE0D4F21DFA3D9B0032AB99 /* VRTView.mm */,
+				756112FD61B724010775CDC2 /* VRTExternalVideo.h */,
+				5725F603B6DA58A37795CC42 /* VRTExternalVideo.mm */,
 			);
 			name = Views;
 			sourceTree = "<group>";
@@ -2274,6 +2296,8 @@
 				A5E8F0AC1ED6B64E00729916 /* VRTSceneModule.mm in Sources */,
 				0CC0B5D4555D4AD9BB9C6A84 /* VRTCameraTexture.mm in Sources */,
 				7E0523EAEBF248789C000C3B /* VRTCameraTextureManager.mm in Sources */,
+				83696E7BE83BBB28FDB02942 /* VRTObjectDetectorView.mm in Sources */,
+				1FE9703E048130AC965AFDB6 /* VRTObjectDetectorViewManager.mm in Sources */,
 				83AD6FC66A21499F9172158A /* VRTCameraTextureModule.mm in Sources */,
 				8BDD9DD81E2EDC5200A42870 /* VRTCameraManager.mm in Sources */,
 				8BE0D4A11DFA15880032AB99 /* VRTLightManager.mm in Sources */,
@@ -2405,6 +2429,8 @@
 				8AEFA22F1EF34487006851B7 /* VRTARAnchorNode.mm in Sources */,
 				13F63033205762CB00A74EFC /* VRT3DSceneNavigatorManager.mm in Sources */,
 				8BE0D4FD1DFA3D9B0032AB99 /* VRTControl.mm in Sources */,
+				E016F47DBB02CDD80FDE8352 /* VRTExternalVideo.mm in Sources */,
+				FCD566F8509C2522A94C9CF2 /* VRTExternalVideoManager.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
