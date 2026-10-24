@@ -34,7 +34,8 @@ export const ViroGameLoopUtils = {
   ): void {
     const handle = findNodeHandle(nodeRef.current);
     if (handle == null) return;
-    UIManager.dispatchViewManagerCommand(handle, "setPosition", position);
+    // RN 0.88 types the command id as a number; both platforms accept the name string.
+    UIManager.dispatchViewManagerCommand(handle, "setPosition" as unknown as number, position);
   },
 
   /**
@@ -46,7 +47,7 @@ export const ViroGameLoopUtils = {
   ): void {
     const handle = findNodeHandle(nodeRef.current);
     if (handle == null) return;
-    UIManager.dispatchViewManagerCommand(handle, "setRotationEuler", rotation);
+    UIManager.dispatchViewManagerCommand(handle, "setRotationEuler" as unknown as number, rotation);
   },
 
   /**
@@ -58,6 +59,6 @@ export const ViroGameLoopUtils = {
   ): void {
     const handle = findNodeHandle(nodeRef.current);
     if (handle == null) return;
-    UIManager.dispatchViewManagerCommand(handle, "setScale", scale);
+    UIManager.dispatchViewManagerCommand(handle, "setScale" as unknown as number, scale);
   },
 };

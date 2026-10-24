@@ -117,7 +117,7 @@ type HostTarget = NativeSyntheticEvent<{ error: string }>["target"];
  * never mounted, so there is no host element: `target` and `currentTarget` are null.
  */
 function createErrorEvent(message: string): NativeSyntheticEvent<{ error: string }> {
-  const noHost = null as unknown as HostTarget;
+  const noHost = null as unknown as NonNullable<HostTarget>;
   return {
     nativeEvent: { error: message },
     currentTarget: noHost,
@@ -134,6 +134,7 @@ function createErrorEvent(message: string): NativeSyntheticEvent<{ error: string
     stopPropagation: () => undefined,
     isPropagationStopped: () => false,
     persist: () => undefined,
+    dispatchConfig: { registrationName: "onError" },
   };
 }
 

@@ -9,7 +9,9 @@
     "moduleResolution": "nodenext",
     "rootDir": ".",
     "outDir": "./dist",
-    "jsx": "preserve"
+    "jsx": "preserve",
+    // TS 6+/7 no longer auto-includes every @types package; the plugins need Node's.
+    "types": ["node"]
   },
   "include": ["plugins/**/*.ts"],
   "exclude": ["node_modules", "dist"]

@@ -329,7 +329,9 @@ export function useViroMapCamera(options: ViroMapCameraOptions = {}) {
       orthographicScale: scale,
     },
     /** Spread onto the overlay View, together with onLayout. */
-    panHandlers: panResponder.panHandlers,
+    panHandlers: panResponder.panHandlers as ReturnType<
+      typeof PanResponder.create
+    >["panHandlers"],
     onLayout,
     controls,
   };

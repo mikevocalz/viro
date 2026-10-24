@@ -1,9 +1,12 @@
 module.exports = {
   presets: [
     ['@babel/preset-env', {targets: {node: 'current'}}],
-    // `declare` fields (ViroCamera's `declare context`) are erased, as tsc erases
-    // them for the build; without this the preset refuses the file.
-    ['@babel/preset-typescript', {allowDeclareFields: true}],
+    // Babel 8 always accepts `declare` fields (ViroCamera's `declare context`) and
+    // erases them, as tsc does; the old allowDeclareFields option is gone.
+    // Babel 8 defaults onlyRemoveTypeImports to true, which keeps imports that
+    // are used only as types. tsc drops them, and the suites mock react-native
+    // and other modules on the assumption that the type-only ones never load.
+    ['@babel/preset-typescript', {onlyRemoveTypeImports: false}],
   ],
   overrides: [
     {

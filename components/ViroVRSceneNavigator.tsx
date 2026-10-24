@@ -533,7 +533,7 @@ export class ViroVRSceneNavigator extends React.Component<Props, State> {
    */
   _takeScreenshot = async (fileName: string, saveToCameraRoll: boolean) => {
     return await VRCapture.takeScreenshot(
-      findNodeHandle(this),
+      findNodeHandle(this) ?? null,
       fileName,
       saveToCameraRoll
     );
@@ -551,7 +551,7 @@ export class ViroVRSceneNavigator extends React.Component<Props, State> {
     onError: (errorCode: number) => void
   ) => {
     VRCapture.startVideoRecording(
-      findNodeHandle(this),
+      findNodeHandle(this) ?? null,
       fileName,
       saveToCameraRoll,
       onError
@@ -560,7 +560,7 @@ export class ViroVRSceneNavigator extends React.Component<Props, State> {
 
   /** Stops the recording. Resolves `{ success, url, errorCode }`. */
   _stopVideoRecording = async () => {
-    return await VRCapture.stopVideoRecording(findNodeHandle(this));
+    return await VRCapture.stopVideoRecording(findNodeHandle(this) ?? null);
   };
 
   _renderSceneStackItems() {
