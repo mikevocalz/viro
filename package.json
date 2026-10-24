@@ -3,7 +3,7 @@
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
-  "version": "3.0.2-moyo.2",
+  "version": "3.0.3-moyo.1",
   "license": "MIT",
   "publishConfig": {
     "access": "public",
@@ -34,7 +34,8 @@
     "test:rive-contract": "node scripts/test-rive-local-contract.cjs",
     "perf:tracesift:init": "npx --yes @callstack/tracesift@0.3.1 init",
     "perf:tracesift": "npx --yes @callstack/tracesift@0.3.1 start",
-    "test:plugin-load": "node scripts/check-plugin-loads.cjs"
+    "test:plugin-load": "node scripts/check-plugin-loads.cjs",
+    "check:ios-bridge": "bash scripts/check-ios-bridge.sh"
   },
   "peerDependencies": {
     "@reactvision/react-native-visionos": ">=0.86.0 <0.89.0",

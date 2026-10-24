@@ -34,11 +34,15 @@ import com.viro.core.ViroViewOpenXR;
  * JS usage (via NativeModules.VRModuleOpenXR):
  *   recenterTracking(viewTag)
  *   setPassthroughEnabled(viewTag, enabled)  // Week 4
+ *   takeScreenshot(viewTag, fileName, saveToCameraRoll) → {success, url, errorCode}
+ *   startVideoRecording(viewTag, fileName, saveToCameraRoll, onError(errorCode))
+ *   stopVideoRecording(viewTag) → {success, url, errorCode}
  */
 @ReactModule(name = "VRModuleOpenXR")
 public class VRModuleOpenXR extends ReactContextBaseJavaModule {
 
-    // Watermark, file, gallery and permission handling shared with AR capture.
+    // Watermark, file, gallery and permission handling, shared with the AR
+    // navigator's capture methods (ARSceneNavigatorModule).
     private final MediaCapture mCapture;
 
     public VRModuleOpenXR(ReactApplicationContext context) {
@@ -238,11 +242,6 @@ public class VRModuleOpenXR extends ReactContextBaseJavaModule {
         });
     }
 
-    /**
-     * Fire a controller haptic pulse. hand: 0 = left, 1 = right, 2 = both,
-     * -1 = whichever controller last pressed its trigger. amplitude ∈ [0,1],
-     * durationSec is the pulse length in seconds (e.g. 0.02–0.06 for a UI tick).
-     */
     // ------------------------------------------------------------------------
     // Screen capture
     //
@@ -391,6 +390,12 @@ public class VRModuleOpenXR extends ReactContextBaseJavaModule {
             }
         });
     }
+
+    /**
+     * Fire a controller haptic pulse. hand: 0 = left, 1 = right, 2 = both,
+     * -1 = whichever controller last pressed its trigger. amplitude ∈ [0,1],
+     * durationSec is the pulse length in seconds (e.g. 0.02–0.06 for a UI tick).
+     */
     @ReactMethod
     public void triggerHaptic(final int sceneNavTag, final int hand,
                               final float amplitude, final float durationSec) {

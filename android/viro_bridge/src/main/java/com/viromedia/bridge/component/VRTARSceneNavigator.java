@@ -650,7 +650,17 @@ public class VRTARSceneNavigator extends VRT3DSceneNavigator {
         // no-op — see FORK NOTE on startRecording
     }
 
+    /**
+     * The recording state, in the vocabulary JS declares.
+     *
+     * This used to return the Java enum's own name — NONE/RECORDING/IO_ERROR/UNSUPPORTED —
+     * while iOS returned None/Recording/IOError/Unsupported, so the same call answered
+     * differently per platform and no JS code could switch on it. Mapped by hand here,
+     * the way getEarthTrackingState() below already does.
+     */
     public String getRecordingStatus() {
+        // Stays Unsupported while startRecording is stubbed (see FORK NOTE above). Once it
+        // calls through, switch on arScene.getRecordingStatus() as upstream v3.0.3 does.
         return "Unsupported";
     }
 

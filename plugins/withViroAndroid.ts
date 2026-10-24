@@ -624,7 +624,9 @@ const withViroManifest = (config: ExpoConfig) =>
         }
         if (eyeTracking && !existingPermissions.includes("com.oculus.permission.EYE_TRACKING")) {
           contents.manifest["uses-permission"].push({
-            $: { "android:name": "com.oculus.permission.EYE_TRACKING" },
+            $: eyeTracking
+              ? { "android:name": "com.oculus.permission.EYE_TRACKING" }
+              : { "android:name": "com.oculus.permission.EYE_TRACKING", "tools:node": "remove" },
           });
         }
         // Spatial Data / Scene permissions — required for the Meta OpenXR runtime

@@ -37,6 +37,7 @@ export type ViroOpenXRRuntimeCapabilities = {
   eyeTrackedFoveationAvailable: boolean;
   localFloorAvailable: boolean;
 };
+
 /**
  * What screenshot and stop-recording resolve to, on every navigator. `url` is
  * the local file path on success; `errorCode` is a
