@@ -26,6 +26,6 @@ dependencies {
 // task for every variant. Fixes 'hasLocalAarDeps' evaluation failure.
 afterEvaluate {
     tasks.matching {
-        it.name.startsWith('bundle') && it.name.endsWith('Aar')
+        it.name.startsWith('bundle') && it.name.endsWith('Aar') && !it.name.endsWith('LocalLintAar')
     }.configureEach { enabled = false }
 }

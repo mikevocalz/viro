@@ -1,4 +1,6 @@
 import { describe, expect, test } from "@jest/globals";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { withDefaultInfoPlist } from "../plugins/withViroIos";
 import {
   noInfoPlistDefinitionsAppConfigAfter,
@@ -10,6 +12,16 @@ import {
   infoPlistDefinedAppConfigBefore,
   infoPlistDefinedTestPluginConfigs,
 } from "./infoPlistDefined";
+
+describe("Android prebuilt AAR wrappers", () => {
+  test.each(["react_viro", "viro_renderer"])(
+    "%s keeps lint artifacts enabled for all device variants",
+    (module) => {
+      const gradle = readFileSync(resolve(__dirname, "../android", module, "build.gradle"), "utf8");
+      expect(gradle).toContain("!it.name.endsWith('LocalLintAar')");
+    }
+  );
+});
 
 describe("withViro", () => {
   test("should correctly set InfoPlist config if no InfoPlist values are configured", () => {

@@ -23,6 +23,6 @@ dependencies {
 // Same AGP 8.12+ bundleAar guard as viro_renderer — see that build.gradle.
 afterEvaluate {
     tasks.matching {
-        it.name.startsWith('bundle') && it.name.endsWith('Aar')
+        it.name.startsWith('bundle') && it.name.endsWith('Aar') && !it.name.endsWith('LocalLintAar')
     }.configureEach { enabled = false }
 }
