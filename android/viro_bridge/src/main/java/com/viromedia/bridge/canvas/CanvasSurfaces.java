@@ -18,13 +18,20 @@ import java.util.Map;
  *
  * <p>Threading: {@link #provide} and {@link #revoke} usually arrive on Viro's GL render thread,
  * and revocation can also arrive on the thread that disposes the material. Every method is
- * safe to call from any thread. Listeners run on whichever thread triggered the event, never
- * under this registry's lock, so a listener may call back into the registry. Events for one
- * registry are delivered one at a time in the order they were recorded, including events a
- * listener causes from inside its own callback.
+ * safe to call from any thread. Listeners never run under this registry's lock, so a listener
+ * may call back into the registry. Events are delivered one at a time, in the order they were
+ * recorded, by whichever thread is delivering when they are recorded.
  *
- * <p>A listener should hand the Surface to its own render thread and return quickly. After
- * {@link Listener#onSurfaceRevoked} returns, the Surface may be released at any time.
+ * <p>{@link #provide}, both {@link #revoke} overloads and {@link #addListener} return only
+ * after every listener callback for the events they recorded has returned, even when another
+ * thread delivers those events. The owner can therefore release a Surface as soon as
+ * {@code revoke} returns. One exception: a call made from inside a listener callback runs on
+ * the delivering thread, so it cannot wait for itself. It returns at once, and its events are
+ * delivered after the current callback returns.
+ *
+ * <p>A listener should hand the Surface to its own render thread and return quickly, because
+ * a caller on another thread may be waiting for it. A listener must not block on a thread
+ * that is itself calling into this registry.
  */
 public final class CanvasSurfaces {
 
@@ -65,7 +72,12 @@ public final class CanvasSurfaces {
     private static final Map<Integer, Entry> sEntries = new HashMap<>();
     private static final Map<Integer, List<Registration>> sListeners = new HashMap<>();
     private static final ArrayDeque<Runnable> sPending = new ArrayDeque<>();
-    private static boolean sDispatching;
+    // Sequence number of the last event added to sPending, and of the last event whose
+    // callbacks have all returned. Events run in order, so sDelivered >= n means event n ran.
+    private static long sRecorded;
+    private static long sDelivered;
+    // The thread running queued events, or null when none is.
+    private static Thread sDispatcher;
 
     private CanvasSurfaces() {}
 
@@ -81,6 +93,7 @@ public final class CanvasSurfaces {
             throw new IllegalArgumentException("surface size must be positive, got "
                     + width + "x" + height);
         }
+        long ticket;
         synchronized (sLock) {
             Entry previous = sEntries.get(id);
             if (previous != null && previous.surface == surface
@@ -91,8 +104,9 @@ public final class CanvasSurfaces {
             sEntries.put(id, next);
             if (previous != null) enqueueRevoked(previous);
             enqueueProvided(next);
+            ticket = sRecorded;
         }
-        drain();
+        deliverThrough(ticket);
     }
 
     /**
@@ -101,12 +115,14 @@ public final class CanvasSurfaces {
      * @return true if a Surface was withdrawn
      */
     public static boolean revoke(int id) {
+        long ticket;
         synchronized (sLock) {
             Entry previous = sEntries.remove(id);
             if (previous == null) return false;
             enqueueRevoked(previous);
+            ticket = sRecorded;
         }
-        drain();
+        deliverThrough(ticket);
         return true;
     }
 
@@ -117,13 +133,15 @@ public final class CanvasSurfaces {
      * @return true if {@code surface} was current and is now withdrawn
      */
     public static boolean revoke(int id, Surface surface) {
+        long ticket;
         synchronized (sLock) {
             Entry current = sEntries.get(id);
             if (current == null || current.surface != surface) return false;
             sEntries.remove(id);
             enqueueRevoked(current);
+            ticket = sRecorded;
         }
-        drain();
+        deliverThrough(ticket);
         return true;
     }
 
@@ -144,6 +162,7 @@ public final class CanvasSurfaces {
     public static Subscription addListener(int id, Listener listener) {
         if (listener == null) throw new IllegalArgumentException("listener must not be null");
         final Registration registration = new Registration(id, listener);
+        long ticket;
         synchronized (sLock) {
             List<Registration> list = sListeners.get(id);
             if (list == null) {
@@ -153,22 +172,23 @@ public final class CanvasSurfaces {
             list.add(registration);
             final Entry current = sEntries.get(id);
             if (current != null) {
-                sPending.add(new Runnable() {
+                record(new Runnable() {
                     @Override
                     public void run() {
                         registration.provided(current);
                     }
                 });
             }
+            ticket = sRecorded;
         }
-        drain();
+        deliverThrough(ticket);
         return registration;
     }
 
     private static void enqueueProvided(final Entry entry) {
         final List<Registration> targets = snapshot(entry.id);
         if (targets.isEmpty()) return;
-        sPending.add(new Runnable() {
+        record(new Runnable() {
             @Override
             public void run() {
                 for (Registration target : targets) target.provided(entry);
@@ -179,7 +199,7 @@ public final class CanvasSurfaces {
     private static void enqueueRevoked(final Entry entry) {
         final List<Registration> targets = snapshot(entry.id);
         if (targets.isEmpty()) return;
-        sPending.add(new Runnable() {
+        record(new Runnable() {
             @Override
             public void run() {
                 for (Registration target : targets) target.revoked(entry);
@@ -193,33 +213,67 @@ public final class CanvasSurfaces {
         return list == null ? new ArrayList<Registration>() : new ArrayList<>(list);
     }
 
-    // Runs queued events outside the lock. Only one thread drains at a time, which keeps
-    // delivery in recording order; an event recorded while another thread drains is run by
-    // that thread.
-    private static void drain() {
-        synchronized (sLock) {
-            if (sDispatching) return;
-            sDispatching = true;
+    // Caller holds sLock.
+    private static void record(Runnable event) {
+        sPending.add(event);
+        sRecorded++;
+    }
+
+    /**
+     * Returns once every event up to sequence number {@code ticket} has been delivered. If no
+     * thread is delivering, the caller delivers the queue itself. If another thread is, the
+     * caller waits for it. If the caller is the delivering thread (a listener calling back
+     * in), it returns at once: its events are already queued behind the current callback.
+     */
+    private static void deliverThrough(long ticket) {
+        Thread self = Thread.currentThread();
+        boolean interrupted = false;
+        try {
+            while (true) {
+                synchronized (sLock) {
+                    if (sDelivered >= ticket || sDispatcher == self) return;
+                    if (sDispatcher != null) {
+                        try {
+                            sLock.wait();
+                        } catch (InterruptedException error) {
+                            // The owner may release the Surface once we return, so keep waiting.
+                            interrupted = true;
+                        }
+                        continue;
+                    }
+                    sDispatcher = self;
+                }
+                dispatch();
+            }
+        } finally {
+            if (interrupted) self.interrupt();
         }
-        boolean finished = false;
+    }
+
+    // Runs queued events outside the lock until the queue is empty. Caller is sDispatcher.
+    private static void dispatch() {
         try {
             while (true) {
                 Runnable next;
                 synchronized (sLock) {
                     next = sPending.poll();
-                    if (next == null) {
-                        sDispatching = false;
-                        finished = true;
-                        return;
+                    if (next == null) return;
+                }
+                try {
+                    next.run();
+                } finally {
+                    synchronized (sLock) {
+                        sDelivered++;
+                        sLock.notifyAll();
                     }
                 }
-                next.run();
             }
         } finally {
-            if (!finished) {
-                synchronized (sLock) {
-                    sDispatching = false;
-                }
+            // Also reached when an Error escapes a listener: a waiting thread takes over the
+            // rest of the queue instead of waiting forever.
+            synchronized (sLock) {
+                sDispatcher = null;
+                sLock.notifyAll();
             }
         }
     }
