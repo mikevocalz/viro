@@ -186,6 +186,31 @@ describe("useCanvasPanel lifecycle", () => {
     harness.unmount();
   });
 
+  it("passes blendMode PremultiplyAlpha through to the canvas material", async () => {
+    const harness = mountHarness({
+      producerFactory: () => makeProducer(),
+      resolution: { width: 64, height: 64 },
+      blendMode: "PremultiplyAlpha",
+    });
+    await harness.flush();
+    const [materials] = createdMaterials;
+    const materialName = Object.keys(materials!)[0]!;
+    expect(materials![materialName]).toMatchObject({ blendMode: "PremultiplyAlpha" });
+    harness.unmount();
+  });
+
+  it("leaves blendMode unset when none is requested", async () => {
+    const harness = mountHarness({
+      producerFactory: () => makeProducer(),
+      resolution: { width: 64, height: 64 },
+    });
+    await harness.flush();
+    const [materials] = createdMaterials;
+    const materialName = Object.keys(materials!)[0]!;
+    expect(materials![materialName]).not.toHaveProperty("blendMode");
+    harness.unmount();
+  });
+
   it("autoTick=false leaves the producer attached but inactive", async () => {
     const producer = makeProducer();
     const harness = mountHarness({

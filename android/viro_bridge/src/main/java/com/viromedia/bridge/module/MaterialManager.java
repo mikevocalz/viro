@@ -394,7 +394,15 @@ public class MaterialManager extends ReactContextBaseJavaModule {
                 } else if ("lightingModel".equalsIgnoreCase(materialPropertyName)) {
                     lightingModel = Material.LightingModel.valueFromString(materialMap.getString(materialPropertyName));
                 } else if ("blendMode".equalsIgnoreCase(materialPropertyName)) {
-                    blendMode = Material.BlendMode.valueFromString(materialMap.getString(materialPropertyName));
+                    String blendName = materialMap.getString(materialPropertyName);
+                    blendMode = Material.BlendMode.valueFromString(blendName);
+                    // The renderer's enum decides which names exist. A renderer without
+                    // PREMULTIPLY_ALPHA returns null here, and null would crash in Material.
+                    if (blendMode == null) {
+                        throw new IllegalArgumentException("Material '" + materialName
+                                + "': blendMode '" + blendName + "' is not supported by this "
+                                + "Viro renderer build");
+                    }
                 } else if ("transparencyMode".equalsIgnoreCase(materialPropertyName)) {
                     transparencyMode = Material.TransparencyMode.valueFromString(materialMap.getString(materialPropertyName));
                 } else if ("alpha".equalsIgnoreCase(materialPropertyName)) {

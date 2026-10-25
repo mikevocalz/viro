@@ -18,9 +18,13 @@ export type CanvasPanelOpts<P extends CanvasProducer> = {
   /**
    * Material blend mode. Defaults to the bridge's Alpha, which composites
    * the surface's alpha against the scene behind — the see-through panel
-   * look on headsets. "None" renders the texture fully opaque.
+   * look on headsets and expects straight (unpremultiplied) alpha. "None"
+   * renders the texture fully opaque. "PremultiplyAlpha" is for producers
+   * that write premultiplied alpha, such as Rive and the native whiteboard.
+   * Android needs a Viro renderer whose `Material.BlendMode` has
+   * `PREMULTIPLY_ALPHA`; on an older renderer, creating the material throws.
    */
-  blendMode?: "None" | "Alpha" | "Add" | "Subtract" | "Multiply" | "Screen";
+  blendMode?: "None" | "Alpha" | "Add" | "Subtract" | "Multiply" | "Screen" | "PremultiplyAlpha";
   /** Producer initialized; native Surface/frame readiness is exposed by the runtime. */
   onReady?: (state: CanvasPanelState<P>) => void;
   onError?: (error: Error) => void;

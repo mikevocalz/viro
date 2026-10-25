@@ -42,7 +42,7 @@ type ViroRivePanelCommonProps = {
   fallbackColor?: string;
   materialName?: string;
   /** "None" renders the panel face fully opaque — see `useCanvasPanel`. */
-  blendMode?: "None" | "Alpha" | "Add" | "Subtract" | "Multiply" | "Screen";
+  blendMode?: "None" | "Alpha" | "Add" | "Subtract" | "Multiply" | "Screen" | "PremultiplyAlpha";
   onReady?: () => void;
   onError?: (error: Error) => void;
   autoTick?: boolean;
