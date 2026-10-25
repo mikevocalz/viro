@@ -939,7 +939,7 @@ public class MaterialManager extends ReactContextBaseJavaModule {
             if (context == null) return false;
             if (mCanvasSource != null) {
                 if (mTextureContext == context && mCanvasBridge != null) return false;
-                CanvasSourceBridge next = new CanvasSourceBridge(mCanvasSource);
+                CanvasSourceBridge next = new CanvasSourceBridge(mCanvasSource, authoredBlendMode());
                 try {
                     Texture texture = next.create(context);
                     if (mCanvasBridge != null) mCanvasBridge.dispose();
@@ -957,6 +957,16 @@ public class MaterialManager extends ReactContextBaseJavaModule {
                 return true;
             }
             return false;
+        }
+
+        // The blendMode string this material was registered with, or null. The canvas texture
+        // keeps premultiplied alpha only when the material blends it as premultiplied.
+        private String authoredBlendMode() {
+            if (mMaterialSource == null || !mMaterialSource.hasKey("blendMode")
+                    || mMaterialSource.getType("blendMode") != ReadableType.String) {
+                return null;
+            }
+            return mMaterialSource.getString("blendMode");
         }
 
         public void dispose() {

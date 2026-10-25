@@ -19,6 +19,7 @@ final class CanvasSourceBridge {
     private final int id;
     private final int width;
     private final int height;
+    private final CanvasSourceStyle style;
     // Both null when nitro-canvas-in-Vision is not installed.
     private final Method provide;
     private final Method revoke;
@@ -30,10 +31,17 @@ final class CanvasSourceBridge {
         return source != null && source.hasKey("canvasSource");
     }
 
-    CanvasSourceBridge(ReadableMap source) {
+    /**
+     * @param source    the {@code canvasSource} texture value
+     * @param blendMode the material's {@code blendMode}, or null when unset. PremultiplyAlpha
+     *                  tells the renderer that the producer writes premultiplied alpha.
+     */
+    CanvasSourceBridge(ReadableMap source, String blendMode) {
         id = positiveInt(source, "canvasSource");
         width = positiveInt(source, "width");
         height = positiveInt(source, "height");
+        style = CanvasSourceStyle.of(blendMode, optionalNumber(source, "cornerRadius"),
+                optionalNumber(source, "panelWidth"), optionalNumber(source, "panelHeight"));
         Method provideMethod = null;
         Method revokeMethod = null;
         Class<?> producer = null;
@@ -69,10 +77,22 @@ final class CanvasSourceBridge {
         return (int) value;
     }
 
+    private static Double optionalNumber(ReadableMap source, String key) {
+        if (!source.hasKey(key) || source.isNull(key)) return null;
+        if (source.getType(key) != ReadableType.Number) {
+            throw new IllegalArgumentException("canvasSource " + key + " must be a number");
+        }
+        return source.getDouble(key);
+    }
+
     synchronized ExternalSurfaceTexture create(ViroContext context) {
         if (disposed) throw new IllegalStateException("canvasSource is disposed");
         if (texture == null) {
             texture = new ExternalSurfaceTexture(context, width, height, this::offer);
+            texture.setPremultipliedAlpha(style.premultipliedAlpha);
+            if (style.roundsCorners()) {
+                texture.setCornerRadius(style.cornerRadiusM, style.panelWidthM, style.panelHeightM);
+            }
             Surface surface = texture.getSurface();
             if (surface != null) offer(surface);
         }

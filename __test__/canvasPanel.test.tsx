@@ -87,7 +87,7 @@ jest.mock("../components/Material/ViroMaterials", () => ({
   },
 }));
 
-import { useCanvasPanel } from "../components/CanvasPanel/useCanvasPanel";
+import { canvasCorners, useCanvasPanel } from "../components/CanvasPanel/useCanvasPanel";
 import {
   applyBindings,
   bindingFingerprint,
@@ -308,6 +308,66 @@ describe("useCanvasPanel lifecycle", () => {
   });
 });
 
+describe("useCanvasPanel corner radius", () => {
+  it("adds cornerRadius and the panel size in meters to the canvasSource value", async () => {
+    const harness = mountHarness({
+      producerFactory: () => makeProducer(),
+      resolution: { width: 2496, height: 1560 },
+      blendMode: "PremultiplyAlpha",
+      cornerRadius: 0.021,
+      panelSize: { width: 0.6, height: 0.375 },
+    });
+    await harness.flush();
+    const [materials] = createdMaterials;
+    const materialName = Object.keys(materials!)[0]!;
+    expect(materials![materialName]).toMatchObject({
+      blendMode: "PremultiplyAlpha",
+      diffuseTexture: {
+        canvasSource: 1, width: 2496, height: 1560,
+        cornerRadius: 0.021, panelWidth: 0.6, panelHeight: 0.375,
+      },
+    });
+    harness.unmount();
+  });
+
+  it("leaves the canvasSource value untouched without a radius", async () => {
+    const harness = mountHarness({
+      producerFactory: () => makeProducer(),
+      resolution: { width: 64, height: 64 },
+      panelSize: { width: 1, height: 1 },
+    });
+    await harness.flush();
+    const [materials] = createdMaterials;
+    const materialName = Object.keys(materials!)[0]!;
+    expect((materials![materialName] as { diffuseTexture: object }).diffuseTexture)
+      .toEqual({ canvasSource: 1, width: 64, height: 64 });
+    harness.unmount();
+  });
+
+  it("reports a radius without a panel size before creating a surface", async () => {
+    const onError = jest.fn();
+    const harness = mountHarness({
+      producerFactory: () => makeProducer(),
+      resolution: { width: 64, height: 64 },
+      cornerRadius: 0.02,
+      onError,
+    });
+    await harness.flush();
+    expect(onError).toHaveBeenCalledWith(expect.objectContaining({
+      message: expect.stringContaining("panelSize"),
+    }));
+    expect(createdSurfaces).toHaveLength(0);
+    expect(createdMaterials).toHaveLength(0);
+    harness.unmount();
+  });
+
+  it("rejects a negative radius", () => {
+    expect(() => canvasCorners(-1, 1, 1)).toThrow("cornerRadius");
+    expect(() => canvasCorners(Number.NaN, 1, 1)).toThrow("cornerRadius");
+    expect(canvasCorners(0)).toBeNull();
+  });
+});
+
 describe("ViroRivePanel runtime replacement", () => {
   function mountPanel() {
     const container = document.createElement("div");
@@ -327,6 +387,26 @@ describe("ViroRivePanel runtime replacement", () => {
       unmount: () => act(() => root.unmount()),
     };
   }
+
+  it("rounds the panel with cornerRadius using width and height as the panel size", async () => {
+    runtimeQueue.push({ artboardWidth: 100, artboardHeight: 100 });
+    const panel = mountPanel();
+    panel.render({
+      width: 0.6,
+      height: 0.375,
+      cornerRadius: 0.021,
+      blendMode: "PremultiplyAlpha",
+      source: { rivBytes: new ArrayBuffer(8), fit: "contain" },
+    });
+    await panel.flush();
+    const [materials] = createdMaterials;
+    const materialName = Object.keys(materials!)[0]!;
+    expect(materials![materialName]).toMatchObject({
+      blendMode: "PremultiplyAlpha",
+      diffuseTexture: { cornerRadius: 0.021, panelWidth: 0.6, panelHeight: 0.375 },
+    });
+    panel.unmount();
+  });
 
   it("reapplies bindings to the new runtime after a source swap", async () => {
     const runtimeA = {

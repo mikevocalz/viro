@@ -25,6 +25,20 @@ export type CanvasPanelOpts<P extends CanvasProducer> = {
    * `PREMULTIPLY_ALPHA`; on an older renderer, creating the material throws.
    */
   blendMode?: "None" | "Alpha" | "Add" | "Subtract" | "Multiply" | "Screen" | "PremultiplyAlpha";
+  /**
+   * Corner radius in meters on the panel this canvas covers. The renderer's
+   * copy of each frame rounds the corners with a one-pixel anti-aliased edge,
+   * so the producer keeps drawing square content. Needs `panelSize`, because
+   * the pixel radius is computed per axis from the panel's size in meters.
+   * Default 0: square corners. Android only; iOS accepts the value and does
+   * not apply it yet.
+   */
+  cornerRadius?: number;
+  /**
+   * Size in meters of the panel the canvas covers (the quad's width and
+   * height). Required when `cornerRadius` is above 0, ignored otherwise.
+   */
+  panelSize?: { width: number; height: number };
   /** Producer initialized; native Surface/frame readiness is exposed by the runtime. */
   onReady?: (state: CanvasPanelState<P>) => void;
   onError?: (error: Error) => void;
@@ -49,7 +63,9 @@ export function useCanvasPanel<P extends CanvasProducer>(opts: CanvasPanelOpts<P
   const updateClock = React.useRef<(() => void) | null>(null);
   const { resolution: { width, height }, sRGB = true, androidRoute = "ahb",
     materialName: override, lightingModel = "Constant", fallbackColor = "#ffffff",
-    blendMode } = opts;
+    blendMode, cornerRadius = 0 } = opts;
+  const panelWidth = opts.panelSize?.width;
+  const panelHeight = opts.panelSize?.height;
 
   React.useEffect(() => {
     let alive = true;
@@ -99,6 +115,7 @@ export function useCanvasPanel<P extends CanvasProducer>(opts: CanvasPanelOpts<P
     });
 
     try {
+      const corners = canvasCorners(cornerRadius, panelWidth, panelHeight);
       const surface = requireNitroCanvas().createCanvasSurface({ width, height, sRGB, androidRoute });
       let producer: P;
       try { producer = latest.current.producerFactory(); }
@@ -106,7 +123,7 @@ export function useCanvasPanel<P extends CanvasProducer>(opts: CanvasPanelOpts<P
       const materialName = override ?? `viroCanvasPanel_${surface.id}`;
       resource = { surface, producer, materialName };
       ViroMaterials.createMaterials({ [materialName]: {
-        diffuseTexture: requireNitroCanvas().canvasSource(surface),
+        diffuseTexture: withCorners(requireNitroCanvas().canvasSource(surface), corners),
         diffuseColor: fallbackColor, lightingModel,
         ...(blendMode ? { blendMode } : null),
       } });
@@ -165,8 +182,33 @@ export function useCanvasPanel<P extends CanvasProducer>(opts: CanvasPanelOpts<P
         }
       }
     };
-  }, [width, height, sRGB, androidRoute, override, lightingModel, fallbackColor, blendMode, opts.resourceKey]);
+  }, [width, height, sRGB, androidRoute, override, lightingModel, fallbackColor, blendMode,
+    cornerRadius, panelWidth, panelHeight, opts.resourceKey]);
 
   React.useEffect(() => { updateClock.current?.(); }, [opts.autoTick]);
   return state;
+}
+
+type CanvasCorners = { cornerRadius: number; panelWidth: number; panelHeight: number } | null;
+
+/** Validates the corner options; throws before any native resource exists. */
+export function canvasCorners(radius: number, panelWidth?: number, panelHeight?: number): CanvasCorners {
+  if (!Number.isFinite(radius) || radius < 0) {
+    throw new Error(`cornerRadius must be a finite number of meters >= 0, got ${radius}`);
+  }
+  if (radius === 0) return null;
+  const valid = (value: number | undefined) => value !== undefined && Number.isFinite(value) && value > 0;
+  if (!valid(panelWidth) || !valid(panelHeight)) {
+    throw new Error("cornerRadius needs panelSize with a positive width and height in meters");
+  }
+  return { cornerRadius: radius, panelWidth: panelWidth!, panelHeight: panelHeight! };
+}
+
+/** Adds the corner keys the Android bridge reads to the canvasSource texture value. */
+function withCorners(source: unknown, corners: CanvasCorners): unknown {
+  if (!corners) return source;
+  if (source === null || typeof source !== "object") {
+    throw new Error("canvasSource(surface) did not return an object; cannot attach cornerRadius");
+  }
+  return { ...(source as Record<string, unknown>), ...corners };
 }

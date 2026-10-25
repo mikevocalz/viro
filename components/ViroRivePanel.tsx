@@ -43,6 +43,13 @@ type ViroRivePanelCommonProps = {
   materialName?: string;
   /** "None" renders the panel face fully opaque — see `useCanvasPanel`. */
   blendMode?: "None" | "Alpha" | "Add" | "Subtract" | "Multiply" | "Screen" | "PremultiplyAlpha";
+  /**
+   * Corner radius in meters. The renderer rounds the panel with transparent,
+   * anti-aliased corners; the Rive content stays square. Uses `width` and
+   * `height` as the panel size. Default 0. Android only; iOS accepts the
+   * value and does not apply it yet.
+   */
+  cornerRadius?: number;
   onReady?: () => void;
   onError?: (error: Error) => void;
   autoTick?: boolean;
@@ -85,6 +92,7 @@ export const ViroRivePanel = React.forwardRef<
     fallbackColor,
     materialName,
     blendMode,
+    cornerRadius,
     onReady,
     onError,
     autoTick,
@@ -116,6 +124,8 @@ export const ViroRivePanel = React.forwardRef<
     fallbackColor,
     materialName,
     blendMode,
+    cornerRadius,
+    panelSize: { width, height },
     onReady: ({ producer }) => {
       const value = producer.runtime;
       runtime.current =
