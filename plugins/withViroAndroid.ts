@@ -25,6 +25,10 @@ import {
   isMetaOnlyName,
   syncQuestFlavorManifest,
 } from "./util/questFlavorManifest";
+import {
+  OPENXR_RENDER_QUALITY_META_NAMES,
+  resolveOpenXRRenderQualityMetaData,
+} from "./util/openxrRenderQuality";
 import { ViroConfigurationOptions, XrMode } from "./withViro";
 import { assertMetaVrGlassesXrMode, resolveMetaDefaultDeviceTargets } from "./metaTargeting";
 let viroPluginConfig = ["AR", "GVR"];
@@ -1118,6 +1122,35 @@ const withViroMetaSpatialLayoutFlavors: ConfigPlugin<ViroConfigurationOptions> =
   ]);
 };
 
+/**
+ * Writes android.openxr as com.viro.openxr.* meta-data. Validation runs when
+ * the plugin is applied, so a bad value fails `expo prebuild` (and `expo
+ * config`) before any native file is touched. Existing entries with the same
+ * names are replaced, so a prebuild over an existing android/ stays idempotent.
+ */
+const withViroOpenXRRenderQuality: ConfigPlugin<ViroConfigurationOptions> = (
+  config,
+  props
+) => {
+  const configured = props?.android?.xRMode ?? ["GVR", "AR"];
+  const modes = Array.isArray(configured) ? configured : [configured as XrMode];
+  const entries = resolveOpenXRRenderQualityMetaData(props?.android?.openxr, modes);
+  return withAndroidManifest(config, async (config) => {
+    const application = config.modResults.manifest.application?.[0];
+    if (!application) return config;
+    const kept = (application["meta-data"] ?? []).filter(
+      (entry) => !OPENXR_RENDER_QUALITY_META_NAMES.includes(entry.$["android:name"])
+    );
+    application["meta-data"] = [
+      ...kept,
+      ...entries.map((entry) => ({
+        $: { "android:name": entry.name, "android:value": entry.value },
+      })),
+    ];
+    return config;
+  });
+};
+
 export const withViroAndroid: ConfigPlugin<ViroConfigurationOptions> = (
   config,
   props
@@ -1125,6 +1158,7 @@ export const withViroAndroid: ConfigPlugin<ViroConfigurationOptions> = (
   config = withBranchAndroid(config, props) as typeof config;
   config = withViroProjectBuildGradle(config) as typeof config;
   config = withViroManifest(config) as typeof config;
+  config = withViroOpenXRRenderQuality(config, props) as typeof config;
   config = withViroSettingsGradle(config) as typeof config;
   config = withViroAppBuildGradle(config, props) as typeof config;
   config = withViroQuestActivity(config, props) as typeof config;

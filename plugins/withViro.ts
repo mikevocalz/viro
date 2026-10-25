@@ -1,6 +1,7 @@
 import { ConfigPlugin } from "@expo/config-plugins";
 import { withViroAndroid } from "./withViroAndroid";
 import { withViroIos } from "./withViroIos";
+import type { OpenXRRenderQualityOptions } from "./util/openxrRenderQuality";
 
 const CAMERA_USAGE = "Allow $(PRODUCT_NAME) to use your camera";
 const MICROPHONE_USAGE = "Allow $(PRODUCT_NAME) to use your microphone";
@@ -285,6 +286,15 @@ export interface ViroConfigurationOptions {
       minSdkVersion?: number;
       targetSdkVersion?: number;
     };
+    /**
+     * Startup render quality for the OpenXR renderer: the eye-buffer scale and
+     * the foveation the session starts with. Requires xRMode to include
+     * "QUEST" or "PICO". Written to AndroidManifest as com.viro.openxr.*
+     * meta-data and validated at prebuild.
+     *
+     * DEFAULTS TO: eyeBufferScale 1.3, foveation { level: "low", dynamic: true }
+     */
+    openxr?: OpenXRRenderQualityOptions;
   };
 }
 
