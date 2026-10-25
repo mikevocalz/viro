@@ -287,12 +287,14 @@ export interface ViroConfigurationOptions {
       targetSdkVersion?: number;
     };
     /**
-     * Startup render quality for the OpenXR renderer: the eye-buffer scale and
-     * the foveation the session starts with. Requires xRMode to include
+     * Startup render quality for the OpenXR renderer: the eye-buffer scale,
+     * the foveation the session starts with, and an optional display refresh
+     * rate request. Requires xRMode to include
      * "QUEST" or "PICO". Written to AndroidManifest as com.viro.openxr.*
      * meta-data and validated at prebuild.
      *
-     * DEFAULTS TO: eyeBufferScale 1.3, foveation { level: "low", dynamic: true }
+     * DEFAULTS TO: eyeBufferScale 1.3, foveation { level: "low", dynamic: true },
+     * no displayRefreshRate request
      */
     openxr?: OpenXRRenderQualityOptions;
   };

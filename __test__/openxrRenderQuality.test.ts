@@ -5,6 +5,9 @@ import os from "os";
 import path from "path";
 import { withViroAndroid } from "../plugins/withViroAndroid";
 import {
+  OPENXR_DISPLAY_REFRESH_RATE_MAX_HZ,
+  OPENXR_DISPLAY_REFRESH_RATE_META,
+  OPENXR_RENDER_QUALITY_META_NAMES,
   OPENXR_EYE_BUFFER_SCALE_MAX,
   OPENXR_EYE_BUFFER_SCALE_META,
   OPENXR_EYE_BUFFER_SCALE_MIN,
@@ -109,6 +112,64 @@ describe("resolveOpenXRRenderQualityMetaData", () => {
     ).toThrow(/android\.openxr\.foveation\.dynamic/);
   });
 
+  test("displayRefreshRate 'highest'", () => {
+    expect(
+      resolveOpenXRRenderQualityMetaData({ displayRefreshRate: "highest" }, ["QUEST"])
+    ).toEqual([{ name: OPENXR_DISPLAY_REFRESH_RATE_META, value: "highest" }]);
+  });
+
+  test.each([72, 90, 72.5, 120, OPENXR_DISPLAY_REFRESH_RATE_MAX_HZ])(
+    "displayRefreshRate %p Hz",
+    (displayRefreshRate) => {
+      expect(
+        resolveOpenXRRenderQualityMetaData({ displayRefreshRate }, ["PICO"])
+      ).toEqual([{ name: OPENXR_DISPLAY_REFRESH_RATE_META, value: String(displayRefreshRate) }]);
+    }
+  );
+
+  test("displayRefreshRate comes last, after the other keys", () => {
+    expect(
+      resolveOpenXRRenderQualityMetaData(
+        { eyeBufferScale: 1.3, foveation: { level: "low" }, displayRefreshRate: "highest" },
+        ["QUEST"]
+      ).map((e) => e.name)
+    ).toEqual([
+      OPENXR_EYE_BUFFER_SCALE_META,
+      OPENXR_FOVEATION_LEVEL_META,
+      OPENXR_DISPLAY_REFRESH_RATE_META,
+    ]);
+  });
+
+  test("the max is 240 Hz and the key is in the meta-name list", () => {
+    expect(OPENXR_DISPLAY_REFRESH_RATE_MAX_HZ).toBe(240);
+    expect(OPENXR_DISPLAY_REFRESH_RATE_META).toBe("com.viro.openxr.displayRefreshRate");
+    expect(OPENXR_RENDER_QUALITY_META_NAMES).toContain(OPENXR_DISPLAY_REFRESH_RATE_META);
+  });
+
+  test.each([
+    0,
+    -90,
+    240.5,
+    NaN,
+    Infinity,
+    -Infinity,
+    "90" as unknown as number,
+    "Highest" as unknown as number,
+    "max" as unknown as number,
+    null as unknown as number,
+    true as unknown as number,
+  ])("rejects displayRefreshRate %p", (displayRefreshRate) => {
+    expect(() =>
+      resolveOpenXRRenderQualityMetaData({ displayRefreshRate }, ["QUEST"])
+    ).toThrow(/android\.openxr\.displayRefreshRate must be "highest" or a number of Hz/);
+  });
+
+  test("displayRefreshRate alone still requires an OpenXR xRMode", () => {
+    expect(() =>
+      resolveOpenXRRenderQualityMetaData({ displayRefreshRate: "highest" }, ["AR"])
+    ).toThrow(/android\.openxr requires android\.xRMode/);
+  });
+
   test("requires an OpenXR xRMode", () => {
     expect(() =>
       resolveOpenXRRenderQualityMetaData({ eyeBufferScale: 1.3 }, ["AR", "GVR"])
@@ -184,12 +245,28 @@ describe("android.openxr in the manifest", () => {
     expect(meta[OPENXR_FOVEATION_DYNAMIC_META]).toEqual(["false"]);
   });
 
+  test("writes the refresh-rate meta-data", async () => {
+    const manifest = await prebuild(makeProject(), {
+      xRMode: ["QUEST"],
+      openxr: { displayRefreshRate: "highest" },
+    });
+    expect(metaData(manifest)[OPENXR_DISPLAY_REFRESH_RATE_META]).toEqual(["highest"]);
+  });
+
+  test("removing displayRefreshRate on a later prebuild removes its meta-data", async () => {
+    const root = makeProject();
+    await prebuild(root, { xRMode: ["QUEST"], openxr: { displayRefreshRate: 90 } });
+    const manifest = await prebuild(root, { xRMode: ["QUEST"], openxr: { eyeBufferScale: 1.3 } });
+    expect(metaData(manifest)[OPENXR_DISPLAY_REFRESH_RATE_META]).toBeUndefined();
+  });
+
   test("writes nothing when openxr is omitted", async () => {
     const manifest = await prebuild(makeProject(), { xRMode: ["QUEST"] });
     const meta = metaData(manifest);
     expect(meta[OPENXR_EYE_BUFFER_SCALE_META]).toBeUndefined();
     expect(meta[OPENXR_FOVEATION_LEVEL_META]).toBeUndefined();
     expect(meta[OPENXR_FOVEATION_DYNAMIC_META]).toBeUndefined();
+    expect(meta[OPENXR_DISPLAY_REFRESH_RATE_META]).toBeUndefined();
   });
 
   test("a second prebuild over the same manifest does not duplicate entries", async () => {

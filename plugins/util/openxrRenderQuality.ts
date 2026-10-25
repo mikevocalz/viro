@@ -26,10 +26,21 @@ export interface OpenXRFoveationOptions {
 }
 
 /**
+ * A display refresh rate request for XR_FB_display_refresh_rate. Used by
+ * {@link OpenXRRenderQualityOptions.displayRefreshRate}.
+ *
+ * - `"highest"`: the highest rate the headset's runtime offers.
+ * - A number: the closest supported rate at or below that many Hz, from above
+ *   0 to {@link OPENXR_DISPLAY_REFRESH_RATE_MAX_HZ}. When every supported rate
+ *   is higher, the lowest one is used.
+ */
+export type OpenXRDisplayRefreshRate = "highest" | number;
+
+/**
  * Startup render quality for the OpenXR renderer, set as `android.openxr` in
  * the Viro config plugin options. Requires `android.xRMode` to include
- * `"QUEST"` or `"PICO"`. Both fields are read once, when the OpenXR session
- * starts; there is no JS API to change them at runtime.
+ * `"QUEST"` or `"PICO"`. Every field is read when the OpenXR session starts;
+ * there is no JS API to change them at runtime.
  */
 export interface OpenXRRenderQualityOptions {
   /**
@@ -50,6 +61,16 @@ export interface OpenXRRenderQualityOptions {
    * @default { level: "low", dynamic: true }
    */
   foveation?: OpenXRFoveationOptions;
+  /**
+   * Display refresh rate to request each time the OpenXR session begins. The
+   * runtime treats it as a hint, and runtimes without XR_FB_display_refresh_rate
+   * ignore it. The renderer logs the requested, chosen and current rate.
+   *
+   * Written to AndroidManifest as com.viro.openxr.displayRefreshRate.
+   *
+   * @default undefined: no request, the runtime keeps its own rate
+   */
+  displayRefreshRate?: OpenXRDisplayRefreshRate;
 }
 
 /** Manifest key for {@link OpenXRRenderQualityOptions.eyeBufferScale}. */
@@ -58,6 +79,14 @@ export const OPENXR_EYE_BUFFER_SCALE_META = "com.viro.openxr.eyeBufferScale";
 export const OPENXR_FOVEATION_LEVEL_META = "com.viro.openxr.foveationLevel";
 /** Manifest key for {@link OpenXRFoveationOptions.dynamic}. */
 export const OPENXR_FOVEATION_DYNAMIC_META = "com.viro.openxr.foveationDynamic";
+/** Manifest key for {@link OpenXRRenderQualityOptions.displayRefreshRate}. */
+export const OPENXR_DISPLAY_REFRESH_RATE_META = "com.viro.openxr.displayRefreshRate";
+
+/**
+ * Largest accepted numeric {@link OpenXRRenderQualityOptions.displayRefreshRate},
+ * in Hz. A sanity bound against typos; no current headset reaches it.
+ */
+export const OPENXR_DISPLAY_REFRESH_RATE_MAX_HZ = 240;
 
 /**
  * Smallest accepted {@link OpenXRRenderQualityOptions.eyeBufferScale}. 1.0 is
@@ -102,7 +131,7 @@ export function resolveOpenXRRenderQualityMetaData(
     return [];
   }
   const entries: OpenXRMetaDataEntry[] = [];
-  const { eyeBufferScale, foveation } = options;
+  const { eyeBufferScale, foveation, displayRefreshRate } = options;
 
   if (eyeBufferScale !== undefined) {
     if (
@@ -141,6 +170,22 @@ export function resolveOpenXRRenderQualityMetaData(
     }
   }
 
+  if (displayRefreshRate !== undefined) {
+    const isHz =
+      typeof displayRefreshRate === "number" &&
+      Number.isFinite(displayRefreshRate) &&
+      displayRefreshRate > 0 &&
+      displayRefreshRate <= OPENXR_DISPLAY_REFRESH_RATE_MAX_HZ;
+    if (displayRefreshRate !== "highest" && !isHz) {
+      fail(
+        `android.openxr.displayRefreshRate must be "highest" or a number of Hz above 0 ` +
+          `and at most ${OPENXR_DISPLAY_REFRESH_RATE_MAX_HZ}, got ${describe(displayRefreshRate)}. ` +
+          "Omit it to keep the runtime's rate."
+      );
+    }
+    entries.push({ name: OPENXR_DISPLAY_REFRESH_RATE_META, value: String(displayRefreshRate) });
+  }
+
   if (entries.length > 0 && !xrModes.some((mode) => OPENXR_XR_MODES.includes(mode))) {
     fail(
       'android.openxr requires android.xRMode to include "QUEST" or "PICO"; ' +
@@ -155,4 +200,5 @@ export const OPENXR_RENDER_QUALITY_META_NAMES: readonly string[] = [
   OPENXR_EYE_BUFFER_SCALE_META,
   OPENXR_FOVEATION_LEVEL_META,
   OPENXR_FOVEATION_DYNAMIC_META,
+  OPENXR_DISPLAY_REFRESH_RATE_META,
 ];
