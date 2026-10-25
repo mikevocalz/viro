@@ -5,15 +5,21 @@ import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableType;
 import com.viro.core.ExternalSurfaceTexture;
 import com.viro.core.ViroContext;
+import com.viromedia.bridge.canvas.CanvasSurfaces;
 import java.lang.reflect.Method;
 
-/** Owns the renderer texture; Nitro only borrows its producer Surface. */
+/**
+ * Owns the renderer texture and publishes its producer Surface through {@link CanvasSurfaces}.
+ * Apps that still ship nitro-canvas-in-Vision also get the Surface through its
+ * CanvasSourceSurfaces class, found by reflection.
+ */
 final class CanvasSourceBridge {
     private static final String PRODUCER =
             "com.margelo.nitro.nitrocanvasinVision.CanvasSourceSurfaces";
     private final int id;
     private final int width;
     private final int height;
+    // Both null when nitro-canvas-in-Vision is not installed.
     private final Method provide;
     private final Method revoke;
     private ExternalSurfaceTexture texture;
@@ -28,15 +34,26 @@ final class CanvasSourceBridge {
         id = positiveInt(source, "canvasSource");
         width = positiveInt(source, "width");
         height = positiveInt(source, "height");
+        Method provideMethod = null;
+        Method revokeMethod = null;
+        Class<?> producer = null;
         try {
-            Class<?> producer = Class.forName(PRODUCER);
-            provide = producer.getMethod("provideSurface", int.class, Surface.class,
-                    int.class, int.class);
-            revoke = producer.getMethod("revokeSurface", int.class, Surface.class);
-        } catch (ReflectiveOperationException error) {
-            throw new IllegalStateException("canvasSource requires a compatible "
-                    + "nitro-canvas-in-Vision with CanvasSourceSurfaces", error);
+            producer = Class.forName(PRODUCER);
+        } catch (ClassNotFoundException absent) {
+            // Native producers subscribe to CanvasSurfaces; Nitro is optional.
         }
+        if (producer != null) {
+            try {
+                provideMethod = producer.getMethod("provideSurface", int.class, Surface.class,
+                        int.class, int.class);
+                revokeMethod = producer.getMethod("revokeSurface", int.class, Surface.class);
+            } catch (NoSuchMethodException error) {
+                throw new IllegalStateException("nitro-canvas-in-Vision is installed but its "
+                        + "CanvasSourceSurfaces lacks provideSurface/revokeSurface", error);
+            }
+        }
+        provide = provideMethod;
+        revoke = revokeMethod;
     }
 
     private static int positiveInt(ReadableMap source, String key) {
@@ -64,8 +81,10 @@ final class CanvasSourceBridge {
 
     private synchronized void offer(Surface surface) {
         if (disposed || offered == surface) return;
+        offered = surface;
+        CanvasSurfaces.provide(id, surface, width, height);
+        if (provide == null) return;
         try {
-            offered = surface;
             provide.invoke(null, id, surface, width, height);
         } catch (ReflectiveOperationException error) {
             // Fail visibly without unwinding through a native rendering callback.
@@ -77,7 +96,10 @@ final class CanvasSourceBridge {
         if (disposed) return;
         disposed = true;
         try {
-            if (offered != null) revoke.invoke(null, id, offered);
+            if (offered != null) {
+                CanvasSurfaces.revoke(id, offered);
+                if (revoke != null) revoke.invoke(null, id, offered);
+            }
         } catch (ReflectiveOperationException error) {
             android.util.Log.e("CanvasSourceBridge", "Cannot revoke canvas Surface", error);
         } finally {
