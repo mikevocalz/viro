@@ -227,32 +227,119 @@ RCT_EXPORT_METHOD(rvGetProjectId:(RCTPromiseResolveBlock)resolve
     resolve(projectId ?: [NSNull null]);
 }
 
-// @internal — sets/clears the first-party session auth (see gStudioSession).
-// A dict { baseUrl, accessToken, clientTag?, functionRegion? } enables session mode; null /
-// NSNull / malformed reverts to manifest RVApiKey mode. The renderer keeps its
-// own copy, which cloud anchors and the co-location channel read.
-RCT_EXPORT_METHOD(rvSetStudioSession:(id)config
-                             resolve:(RCTPromiseResolveBlock)resolve
-                              reject:(RCTPromiseRejectBlock)reject) {
-    NSString *baseUrl     = [config isKindOfClass:[NSDictionary class]] ? config[@"baseUrl"] : nil;
-    NSString *accessToken = [config isKindOfClass:[NSDictionary class]] ? config[@"accessToken"] : nil;
-    if (baseUrl.length == 0 || accessToken.length == 0) {
-        gStudioSession = nil;
-        [VROColocationBridge setStudioSessionBaseUrl:nil accessToken:nil clientTag:nil];
-        resolve([NSNull null]);
-        return;
+// Rules for the internal session config, shared with Android's StudioSessionRules. The
+// session's bearer token goes to baseUrl on every Studio, cloud-anchor and co-location
+// request, so baseUrl must be https; cleartext is allowed only for the hosts a local platform
+// runs on (localhost, 127.0.0.1, and 10.0.2.2 for parity with the Android emulator).
+// functionRegion is sent as the x-region header, so it must be a plain region slug.
+
+// Returns nil when value is absent or NSNull, sets *error when it is not a string.
+static NSString *RVOptionalString(NSDictionary *config, NSString *key, NSString **error) {
+    id value = config[key];
+    if (value == nil || value == [NSNull null]) return nil;
+    if (![value isKindOfClass:[NSString class]]) {
+        *error = [NSString stringWithFormat:@"%@ must be a string", key];
+        return nil;
+    }
+    return value;
+}
+
+// Returns baseUrl without trailing slashes, or nil with *error set.
+static NSString *RVValidatedBaseUrl(NSString *baseUrl, NSString **error) {
+    NSURLComponents *components = [NSURLComponents componentsWithString:baseUrl];
+    if (!components) {
+        *error = @"baseUrl is not a valid URL";
+        return nil;
+    }
+    NSString *scheme = components.scheme.lowercaseString ?: @"";
+    NSString *host = components.host.lowercaseString;
+    if (![scheme isEqualToString:@"https"] && ![scheme isEqualToString:@"http"]) {
+        *error = @"baseUrl must use https";
+        return nil;
+    }
+    if (host.length == 0) {
+        *error = @"baseUrl has no host";
+        return nil;
+    }
+    if ([scheme isEqualToString:@"http"] &&
+        ![@[@"localhost", @"127.0.0.1", @"10.0.2.2"] containsObject:host]) {
+        *error = @"baseUrl must use https; http is allowed only for localhost, 127.0.0.1 and 10.0.2.2";
+        return nil;
+    }
+    if (components.user != nil || components.password != nil) {
+        *error = @"baseUrl must not contain credentials";
+        return nil;
+    }
+    if (components.query != nil) {
+        *error = @"baseUrl must not have a query";
+        return nil;
+    }
+    if (components.fragment != nil) {
+        *error = @"baseUrl must not have a fragment";
+        return nil;
     }
     while ([baseUrl hasSuffix:@"/"]) {
         baseUrl = [baseUrl substringToIndex:baseUrl.length - 1];
     }
+    return baseUrl;
+}
+
+// Empty means "not pinned", as before. Anything else must match ^[a-z0-9-]{1,32}$.
+static BOOL RVValidFunctionRegion(NSString *region) {
+    if (region.length == 0) return YES;
+    if (region.length > 32) return NO;
+    NSCharacterSet *allowed =
+        [NSCharacterSet characterSetWithCharactersInString:@"abcdefghijklmnopqrstuvwxyz0123456789-"];
+    return [region rangeOfCharacterFromSet:allowed.invertedSet].location == NSNotFound;
+}
+
+static void RVClearStudioSession(void) {
+    gStudioSession = nil;
+    [VROColocationBridge setStudioSessionBaseUrl:nil accessToken:nil clientTag:nil];
+}
+
+// @internal — sets/clears the first-party session auth (see gStudioSession).
+// A dict { baseUrl, accessToken, clientTag?, functionRegion? } enables session mode; nil,
+// NSNull, or a missing or empty baseUrl or accessToken reverts to manifest RVApiKey mode. A
+// config that breaks a rule above (wrong type, non-https baseUrl, malformed functionRegion) is
+// rejected with E_INVALID_STUDIO_SESSION and also clears the session, so a bad config never
+// leaves an older token pointed at an older host. The renderer keeps its own copy, which
+// cloud anchors and the co-location channel read.
+RCT_EXPORT_METHOD(rvSetStudioSession:(id)config
+                             resolve:(RCTPromiseResolveBlock)resolve
+                              reject:(RCTPromiseRejectBlock)reject) {
+    if (config == nil || config == [NSNull null]) {
+        RVClearStudioSession();
+        resolve([NSNull null]);
+        return;
+    }
+    NSString *error = nil;
+    if (![config isKindOfClass:[NSDictionary class]]) {
+        error = @"session config must be an object";
+    }
+    NSString *baseUrl = nil, *accessToken = nil, *clientTag = nil, *functionRegion = nil;
+    if (!error) baseUrl = RVOptionalString(config, @"baseUrl", &error);
+    if (!error) accessToken = RVOptionalString(config, @"accessToken", &error);
+    if (!error) clientTag = RVOptionalString(config, @"clientTag", &error);
+    if (!error) functionRegion = RVOptionalString(config, @"functionRegion", &error);
+    if (!error && (baseUrl.length == 0 || accessToken.length == 0)) {
+        RVClearStudioSession();
+        resolve([NSNull null]);
+        return;
+    }
+    if (!error) baseUrl = RVValidatedBaseUrl(baseUrl, &error);
+    if (!error && !RVValidFunctionRegion(functionRegion)) {
+        error = @"functionRegion must match ^[a-z0-9-]{1,32}$";
+    }
+    if (error) {
+        RVClearStudioSession();
+        reject(@"E_INVALID_STUDIO_SESSION", error, nil);
+        return;
+    }
     NSMutableDictionary *snapshot =
         [@{ @"baseUrl": baseUrl, @"accessToken": accessToken } mutableCopy];
-    NSString *clientTag = config[@"clientTag"];
     if (clientTag.length > 0) snapshot[@"clientTag"] = clientTag;
-    NSString *functionRegion = config[@"functionRegion"];
-    if ([functionRegion isKindOfClass:[NSString class]] && functionRegion.length > 0) {
-        snapshot[@"functionRegion"] = functionRegion;
-    }
+    if (functionRegion.length > 0) snapshot[@"functionRegion"] = functionRegion;
     gStudioSession = [snapshot copy];
     [VROColocationBridge setStudioSessionBaseUrl:baseUrl
                                      accessToken:accessToken

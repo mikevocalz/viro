@@ -12,13 +12,17 @@ export interface StudioModuleResult {
  * real boundary.
  */
 export interface StudioSessionConfig {
+  /**
+   * Must be https. Plain http is accepted only for localhost, 127.0.0.1 and
+   * 10.0.2.2. No credentials, query or fragment.
+   */
   baseUrl: string;
   accessToken: string;
   clientTag?: string;
   /**
    * The session project's database region (e.g. `eu-west-2`), sent as
    * `x-region` so its edge functions run beside the database. Omitted, only
-   * the default platform URL is pinned.
+   * the default platform URL is pinned. Must match `^[a-z0-9-]{1,32}$`.
    */
   functionRegion?: string;
 }
@@ -87,7 +91,9 @@ export const VRTStudioModule = {
    * @internal — sets/clears an internal session so the fetch methods use
    * `${baseUrl}/functions/v1/...` with `Authorization: Bearer` (and no
    * `x-api-key`) instead of the manifest RVApiKey. Pass null to revert to
-   * API-key mode. Session auth wins over any manifest key.
+   * API-key mode. Session auth wins over any manifest key. Native rejects a
+   * config that breaks a StudioSessionConfig rule with code
+   * `E_INVALID_STUDIO_SESSION` and clears any session it had.
    */
   rvSetStudioSession: (config: StudioSessionConfig | null): Promise<void> => {
     // Method-level guard, not just `!native`: JS can OTA ahead of the native
