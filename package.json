@@ -91,6 +91,7 @@
     "android/viro_renderer",
     "android/gvr_common",
     "android/arcore_client",
+    "android/one-launcher-tile.gradle",
     "ios/dist",
     "ios/ViroReact",
     "ios/*.h",

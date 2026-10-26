@@ -14,6 +14,12 @@ import type { ExpoConfig } from "@expo/config-types";
 import fs from "fs";
 import path from "path";
 import { insertLinesHelper } from "./util/insertLinesHelper";
+import {
+  assertOneLauncherTileOnDisk,
+  removeMainActionFromActivity,
+  VR_ACTIVITY_ACTION,
+  VR_ACTIVITY_NAME,
+} from "./util/launcherTiles";
 import { addQuestRenderModelEntries } from "./util/questRenderModel";
 import {
   META_SPATIAL_LAYOUT_FLAVOR_WARNING,
@@ -260,14 +266,18 @@ const withViroAppBuildGradle = (
     implementation 'com.google.android.gms:play-services-location:21.0.1'${metaSpatialDependencies}
     // ========================================================================`;
 
+    // A prebuild over an existing android/ already has the block.
+    const hasViroDependencies = config.modResults.contents.includes(
+      "implementation project(path: ':react_viro')"
+    );
     // Add Viro dependencies for legacy architecture (fallback)
-    config.modResults.contents = config.modResults.contents.replace(
+    if (!hasViroDependencies) config.modResults.contents = config.modResults.contents.replace(
       /implementation "com.facebook.react:react-native:\+"  \/\/ From node_modules/,
       `implementation "com.facebook.react:react-native:+"  // From node_modules${viroNewArchDependencies}`
     );
 
     // Add Viro dependencies for new architecture (primary)
-    config.modResults.contents = config.modResults.contents.replace(
+    if (!hasViroDependencies) config.modResults.contents = config.modResults.contents.replace(
       /implementation\("com.facebook.react:react-android"\)/,
       `implementation("com.facebook.react:react-android")${viroNewArchDependencies}`
     );
@@ -959,22 +969,25 @@ class VRActivity : ReactActivity() {
     if (!app.activity) app.activity = [];
 
     const alreadyAdded = app.activity.some(
-      (a: any) => a.$?.["android:name"] === ".VRActivity"
+      (a: any) => a.$?.["android:name"] === VR_ACTIVITY_NAME
     );
 
     if (!alreadyAdded) {
       (app.activity as any[]).push({
         $: {
-          "android:name": ".VRActivity",
+          "android:name": VR_ACTIVITY_NAME,
           "android:screenOrientation": "landscape",
           "android:exported": "false",
           "android:configChanges":
             "keyboard|keyboardHidden|orientation|screenSize|uiMode",
           "android:launchMode": "singleTask",
         },
+        // Never android.intent.action.MAIN: Horizon OS and PICO OS list every
+        // MAIN activity with a VR category as its own library tile, and
+        // VRLauncher starts this activity with an explicit intent anyway.
         "intent-filter": [
           {
-            action: [{ $: { "android:name": "android.intent.action.MAIN" } }],
+            action: [{ $: { "android:name": VR_ACTIVITY_ACTION } }],
             category: [
               { $: { "android:name": "com.oculus.intent.category.VR" } },
             ],
@@ -990,6 +1003,11 @@ class VRActivity : ReactActivity() {
         ],
       });
     }
+    // An android/ from an older plugin version still has MAIN here.
+    const vrActivity = app.activity.find(
+      (a: any) => a.$?.["android:name"] === VR_ACTIVITY_NAME
+    );
+    if (vrActivity) removeMainActionFromActivity(vrActivity as any);
 
     // Quest store validator requires all activities to be landscape.
     // Only apply when targeting Quest (questAppId present); AR/phone apps use portrait.
@@ -1151,10 +1169,69 @@ const withViroOpenXRRenderQuality: ConfigPlugin<ViroConfigurationOptions> = (
   });
 };
 
+const ONE_LAUNCHER_TILE_MARKER = "// @reactvision/react-viro: one launcher tile check";
+
+/**
+ * Returns app/build.gradle with exactly one `apply from:` line for
+ * android/one-launcher-tile.gradle, placed at the end. `scriptPath` is
+ * relative to the app module directory. Idempotent.
+ */
+export function applyOneLauncherTileGradle(contents: string, scriptPath: string): string {
+  const kept = contents
+    .split("\n")
+    .filter((line, i, lines) => {
+      if (line.trim() === ONE_LAUNCHER_TILE_MARKER) return false;
+      return !(lines[i - 1]?.trim() === ONE_LAUNCHER_TILE_MARKER && line.includes("one-launcher-tile.gradle"));
+    })
+    .join("\n")
+    .replace(/\n+$/, "");
+  return `${kept}\n\n${ONE_LAUNCHER_TILE_MARKER}\napply from: "${scriptPath}"\n`;
+}
+
+/**
+ * Keeps every Viro app at one headset library tile. VRActivity never gets
+ * android.intent.action.MAIN (an older android/ is cleaned), the prebuild
+ * fails when the main manifest, alone or with any flavor manifest, has more
+ * than one launcher-visible activity, and app/build.gradle applies the
+ * Gradle check that reads each variant's merged manifest, library manifests
+ * included. Runs for every xRMode: the second tile came from a PICO build.
+ */
+const withViroOneLauncherTile: ConfigPlugin<ViroConfigurationOptions> = (config) => {
+  config = withAndroidManifest(config, (config) => {
+    const app = config.modResults.manifest.application?.[0];
+    const vrActivity = app?.activity?.find(
+      (a: any) => a.$?.["android:name"] === VR_ACTIVITY_NAME
+    );
+    if (vrActivity) removeMainActionFromActivity(vrActivity as any);
+    return config;
+  });
+  config = withAppBuildGradle(config, (config) => {
+    const viroAndroidRoot = resolveViroAndroidRelativePath(
+      config.modRequest.projectRoot,
+      path.join(config.modRequest.platformProjectRoot, "app")
+    );
+    config.modResults.contents = applyOneLauncherTileGradle(
+      config.modResults.contents,
+      `${viroAndroidRoot}/one-launcher-tile.gradle`
+    );
+    return config;
+  });
+  return withFinalizedMod(config, [
+    "android",
+    async (config) => {
+      await assertOneLauncherTileOnDisk(config.modRequest.platformProjectRoot);
+      return config;
+    },
+  ]);
+};
+
 export const withViroAndroid: ConfigPlugin<ViroConfigurationOptions> = (
   config,
   props
 ) => {
+  // Registered first so its mods run last: Expo runs the most recently
+  // registered mod of each type first, then the earlier ones.
+  config = withViroOneLauncherTile(config, props) as typeof config;
   config = withBranchAndroid(config, props) as typeof config;
   config = withViroProjectBuildGradle(config) as typeof config;
   config = withViroManifest(config) as typeof config;

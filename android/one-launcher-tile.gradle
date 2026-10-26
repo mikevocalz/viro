@@ -1,0 +1,107 @@
+// One launcher tile per app.
+//
+// PICO OS and Horizon OS list every activity whose intent-filter pairs
+// android.intent.action.MAIN with LAUNCHER or a headset VR category, so an
+// app with two such activities shows up twice in the headset library. This
+// script reads each variant's merged manifest (app, flavors and every library)
+// and fails the build unless exactly one activity is launcher-visible.
+//
+// Apply it from the app module: apply from: "<path>/one-launcher-tile.gradle"
+// @reactvision/react-viro's config plugin adds that line to app/build.gradle.
+// @expo-pico/core ships the same script; whichever is applied first registers
+// the check and the other is a no-op.
+
+import javax.xml.parsers.DocumentBuilderFactory
+
+abstract class OneLauncherTileCheckTask extends DefaultTask {
+    static final String ANDROID_NS = 'http://schemas.android.com/apk/res/android'
+    static final String MAIN = 'android.intent.action.MAIN'
+    static final List<String> CATEGORIES = [
+        'android.intent.category.LAUNCHER',
+        'com.oculus.intent.category.VR',
+        'com.pico.intent.category.VR',
+        'com.picovr.intent.category.VR',
+        'org.khronos.openxr.intent.category.IMMERSIVE_HMD',
+    ]
+
+    @InputFile
+    @PathSensitive(PathSensitivity.NONE)
+    abstract RegularFileProperty getMergedManifest()
+
+    @OutputFile
+    abstract RegularFileProperty getCheckedManifest()
+
+    @Input
+    abstract Property<String> getVariantName()
+
+    static List<String> childNames(org.w3c.dom.Element parent, String tag) {
+        def out = []
+        def nodes = parent.getElementsByTagName(tag)
+        for (int i = 0; i < nodes.length; i++) {
+            out << ((org.w3c.dom.Element) nodes.item(i)).getAttributeNS(ANDROID_NS, 'name')
+        }
+        return out
+    }
+
+    @TaskAction
+    void check() {
+        File input = mergedManifest.get().asFile
+        def factory = DocumentBuilderFactory.newInstance()
+        factory.namespaceAware = true
+        def doc = factory.newDocumentBuilder().parse(input)
+        def visible = []
+        ['activity', 'activity-alias'].each { tag ->
+            def activities = doc.getElementsByTagName(tag)
+            for (int i = 0; i < activities.length; i++) {
+                def activity = (org.w3c.dom.Element) activities.item(i)
+                def filters = activity.getElementsByTagName('intent-filter')
+                for (int j = 0; j < filters.length; j++) {
+                    def filter = (org.w3c.dom.Element) filters.item(j)
+                    if (OneLauncherTileCheckTask.childNames(filter, 'action').contains(MAIN) &&
+                        OneLauncherTileCheckTask.childNames(filter, 'category').any { CATEGORIES.contains(it) }) {
+                        visible << activity.getAttributeNS(ANDROID_NS, 'name')
+                        break
+                    }
+                }
+            }
+        }
+        if (visible.size() != 1) {
+            throw new GradleException(
+                "[one-launcher-tile] The merged manifest of variant '${variantName.get()}' declares " +
+                "${visible.size()} launcher-visible activities (${visible.join(', ')}). " +
+                "PICO OS and Horizon OS show one app-library tile per activity whose intent-filter " +
+                "pairs ${MAIN} with one of ${CATEGORIES.join(', ')}. Exactly one activity may do that. " +
+                "Start immersive activities with an explicit intent and give their headset categories " +
+                "a non-MAIN action such as com.viro.intent.action.VR. Merged manifest: ${input}")
+        }
+        File output = checkedManifest.get().asFile
+        output.parentFile.mkdirs()
+        output.bytes = input.bytes
+    }
+}
+
+def oneLauncherTileExtra = project.extensions.extraProperties
+if (!oneLauncherTileExtra.has('oneLauncherTileCheckRegistered')) {
+    oneLauncherTileExtra.set('oneLauncherTileCheckRegistered', true)
+    project.plugins.withId('com.android.application') {
+        def androidComponents = project.extensions.getByName('androidComponents')
+        // SingleArtifact.MERGED_MANIFEST is a Kotlin object; load it through
+        // AGP's class loader so this script needs nothing on its own classpath.
+        def mergedManifestArtifact = Class.forName(
+            'com.android.build.api.artifact.SingleArtifact$MERGED_MANIFEST',
+            true,
+            androidComponents.getClass().classLoader
+        ).getField('INSTANCE').get(null)
+        androidComponents.onVariants(androidComponents.selector().all()) { variant ->
+            def taskName = "check${variant.name.capitalize()}OneLauncherTile"
+            def task = project.tasks.register(taskName, OneLauncherTileCheckTask) {
+                it.variantName.set(variant.name)
+            }
+            // A transform puts the check on the path to every APK and bundle:
+            // packaging reads the manifest only after this task copied it.
+            variant.artifacts.use(task)
+                .wiredWithFiles({ it.mergedManifest }, { it.checkedManifest })
+                .toTransform(mergedManifestArtifact)
+        }
+    }
+}

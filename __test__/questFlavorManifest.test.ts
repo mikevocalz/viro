@@ -197,7 +197,7 @@ describe("Quest entries with a quest product flavor", () => {
     expect(questVr.$["tools:node"]).toBe("merge");
     expect(questVr["intent-filter"]).toEqual([
       {
-        action: [{ $: { "android:name": "android.intent.action.MAIN" } }],
+        action: [{ $: { "android:name": "com.viro.intent.action.VR" } }],
         category: [{ $: { "android:name": "com.oculus.intent.category.VR" } }],
       },
     ]);
