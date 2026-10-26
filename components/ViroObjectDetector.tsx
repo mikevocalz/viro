@@ -230,24 +230,14 @@ export const ViroObjectDetector: React.FC<Props> = ({
   // Its view manager is excluded from the visionOS renderer, so React has no view config for it
   // and mounting fails with "View config not found". visionOS grants no passthrough camera access
   // without an enterprise entitlement, so there is nothing for the detector to look at either.
-  // Safe above the hooks: isVisionOS is a module constant, so the hook order never varies.
-  if (isVisionOS) {
-    warnUnsupported(
-      "ViroObjectDetector",
-      "Apple Vision Pro",
-      "visionOS grants no passthrough camera access without an enterprise entitlement."
-    );
-    return null;
-  }
-
-  const nativeViewAvailable = isNativeViewRegistered();
+  const nativeViewAvailable = !isVisionOS && isNativeViewRegistered();
 
   // Report a missing native view through the component's own error channel, once per mount,
   // with the latest `onError` rather than the one captured on the first render.
   const onErrorRef = React.useRef(onError);
   onErrorRef.current = onError;
   React.useEffect(() => {
-    if (nativeViewAvailable) return;
+    if (isVisionOS || nativeViewAvailable) return;
     warnUnsupported(
       "ViroObjectDetector",
       "this build",
@@ -276,6 +266,15 @@ export const ViroObjectDetector: React.FC<Props> = ({
     },
     [onError]
   );
+
+  if (isVisionOS) {
+    warnUnsupported(
+      "ViroObjectDetector",
+      "Apple Vision Pro",
+      "visionOS grants no passthrough camera access without an enterprise entitlement."
+    );
+    return null;
+  }
 
   if (!nativeViewAvailable) {
     return null;

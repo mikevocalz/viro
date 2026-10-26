@@ -1,4 +1,4 @@
-import { ImageSourcePropType, NativeMethods } from "react-native";
+import type { ImageSourcePropType, HostInstance } from "react-native";
 
 export type ViroSceneDictionary = {
   [val: string]: ViroScene;
@@ -43,7 +43,7 @@ export type ViroScale = [
 ];
 
 export type ViroNativeRef =
-  | (React.Component<unknown, {}, any> & Readonly<NativeMethods>)
+  | HostInstance
   | null;
 
 export type ViroPhysicsBody = {

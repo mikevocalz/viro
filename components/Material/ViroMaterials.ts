@@ -19,7 +19,7 @@ import {
 } from "react-native";
 
 // @ts-ignore
-import { getAssetByID } from "react-native/Libraries/Image/AssetRegistry";
+import { getAssetByID } from "react-native/asset-registry";
 
 // @ts-ignore
 import resolveAssetSource from "react-native/Libraries/Image/resolveAssetSource";

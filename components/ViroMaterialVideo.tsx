@@ -76,7 +76,7 @@ export class ViroMaterialVideo extends React.Component<Props> {
     if (nodeHandle) {
       if (Platform.OS === "android") {
         // Bridgeless-safe: NativeModules.UIManager is null on New Architecture.
-        const cmd = UIManager.getViewManagerConfig?.("VRTMaterialVideo")?.Commands?.pause;
+        const cmd = (UIManager.getViewManagerConfig?.("VRTMaterialVideo") as { Commands?: Record<string, number> } | undefined)?.Commands?.pause;
         if (cmd !== undefined) {
           UIManager.dispatchViewManagerCommand(nodeHandle, cmd, [0]);
         }
@@ -147,7 +147,7 @@ export class ViroMaterialVideo extends React.Component<Props> {
         );
         break;
       case "android": {
-        const cmd = UIManager.getViewManagerConfig?.("VRTMaterialVideo")?.Commands?.seekToTime;
+        const cmd = (UIManager.getViewManagerConfig?.("VRTMaterialVideo") as { Commands?: Record<string, number> } | undefined)?.Commands?.seekToTime;
         if (cmd !== undefined) {
           UIManager.dispatchViewManagerCommand(findNodeHandle(this)!, cmd, [timeInSeconds]);
         }

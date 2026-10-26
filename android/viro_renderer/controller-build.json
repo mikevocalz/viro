@@ -1,8 +1,1 @@
-{
-  "sourceRepository": "mikevocalz/virocore",
-  "sourceCommit": "034d3b977754c94c23fa12d3a7e8c24d26f56b41",
-  "workflowRun": 36354633068,
-  "sha256": "08c22843d1311cbc52ae973b8a97dd8186a86c72d3682312a50a00c198506a3b",
-  "packaging": "Lossless standard ZIP deflate recompression; every decompressed member verified byte-identical to CI artifact.",
-  "validation": "C++ sample policy replay; Android release build and 16KB native alignment; no headset latency measurement."
-}
+{"sourceRepository":"mikevocalz/virocore","sourceCommit":"70e95fd8c13b8209d70a792a1ae4e7741102da96","sourceBranch":"fix/moyo-right-eye-depth-clear (fork/main f5c2a728 + 7 commits, includes virocore v3.0.3)","workflowRun":null,"sha256":"2bc3b3357c8ce6547018936764596798dafa47f57e1878952e26dc99f47eb18a","packaging":"Local scripts/build-pico-aar.sh build from a clean tree; not a CI artifact.","validation":"C++ syntax check of rebased files; Android release build; 16KB native alignment (arm64-v8a min p_align 0x4000); classes.jar member list identical to the previous AAR. No headset run."}

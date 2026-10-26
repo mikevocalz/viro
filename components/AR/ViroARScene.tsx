@@ -50,7 +50,6 @@ import {
 import { ViroBase } from "../ViroBase";
 import { ViroTrackingStateConstants } from "../ViroConstants";
 import { ViroCommonProps } from "./ViroCommonProps";
-import { ViroOrbitCamera } from "../ViroOrbitCamera";
 import { ViroActiveCameraTracker } from "../Utilities/ViroActiveCameraTracker";
 import { isQuest, isVisionOS } from "../Utilities/ViroPlatform";
 import { warnUnsupported } from "../Utilities/ViroUnsupported";

@@ -9,8 +9,10 @@ import {
   StudioARScene,
   StudioRecordingIndicator,
   StudioPlacementIndicator,
+  StudioColocationIndicator,
   useStudioRecording,
   useStudioPlacement,
+  useStudioColocation,
 } from "./components/Studio";
 import {
   ViroVisionOSModule,
@@ -385,6 +387,7 @@ import {
 } from "./components/Utilities/VRModuleOpenXR";
 import type {
   VRModuleOpenXRType,
+  ViroCaptureResult,
   ViroPassthroughStyle,
   ViroHapticHand,
   ViroTrackingOrigin,
@@ -654,6 +657,7 @@ export {
   // Geospatial Types
   ViroGeospatialAnchorProvider,
   ViroEarthTrackingState,
+  ViroRecordingStatus,
   ViroVPSAvailability,
   ViroGeospatialAnchorType,
   ViroQuaternion,
@@ -681,8 +685,10 @@ export {
   StudioARScene,
   StudioRecordingIndicator,
   StudioPlacementIndicator,
+  StudioColocationIndicator,
   useStudioRecording,
   useStudioPlacement,
+  useStudioColocation,
   // VisionOS
   ViroVisionOSModule,
   isVisionOS,
@@ -697,6 +703,7 @@ export {
 
 export type {
   VRModuleOpenXRType,
+  ViroCaptureResult,
   ViroPassthroughStyle,
   ViroHapticHand,
   ViroTrackingOrigin,

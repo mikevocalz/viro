@@ -742,6 +742,13 @@ export type ViroEarthTrackingState =
   | "Stopped"
   | "Localizing";
 
+/**
+ * State of an AR session recording. The same four values on every platform: the iOS bridge
+ * returns them directly and the Android bridge maps its Java enum onto them.
+ *
+ * Web is not in the list on purpose: ViroARSceneNavigator.web.tsx exposes no imperative API at
+ * all, so there is no getRecordingStatus to call there rather than one that answers "Unsupported".
+ */
 export type ViroRecordingStatus =
   | "None"
   | "Recording"

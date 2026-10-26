@@ -140,7 +140,11 @@ public class VRT3DSceneNavigator extends FrameLayout {
      */
     protected ViroView mViroView;
 
-    /** Exposed for extension modules (e.g. @viro-external/splat-pass). */
+    /**
+     * The view rendering this navigator's scenes: a ViroViewOpenXR on Quest, which is
+     * what the AR scene module hit-tests through there. Also used by extension modules
+     * such as @viro-external/splat-pass.
+     */
     public ViroView getViroView() {
         return mViroView;
     }
