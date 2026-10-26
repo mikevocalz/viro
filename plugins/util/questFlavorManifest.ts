@@ -1,6 +1,7 @@
 import { AndroidConfig } from "@expo/config-plugins";
 import fs from "fs";
 import path from "path";
+import { removeMainActionFromActivity, VR_ACTIVITY_NAME } from "./launcherTiles";
 
 /**
  * Meta-only manifest entries and where they go.
@@ -116,6 +117,13 @@ export function routeMetaEntriesToQuest(
   if (m.$ && !Object.keys(m).some((key) => key.startsWith("horizonos:"))) {
     delete m.$["xmlns:horizonos"];
   }
+
+  // A quest manifest from an older prebuild can still give VRActivity MAIN,
+  // which makes it a second tile in the Horizon library.
+  const questVrActivity = (applicationOf(q, false)?.activity ?? []).find(
+    (a: Entry) => nameOf(a) === VR_ACTIVITY_NAME
+  );
+  if (questVrActivity) removeMainActionFromActivity(questVrActivity);
 
   if (disabled.length > 0) {
     for (const root of [m, q]) {
