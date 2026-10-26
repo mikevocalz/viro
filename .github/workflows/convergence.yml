@@ -3,6 +3,7 @@ name: Viro convergence
 on:
   push:
     branches:
+      - main
       - upgrade/viro-3.0.1
       - decax9-three-panel
       - feat/xr-platform-foundation
@@ -13,6 +14,7 @@ on:
     branches:
       - main
       - decax9-three-panel
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -27,16 +29,19 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - name: Install public dependencies
-        run: npm install
+        run: npm ci
 
       - name: Reject workspace-only renderer assumptions
         run: |
-          ! grep -R '"file:../viro-web-renderer"' package.json package-lock.json
-          ! grep -R '<rootDir>/../viro-web-renderer' jest.config.ts
+          if grep -F '"file:../viro-web-renderer"' package.json package-lock.json ||
+             grep -F '<rootDir>/../viro-web-renderer' jest.config.ts; then
+            echo "::error::Viro must resolve the published renderer without a sibling checkout."
+            exit 1
+          fi
 
       - name: Test
         run: npm test -- --runInBand
