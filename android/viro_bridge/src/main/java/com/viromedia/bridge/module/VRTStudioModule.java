@@ -8,6 +8,7 @@ import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
+import com.facebook.react.bridge.ReadableType;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.Arguments;
 import com.reactvision.cca.RVHttpClient;
@@ -129,29 +130,50 @@ public class VRTStudioModule extends ReactContextBaseJavaModule {
     }
 
     // @internal — sets/clears the first-party session auth (see studioSession).
-    // A map { baseUrl, accessToken, clientTag?, functionRegion? } enables session mode; null /
-    // malformed reverts to manifest RVApiKey mode. The renderer keeps its own
-    // copy, which cloud anchors and the co-location channel read.
+    // A map { baseUrl, accessToken, clientTag?, functionRegion? } enables session mode; null,
+    // or a missing or empty baseUrl or accessToken, reverts to manifest RVApiKey mode. A config
+    // that breaks a rule (wrong type, non-https baseUrl, malformed functionRegion) is rejected
+    // with E_INVALID_STUDIO_SESSION and also clears the session, so a bad config never leaves
+    // an older token pointed at an older host. The renderer keeps its own copy, which cloud
+    // anchors and the co-location channel read.
     @ReactMethod
     public void rvSetStudioSession(ReadableMap config, Promise promise) {
-        String baseUrl = config != null && config.hasKey("baseUrl")
-                ? config.getString("baseUrl") : null;
-        String accessToken = config != null && config.hasKey("accessToken")
-                ? config.getString("accessToken") : null;
-        if (baseUrl == null || baseUrl.isEmpty() || accessToken == null || accessToken.isEmpty()) {
+        StudioSession session;
+        try {
+            session = parseSession(config);
+        } catch (IllegalArgumentException invalid) {
             studioSession = null;
             pushSessionToRenderer(null);
-            promise.resolve(null);
+            promise.reject("E_INVALID_STUDIO_SESSION", invalid.getMessage());
             return;
         }
-        while (baseUrl.endsWith("/")) baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
-        String clientTag = config.hasKey("clientTag") ? config.getString("clientTag") : null;
-        String functionRegion = config.hasKey("functionRegion") && !config.isNull("functionRegion")
-                ? config.getString("functionRegion") : null;
-        StudioSession session = new StudioSession(baseUrl, accessToken, clientTag, functionRegion);
         studioSession = session;
         pushSessionToRenderer(session);
         promise.resolve(null);
+    }
+
+    // Returns null for "clear the session". Throws IllegalArgumentException naming the rule
+    // the config breaks.
+    private static StudioSession parseSession(ReadableMap config) {
+        if (config == null) return null;
+        String baseUrl = optionalString(config, "baseUrl");
+        String accessToken = optionalString(config, "accessToken");
+        String clientTag = optionalString(config, "clientTag");
+        String functionRegion = optionalString(config, "functionRegion");
+        if (baseUrl == null || baseUrl.isEmpty() || accessToken == null || accessToken.isEmpty()) {
+            return null;
+        }
+        return new StudioSession(StudioSessionRules.baseUrl(baseUrl), accessToken,
+                clientTag, StudioSessionRules.functionRegion(functionRegion));
+    }
+
+    // Absent and null both read as null; any other non-string type is rejected.
+    private static String optionalString(ReadableMap config, String key) {
+        if (!config.hasKey(key) || config.isNull(key)) return null;
+        if (config.getType(key) != ReadableType.String) {
+            throw new IllegalArgumentException(key + " must be a string");
+        }
+        return config.getString(key);
     }
 
     // @internal Credentials for JS clients that talk to the platform or the
