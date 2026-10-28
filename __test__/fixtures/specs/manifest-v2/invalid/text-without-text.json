@@ -1,0 +1,1 @@
+{"description":"text node needs text","expectSchemaValid":false,"expectCodes":["VS1005"],"manifest":{"version":2,"nodes":[{"id":"a","kind":"text"}]}}

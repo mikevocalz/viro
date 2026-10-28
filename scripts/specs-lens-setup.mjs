@@ -20,7 +20,8 @@
 //
 // Lens Studio must be running with its MCP server enabled (AI Assistant > AI
 // Model Context Protocol > Configure Server). The URL and bearer key come from
-// ~/.claude.json or LENS_STUDIO_MCP_URL / LENS_STUDIO_MCP_TOKEN.
+// LENS_STUDIO_MCP_URL / LENS_STUDIO_MCP_TOKEN, or the MCP config file named by
+// LENS_STUDIO_MCP_CONFIG.
 //
 // Evidence labels follow the Specs production pack: this script can reach
 // lens-compiled (recompile) and preview-validated (LEAF in Preview). It never

@@ -1,0 +1,4 @@
+{
+  "description": "A React key feeds the hash; it is not used as the ID (keys are only unique among siblings).",
+  "parity": true
+}

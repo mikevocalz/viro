@@ -1,0 +1,9 @@
+scene.tsx:9:7 warning VS3012 [group-4f02d728a7ca]: ViroNode has no viroTag; it was given content-hash ID group-4f02d728a7ca.
+scene.tsx:10:9 warning VS3012 [text-538ff9754de1]: ViroText has no viroTag; it was given content-hash ID text-538ff9754de1.
+scene.tsx:10:9 warning VS3017 [text-538ff9754de1]: Node "text-538ff9754de1" is 0.00 m from the wearer; the band is 0.6-3 m.
+scene.tsx:11:9 warning VS3012 [text-57b957d776b2]: ViroText has no viroTag; it was given content-hash ID text-57b957d776b2.
+scene.tsx:11:9 warning VS3017 [text-57b957d776b2]: Node "text-57b957d776b2" is 0.00 m from the wearer; the band is 0.6-3 m.
+scene.tsx:12:9 warning VS3012 [text-4882cee5036a]: ViroText has no viroTag; it was given content-hash ID text-4882cee5036a.
+scene.tsx:12:9 warning VS3017 [text-4882cee5036a]: Node "text-4882cee5036a" is 0.00 m from the wearer; the band is 0.6-3 m.
+scene.tsx:13:9 warning VS3012 [model-27b399c7ad0c]: Viro3DObject has no viroTag; it was given content-hash ID model-27b399c7ad0c.
+scene.tsx:13:9 warning VS3017 [model-27b399c7ad0c]: Node "model-27b399c7ad0c" is 0.00 m from the wearer; the band is 0.6-3 m.

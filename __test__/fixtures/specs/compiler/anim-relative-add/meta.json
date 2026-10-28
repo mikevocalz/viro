@@ -1,0 +1,4 @@
+{
+  "description": "\"+=0.5\" on positionX resolves against position[0].",
+  "parity": true
+}

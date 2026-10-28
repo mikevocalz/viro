@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "generatedBy": "@viro-external/specs",
-  "sdkVersion": "0.2.0",
+  "sdkVersion": "0.3.0",
   "profile": "production",
   "files": {
     "lens/ViroSpecsActionContract.ts": "526768568e07b2c56167d5102da62aa8aa58abc9439f6291a33d154d9494915e",
@@ -13,7 +13,7 @@
     "lens/ViroSpecsExperience.ts": "c6e3694fc7081fe46e03700d091e7606124144577066eb3c75d8cc1168e46aed",
     "lens/ViroSpecsExperienceCopy.ts": "78e52d9d52f3223b2681d6a20003532faf46c7bc32238221856477dfcb42a2a4",
     "lens/ViroSpecsExperienceLensView.ts": "fbf6c77631480f0bce75b0bf863e32d0b985e513fd330d3ebd3f5c534c9975ba",
-    "lens/ViroSpecsExperienceTokens.ts": "e55781bccfeb8e6fc2c370a5d9783dc90e33166cea94d753a2e0721e85144af9",
+    "lens/ViroSpecsExperienceTokens.ts": "514967f84d99b542010a7e170cbc7e5ae06b3108eac57c000eb21269192fa2af",
     "lens/ViroSpecsHostDiagnostics.ts": "39118e5b0245032def1681fb3306358990b6f7e21941bada9d8165413e4a01b9",
     "lens/ViroSpecsInteractionHost.ts": "a5fa47a184c8721c29e147044670a0010460affc9ef94cfb830a9a5c0787f121",
     "lens/ViroSpecsInteractionKit.ts": "510694c8c2187e3e15e94911b475a0760c351dea86a62cacb86a099f45c26c8c",
@@ -34,6 +34,6 @@
     "lens/ViroSpecsSceneRuntime.ts": "59fa2f5585c0e1c413042d27d882f9ea80653caf5784bb90001ce05ed4f990c6",
     "lens/ViroSpecsSikBinding.ts": "80cd5ccdeb840d8dd39dbc7c7fce78c9f4d795258c21c83d402c739a5912e568",
     "lens/ViroSpecsWorldRuntime.ts": "c2b1abd6796ecdecf92efabe2969db6f14bb0a6226d187b47b609e3bd13e85a1",
-    "viro-specs.dependencies.json": "24591a53e1ec0c8b5f24b50e8f9f4f96961e408fbc78aeeafc5394718717bf29"
+    "viro-specs.dependencies.json": "31420ff25af66f2b55d9455344222c34561baaf7dcedf043d15d0553c2c5561e"
   }
 }

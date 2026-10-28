@@ -9,9 +9,9 @@ default.
 
 - Lens Studio 5.22 or later, running, with the project open. Tested on 5.24.1.
 - The MCP server enabled: AI Assistant > AI Model Context Protocol > Configure
-  Server. The script reads the URL and bearer key from `~/.claude.json` (the
-  `lens-studio` server), or from `LENS_STUDIO_MCP_URL` and
-  `LENS_STUDIO_MCP_TOKEN`.
+  Server. The script reads the URL and bearer key from `LENS_STUDIO_MCP_URL`
+  and `LENS_STUDIO_MCP_TOKEN`, or from the MCP client config file named by
+  `LENS_STUDIO_MCP_CONFIG` (its `lens-studio` server).
 - A checkout of `@viro-external/specs` for the sync and doctor steps. Pass
   `--specs`, set `VIRO_SPECS_PACKAGE`, or keep `viro-external` next to `viro`.
 

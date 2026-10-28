@@ -1,0 +1,1 @@
+scene.tsx:10:23 warning VS3017 [badge]: Node "badge" is 0.00 m from the wearer; the band is 0.6-3 m.

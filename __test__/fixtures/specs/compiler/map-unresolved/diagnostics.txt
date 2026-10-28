@@ -1,0 +1,2 @@
+scene.tsx:9:8 error VS2019: .map() array `items` cannot be resolved statically: items is a parameter or local of the enclosing function, so it is only known at runtime.
+scene.tsx error VS2002: <ViroSpecsScene> in scene.tsx has no compiled content.

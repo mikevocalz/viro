@@ -1,0 +1,23 @@
+{
+  "$schema": "https://github.com/mikevocalz/viro/blob/main/schemas/viro-specs-manifest.v2.json",
+  "version": 2,
+  "generator": {
+    "name": "viro-specs-compile"
+  },
+  "source": "__test__/fixtures/specs/compiler/text-style-dropped/scene.tsx",
+  "nodes": [
+    {
+      "id": "lossy",
+      "kind": "text",
+      "text": "lossy",
+      "style": {
+        "fontSize": 20
+      }
+    }
+  ],
+  "polylines": [],
+  "lights": [],
+  "materials": [],
+  "interactions": [],
+  "animations": []
+}

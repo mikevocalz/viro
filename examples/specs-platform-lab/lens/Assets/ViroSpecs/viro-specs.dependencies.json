@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "generatedBy": "@viro-external/specs",
-  "sdkVersion": "0.2.0",
+  "sdkVersion": "0.3.0",
   "wireVersion": 1,
   "sceneProtocols": [
     1,

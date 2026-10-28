@@ -1,0 +1,49 @@
+{
+  "$schema": "https://github.com/mikevocalz/viro/blob/main/schemas/viro-specs-manifest.v2.json",
+  "version": 2,
+  "generator": {
+    "name": "viro-specs-compile"
+  },
+  "source": "__test__/fixtures/specs/compiler/nested-translate-rotate/scene.tsx",
+  "nodes": [
+    {
+      "id": "arm",
+      "kind": "group",
+      "position": [
+        1,
+        0,
+        -2
+      ],
+      "rotation": [
+        0,
+        0.7071067811865475,
+        0,
+        0.7071067811865476
+      ]
+    }
+  ],
+  "polylines": [
+    {
+      "id": "reach",
+      "primitive": "volumetric-line",
+      "backendPackage": "VolumetricLine",
+      "points": [
+        [
+          1,
+          0,
+          -2
+        ],
+        [
+          1.0000000000000002,
+          0,
+          -3
+        ]
+      ],
+      "radiusMeters": 0.005
+    }
+  ],
+  "lights": [],
+  "materials": [],
+  "interactions": [],
+  "animations": []
+}

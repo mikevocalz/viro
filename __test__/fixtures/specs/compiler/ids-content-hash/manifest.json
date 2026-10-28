@@ -1,0 +1,44 @@
+{
+  "$schema": "https://github.com/mikevocalz/viro/blob/main/schemas/viro-specs-manifest.v2.json",
+  "version": 2,
+  "generator": {
+    "name": "viro-specs-compile"
+  },
+  "source": "__test__/fixtures/specs/compiler/ids-content-hash/scene.tsx",
+  "nodes": [
+    {
+      "id": "group-4f02d728a7ca",
+      "kind": "group"
+    },
+    {
+      "id": "text-538ff9754de1",
+      "kind": "text",
+      "parentId": "group-4f02d728a7ca",
+      "text": "Hello"
+    },
+    {
+      "id": "text-57b957d776b2",
+      "kind": "text",
+      "parentId": "group-4f02d728a7ca",
+      "text": "World"
+    },
+    {
+      "id": "text-4882cee5036a",
+      "kind": "text",
+      "parentId": "group-4f02d728a7ca",
+      "text": "Hello"
+    },
+    {
+      "id": "model-27b399c7ad0c",
+      "kind": "model",
+      "parentId": "group-4f02d728a7ca",
+      "source": "__test__/fixtures/specs/compiler/assets/cube.glb",
+      "format": "glb"
+    }
+  ],
+  "polylines": [],
+  "lights": [],
+  "materials": [],
+  "interactions": [],
+  "animations": []
+}

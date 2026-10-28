@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "generatedBy": "@viro-external/specs",
-  "sdkVersion": "0.2.0",
+  "sdkVersion": "0.3.0",
   "profile": "validation",
   "files": {
     "lens/ViroSpecsActionsLab.ts": "65f74cf69be3406cd51145692ce553d5d1e4722c7fe7810ff254a6a44a2a4a1e",

@@ -1,0 +1,1 @@
+{"description":"panel needs layout extents","expectSchemaValid":false,"expectCodes":["VS1005"],"manifest":{"version":2,"nodes":[{"id":"a","kind":"panel"}]}}

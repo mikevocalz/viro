@@ -1,0 +1,4 @@
+{
+  "description": "A nested payload in specsAction is VS3023 and emits no trigger; a trigger naming an undeclared action is VS1017.",
+  "parity": true
+}

@@ -1,0 +1,1 @@
+{"description":"kind outside the enum","expectSchemaValid":false,"expectCodes":["VS1012"],"manifest":{"version":2,"nodes":[{"id":"a","kind":"portal"}]}}

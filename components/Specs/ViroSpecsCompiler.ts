@@ -1,35 +1,45 @@
 import * as React from "react";
 import { ViroAnimations } from "../Animation/ViroAnimations";
 import { Viro3DObject } from "../Viro3DObject";
+import { ViroAmbientLight } from "../ViroAmbientLight";
+import { ViroDirectionalLight } from "../ViroDirectionalLight";
 import { ViroImage } from "../ViroImage";
 import { ViroNode } from "../ViroNode";
+import { ViroOmniLight } from "../ViroOmniLight";
 import { ViroPolyline } from "../ViroPolyline";
+import { ViroSpotLight } from "../ViroSpotLight";
 import { ViroText } from "../ViroText";
+import type {
+  ViroSpecsAnimationLookup,
+  ViroSpecsAnimationPlan as CoreAnimationPlan,
+} from "./core/animation";
+import type { ViroSpecsActionDeclaration } from "./core/actions";
+import { createViroSpecsDiagnostic, type ViroSpecsDiagnostic } from "./core/diagnostic";
+import { VIRO_SPECS_NO_ORIGIN } from "./core/diagnostics";
+import type {
+  ViroSpecsManifestV2,
+  ViroSpecsSceneDocument,
+  ViroSpecsVec3,
+  ViroSpecsWireNode,
+  ViroSpecsWireSceneSnapshot,
+} from "./core/manifest";
+import {
+  VIRO_SPECS_ROOT_SCOPE,
+  ViroSpecsSceneBuilder,
+  type ViroSpecsScope,
+  type ViroSpecsSourceResolution,
+} from "./core/scene";
 
 type Vec3 = [number, number, number];
-type Quat = [number, number, number, number];
+type Props = Readonly<Record<string, unknown>>;
 
-type Transform = {
-  position: Vec3;
-  rotation: Quat;
-  scale: Vec3;
-};
+/** Node in the scene snapshot sent to the Lens runtime (scene protocol 1). */
+export type ViroSpecsPortableNode = ViroSpecsWireNode;
 
-export type ViroSpecsPortableNode = {
-  id: string;
-  kind: "group" | "text" | "image" | "model" | "panel";
-  parentId?: string;
-  position?: Vec3;
-  rotation?: Quat;
-  scale?: Vec3;
-  source?: string;
-  text?: string;
-  visible?: boolean;
-};
-
+/** World-space polyline passed to {@linkcode ViroSpecsSceneTransport.presentPolyline}. */
 export type ViroSpecsPortablePolyline = {
   id: string;
-  points: readonly Vec3[];
+  points: readonly ViroSpecsVec3[];
   radiusMeters: number;
   materialId?: string;
 };
@@ -57,42 +67,44 @@ export type ViroSpecsAnimationEvent = {
   completionEvent?: string;
 };
 
-export type ViroSpecsSceneSnapshot = {
-  version: 1;
-  nodes: ViroSpecsPortableNode[];
-};
+/** Scene protocol 1 snapshot passed to {@linkcode ViroSpecsSceneTransport.applyScene}. */
+export type ViroSpecsSceneSnapshot = ViroSpecsWireSceneSnapshot;
 
 export type ViroSpecsSourceResolver = (
   source: unknown,
   kind: "image" | "model"
 ) => string;
 
-export type ViroSpecsAnimationPlan =
-  | {
-      action: "play";
-      nodeId: string;
-      name: string;
-      definition: {
-        properties: Record<string, number>;
-        durationMs: number;
-        delayMs?: number;
-        easing?: string;
-        loop?: boolean;
-        completionEvent?: string;
-      };
-    }
-  | {
-      action: "stop";
-      nodeId: string;
-      name: string;
-    };
+/** Animation action for the runtime transport. */
+export type ViroSpecsAnimationPlan = CoreAnimationPlan;
 
+/**
+ * Output of {@linkcode compileViroSpecsChildren}.
+ *
+ * `manifest` is the manifest v2 for the tree. `scene`, `polylines` and
+ * `animations` are the transport payloads derived from it. When
+ * `diagnostics` contains an error, {@linkcode ViroSpecsScene} does not apply
+ * the result.
+ */
 export type ViroSpecsCompiledScene = {
+  manifest: ViroSpecsManifestV2;
+  /**
+   * Scene protocol 2 document with every manifest field. `ViroSpecsScene`
+   * sends it to transports that implement `applySceneDocument`.
+   */
+  document: ViroSpecsSceneDocument;
+  /** Scene protocol 1 snapshot for transports that only implement `applyScene`. */
   scene: ViroSpecsSceneSnapshot;
+  /**
+   * `VS1015` warnings for fields `scene` drops. Reported by `ViroSpecsScene`
+   * only when it has to fall back to `applyScene`; `diagnostics` does not
+   * include them.
+   */
+  loweringDiagnostics: ViroSpecsDiagnostic[];
   polylines: ViroSpecsPortablePolyline[];
   animations: ViroSpecsAnimationPlan[];
   callbacks: Map<string, ViroSpecsCallbackRecord>;
-  diagnostics: string[];
+  diagnostics: ViroSpecsDiagnostic[];
 };
 
 export type ViroSpecsCallbackRecord = {
@@ -107,378 +119,197 @@ export type ViroSpecsCallbackRecord = {
   onAnimationFinish?: () => void;
 };
 
-const IDENTITY: Transform = {
-  position: [0, 0, 0],
-  rotation: [0, 0, 0, 1],
-  scale: [1, 1, 1],
-};
+const COMPONENT_NAMES = new Map<unknown, string>([
+  [ViroNode, "ViroNode"],
+  [ViroText, "ViroText"],
+  [ViroImage, "ViroImage"],
+  [Viro3DObject, "Viro3DObject"],
+  [ViroPolyline, "ViroPolyline"],
+  [ViroAmbientLight, "ViroAmbientLight"],
+  [ViroDirectionalLight, "ViroDirectionalLight"],
+  [ViroOmniLight, "ViroOmniLight"],
+  [ViroSpotLight, "ViroSpotLight"],
+]);
 
-function degreesToQuaternion(
-  rotation?: readonly number[]
-): Quat | undefined {
-  if (!rotation || rotation.length < 3) return undefined;
-  const [x, y, z] = rotation.map((value) => (value * Math.PI) / 180);
-  const cx = Math.cos(x / 2);
-  const sx = Math.sin(x / 2);
-  const cy = Math.cos(y / 2);
-  const sy = Math.sin(y / 2);
-  const cz = Math.cos(z / 2);
-  const sz = Math.sin(z / 2);
-
-  return [
-    sx * cy * cz - cx * sy * sz,
-    cx * sy * cz + sx * cy * sz,
-    cx * cy * sz - sx * sy * cz,
-    cx * cy * cz + sx * sy * sz,
-  ];
+function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function multiplyQuat(a: Quat, b: Quat): Quat {
-  const [ax, ay, az, aw] = a;
-  const [bx, by, bz, bw] = b;
-  return [
-    aw * bx + ax * bw + ay * bz - az * by,
-    aw * by - ax * bz + ay * bw + az * bx,
-    aw * bz + ax * by - ay * bx + az * bw,
-    aw * bw - ax * bx - ay * by - az * bz,
-  ];
-}
-
-function rotatePoint(rotation: Quat, point: Vec3): Vec3 {
-  const [qx, qy, qz, qw] = rotation;
-  const [x, y, z] = point;
-  const ix = qw * x + qy * z - qz * y;
-  const iy = qw * y + qz * x - qx * z;
-  const iz = qw * z + qx * y - qy * x;
-  const iw = -qx * x - qy * y - qz * z;
-  return [
-    ix * qw + iw * -qx + iy * -qz - iz * -qy,
-    iy * qw + iw * -qy + iz * -qx - ix * -qz,
-    iz * qw + iw * -qz + ix * -qy - iy * -qx,
-  ];
-}
-
-function composeTransform(parent: Transform, props: any): Transform {
-  const localPosition: Vec3 = props.position ?? [0, 0, 0];
-  const localScale: Vec3 = props.scale ?? [1, 1, 1];
-  const localRotation: Quat =
-    degreesToQuaternion(props.rotation) ?? [0, 0, 0, 1];
-
-  const scaledLocal: Vec3 = [
-    localPosition[0] * parent.scale[0],
-    localPosition[1] * parent.scale[1],
-    localPosition[2] * parent.scale[2],
-  ];
-  const rotatedLocal = rotatePoint(parent.rotation, scaledLocal);
-
-  return {
-    position: [
-      parent.position[0] + rotatedLocal[0],
-      parent.position[1] + rotatedLocal[1],
-      parent.position[2] + rotatedLocal[2],
-    ],
-    rotation: multiplyQuat(parent.rotation, localRotation),
-    scale: [
-      parent.scale[0] * localScale[0],
-      parent.scale[1] * localScale[1],
-      parent.scale[2] * localScale[2],
-    ],
-  };
-}
-
-function transformPoint(transform: Transform, point: Vec3): Vec3 {
-  const scaled: Vec3 = [
-    point[0] * transform.scale[0],
-    point[1] * transform.scale[1],
-    point[2] * transform.scale[2],
-  ];
-  const rotated = rotatePoint(transform.rotation, scaled);
-  return [
-    transform.position[0] + rotated[0],
-    transform.position[1] + rotated[1],
-    transform.position[2] + rotated[2],
-  ];
-}
-
-function nodeKind(type: unknown):
-  | ViroSpecsPortableNode["kind"]
-  | "polyline"
-  | null {
-  if (type === ViroNode) return "group";
-  if (type === ViroText) return "text";
-  if (type === ViroImage) return "image";
-  if (type === Viro3DObject) return "model";
-  if (type === ViroPolyline) return "polyline";
-  return null;
+/**
+ * Name used in diagnostics. Supported components are matched by identity;
+ * other components fall back to displayName or function name, which is
+ * enough to classify capability errors such as ViroRivePanel.
+ */
+function componentName(type: unknown): string {
+  const known = COMPONENT_NAMES.get(type);
+  if (known) return known;
+  if (typeof type === "string") return type;
+  if (typeof type === "function" || isRecord(type)) {
+    const named = type as { displayName?: unknown; name?: unknown; render?: unknown };
+    if (typeof named.displayName === "string") return named.displayName;
+    if (typeof named.name === "string" && named.name !== "") return named.name;
+    if (typeof named.render === "function" && named.render.name !== "") {
+      return named.render.name;
+    }
+  }
+  return "anonymous component";
 }
 
 function defaultSourceResolver(source: unknown): string {
   if (typeof source === "string") return source;
   if (typeof source === "number") return "react-native-asset:" + source;
-  if (
-    source &&
-    typeof source === "object" &&
-    "uri" in source &&
-    typeof (source as { uri?: unknown }).uri === "string"
-  ) {
-    return (source as { uri: string }).uri;
-  }
+  if (isRecord(source) && typeof source.uri === "string") return source.uri;
   throw new Error(
     "Specs source needs a stable string ID. Pass sourceResolver to ViroSpecsScene for bundled assets."
   );
 }
 
-function resolveRelative(value: number | string, base: number): number | null {
-  if (typeof value === "number") return value;
-  const trimmed = value.trim();
-
-  const relative = /^([+\-*/])=(-?\d+(?:\.\d+)?)$/.exec(trimmed);
-  if (relative) {
-    const operand = Number(relative[2]);
-    switch (relative[1]) {
-      case "+":
-        return base + operand;
-      case "-":
-        return base - operand;
-      case "*":
-        return base * operand;
-      case "/":
-        return operand === 0 ? null : base / operand;
-    }
-  }
-
-  const absolute = Number(trimmed);
-  return Number.isFinite(absolute) ? absolute : null;
+function asCallback<T>(value: unknown): T | undefined {
+  // Viro callbacks are opaque functions; the prop types define their signatures.
+  return typeof value === "function" ? (value as T) : undefined;
 }
 
-function animationBase(property: string, props: any): number {
-  const position = (props.position ?? [0, 0, 0]) as Vec3;
-  const scale = (props.scale ?? [1, 1, 1]) as Vec3;
-  const rotation = (props.rotation ?? [0, 0, 0]) as Vec3;
+const lookupRegisteredAnimation: ViroSpecsAnimationLookup = (name) => {
+  const registered = ViroAnimations.getRegisteredAnimation(name);
+  if (registered === undefined) return undefined;
+  if (Array.isArray(registered)) return "chain";
+  return registered;
+};
 
-  switch (property) {
-    case "positionX":
-      return position[0];
-    case "positionY":
-      return position[1];
-    case "positionZ":
-      return position[2];
-    case "scaleX":
-      return scale[0];
-    case "scaleY":
-      return scale[1];
-    case "scaleZ":
-      return scale[2];
-    case "rotateX":
-      return rotation[0];
-    case "rotateY":
-      return rotation[1];
-    case "rotateZ":
-      return rotation[2];
-    case "opacity":
-      return props.opacity ?? 1;
-    default:
-      return 0;
-  }
+function isBlankText(child: React.ReactNode): boolean {
+  return typeof child === "string" && child.trim() === "";
 }
 
+/** Scene-level inputs of {@linkcode compileViroSpecsChildren}, from `ViroSpecsScene` props. */
+export type ViroSpecsCompileOptions = {
+  /** Actions the tree's `specsAction` triggers may fire. Copied to the manifest. */
+  readonly actions?: readonly ViroSpecsActionDeclaration[];
+  /** Route of the scene. A new route is navigation on the Lens host. */
+  readonly route?: string;
+};
+
+/**
+ * Compiles a Viro JSX tree into the portable Specs scene.
+ *
+ * Every rule about what an element compiles to lives in the shared core
+ * (`components/Specs/core/scene.ts`), which `viro-specs-compile` also uses, so
+ * both compilers produce the same manifest for the same tree. This function
+ * only walks React elements and keeps the callbacks.
+ *
+ * Components without a Specs mapping, props the manifest does not carry and
+ * values it cannot represent are reported in `diagnostics` with a code from
+ * `docs/specs-diagnostics.md`. Unsupported features (portals, physics, Rive,
+ * video, audio, native textures, custom rendering) are capability errors;
+ * nothing is emitted in their place.
+ */
 export function compileViroSpecsChildren(
   children: React.ReactNode,
-  sourceResolver: ViroSpecsSourceResolver = defaultSourceResolver
+  sourceResolver: ViroSpecsSourceResolver = defaultSourceResolver,
+  options: ViroSpecsCompileOptions = {}
 ): ViroSpecsCompiledScene {
-  const nodes: ViroSpecsPortableNode[] = [];
-  const polylines: ViroSpecsPortablePolyline[] = [];
-  const animations: ViroSpecsAnimationPlan[] = [];
   const callbacks = new Map<string, ViroSpecsCallbackRecord>();
-  const diagnostics: string[] = [];
-  let ordinal = 0;
-
-  const visit = (
-    child: React.ReactNode,
-    parentId?: string,
-    parentTransform: Transform = IDENTITY
-  ) => {
-    if (!React.isValidElement(child)) return;
-
-    const kind = nodeKind(child.type);
-    if (!kind) {
-      diagnostics.push(
-        "Unsupported Specs JSX child " +
-          (typeof child.type === "string"
-            ? child.type
-            : (child.type as { name?: string }).name ?? "anonymous")
-      );
-      return;
-    }
-
-    const props = child.props as any;
-    const id =
-      props.viroTag ??
-      (child.key != null ? String(child.key) : "viro-specs-" + ordinal++);
-    const worldTransform = composeTransform(parentTransform, props);
-
-    const callbackRecord: ViroSpecsCallbackRecord = {};
-    if (props.onHover) callbackRecord.onHover = props.onHover;
-    if (props.onClick) callbackRecord.onClick = props.onClick;
-    if (props.onDrag) callbackRecord.onDrag = props.onDrag;
-    if (props.animation?.onStart) {
-      callbackRecord.onAnimationStart = props.animation.onStart;
-    }
-    if (props.animation?.onFinish) {
-      callbackRecord.onAnimationFinish = props.animation.onFinish;
-    }
-    if (Object.keys(callbackRecord).length) callbacks.set(id, callbackRecord);
-
-    if (kind === "polyline") {
-      const points = (props.points ?? []) as Vec3[];
-      polylines.push({
-        id,
-        points: points.map((point) => transformPoint(worldTransform, point)),
-        radiusMeters:
-          ((props.thickness ?? 0.01) / 2) *
-          Math.max(
-            Math.abs(worldTransform.scale[0]),
-            Math.abs(worldTransform.scale[1]),
-            Math.abs(worldTransform.scale[2])
-          ),
-        materialId:
-          typeof props.materials === "string"
-            ? props.materials
-            : Array.isArray(props.materials)
-              ? props.materials[0]
-              : undefined,
-      });
-      return;
-    }
-
-    const node: ViroSpecsPortableNode = {
-      id,
-      kind,
-      ...(parentId ? { parentId } : {}),
-      ...(props.position ? { position: props.position } : {}),
-      ...(props.rotation
-        ? { rotation: degreesToQuaternion(props.rotation) }
-        : {}),
-      ...(props.scale ? { scale: props.scale } : {}),
-      ...(props.visible !== undefined ? { visible: props.visible } : {}),
-    };
-
-    if (kind === "text") node.text = props.text;
-    if (kind === "image" && props.source !== undefined) {
-      node.source = sourceResolver(props.source, "image");
-    }
-    if (kind === "model" && props.source !== undefined) {
-      node.source = sourceResolver(props.source, "model");
-    }
-
-    nodes.push(node);
-
-    if (props.animation?.name) {
-      const animationName = String(props.animation.name);
-      if (props.animation.run === false) {
-        animations.push({
-          action: "stop",
-          nodeId: id,
-          name: animationName,
-        });
-      } else if (props.animation.run === true) {
-        const registered = ViroAnimations.getRegisteredAnimation(animationName);
-
-        if (!registered || Array.isArray(registered)) {
-          diagnostics.push(
-            "Specs animation " +
-              animationName +
-              " is missing or is an animation chain."
-          );
-        } else {
-          const resolvedProperties: Record<string, number> = {};
-
-          for (const [property, value] of Object.entries(
-            registered.properties ?? {}
-          )) {
-            if (
-              ![
-                "positionX",
-                "positionY",
-                "positionZ",
-                "scaleX",
-                "scaleY",
-                "scaleZ",
-                "rotateX",
-                "rotateY",
-                "rotateZ",
-                "opacity",
-              ].includes(property)
-            ) {
-              if (value !== undefined) {
-                diagnostics.push(
-                  "Specs animation " +
-                    animationName +
-                    " does not support property " +
-                    property +
-                    "."
-                );
-              }
-              continue;
-            }
-
-            if (typeof value !== "number" && typeof value !== "string") {
-              continue;
-            }
-
-            const resolved = resolveRelative(
-              value,
-              animationBase(property, props)
-            );
-            if (resolved === null) {
-              diagnostics.push(
-                "Specs animation " +
-                  animationName +
-                  " could not resolve " +
-                  property +
-                  "=" +
-                  String(value) +
-                  "."
-              );
-              continue;
-            }
-            resolvedProperties[property] = resolved;
-          }
-
-          if (Object.keys(resolvedProperties).length) {
-            animations.push({
-              action: "play",
-              nodeId: id,
-              name: animationName,
-              definition: {
-                properties: resolvedProperties,
-                durationMs: registered.duration,
-                delayMs:
-                  (registered.delay ?? 0) + (props.animation.delay ?? 0),
-                easing: registered.easing,
-                loop: Boolean(props.animation.loop),
-                completionEvent:
-                  "viro-animation-complete:" + id + ":" + animationName,
-              },
-            });
-          }
-        }
+  const builder = new ViroSpecsSceneBuilder({
+    generator: "viro-specs-runtime",
+    lookupAnimation: lookupRegisteredAnimation,
+    resolveSource: (value, kind): ViroSpecsSourceResolution => {
+      try {
+        return { id: sourceResolver(value, kind) };
+      } catch (error) {
+        return {
+          issue: {
+            code: "VS3008",
+            prop: "source",
+            message: (error instanceof Error ? error.message : String(error)),
+          },
+        };
       }
+    },
+  });
+
+  builder.setScene({
+    ...(options.route !== undefined ? { route: options.route } : {}),
+    ...(options.actions !== undefined ? { actions: options.actions } : {}),
+  });
+
+  const visit = (child: React.ReactNode, scope: ViroSpecsScope): void => {
+    if (typeof child === "string" || typeof child === "number") {
+      if (isBlankText(child)) return;
+      builder.report(
+        createViroSpecsDiagnostic(
+          "VS3001",
+          "Text child " + JSON.stringify(String(child)) + " has no Specs mapping. Use ViroText.",
+          scope.nodeId !== undefined ? { nodeId: scope.nodeId } : {}
+        )
+      );
+      return;
+    }
+    if (!React.isValidElement(child)) return;
+    const props = child.props as Props;
+
+    if (child.type === React.Fragment) {
+      React.Children.forEach(props.children as React.ReactNode, (nested) => visit(nested, scope));
+      return;
     }
 
-    if (props.children) {
-      React.Children.forEach(props.children, (nested) =>
-        visit(nested, id, worldTransform)
-      );
+    const name = componentName(child.type);
+    const elementChildren = React.Children.toArray(props.children as React.ReactNode);
+    const result = builder.addElement(scope, {
+      name,
+      props,
+      writtenProps: Object.keys(props).filter((prop) => prop !== "children" && props[prop] !== undefined),
+      ...(child.key !== null ? { key: String(child.key) } : {}),
+      hasChildren: elementChildren.some((nested) => !isBlankText(nested)),
+      origin: VIRO_SPECS_NO_ORIGIN,
+    });
+    if (result.kind !== "compiled") return;
+
+    const record: ViroSpecsCallbackRecord = {};
+    const onHover = asCallback<ViroSpecsCallbackRecord["onHover"]>(props.onHover);
+    const onPress = asCallback<() => void>(props.onPress);
+    const onClick =
+      asCallback<ViroSpecsCallbackRecord["onClick"]>(props.onClick) ??
+      asCallback<ViroSpecsCallbackRecord["onClick"]>(props.onClickState) ??
+      (onPress ? () => onPress() : undefined);
+    const onDrag = asCallback<ViroSpecsCallbackRecord["onDrag"]>(props.onDrag);
+    if (onHover) record.onHover = onHover;
+    if (onClick) record.onClick = onClick;
+    if (onDrag) record.onDrag = onDrag;
+    if (isRecord(props.animation)) {
+      const onStart = asCallback<() => void>(props.animation.onStart);
+      const onFinish = asCallback<() => void>(props.animation.onFinish);
+      if (onStart) record.onAnimationStart = onStart;
+      if (onFinish) record.onAnimationFinish = onFinish;
+    }
+    if (Object.keys(record).length) callbacks.set(result.id, record);
+
+    const childScope = result.childScope;
+    if (childScope) {
+      React.Children.forEach(props.children as React.ReactNode, (nested) => visit(nested, childScope));
     }
   };
 
-  React.Children.forEach(children, (child) => visit(child));
+  React.Children.forEach(children, (child) => visit(child, VIRO_SPECS_ROOT_SCOPE));
+
+  const built = builder.finish();
+  // The runtime compiler never fills `materials`; materials come from the Lens
+  // registry, so VS1011 (info) would repeat for every materialId on every render.
+  // Lowering findings (VS1015) are not part of `diagnostics`: ViroSpecsScene
+  // reports them only when a transport lacks applySceneDocument and has to
+  // take the protocol 1 snapshot.
+  const diagnostics = built.diagnostics.filter((diagnostic) => diagnostic.code !== "VS1011");
 
   return {
-    scene: { version: 1, nodes },
-    polylines,
-    animations,
+    manifest: built.manifest,
+    document: built.document,
+    scene: built.scene,
+    loweringDiagnostics: [...built.loweringDiagnostics],
+    polylines: built.polylines.map((polyline) => ({
+      id: polyline.id,
+      points: polyline.points,
+      radiusMeters: polyline.radiusMeters,
+      ...(polyline.materialId !== undefined ? { materialId: polyline.materialId } : {}),
+    })),
+    animations: [...built.plans],
     callbacks,
     diagnostics,
   };

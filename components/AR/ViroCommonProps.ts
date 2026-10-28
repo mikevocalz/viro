@@ -20,10 +20,24 @@ import {
   ViroShaderUniform,
 } from "../Material/ViroMaterials";
 import { NativeSyntheticEvent, ViewProps } from "react-native";
+import type { ViroSpecsActionTrigger } from "../Specs/core/actions";
+import type { ViroSpecsScroll } from "../Specs/core/manifest";
 
 // RN 0.88 types ViewProps.onClick as a pointer-event handler; Viro's onClick takes (position, source).
 export type ViroCommonProps = Omit<ViewProps, "onClick"> & {
   target?: string;
+
+  /**
+   * Specs only: typed action(s) this node fires, built with `specsTrigger`.
+   * Read by the Specs compilers and carried to the Lens as JSON; ignored by
+   * ViroCore renderers, where `onClick` handles the same input.
+   */
+  specsAction?: ViroSpecsActionTrigger | readonly ViroSpecsActionTrigger[];
+  /**
+   * Specs only, on ViroNode: makes the node a scroll window. The Lens host
+   * keeps its scroll position across updates and back navigation.
+   */
+  specsScroll?: ViroSpecsScroll;
 
   pauseUpdates?: boolean;
   renderingOrder?: number;

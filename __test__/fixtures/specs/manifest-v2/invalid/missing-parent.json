@@ -1,0 +1,1 @@
+{"description":"parentId points nowhere","expectSchemaValid":true,"expectCodes":["VS1008"],"manifest":{"version":2,"nodes":[{"id":"a","kind":"group","parentId":"ghost"}]}}

@@ -1,0 +1,85 @@
+{
+  "$schema": "https://github.com/mikevocalz/viro/blob/main/schemas/viro-specs-manifest.v2.json",
+  "version": 2,
+  "generator": {
+    "name": "viro-specs-compile"
+  },
+  "source": "__test__/fixtures/specs/compiler/nested-three-levels/scene.tsx",
+  "nodes": [
+    {
+      "id": "a",
+      "kind": "group",
+      "position": [
+        0,
+        1,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "id": "b",
+      "kind": "group",
+      "parentId": "a",
+      "position": [
+        0.5,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0.7071067811865475,
+        0.7071067811865476
+      ]
+    },
+    {
+      "id": "c",
+      "kind": "group",
+      "parentId": "b",
+      "position": [
+        0,
+        0.25,
+        0
+      ],
+      "scale": [
+        0.5,
+        0.5,
+        0.5
+      ]
+    },
+    {
+      "id": "leaf",
+      "kind": "text",
+      "parentId": "c",
+      "text": "leaf"
+    }
+  ],
+  "polylines": [
+    {
+      "id": "tip",
+      "primitive": "volumetric-line",
+      "backendPackage": "VolumetricLine",
+      "points": [
+        [
+          0.5,
+          1,
+          0
+        ],
+        [
+          0.5000000000000002,
+          2,
+          0
+        ]
+      ],
+      "radiusMeters": 0.01
+    }
+  ],
+  "lights": [],
+  "materials": [],
+  "interactions": [],
+  "animations": []
+}
