@@ -5,7 +5,7 @@ import { expect } from "Leaf.lspkg/Utils/common/Expect";
 import { Interactable } from "SpectaclesInteractionKit.lspkg/Components/Interaction/Interactable/Interactable";
 import { ScrollWindow } from "SpectaclesUIKit.lspkg/Scripts/Components/ScrollWindow/ScrollWindow";
 import type { ViroSpecsDocumentNode } from "../../ViroSpecs/lens/ViroSpecsProtocol";
-import { controllerHost, document, restoreGeneratedScene, settle, waitForGeneratedScene } from "./ViroLabLeafSupport";
+import { controllerHost, document, dragFrames, restoreGeneratedScene, settle, waitForGeneratedScene } from "./ViroLabLeafSupport";
 
 /**
  * viro_lab_scroll_window: a scroll group stages under the disabled staging
@@ -61,8 +61,10 @@ export class ViroLabScrollWindowScenario extends Scenario {
 
       const drag = async (target: Interactable, window: ScrollWindow): Promise<number> => {
         const before = window.scrollPosition.y;
-        // Drag up to scroll the content; LEAF adds the vector each drag frame.
-        await new DefaultLeafInteractor().drag(target, new vec3(0, 1, 0), 500);
+        // Drag up 1 cm on each of 18 drag updates, counted rather than timed
+        // (dragFrames): LEAF's timed drag got too few frames in a busy
+        // Preview and the window did not move.
+        await dragFrames(new DefaultLeafInteractor(), target, new vec3(0, 1, 0), 18);
         await sleep(300);
         return window.scrollPosition.y - before;
       };

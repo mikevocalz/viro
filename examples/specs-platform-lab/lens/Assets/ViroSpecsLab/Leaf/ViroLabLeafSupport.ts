@@ -1,4 +1,6 @@
-import { findSceneObjectByName, sleep } from "Leaf.lspkg/Utils/common/Utils";
+import { awaitEventOnce, findSceneObjectByName, nextFrame, sleep } from "Leaf.lspkg/Utils/common/Utils";
+import { InteractorTriggerType } from "SpectaclesInteractionKit.lspkg/Core/Interactor/Interactor";
+import type { DefaultLeafInteractor } from "Leaf.lspkg/Interactors/interactor/DefaultLeafInteractor";
 import { expect } from "Leaf.lspkg/Utils/common/Expect";
 import { ViroSpecsSceneControllerHost } from "../../ViroSpecs/lens/ViroSpecsSceneControllerHost";
 import { ViroGeneratedSceneHost } from "../../ViroSpecs/generated/ViroGeneratedSceneHost";
@@ -260,4 +262,54 @@ export function visibleCard(lab: ViroSpecsActionsLab): { id: string; title: stri
   expect(picked).toBeTruthy();
   print("VIRO_LAB_LEAF visible card-" + picked.id + " dy=" + bestDy);
   return picked;
+}
+
+/** BaseLeafInteractor members dragFrames drives; protected or private in LEAF 2.0.2. */
+type LeafDragInternals = {
+  startPoint: vec3;
+  endPoint: vec3;
+  overrideTrigger: InteractorTriggerType;
+  overrideDragVector: vec3 | undefined;
+  enterHover(target: Interactable): Promise<void>;
+  exitHover(): Promise<void>;
+  resetStartEndPoint(): void;
+};
+
+/**
+ * Drags `target` for exactly `frames` drag updates, adding `vector` (cm)
+ * to the interactor ray on each. Returns the number of updates SIK reported.
+ *
+ * LEAF's drag(target, vector, durationMs) does the same step but loops until
+ * the wall-clock duration passes, so the distance depends on the Preview frame
+ * rate: a normal Preview gets about 15 updates in 400 ms, a busy one gets 1
+ * (viro_lab_drag moved 0.456 cm in ws4-03-leaf-existing). Counting updates
+ * makes the drag the same length on every run.
+ */
+export async function dragFrames(interactor: DefaultLeafInteractor, target: Interactable, vector: vec3, frames: number): Promise<number> {
+  const self = interactor as unknown as LeafDragInternals;
+  let updates = 0;
+  const unsubscribe = target.onDragUpdate.add(() => {
+    if (updates < frames) {
+      self.startPoint = self.startPoint.add(vector);
+      self.endPoint = self.endPoint.add(vector);
+    }
+    updates++;
+  });
+  const dragStarted = awaitEventOnce(target.onDragStart);
+  const dragEnded = awaitEventOnce(target.onDragEnd);
+  await self.enterHover(target);
+  await nextFrame();
+  await nextFrame();
+  self.overrideTrigger = InteractorTriggerType.Select;
+  await nextFrame();
+  self.overrideDragVector = vector;
+  await dragStarted;
+  while (updates < frames) await awaitEventOnce(target.onTriggerUpdate);
+  unsubscribe();
+  self.overrideTrigger = InteractorTriggerType.None;
+  await dragEnded;
+  self.resetStartEndPoint();
+  self.overrideDragVector = undefined;
+  await self.exitHover();
+  return updates;
 }
