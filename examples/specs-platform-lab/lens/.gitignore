@@ -13,3 +13,6 @@ Plugins/
 
 # Per-machine signing key.
 spk_debug_key.pem
+
+# Machine paths for the viro-specs ChatTool (node, specsPackage).
+viro-specs.local.json

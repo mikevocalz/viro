@@ -1,0 +1,13 @@
+✔ descriptor exposes compile, doctor and sync (3.756417ms)
+✔ compile json writes the Platform Lab manifest through the real CLI (364.512041ms)
+✔ compile lens-ts output matches the committed generated host (352.159375ms)
+✔ unknown command and missing specsPackage are reported, not thrown (2.227792ms)
+✔ doctor runs the @viro-external/specs script when specsPackage is set (144.562125ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1035.618625

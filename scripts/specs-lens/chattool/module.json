@@ -1,0 +1,5 @@
+{
+  "name": "Viro Specs",
+  "main": "main.js",
+  "permissions": ["filesystem", "subprocess"]
+}
