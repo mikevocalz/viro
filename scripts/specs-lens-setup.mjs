@@ -103,6 +103,20 @@ const SCENARIOS = [
     "viro_ws4_scene_rejection",
     "viro_ws4_preferences",
   ].map((id) => ({ id, expect: "succeeded" })),
+  // Reference apps (RefAppsLeafIndex).
+  ...[
+    "viro_ref_dashboard_ready",
+    "viro_ref_dashboard_range",
+    "viro_ref_dashboard_ik",
+    "viro_ref_model_ready",
+    "viro_ref_model_transform",
+    "viro_ref_model_missing_asset",
+    "viro_ref_placement_ready",
+    "viro_ref_placement_confirm",
+    "viro_ref_placement_cancel",
+  ].map((id) => ({ id, expect: "succeeded" })),
+  // Proves the reference-app index reports failures. It must fail.
+  { id: "viro_ref_expected_failure", expect: "failed" },
 ];
 
 function parseArgs(argv) {
