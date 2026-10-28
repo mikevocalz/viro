@@ -58,6 +58,15 @@ for (const [scenario, holds] of Object.entries(PLAN)) {
     const shots = [
       ["front", { center: { x: 0, y: 0, z: -140 }, distance: 150, viewAngle: "front", detail: "high" }],
     ];
+    // The orthographic runtime capture does not apply ScrollWindow's
+    // MaskingComponent; the Preview panel shows what the wearer sees.
+    const panel = await capturer.call("CapturePanelScreenshotTool", { pluginId: "Snap.Plugin.Gui.PreviewPanel", maxDimension: 1024 });
+    if (panel.images?.length) {
+      writeFileSync(path.join(out, `${hold}-preview.png`), Buffer.from(panel.images[0].data, "base64"));
+      report.push({ scenario, hold, captured: true, file: `${hold}-preview.png` });
+    } else {
+      report.push({ scenario, hold, captured: false, reason: "preview panel: " + (panel.text ?? "").slice(0, 300) });
+    }
     for (const [suffix, args] of shots) {
       const capture = await capturer.call("CaptureRuntimeViewTool", { ...args, timeoutMs: 15000 });
       const file = path.join(out, `${hold}-${suffix}.png`);
