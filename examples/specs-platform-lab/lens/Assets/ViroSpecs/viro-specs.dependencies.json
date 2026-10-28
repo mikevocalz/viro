@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "generatedBy": "@viro-external/specs",
+  "wireVersion": 1,
+  "target": "SPECS 27",
+  "lensStudio": ">=5.22.0",
+  "upstream": {
+    "repository": "specs-devs/packages",
+    "commit": "df8820c0c4970f052e545b8da1dd288c2516d912"
+  },
+  "requiredPackages": [
+    "SpectaclesInteractionKit.lspkg",
+    "SpectaclesUIKit.lspkg",
+    "SurfacePlacement.lspkg",
+    "VolumetricLine.lspkg",
+    "SpecsNavigationKit.lspkg"
+  ],
+  "editorValidationPackages": [
+    "Leaf.lspkg",
+    "AiPreviewAgentInspect.lspkg",
+    "AiPreviewAgentInteract.lspkg"
+  ],
+  "notes": [
+    "Install required .lspkg dependencies through Lens Studio Asset Library or project Packages before preview/device builds.",
+    "AiPreviewAgent packages are editor-only validation dependencies and remain inert on device."
+  ]
+}
