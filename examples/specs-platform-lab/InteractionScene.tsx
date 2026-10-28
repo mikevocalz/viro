@@ -36,7 +36,7 @@ export type InteractionSceneProps = {
 export function InteractionScene({ transport, sourceResolver, onOption, onRetry, onDrag, onReset, onNext }: InteractionSceneProps) {
   return (
     <ViroSpecsScene transport={transport} sourceResolver={sourceResolver}>
-      <SpatialPanel viroTag="ix-panel" position={[0, 0, -1.5]} width={0.53} height={0.68}>
+      <SpatialPanel viroTag="ix-panel" position={[0, -0.27, -1.5]} width={0.53} height={0.68}>
         <PanelText viroTag="ix-title" role="title" text={VIRO_SPECS_COPY["gallery.interaction.title"]} position={[0, 0.29, 0.005]} />
         <PanelText
           viroTag="ix-body"
@@ -80,6 +80,7 @@ export function InteractionScene({ transport, sourceResolver, onOption, onRetry,
           type="GLB"
           position={[-0.14, -0.24, 0.06]}
           scale={[0.12, 0.12, 0.12]}
+          resettable={false}
           onDrag={(position) => onDrag?.(position)}
         />
         <PanelButton viroTag="ix-reset" label={VIRO_SPECS_COPY["modelViewer.reset"]} position={[0.13, -0.19, 0.005]} width={0.23} onPress={() => onReset?.()} />

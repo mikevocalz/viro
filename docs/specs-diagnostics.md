@@ -888,6 +888,6 @@ Premium component feature not drawn by this host.
 
 Emitted by the experience layer in `@viro-external/specs` (`ViroSpecsExperienceHost`).
 
-Fix: The scene carries the feature but this host version does not render it yet; the message names the node and the features. See doc/Experience.md#not-drawn-yet.
+Fix: The scene carries a premium feature this host version does not draw; the message names the node and the features. The current Lens host draws every premium feature (ModelViewer load ring, Reset model button and autoRotate; PanelImage radius.card corners), so it reports none. See doc/Experience.md#not-drawn-yet.
 
-Reported once per node for ModelViewer `autoRotate`, the Reset model button and the load ring, and PanelImage corner radius. SpatialScrollView is drawn as a scroll group and is not reported. The manifest still carries them, so a newer host draws them without recompiling.
+The code stays in the catalog for hosts that lag behind the compiler: a host reports it once per node for each feature it cannot draw. The current `@viro-external/specs` host draws the ModelViewer load ring, Reset model button and `autoRotate`, the PanelImage `radius.card` corners, and SpatialScrollView as a scroll group, so it raises none.

@@ -48,16 +48,16 @@ export type NavigationSceneProps = {
 export function NavigationScene({ transport, sourceResolver, onOpenCard, onBack, onToggleLabels, onNext }: NavigationSceneProps) {
   return (
     <ViroSpecsScene transport={transport} sourceResolver={sourceResolver}>
-      <SpatialPanel viroTag="nav-panel" position={[0, 0, -1.5]} width={0.53} height={0.5}>
+      <SpatialPanel viroTag="nav-panel" position={[0, -0.22, -1.5]} width={0.53} height={0.6}>
         <ViroNode viroTag="nav-list-view">
-          <PanelText viroTag="nav-title" role="title" text={VIRO_SPECS_COPY["gallery.navigation.title"]} position={[0, 0.2, 0.005]} />
-          <SpatialScrollView viroTag="nav-list" position={[0, -0.01, 0.005]} width={0.48} height={0.3} itemHeight={0.13}>
+          <PanelText viroTag="nav-title" role="title" text={VIRO_SPECS_COPY["gallery.navigation.title"]} position={[0, 0.235, 0.005]} />
+          <SpatialScrollView viroTag="nav-list" position={[0, 0.05, 0.005]} width={0.48} height={0.26} itemHeight={0.13}>
             {CARDS.map((card) => (
               <PanelButton
                 key={card.tag}
                 viroTag={card.tag}
                 label={card.name}
-                position={[card.column === 0 ? -0.12 : 0.12, 0.085 - card.row * 0.13, 0]}
+                position={[card.column === 0 ? -0.12 : 0.12, 0.065 - card.row * 0.13, 0]}
                 width={0.22}
                 height={0.11}
                 onPress={() => onOpenCard?.(card.tag)}
@@ -65,22 +65,22 @@ export function NavigationScene({ transport, sourceResolver, onOpenCard, onBack,
                 <PanelImage
                   viroTag={card.tag + "-image"}
                   source={require("../visionos-sweep/assets/button.png")}
-                  position={[-0.085, 0, 0.003]}
+                  position={[-0.085, 0, 0.012]}
                   width={0.04}
                   height={0.04}
                 />
               </PanelButton>
             ))}
           </SpatialScrollView>
-          <PanelButton viroTag="nav-next" label={VIRO_SPECS_COPY["nav.next"]} position={[0.14, -0.2, 0.005]} onPress={() => onNext?.()} />
+          <PanelButton viroTag="nav-next" label={VIRO_SPECS_COPY["nav.next"]} position={[0.14, -0.245, 0.005]} onPress={() => onNext?.()} />
         </ViroNode>
         <ViroNode viroTag="nav-detail" visible={false}>
-          <PanelButton viroTag="nav-back" label={VIRO_SPECS_COPY["nav.back"]} position={[-0.17, 0.2, 0.005]} width={0.14} onPress={() => onBack?.()} />
-          <PanelText viroTag="nav-detail-title" role="title" text="Card 1" position={[0.06, 0.2, 0.005]} />
+          <PanelButton viroTag="nav-back" label={VIRO_SPECS_COPY["nav.back"]} position={[-0.17, 0.235, 0.005]} width={0.14} onPress={() => onBack?.()} />
+          <PanelText viroTag="nav-detail-title" role="title" text="Card 1" position={[0.06, 0.235, 0.005]} />
           <PanelImage
             viroTag="nav-detail-image"
             source={require("../visionos-sweep/assets/button.png")}
-            position={[0, 0.115, 0.005]}
+            position={[0, 0.15, 0.005]}
             width={0.16}
             height={0.09}
           />
@@ -88,7 +88,7 @@ export function NavigationScene({ transport, sourceResolver, onOpenCard, onBack,
             viroTag="nav-detail-body"
             role="body"
             text={VIRO_SPECS_COPY["gallery.navigation.cardBody"]}
-            position={[0, -0.03, 0.005]}
+            position={[0, -0.01, 0.005]}
             width={0.46}
             height={0.2}
           />
