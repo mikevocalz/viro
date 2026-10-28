@@ -120,9 +120,11 @@ describe("preview parity with the mock host", () => {
   });
 
   it("an invalid manifest is reported by viro and rejected by the controller on both hosts", () => {
-    const input = readPreviewInput(json("__test__/fixtures/specs/manifest-v2/invalid/missing-parent.json"));
+    // Invalid fixtures wrap the manifest: { description, expectCodes, manifest }.
+    const wrapper = json("__test__/fixtures/specs/manifest-v2/invalid/missing-parent.json") as { manifest: unknown; expectCodes: string[] };
+    const input = readPreviewInput(wrapper.manifest);
     expect(input.route).toBe("scene-document");
-    expect(input.manifestDiagnostics.length).toBeGreaterThan(0);
+    expect(input.manifestDiagnostics.map((d) => d.code)).toEqual(wrapper.expectCodes);
     const hosts = createParityHosts();
     const { mock, three } = presentBoth(hosts, input.scene);
     expect(three.status).toBe("rejected");

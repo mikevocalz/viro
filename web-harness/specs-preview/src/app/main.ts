@@ -10,8 +10,8 @@ const FIXTURES = [
   { id: "platform-lab-manifest", label: "Platform Lab, manifest v2", url: "/viro-repo/web-harness/specs-preview/fixtures/platform-lab.manifest.json" },
   { id: "platform-lab-v1", label: "Platform Lab, manifest v1 (migrated)", url: "/viro-repo/__test__/fixtures/specs/manifest-v1/platform-lab.v1.json" },
   { id: "all-fields", label: "Every manifest field, no assets", url: "/viro-repo/__test__/fixtures/specs/manifest-v2/valid/all-fields.json" },
-  { id: "invalid-parent", label: "Invalid: missing parent", url: "/viro-repo/__test__/fixtures/specs/manifest-v2/invalid/missing-parent.json" },
-] as const;
+  { id: "invalid-parent", label: "Invalid: missing parent", url: "/viro-repo/__test__/fixtures/specs/manifest-v2/invalid/missing-parent.json", unwrap: true },
+] as const satisfies readonly { id: string; label: string; url: string; unwrap?: boolean }[];
 
 const $ = <T extends HTMLElement>(selector: string): T => {
   const el = document.querySelector<T>(selector);
@@ -35,11 +35,14 @@ const params = new URLSearchParams(location.search);
 let manifestDiagnostics: { code: string; severity: string; message: string; fieldPath?: string }[] = [];
 let sourceLabel = "";
 
-async function loadUrl(url: string, label: string, mode: "present" | "update" = "present"): Promise<void> {
+async function loadUrl(url: string, label: string, mode: "present" | "update" = "present", unwrap = false): Promise<void> {
   try {
     const response = await fetch(url, { cache: "no-store" });
     if (!response.ok) throw new Error(response.status + " " + response.statusText);
-    await loadJson(await response.json(), label, mode);
+    const body: unknown = await response.json();
+    // Invalid-manifest test fixtures wrap the document: { description, expectCodes, manifest }.
+    const json = unwrap && typeof body === "object" && body !== null && "manifest" in body ? (body as { manifest: unknown }).manifest : body;
+    await loadJson(json, label, mode);
   } catch (error) {
     showLoadError(label + ": " + (error instanceof Error ? error.message : String(error)));
   }
@@ -63,7 +66,7 @@ picker.addEventListener("change", () => {
   const f = FIXTURES.find((x) => x.id === picker.value);
   if (f) {
     history.replaceState(null, "", "?fixture=" + f.id);
-    void loadUrl(f.url, f.label);
+    void loadUrl(f.url, f.label, "present", "unwrap" in f && f.unwrap);
   }
 });
 
@@ -195,7 +198,7 @@ if (watchUrl) {
   if (sceneUrl) void loadUrl(sceneUrl, sceneUrl);
   else {
     picker.value = fixture.id;
-    void loadUrl(fixture.url, fixture.label);
+    void loadUrl(fixture.url, fixture.label, "present", "unwrap" in fixture && fixture.unwrap);
   }
 }
 

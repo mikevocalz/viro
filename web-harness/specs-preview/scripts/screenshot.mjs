@@ -38,7 +38,7 @@ const browser = await chromium.launch({ channel: "chrome", args: ["--use-angle=s
 const failures = [];
 try {
   for (const shot of SHOTS.filter((s) => s.name.startsWith(only))) {
-    const context = await browser.newContext({ viewport: shot.viewport, deviceScaleFactor: 2 });
+    const context = await browser.newContext({ viewport: shot.viewport, deviceScaleFactor: Number(arg("--scale", "1")) });
     const page = await context.newPage();
     const errors = [];
     page.on("console", (m) => m.type() === "error" && !/Failed to load resource: the server responded with a status of 404/.test(m.text()) && errors.push(m.text()));
