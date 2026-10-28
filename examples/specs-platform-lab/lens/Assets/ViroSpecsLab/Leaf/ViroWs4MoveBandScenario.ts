@@ -32,7 +32,8 @@ import {
  * viro_ws4_move_band: Interaction: moving the model away step by step with
  * the gaze Move API (moveNode) stops at the 3.0 m band edge and logs VS5023
  * once; a hand drag far to the side stops at the same edge and logs VS5023
- * once.
+ * once, and every drag event an app listener receives carries the clamped
+ * position the node is at, never the one SIK proposed.
  */
 @component
 export class ViroWs4MoveBandScenario extends Scenario {
@@ -63,10 +64,28 @@ export class ViroWs4MoveBandScenario extends Scenario {
       await settle(200);
       const dragged = controllerHost().getNode("ix-model") as SceneObject;
       let frames = 0;
+      // What an app drag listener receives: on every frame, the position the
+      // node is at after the clamp, never the position SIK proposed.
+      const reported: { distance: number; offCm: number }[] = [];
+      const listener = controllerHost().addOnInteractionListener((event) => {
+        if (event.nodeId !== "ix-model" || event.phase !== "drag" || !event.position) return;
+        const at = new vec3(event.position[0] * 100, event.position[1] * 100, event.position[2] * 100);
+        reported.push({
+          distance: at.sub(cameraPose().position).length / 100,
+          offCm: at.sub(dragged.getTransform().getWorldPosition()).length,
+        });
+      });
       const dragDiagnostics = await diagnosticsDuring(async () => {
         frames = await dragFrames(new DefaultLeafInteractor(), nodeInteractable("ix-model"), new vec3(20, 0, 0), 20);
         await settle(200);
       });
+      listener.remove();
+      const farthest = reported.reduce((max, r) => Math.max(max, r.distance), 0);
+      const worstOff = reported.reduce((max, r) => Math.max(max, r.offCm), 0);
+      print("VIRO_WS4 move_band drag events=" + reported.length + " farthest reported m=" + farthest + " worst offset from node cm=" + worstOff);
+      expect(reported.length).toBeGreaterThan(0);
+      expect(farthest).toBeLessThan(3.0 + 0.001);
+      expect(worstOff).toBeLessThan(0.01);
       const dragD = dragged.getTransform().getWorldPosition().sub(cameraPose().position).length / 100;
       const dragClamps = dragDiagnostics.filter((x) => x.code === "VS5023");
       print("VIRO_WS4 move_band hand drag frames=" + frames + " distance m=" + dragD + " VS5023=" + dragClamps.length);

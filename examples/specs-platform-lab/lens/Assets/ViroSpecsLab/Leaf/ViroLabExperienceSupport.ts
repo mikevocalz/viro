@@ -9,6 +9,7 @@ import { ViroSpecsLensSceneBackend } from "../../ViroSpecs/lens/ViroSpecsLensSce
 import type { ViroSpecsHostDiagnostic } from "../../ViroSpecs/lens/ViroSpecsHostDiagnostics";
 import type { ViroSpecsApplyResult } from "../../ViroSpecs/lens/ViroSpecsSceneController";
 import { galleryScene, type ViroLabGalleryScene } from "../Gallery/ViroLabGallery";
+import { VIRO_SPECS_LENS_TEXT_EM_METERS_PER_SIZE } from "../../ViroSpecs/lens/ViroSpecsExperienceTokens";
 import { controllerHost, restoreGeneratedScene, waitFor, waitForGeneratedScene } from "./ViroLabLeafSupport";
 
 /**
@@ -139,13 +140,19 @@ export function panelText(key: "loading" | "notice" | "error" | "permission", ro
   return find(root as SceneObject)?.text ?? "";
 }
 
-/** The Interactable SIK binds on a panel's action button. */
+/**
+ * The Interactable SIK binds on a panel's action button. The panel's backing
+ * carries a listener-free Interactable that stops rays, so the search starts
+ * at the "action" child.
+ */
 export function panelAction(key: "loading" | "notice" | "error" | "permission"): Interactable {
   const root = panel(key);
   expect(root).toBeTruthy();
+  const action = (root as SceneObject).children.find((child) => child.name === "action") ?? null;
+  expect(action).toBeTruthy();
   const found = findInteractables(
     (object: SceneObject) => (object.getComponent(Interactable.getTypeName()) as Interactable | null) ?? undefined,
-    root as SceneObject,
+    action as SceneObject,
     true
   )[0];
   expect(found).toBeTruthy();
@@ -281,3 +288,23 @@ export function placeInGaze(id: string, meters: number): void {
 }
 
 export { sleep, waitFor };
+
+/**
+ * Lines a wrapped state-panel row was laid out for: its layoutRect height over
+ * one line (type.lineHeight 1.3 times the em of its size).
+ */
+export function rowLines(key: "loading" | "notice" | "error" | "permission", row: "title" | "body" | "detail"): number {
+  const root = panel(key) as SceneObject;
+  const object = root.children.find((child) => child.name === row) ?? null;
+  expect(object).toBeTruthy();
+  const text = (object as SceneObject).getComponent("Component.Text") as Text;
+  const rect = text.layoutRect;
+  const lineCm = 1.3 * text.size * VIRO_SPECS_LENS_TEXT_EM_METERS_PER_SIZE * 100;
+  return Math.round((rect.top - rect.bottom) / lineCm);
+}
+
+/** Every physics hit on the segment from `start` to `end`, nearest first. */
+export async function rayHits(start: vec3, end: vec3): Promise<RayCastHit[]> {
+  const probe = Physics.createGlobalProbe();
+  return new Promise<RayCastHit[]>((resolve) => probe.rayCastAll(start, end, (hits: RayCastHit[]) => resolve(hits)));
+}

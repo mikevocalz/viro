@@ -32,8 +32,8 @@ import {
 /**
  * viro_ws4_hello_loading: Hello, loading: with the GLB load slowed to 2.5 s, the loading panel
  * appears after motion.fast (120 ms) reading "Loading 0 of 1", the scene
- * shows no interactables while loading, and the panel goes away when the
- * model arrives.
+ * shows no interactables while loading, the ModelViewer load ring turns at
+ * the model's origin, and the panel and ring go away when the model arrives.
  */
 @component
 export class ViroWs4HelloLoadingScenario extends Scenario {
@@ -55,11 +55,20 @@ export class ViroWs4HelloLoadingScenario extends Scenario {
         expect(panelText("loading", "body").startsWith("Loading 0 of 1")).toBe(true);
         // Content and its SIK targets stay hidden until the scene is ready (A-check L4).
         expect(isEnabled(findInteractableByName("viro-interactable:hello-next"))).toBe(false);
+        // ModelViewer load ring at the model's origin while its GLB loads.
+        const ring = findSceneObjectByName("ViroSpecsModelRing:platform-lab-model");
+        expect(ring).toBeTruthy();
+        expect((ring as SceneObject).enabled).toBe(true);
+        const ringAt = (ring as SceneObject).getTransform().getWorldPosition();
+        const modelAt = (controllerHost().getNode("platform-lab-model") as SceneObject).getTransform().getWorldPosition();
+        print("VIRO_WS4 hello_loading model ring offset cm=" + ringAt.distance(modelAt));
+        expect(ringAt.distance(modelAt)).toBeLessThan(0.5);
         await hold(config, "hello_loading");
         expect(await waitFor(() => controllerHost().lifecycle === "ready", 6000 + holdMs)).toBe(true);
       });
       await settle(300);
       expect(panelOpen("loading")).toBe(false);
+      expect(findSceneObjectByName("ViroSpecsModelRing:platform-lab-model")?.enabled ?? false).toBe(false);
       expect(viewOf(host).sceneVisible).toBe(true);
       expect(isEnabled(findInteractableByName("viro-interactable:hello-next"))).toBe(true);
       // The model node holds the instantiated prefab once the slow load lands.

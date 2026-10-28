@@ -61,13 +61,23 @@ export class ViroWs4NavigationScrollScenario extends Scenario {
           const card = controllerHost().getNode("nav-card-" + n);
           if (!card) continue;
           const y = card.getTransform().getWorldPosition().y;
-          // Window is 30 cm tall; a card is 11 cm.
-          if (y + 5.5 <= windowCenter + 15 + 0.5 && y - 5.5 >= windowCenter - 15 - 0.5) out.push("nav-card-" + n);
+          // Window is 26 cm tall (two 13 cm rows); a card is 11 cm.
+          if (y + 5.5 <= windowCenter + 13 + 0.5 && y - 5.5 >= windowCenter - 13 - 0.5) out.push("nav-card-" + n);
         }
         return out;
       };
       print("VIRO_WS4 navigation top " + JSON.stringify(inWindow()));
       expect(inWindow()).toEqual(["nav-card-1", "nav-card-2", "nav-card-3", "nav-card-4"]);
+      // PanelImage corners: each card image draws on a rounded mesh that
+      // shares the Image's material, and the square Image quad is off.
+      const rounded = findSceneObjectByName("viro-image-rounded:nav-card-1-image");
+      expect(rounded).toBeTruthy();
+      const roundedVisual = (rounded as SceneObject).getComponent("Component.RenderMeshVisual") as RenderMeshVisual;
+      const square = (rounded as SceneObject).getParent()?.getComponent("Component.Image") as Image | null;
+      print("VIRO_WS4 navigation rounded image enabled=" + roundedVisual.enabled + " square image enabled=" + (square ? square.enabled : "none"));
+      expect(roundedVisual.enabled).toBe(true);
+      expect(square !== null && square.enabled === false).toBe(true);
+      expect(roundedVisual.mainMaterial.isSame(square ? square.mainMaterial : roundedVisual.mainMaterial)).toBe(true);
       await hold(config, "navigation_top");
 
       // A hand drag on the list moves it (UI Kit ScrollWindow). Drags fling a

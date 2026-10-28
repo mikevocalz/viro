@@ -51,6 +51,12 @@ export class ViroWs4PlacementTableScenario extends Scenario {
         expect(await waitFor(() => (findSceneObjectByName("ViroSpecsReticle")?.enabled ?? false) && (textOf("ViroSpecsReticleLabel") ?? "").startsWith("Table"), 3000)).toBe(true);
         print("VIRO_WS4 placement_table label=" + JSON.stringify(textOf("ViroSpecsReticleLabel")) + " " + (reticle !== null));
         expect(textOf("ViroSpecsReticleLabel").includes("Table. Pinch to place.")).toBe(true);
+        // The reticle is a disc, not the square unit plane the panels use.
+        const disc = (findSceneObjectByName("ViroSpecsReticle") as SceneObject).children
+          .map((child) => child.getComponent("Component.RenderMeshVisual") as RenderMeshVisual | null)
+          .find((visual) => visual !== null) ?? null;
+        expect(disc).toBeTruthy();
+        expect((disc as RenderMeshVisual).mesh.isSame(host.panelMesh as RenderMesh)).toBe(false);
         await hold(config, "placement_reticle");
         expect(host.confirmPlacement()).toBe(true);
       } finally {

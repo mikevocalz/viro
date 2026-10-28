@@ -61,7 +61,7 @@
   InputLines:
     - '// @input SceneObject sceneHostObject {"hint":"SceneObject with ViroSpecsSceneControllerHost"}'
     - '// @input SceneObject cameraObject {"hint":"The camera; panels open 1.5 m along its view"}'
-    - '// @input Asset.RenderMesh panelMesh {"hint":"Unit plane (1 x 1 cm) for panel backings and the reticle disc"}'
+    - '// @input Asset.RenderMesh panelMesh {"hint":"Unit plane (1 x 1 cm) for panel backings; the reticle and dwell disc build their own disc mesh"}'
     - '// @input Asset.Material panelMaterial {"hint":"Unlit material tinted from the tokens; cloned per visual"}'
     - '// @input bool placementScene {"hint":"The scene places content on surfaces"}'
     - '// @input bool gazeOnly = true {"hint":"Every function has a gaze path (dwell, step buttons)"}'
