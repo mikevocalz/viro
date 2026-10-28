@@ -103,6 +103,7 @@
     "ios/ViroReactUI.podspec",
     "ios/ViroReactExternalVideo.podspec",
     "bin",
+    "schemas",
     "LICENSE"
   ],
   "devDependencies": {

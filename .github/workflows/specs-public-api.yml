@@ -4,12 +4,17 @@ on:
   push:
     branches:
       - main
+      - develop
       - "feat/specs-*"
     paths:
       - "components/Specs/**"
       - "components/Animation/ViroAnimations.ts"
       - "examples/specs-platform-lab/**"
-      - "__test__/ViroSpecsCompiler.test.tsx"
+      - "__test__/ViroSpecs*.test.ts"
+      - "__test__/ViroSpecs*.test.tsx"
+      - "__test__/fixtures/specs/**"
+      - "schemas/**"
+      - "tsconfig.specs-core.json"
       - "docs/specs*.md"
       - "bin/viro-specs.cjs"
       - "bin/viro-specs-compile.cjs"
@@ -25,7 +30,11 @@ on:
       - "components/Specs/**"
       - "components/Animation/ViroAnimations.ts"
       - "examples/specs-platform-lab/**"
-      - "__test__/ViroSpecsCompiler.test.tsx"
+      - "__test__/ViroSpecs*.test.ts"
+      - "__test__/ViroSpecs*.test.tsx"
+      - "__test__/fixtures/specs/**"
+      - "schemas/**"
+      - "tsconfig.specs-core.json"
       - "docs/specs*.md"
       - "bin/viro-specs.cjs"
       - "bin/viro-specs-compile.cjs"
@@ -51,8 +60,12 @@ jobs:
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Typecheck
         run: npx tsc --noEmit
-      - name: Specs compiler regression
-        run: npx jest __test__/ViroSpecsCompiler.test.tsx --runInBand --config jest.specs.config.cjs
+      - name: Typecheck (--strict)
+        run: npx tsc --noEmit --strict
+      - name: Build Specs core for the CLI
+        run: npm run build:specs-core
+      - name: Specs suites (runtime compiler, manifest schema over every fixture, scene gates)
+        run: npm run test:specs
       - name: Static Specs compiler regression
         run: npm run test:specs-compiler
       - name: CLI syntax

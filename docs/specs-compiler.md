@@ -15,6 +15,31 @@ viro-specs-compile \
   --out build/specs-scene.json
 ```
 
+The output is a [manifest v2](specs-manifest.md). Problems are reported as
+coded diagnostics with file, line and column
+([reference](specs-diagnostics.md)):
+
+```text
+[viro-specs] src/SpecsScene.tsx:14:9 error VS2013: ViroText title has a spread attribute; its props were not compiled.
+  hint: Write the props out on the element. The static compiler cannot see what a spread contains.
+```
+
+Errors stop the build. Warnings are printed and the file is written, unless
+`--strict` is set, which also fails on warnings (for example a missing
+`viroTag`, which `--strict` therefore requires).
+
+| Flag | Meaning |
+| --- | --- |
+| `--entry <file.tsx>` | Compile Viro JSX. |
+| `--manifest <file.json>` | Read a hand-written or version 1 manifest, validate it, and write it as version 2. |
+| `--out <file>` | Output path. Nothing is written when the build fails. |
+| `--format json\|lens-ts` | Manifest JSON (default) or the generated Lens Studio host. |
+| `--strict` | Fail on warnings too. |
+| `--diagnostics-format text\|json` | `json` writes only a JSON array of diagnostics to stderr. |
+
+The CLI loads the shared contract code from `bin/specs-core/`, built by
+`npm run build:specs-core` (the package `build` and `prepare` scripts run it).
+
 The compiler currently supports static props for:
 
 - ViroNode
