@@ -1,0 +1,12 @@
+16:06:10.839 [Packages/SpectaclesInteractionKit.lspkg/Utils/logger.ts:21] FrameCache: Initialized global cache flushing for FrameCache
+16:06:11.119 [Packages/SpectaclesInteractionKit.lspkg/Core/ConfigurationValidator/ConfigurationValidator.ts:16] SIK Version : 0.18.0
+16:06:11.440 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:06:11.441 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:06:11.502 [LeafPlugin][PluginViewModel] Loaded 39 scenario(s) from preview.
+16:06:11.503 [LeafPlugin][PluginViewModel] Running scenario: viro_lab_select
+16:06:38.876 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_lab_select with args: []
+16:06:38.877 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.001s]Running with runner config: {"__leaf__log_level":"INFO","__leaf__timeout_secs":"600","__leaf__diagnostic_policy":"fallback","__leaf__diagnostic_report_duration_ms":"-1"}
+16:06:39.653 [Assets/ViroSpecsLab/Leaf/ViroLabSelectScenario.ts:32] VIRO_LAB_LEAF select PASS phases=select-start,drag,drag,drag,drag,select-end
+16:06:39.653 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.777s]PASSED: viro_lab_select
+16:06:39.653 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.777s][viro_lab_select] PASSED
+16:06:39.654 [LeafPlugin][PluginViewModel] ✅ Scenario viro_lab_select completed successfully.

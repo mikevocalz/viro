@@ -1,0 +1,18 @@
+16:28:23.179 [Packages/SpectaclesInteractionKit.lspkg/Utils/logger.ts:21] FrameCache: Initialized global cache flushing for FrameCache
+16:28:23.503 [Packages/SpectaclesInteractionKit.lspkg/Core/ConfigurationValidator/ConfigurationValidator.ts:16] SIK Version : 0.18.0
+16:28:23.871 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:28:23.872 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:28:23.948 [LeafPlugin][PluginViewModel] Loaded 39 scenario(s) from preview.
+16:28:23.948 [LeafPlugin][PluginViewModel] Running scenario: viro_ref_placement_cancel
+16:28:59.253 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_ref_placement_cancel with args: [(hold_ms: 0)]
+16:28:59.253 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.001s]Running with runner config: {"__leaf__log_level":"INFO","__leaf__timeout_secs":"600","__leaf__diagnostic_policy":"fallback","__leaf__diagnostic_report_duration_ms":"-1"}
+16:28:59.630 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node wpi-card-title: Text "wpi-card-title" maxLines 2 is approximated.
+16:28:59.631 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node wpi-card-body: Text "wpi-card-body" maxLines 3 is approximated.
+16:28:59.631 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node wpi-prompt: Text "wpi-prompt" maxLines 2 is approximated.
+16:29:02.161 [Assets/ViroSpecsRefApps/Leaf/ViroRefAppsLeafSupport.ts:138] VIRO_REF_HOLD placement_cancelled 0
+16:29:02.778 [Assets/ViroSpecsRefApps/Leaf/ViroRefPlacementCancelScenario.ts:69] VIRO_REF placement_cancel PASS actions=["placement.start wpi-place","placement.cancel wpi-cancel"]
+16:29:02.781 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:29:02.781 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:29:03.085 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  3.833s]PASSED: viro_ref_placement_cancel
+16:29:03.085 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  3.833s][viro_ref_placement_cancel] PASSED
+16:29:03.086 [LeafPlugin][PluginViewModel] ✅ Scenario viro_ref_placement_cancel completed successfully.

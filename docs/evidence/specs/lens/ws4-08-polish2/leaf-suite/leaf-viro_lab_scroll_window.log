@@ -1,0 +1,16 @@
+16:10:38.662 [Packages/SpectaclesInteractionKit.lspkg/Utils/logger.ts:21] FrameCache: Initialized global cache flushing for FrameCache
+16:10:38.985 [Packages/SpectaclesInteractionKit.lspkg/Core/ConfigurationValidator/ConfigurationValidator.ts:16] SIK Version : 0.18.0
+16:10:39.356 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:10:39.357 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:10:39.418 [LeafPlugin][PluginViewModel] Loaded 39 scenario(s) from preview.
+16:10:39.418 [LeafPlugin][PluginViewModel] Running scenario: viro_lab_scroll_window
+16:11:12.151 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_lab_scroll_window with args: []
+16:11:12.151 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.001s]Running with runner config: {"__leaf__log_level":"INFO","__leaf__timeout_secs":"600","__leaf__diagnostic_policy":"fallback","__leaf__diagnostic_report_duration_ms":"-1"}
+16:11:12.612 [Assets/ViroSpecsLab/Leaf/ViroLabScrollWindowScenario.ts:37] VIRO_LAB_LEAF scroll_window status=committed diagnostics=["VS5008:Text \"platform-lab-title\" maxLines 2 is approximated.","VS5008:Text \"hello-body\" maxLines 3 is approximated."]
+16:11:15.309 [Assets/ViroSpecsLab/Leaf/ViroLabScrollWindowScenario.ts:74] VIRO_LAB_LEAF scroll_window moved staged=25.158523559570312 control=20.059005737304688
+16:11:15.309 [Assets/ViroSpecsLab/Leaf/ViroLabScrollWindowScenario.ts:78] VIRO_LAB_LEAF scroll_window PASS
+16:11:15.311 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:11:15.311 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:11:15.516 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  3.366s]PASSED: viro_lab_scroll_window
+16:11:15.516 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  3.366s][viro_lab_scroll_window] PASSED
+16:11:15.517 [LeafPlugin][PluginViewModel] ✅ Scenario viro_lab_scroll_window completed successfully.
