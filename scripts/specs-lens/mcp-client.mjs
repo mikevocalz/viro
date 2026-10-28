@@ -2,8 +2,8 @@
 //
 // Lens Studio runs a per-window HTTP MCP server (AI Assistant > AI Model
 // Context Protocol > Configure Server). This client reads its URL and bearer
-// header from the same place Claude Code and Codex do, and never prints the
-// header.
+// header from the environment or from an MCP client config file, and never
+// prints the header.
 //
 // It uses node:http rather than fetch: package installs and recompiles can
 // take longer than undici's fixed 300 s headers timeout while Lens Studio
@@ -12,12 +12,12 @@
 import http from "node:http";
 import https from "node:https";
 import { existsSync, readFileSync } from "node:fs";
-import { homedir } from "node:os";
-import path from "node:path";
 
-function fromClaudeConfig() {
-  const file = path.join(homedir(), ".claude.json");
-  if (!existsSync(file)) return null;
+// Any MCP client config with a "lens-studio" entry under mcpServers, either at
+// the top level or per project.
+function fromConfigFile() {
+  const file = process.env.LENS_STUDIO_MCP_CONFIG;
+  if (!file || !existsSync(file)) return null;
   const config = JSON.parse(readFileSync(file, "utf8"));
   const server =
     config.mcpServers?.["lens-studio"] ??
@@ -35,11 +35,11 @@ function fromEnvironment() {
 }
 
 export function resolveServer() {
-  const server = fromEnvironment() ?? fromClaudeConfig();
+  const server = fromEnvironment() ?? fromConfigFile();
   if (!server) {
     throw new Error(
       "Lens Studio MCP server not found. Set LENS_STUDIO_MCP_URL (and LENS_STUDIO_MCP_TOKEN), " +
-        "or add a 'lens-studio' server to ~/.claude.json."
+        "or point LENS_STUDIO_MCP_CONFIG at an MCP config file with a 'lens-studio' server."
     );
   }
   return server;
