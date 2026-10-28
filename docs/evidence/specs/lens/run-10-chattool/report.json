@@ -1,0 +1,18 @@
+{
+  "startedAt": "2026-10-28T11:20:37.393Z",
+  "project": "examples/specs-platform-lab/lens",
+  "steps": {
+    "chattool": {
+      "ok": true,
+      "ms": 24335,
+      "result": {
+        "registry": [
+          "com.reactvision.viro.specs.ChatTool"
+        ],
+        "mcpTools": [],
+        "doctorOk": null
+      }
+    }
+  },
+  "finishedAt": "2026-10-28T11:21:01.768Z"
+}
