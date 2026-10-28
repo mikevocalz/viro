@@ -310,6 +310,25 @@ describe.each(APPS)("reference app layout $name", ({ file }) => {
     expect(outside).toEqual([]);
   });
 
+  // Same frame as the gallery test: Lens Studio 5.24 SPECS 27 Preview at the
+  // default pose spans about 6.7 degrees above the horizon to 30.7 below,
+  // with the LEAF run banner in the top 2 degrees, so panels stay under
+  // 4 degrees up and above 28 down.
+  it("fits the SPECS Preview frame at the default pose", () => {
+    const { m, chain } = boxes();
+    const off: string[] = [];
+    for (const n of m.nodes) {
+      if (n.kind !== "panel" || n.component?.type !== "spatial-panel") continue;
+      const y = chain(n.id).reduce((sum, a) => sum + (a.position?.[1] ?? 0), 0);
+      const z = Math.abs(chain(n.id).reduce((sum, a) => sum + (a.position?.[2] ?? 0), 0));
+      const deg = (h: number) => (Math.atan2(h, z) * 180) / Math.PI;
+      const top = deg(y + n.extents.height / 2);
+      const bottom = deg(y - n.extents.height / 2);
+      if (top > 4 || bottom < -28) off.push(n.id + " spans " + bottom.toFixed(1) + " to " + top.toFixed(1) + " degrees");
+    }
+    expect(off).toEqual([]);
+  });
+
   it("never overlaps two boxes that show at the same time in the same panel", () => {
     const { out } = boxes();
     const overlaps: string[] = [];

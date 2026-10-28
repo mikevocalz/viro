@@ -104,7 +104,7 @@ export function SpatialDashboard({ transport, sourceResolver, onAction }: Spatia
       actions={DASHBOARD_ACTIONS}
       onAction={onAction}
     >
-      <SpatialPanel viroTag="dash-panel" position={[0, 0, -1.5]} width={0.8} height={0.52}>
+      <SpatialPanel viroTag="dash-panel" position={[0, -0.22, -1.5]} width={0.8} height={0.52}>
         <PanelText viroTag="dash-title" role="title" text="Workshop sensors" position={[0, 0.2, 0.005]} />
         {DASHBOARD_METRICS.map((metric) => (
           <ViroNode key={metric.id} viroTag={"dash-card-" + metric.id} position={[metric.x, 0, 0.005]}>

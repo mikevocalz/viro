@@ -28,7 +28,7 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       "kind": "panel",
       "position": [
         0,
-        0,
+        -0.22,
         -1.5
       ],
       "extents": {
@@ -50,7 +50,7 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       ],
       "text": "Workshop sensors",
       "style": {
-        "fontSize": 231.1,
+        "fontSize": 229.1,
         "fontWeight": "600",
         "color": "#eef2f0"
       },
@@ -82,7 +82,7 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       ],
       "text": "Temperature",
       "style": {
-        "fontSize": 139.7,
+        "fontSize": 139.8,
         "fontWeight": "500",
         "color": "#a9b6bf"
       },
@@ -104,7 +104,7 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       ],
       "text": "20.8 °C",
       "style": {
-        "fontSize": 232.3,
+        "fontSize": 234.1,
         "fontWeight": "600",
         "color": "#eef2f0"
       },
@@ -136,7 +136,7 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       ],
       "text": "Humidity",
       "style": {
-        "fontSize": 137.8,
+        "fontSize": 137.9,
         "fontWeight": "500",
         "color": "#a9b6bf"
       },
@@ -158,7 +158,7 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       ],
       "text": "51 %",
       "style": {
-        "fontSize": 229.1,
+        "fontSize": 230.9,
         "fontWeight": "600",
         "color": "#eef2f0"
       },
@@ -190,7 +190,7 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       ],
       "text": "CO2",
       "style": {
-        "fontSize": 139.7,
+        "fontSize": 139.8,
         "fontWeight": "500",
         "color": "#a9b6bf"
       },
@@ -212,7 +212,7 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       ],
       "text": "580 ppm",
       "style": {
-        "fontSize": 232.3,
+        "fontSize": 234.1,
         "fontWeight": "600",
         "color": "#eef2f0"
       },
@@ -322,7 +322,7 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       ],
       "text": "Averages over the last 24 hours",
       "style": {
-        "fontSize": 161.5,
+        "fontSize": 166,
         "fontWeight": "400",
         "color": "#a9b6bf"
       },
