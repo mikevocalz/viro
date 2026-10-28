@@ -52,6 +52,16 @@ export class PreviewAssetStore implements PreviewResources {
     await Promise.all(wanted.map(([kind, source]) => this.fetch(kind, source)));
   }
 
+  /** Drops failed loads so the next preload or load fetches them again (the error panel's Retry). */
+  forgetMissing(): void {
+    for (const [key, asset] of Array.from(this.cache)) {
+      if (asset !== null) continue;
+      this.cache.delete(key);
+      this.inflight.delete(key);
+      this.statuses.delete(key);
+    }
+  }
+
   loadAsset(kind: "image" | "model", source: string): PreviewAsset | null | Promise<PreviewAsset | null> {
     const key = kind + ":" + source;
     if (this.cache.has(key)) return this.cache.get(key) ?? null;

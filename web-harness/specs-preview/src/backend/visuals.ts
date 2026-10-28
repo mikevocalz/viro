@@ -68,6 +68,20 @@ function roundedRect(widthCm: number, heightCm: number, radiusCm: number): Shape
 }
 
 /**
+ * Rounded quad, cm, facing +Z, for experience-layer backings. `radiusFraction`
+ * is the corner radius over the shorter side. Scale it to size it.
+ */
+export function createRoundedSurface(widthCm: number, heightCm: number, radiusFraction: number, name: string): Mesh {
+  const mesh = new Mesh(
+    new ShapeGeometry(roundedRect(widthCm, heightCm, Math.min(widthCm, heightCm) * radiusFraction), 8),
+    new MeshBasicMaterial({ color: 0xffffff, transparent: true, side: DoubleSide })
+  );
+  mesh.name = name;
+  mesh.userData[ALPHA_TARGET] = true;
+  return mesh;
+}
+
+/**
  * Stand-in for the UI Kit Frame the Lens host instantiates from
  * `defaultPanelPrefab`, sized to the panel's `innerSize` (extents). Drawn a
  * millimeter behind the node so children at z >= 0 sit in front of it.

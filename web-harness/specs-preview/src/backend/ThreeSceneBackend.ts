@@ -221,6 +221,18 @@ export class ThreeSceneBackend implements ViroSpecsSceneBackend<PreviewNode, Pre
     node.text.mesh.material = this.textMaterial(node, layout.color[3] * (node.opacity ?? 1));
   }
 
+  /**
+   * Text fill the experience layer sets from tokens (a PanelText `tone`), as
+   * the Lens adapter writes `textFill.color`. Keeps the node's opacity.
+   */
+  setTextFill(node: PreviewNode, color: Rgba): void {
+    if (!node.text) return;
+    const current = node.textColor;
+    if (current && current.every((v, i) => v === color[i])) return;
+    node.textColor = color;
+    node.text.mesh.material = this.textMaterial(node, color[3] * (node.opacity ?? 1));
+  }
+
   setExtents(node: PreviewNode, extents: ViroSpecsExtents): void {
     if (node.kind === "image" && node.imageSurface) {
       node.imageSurface.scale.set(

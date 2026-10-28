@@ -1,4 +1,5 @@
 import { createCanvasRasterizer } from "../backend/textRaster";
+import { PreviewExperience } from "../experience";
 import { PreviewStage } from "../stage";
 import { displayWindowPx } from "./displayWindow";
 import "./styles.css";
@@ -10,6 +11,11 @@ const FIXTURES = [
   { id: "platform-lab-manifest", label: "Platform Lab, manifest v2", url: "/viro-repo/web-harness/specs-preview/fixtures/platform-lab.manifest.json" },
   { id: "platform-lab-v1", label: "Platform Lab, manifest v1 (migrated)", url: "/viro-repo/__test__/fixtures/specs/manifest-v1/platform-lab.v1.json" },
   { id: "all-fields", label: "Every manifest field, no assets", url: "/viro-repo/__test__/fixtures/specs/manifest-v2/valid/all-fields.json" },
+  { id: "navigation", label: "Platform Lab, Navigation (SpatialScrollView)", url: "/viro-repo/__test__/fixtures/specs/gallery/navigation.scene.json" },
+  { id: "interaction", label: "Platform Lab, Interaction", url: "/viro-repo/__test__/fixtures/specs/gallery/interaction.scene.json" },
+  { id: "dashboard", label: "Reference app: Spatial dashboard", url: "/viro-repo/__test__/fixtures/specs/reference-apps/dashboard/scene.json" },
+  { id: "model-viewer", label: "Reference app: Model viewer", url: "/viro-repo/__test__/fixtures/specs/reference-apps/model-viewer/scene.json" },
+  { id: "world-placed-info", label: "Reference app: World-placed info", url: "/viro-repo/__test__/fixtures/specs/reference-apps/world-placed-info/scene.json" },
   { id: "invalid-parent", label: "Invalid: missing parent", url: "/viro-repo/__test__/fixtures/specs/manifest-v2/invalid/missing-parent.json", unwrap: true },
 ] as const satisfies readonly { id: string; label: string; url: string; unwrap?: boolean }[];
 
@@ -19,9 +25,13 @@ const $ = <T extends HTMLElement>(selector: string): T => {
   return el;
 };
 
-const stage = new PreviewStage({ rasterizer: createCanvasRasterizer() });
+const rasterizer = createCanvasRasterizer();
+const stage = new PreviewStage({ rasterizer });
 const viewport = new PreviewViewport($("#viewport"));
 viewport.show(stage);
+const experience = new PreviewExperience({ stage, rasterizer, camera: viewport.camera, builderMode: new URLSearchParams(location.search).has("builder") });
+viewport.overlayTargets = () => experience.targets();
+viewport.onFrame = () => experience.update();
 const inputLog: string[] = [];
 viewport.onInput = (line) => {
   inputLog.unshift(line);
@@ -202,10 +212,22 @@ if (watchUrl) {
   }
 }
 
-/** For Playwright: resolves when the scene is committed and assets have settled. */
+/** For Playwright: scene state plus the input the screenshot script drives. */
 declare global {
   interface Window {
-    __specsPreview: { readonly lifecycle: string; readonly nodeCount: number; readonly diagnostics: readonly string[] };
+    __specsPreview: {
+      readonly lifecycle: string;
+      readonly nodeCount: number;
+      readonly diagnostics: readonly string[];
+      /** Experience view: what the wearer sees around the scene. */
+      readonly experience: { readonly sceneVisible: boolean; readonly panels: readonly string[] };
+      /** Steps a scroll group by rows through the controller. */
+      scrollByRows(id: string, rows: number): boolean;
+      /** Sends a hover-enter to a bound node, as the pointer would. */
+      hover(id: string): boolean;
+      /** Normalized scroll y of a scroll group (1 = top), or undefined. */
+      scrollOf(id: string): number | undefined;
+    };
   }
 }
 window.__specsPreview = {
@@ -217,5 +239,27 @@ window.__specsPreview = {
   },
   get diagnostics() {
     return [...manifestDiagnostics.map((d) => d.code), ...stage.diagnostics.map((d) => d.code)];
+  },
+  get experience() {
+    const view = experience.view;
+    const panels = [
+      ...(view.loading.visible ? ["loading"] : []),
+      ...(view.notice ? ["notice"] : []),
+      ...(view.errorPanel ? ["error"] : []),
+      ...(view.permissionPanel ? ["permission"] : []),
+    ];
+    return { sceneVisible: view.sceneVisible, panels };
+  },
+  scrollByRows(id, rows) {
+    return stage.controller.scrollByRows(id, rows);
+  },
+  hover(id) {
+    const node = stage.backend.liveHandles().find((h) => h.id === id);
+    if (!node?.interaction) return false;
+    stage.backend.deliverInteraction(node, { phase: "hover-enter", source: "synthetic" });
+    return true;
+  },
+  scrollOf(id) {
+    return stage.backend.liveHandles().find((h) => h.id === id)?.scroll?.normalized[1];
   },
 };

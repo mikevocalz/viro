@@ -17,6 +17,7 @@ import {
 } from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import type { PreviewNode } from "../backend/types";
+import type { PreviewOverlayTarget } from "../experience";
 import type { PreviewStage } from "../stage";
 
 /** Eye height above the floor, cm. Content at y = 0 sits at eye level, as on Specs. */
@@ -38,8 +39,15 @@ export class PreviewViewport {
   private dragging: { node: PreviewNode; plane: Plane; offset: Vector3 } | null = null;
   private stage: PreviewStage | null = null;
   private last = performance.now();
+  private hoveredOverlay: PreviewOverlayTarget | null = null;
+  private pressedOverlay: PreviewOverlayTarget | null = null;
+  private wheelRows = 0;
   /** Called with a short description of each input event the preview sends. */
   onInput: ((line: string) => void) | null = null;
+  /** Experience-layer targets (panel actions); they take the pointer before scene nodes. */
+  overlayTargets: () => readonly PreviewOverlayTarget[] = () => [];
+  /** Called once per rendered frame, before rendering. */
+  onFrame: (() => void) | null = null;
 
   constructor(private readonly host: HTMLElement) {
     this.renderer = new WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
@@ -108,6 +116,7 @@ export class PreviewViewport {
     if (!this.stage) return;
     const size = this.renderer.getSize(new Vector2());
     this.stage.step(dt, size.x, size.y);
+    this.onFrame?.();
     this.controls.update();
     this.renderer.render(this.stage.scene, this.camera);
   }
@@ -128,6 +137,41 @@ export class PreviewViewport {
       }
     }
     return null;
+  }
+
+  private pickOverlay(event: PointerEvent | WheelEvent): PreviewOverlayTarget | null {
+    this.setRay(event);
+    const targets = this.overlayTargets();
+    const hit = this.raycaster.intersectObjects(targets.map((t) => t.object), false)[0];
+    return hit ? targets.find((t) => t.object === hit.object) ?? null : null;
+  }
+
+  private setRay(event: PointerEvent | WheelEvent): void {
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    this.pointer.set(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
+    this.raycaster.setFromCamera(this.pointer, this.camera);
+  }
+
+  /** The nearest scroll group whose window rectangle is under the pointer. */
+  private pickScroll(event: WheelEvent): PreviewNode | null {
+    if (!this.stage) return null;
+    this.setRay(event);
+    let best: { node: PreviewNode; distance: number } | null = null;
+    for (const node of this.stage.backend.liveHandles()) {
+      if (!node.scroll || !isShown(node.object)) continue;
+      node.object.updateWorldMatrix(true, false);
+      const origin = node.object.getWorldPosition(new Vector3());
+      const normal = new Vector3(0, 0, 1).transformDirection(node.object.matrixWorld);
+      const hit = this.raycaster.ray.intersectPlane(new Plane().setFromNormalAndCoplanarPoint(normal, origin), new Vector3());
+      if (!hit) continue;
+      const local = node.object.worldToLocal(hit);
+      const halfWidthCm = (node.scroll.spec.width * 100) / 2;
+      const halfHeightCm = (node.scroll.spec.height * 100) / 2;
+      if (Math.abs(local.x) > halfWidthCm || Math.abs(local.y) > halfHeightCm) continue;
+      const distance = origin.distanceTo(this.camera.position);
+      if (!best || distance < best.distance) best = { node, distance };
+    }
+    return best?.node ?? null;
   }
 
   private send(node: PreviewNode, phase: Parameters<PreviewStage["backend"]["deliverInteraction"]>[1]["phase"], point?: Vector3, normal?: Vector3): void {
@@ -158,6 +202,18 @@ export class PreviewViewport {
         }
         return;
       }
+      const overlay = this.pickOverlay(event);
+      if (overlay !== this.hoveredOverlay) {
+        this.hoveredOverlay?.handle("hover-exit");
+        this.hoveredOverlay = overlay;
+        overlay?.handle("hover-enter");
+      }
+      if (overlay) {
+        if (this.hovered) this.send(this.hovered, "hover-exit");
+        this.hovered = null;
+        el.style.cursor = "pointer";
+        return;
+      }
       const hit = this.pick(event);
       if (hit?.node !== this.hovered) {
         if (this.hovered) this.send(this.hovered, "hover-exit");
@@ -169,6 +225,15 @@ export class PreviewViewport {
       }
     });
     el.addEventListener("pointerdown", (event) => {
+      const overlay = this.pickOverlay(event);
+      if (overlay) {
+        this.controls.enabled = false;
+        this.pressedOverlay = overlay;
+        overlay.handle("select-start");
+        this.onInput?.("select-start " + overlay.label);
+        el.setPointerCapture(event.pointerId);
+        return;
+      }
       const hit = this.pick(event);
       if (!hit) return;
       this.controls.enabled = false;
@@ -183,6 +248,14 @@ export class PreviewViewport {
       el.setPointerCapture(event.pointerId);
     });
     const end = (phase: "select-end" | "cancel"): void => {
+      const overlay = this.pressedOverlay;
+      this.pressedOverlay = null;
+      if (overlay) {
+        this.controls.enabled = true;
+        overlay.handle(phase);
+        this.onInput?.(phase + " " + overlay.label);
+        return;
+      }
       const node = this.pressed;
       this.pressed = null;
       this.dragging = null;
@@ -190,6 +263,29 @@ export class PreviewViewport {
       if (node) this.send(node, phase);
     };
     el.addEventListener("pointerup", () => end("select-end"));
+    // Wheel over a scroll group steps it by rows through the controller, as
+    // the Lens gaze Scroll buttons do; elsewhere the wheel zooms the camera.
+    el.addEventListener(
+      "wheel",
+      (event) => {
+        const node = this.pickScroll(event);
+        if (!node || !this.stage) return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        this.wheelRows += event.deltaY / 100;
+        const rows = Math.trunc(this.wheelRows);
+        if (rows === 0) return;
+        this.wheelRows -= rows;
+        if (this.stage.controller.scrollByRows(node.id, rows)) this.onInput?.("scroll " + node.id + " " + (rows > 0 ? "+" : "") + rows + " rows");
+      },
+      { passive: false, capture: true }
+    );
     el.addEventListener("pointercancel", () => end("cancel"));
   }
+}
+
+/** True when `object` and all its ancestors are visible. */
+function isShown(object: Object3D): boolean {
+  for (let o: Object3D | null = object; o; o = o.parent) if (!o.visible) return false;
+  return true;
 }

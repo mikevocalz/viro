@@ -64,8 +64,11 @@ export class PreviewStage {
     return this.controller.lifecycle;
   }
 
+  private last: { json: unknown; file: string | undefined } | null = null;
+
   /** Reads `json` with viro's validator, preloads its assets and presents it (navigation semantics). */
   async load(json: unknown, file?: string): Promise<PreviewLoadResult> {
+    this.last = { json, file };
     const input = readPreviewInput(json, file);
     await this.assets.preload(input.scene);
     this.diagnostics.length = 0;
@@ -74,8 +77,20 @@ export class PreviewStage {
     return { input, apply };
   }
 
+  /**
+   * The error panel's Retry: fetches failed assets again and re-presents the
+   * last scene. The Lens host hands Retry to the app with the node IDs; the
+   * preview is that app. Returns null when nothing was loaded yet.
+   */
+  async retry(_nodeIds: readonly string[]): Promise<PreviewLoadResult | null> {
+    if (!this.last) return null;
+    this.assets.forgetMissing();
+    return this.load(this.last.json, this.last.file);
+  }
+
   /** Applies `json` as a state change on the committed scene (diff + patch ops). */
   async update(json: unknown, file?: string): Promise<PreviewLoadResult> {
+    this.last = { json, file };
     const input = readPreviewInput(json, file);
     await this.assets.preload(input.scene);
     const apply = this.controller.update(input.scene);

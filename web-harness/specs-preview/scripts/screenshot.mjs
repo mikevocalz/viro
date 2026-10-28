@@ -27,6 +27,12 @@ const SHOTS = [
   { name: "preview-platform-lab", url: "/index.html?fixture=platform-lab-scene", viewport: { width: 1440, height: 900 }, expect: "ready" },
   { name: "preview-all-fields", url: "/index.html?fixture=all-fields", viewport: { width: 1440, height: 900 }, expect: "degraded" },
   { name: "preview-invalid", url: "/index.html?fixture=invalid-parent", viewport: { width: 1280, height: 760 }, expect: "error" },
+  { name: "preview-navigation-top", url: "/index.html?fixture=navigation", viewport: { width: 1440, height: 900 }, expect: "ready" },
+  { name: "preview-navigation-scrolled", url: "/index.html?fixture=navigation", viewport: { width: 1440, height: 900 }, expect: "ready", scroll: { id: "nav-list", rows: 2 } },
+  { name: "preview-navigation-hover", url: "/index.html?fixture=navigation", viewport: { width: 1440, height: 900 }, expect: "ready", hover: "nav-card-2" },
+  { name: "preview-dashboard", url: "/index.html?fixture=dashboard", viewport: { width: 1440, height: 900 }, expect: "ready" },
+  { name: "preview-model-viewer", url: "/index.html?fixture=model-viewer", viewport: { width: 1440, height: 900 }, expect: "ready" },
+  { name: "preview-world-placed-info", url: "/index.html?fixture=world-placed-info", viewport: { width: 1440, height: 900 }, expect: "ready" },
   { name: "preview-phone", url: "/index.html?fixture=platform-lab-scene", viewport: { width: 390, height: 844 }, expect: "ready" },
   { name: "gallery", url: "/gallery.html", viewport: { width: 1440, height: 1800 }, expect: "gallery" },
 ];
@@ -49,6 +55,18 @@ try {
     } else {
       await page.waitForFunction((want) => window.__specsPreview?.lifecycle === want, shot.expect, { timeout: 30000 });
     }
+    if (shot.scroll) {
+      const moved = await page.evaluate(({ id, rows }) => {
+        const before = window.__specsPreview.scrollOf(id);
+        window.__specsPreview.scrollByRows(id, rows);
+        return { before, after: window.__specsPreview.scrollOf(id) };
+      }, shot.scroll);
+      if (moved.before === undefined || moved.before === moved.after) failures.push(shot.name + ": " + shot.scroll.id + " did not scroll " + JSON.stringify(moved));
+      console.log(shot.name + ": scroll " + JSON.stringify(moved));
+    }
+    if (shot.hover && !(await page.evaluate((id) => window.__specsPreview.hover(id), shot.hover))) {
+      failures.push(shot.name + ": " + shot.hover + " has no interaction binding");
+    }
     await page.waitForTimeout(600);
     const flat = await page.evaluate(() => {
       const canvas = document.querySelector("canvas");
@@ -65,7 +83,11 @@ try {
     });
     const file = path.join(out, shot.name + ".png");
     await page.screenshot({ path: file, fullPage: shot.expect === "gallery" });
-    const state = await page.evaluate(() => window.__specsPreview ? { lifecycle: window.__specsPreview.lifecycle, diagnostics: window.__specsPreview.diagnostics } : { gallery: window.__specsGallery?.cards });
+    const state = await page.evaluate(() =>
+      window.__specsPreview
+        ? { lifecycle: window.__specsPreview.lifecycle, diagnostics: window.__specsPreview.diagnostics, experience: window.__specsPreview.experience }
+        : { gallery: window.__specsGallery?.cards }
+    );
     console.log(shot.name + ": " + file + " " + JSON.stringify(state));
     if (errors.length) failures.push(shot.name + ": console errors: " + errors.join(" | "));
     if (flat) failures.push(shot.name + ": canvas is a flat color");
