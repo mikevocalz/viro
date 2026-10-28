@@ -43,6 +43,7 @@ import type {
   ViroSpecsManifestPolyline,
   ViroSpecsManifestV2,
   ViroSpecsSceneDocument,
+  ViroSpecsScroll,
   ViroSpecsTextStyle,
   ViroSpecsVec3,
   ViroSpecsWireNode,
@@ -709,9 +710,16 @@ export function compileViroSpecsChildren(
 
     let compiled: ViroSpecsManifestNode | undefined;
     switch (target.kind) {
-      case "group":
-        compiled = { ...base, kind: "group" };
+      case "group": {
+        const scroll = readScroll(props.specsScroll);
+        if (props.specsScroll !== undefined && !scroll) {
+          diagnostics.push(
+            createViroSpecsDiagnostic("VS1004", "ViroNode " + id + " specsScroll needs numeric width, height and contentHeight.", { nodeId: id })
+          );
+        }
+        compiled = { ...base, kind: "group", ...(scroll ? { scroll } : {}) };
         break;
+      }
       case "text": {
         if (typeof props.text !== "string") {
           diagnostics.push(
@@ -793,6 +801,13 @@ export function compileViroSpecsChildren(
     callbacks,
     diagnostics,
   };
+}
+
+function readScroll(value: unknown): ViroSpecsScroll | undefined {
+  if (!isRecord(value)) return undefined;
+  const { width, height, contentHeight } = value;
+  if (typeof width !== "number" || typeof height !== "number" || typeof contentHeight !== "number") return undefined;
+  return { width, height, contentHeight };
 }
 
 const TEXT_STYLE_KEYS = [

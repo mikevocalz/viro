@@ -803,6 +803,7 @@ export type {
   ViroSpecsStateStore,
 } from "./components/Specs/ViroSpecsActions";
 export type { ViroSpecsCompileOptions } from "./components/Specs/ViroSpecsCompiler";
+export type { ViroSpecsScroll } from "./components/Specs/core/manifest";
 
 // Specs manifest v2 and diagnostics
 export {

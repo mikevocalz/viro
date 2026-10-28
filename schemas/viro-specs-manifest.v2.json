@@ -229,6 +229,32 @@
             },
             "kind": {
               "const": "group"
+            },
+            "scroll": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "width",
+                "height",
+                "contentHeight"
+              ],
+              "description": "Scroll window in meters, from ViroNode specsScroll. The Lens host keeps the position across patches and, per route, across back navigation.",
+              "properties": {
+                "width": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "maximum": 10
+                },
+                "height": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "maximum": 10
+                },
+                "contentHeight": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              }
             }
           }
         },

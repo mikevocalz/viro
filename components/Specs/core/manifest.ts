@@ -61,9 +61,24 @@ export interface ViroSpecsNodeBase {
   readonly materialId?: string;
 }
 
-/** Transform-only container. Maps from ViroNode. */
+/**
+ * Scroll window of a group, in meters. Children lay out in a column of
+ * `contentHeight`; the Lens host shows `height` of it and keeps the scroll
+ * position across patches and, per route, across back navigation.
+ */
+export interface ViroSpecsScroll {
+  /** Greater than 0, at most 10. */
+  readonly width: number;
+  /** Greater than 0, at most 10. */
+  readonly height: number;
+  /** At least 0. */
+  readonly contentHeight: number;
+}
+
+/** Transform-only container. Maps from ViroNode; `specsScroll` makes it a scroll window. */
 export interface ViroSpecsGroupNode extends ViroSpecsNodeBase {
   readonly kind: "group";
+  readonly scroll?: ViroSpecsScroll;
 }
 
 /** Maps from ViroText. */

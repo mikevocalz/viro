@@ -144,7 +144,7 @@ const LIGHT_PROPS = ["viroTag", "key", "ref", "color", "intensity"];
  * otherwise warning `VS3002`.
  */
 export const VIRO_SPECS_HANDLED_PROPS: Readonly<Record<string, readonly string[]>> = {
-  ViroNode: COMMON_PROPS,
+  ViroNode: [...COMMON_PROPS, "specsScroll"],
   ViroText: [
     ...COMMON_PROPS,
     "text",

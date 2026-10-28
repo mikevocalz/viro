@@ -685,6 +685,11 @@ function compile(sourceText, entryPath, options = {}) {
       ...(typeof opacity === "number" ? { opacity } : {}),
       ...(materialId ? { materialId } : {}),
     };
+    if (kind === "group") {
+      // Shape is checked by validation (VS1004) on the finished manifest.
+      const scroll = staticValue("specsScroll");
+      if (scroll !== undefined) node.scroll = scroll;
+    }
     let complete = true;
 
     if (kind === "text") {

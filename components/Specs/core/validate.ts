@@ -69,7 +69,7 @@ const V2_NODE_COMMON = [
 const V2_NODE_FIELDS: Readonly<
   Record<string, { readonly required: readonly string[]; readonly optional: readonly string[] }>
 > = {
-  group: { required: [], optional: [] },
+  group: { required: [], optional: ["scroll"] },
   text: { required: ["text"], optional: ["style", "extents", "maxLines"] },
   image: { required: ["source"], optional: ["extents"] },
   model: { required: ["source"], optional: ["format"] },
@@ -303,6 +303,18 @@ function checkV2Node(checker: Checker, node: unknown, path: string): void {
   checker.string(node, "source", path, nodeId);
   checkTextStyle(checker, node, path, nodeId);
   checker.extents(node, "extents", path, nodeId);
+  if ("scroll" in node) {
+    const scroll = node.scroll;
+    const at = pointer(path, "scroll");
+    if (!isRecord(scroll)) {
+      checker.invalid(at, "an object with width, height and contentHeight", scroll, nodeId);
+    } else {
+      checker.fields(scroll, at, ["width", "height", "contentHeight"], [], nodeId);
+      checker.number(scroll, "width", at, { exclusiveMin: 0, max: 10 }, nodeId);
+      checker.number(scroll, "height", at, { exclusiveMin: 0, max: 10 }, nodeId);
+      checker.number(scroll, "contentHeight", at, { min: 0 }, nodeId);
+    }
+  }
   checker.number(node, "maxLines", path, { min: 1, integer: true }, nodeId);
   checker.oneOf(node, "format", path, ["glb", "gltf", "obj", "fbx"], nodeId);
   checker.boolean(node, "loop", path, nodeId);
