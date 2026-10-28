@@ -2,6 +2,14 @@
   "schemaVersion": 1,
   "generatedBy": "@viro-external/specs",
   "wireVersion": 1,
+  "sceneProtocols": [
+    1,
+    2
+  ],
+  "interactionKit": {
+    "line": 2,
+    "package": "SpectaclesInteractionKit.lspkg"
+  },
   "target": "SPECS 27",
   "lensStudio": ">=5.22.0",
   "upstream": {

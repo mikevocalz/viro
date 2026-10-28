@@ -1,0 +1,30 @@
+{
+  "inputs": {
+    "AssetRegistry": {
+      "defaultLineMaterial": "ViroDefaultLine",
+      "defaultMaterial": "ViroDefaultMaterial",
+      "fontIds": "[]",
+      "fonts": "[]",
+      "modelIds": "[\"examples/visionos-sweep/assets/shiba.glb\"]",
+      "modelPrefabs": "shiba",
+      "placeholderMaterial": "ViroPlaceholder"
+    },
+    "GeneratedHost": {
+      "sceneHostObject": "SceneHost"
+    },
+    "SceneHost": {
+      "assetRegistryObject": "AssetRegistry",
+      "root": "ViroGeneratedContent"
+    }
+  },
+  "steps": [
+    "disable package demo root Example Surface",
+    "create ViroSpecsRuntime/SceneHost",
+    "attach ViroSpecsSceneControllerHost to SceneHost",
+    "disable legacy RuntimeHost",
+    "disable legacy InteractionHost",
+    "disable legacy AnimationHost",
+    "disable legacy Navigation",
+    "save"
+  ]
+}

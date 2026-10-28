@@ -28,10 +28,7 @@
   ExportUid: 00000000-0000-0000-0000-000000000000
   PackagePolicy: CanBeUnpacked
   ScriptInputsHidden:
-    animationHostObject: false
-    interactionHostObject: false
-    navigationHostObject: false
-    runtimeHostObject: false
+    sceneHostObject: false
   ScriptTypesHidden:
     {}
   ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
@@ -41,15 +38,9 @@
   Attachments:
     []
   DefaultScriptInputs:
-    - runtimeHostObject: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
-      interactionHostObject: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
-      animationHostObject: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
-      navigationHostObject: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+    - sceneHostObject: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
   ScriptTypes:
     -
       {}
   InputLines:
-    - // @input SceneObject runtimeHostObject
-    - // @input SceneObject interactionHostObject
-    - // @input SceneObject animationHostObject
-    - // @input SceneObject navigationHostObject
+    - '// @input SceneObject sceneHostObject {"hint":"SceneObject hosting ViroSpecsSceneControllerHost"}'

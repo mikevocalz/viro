@@ -30,13 +30,18 @@
   ScriptInputsHidden:
     defaultFont: false
     defaultImageMaterial: false
+    defaultLineMaterial: false
+    defaultMaterial: false
     defaultPanelPrefab: false
+    fontIds: false
+    fonts: false
     imageIds: false
     imageTextures: false
     materialIds: false
     materials: false
     modelIds: false
     modelPrefabs: false
+    placeholderMaterial: false
   ScriptTypesHidden:
     {}
   ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
@@ -61,6 +66,13 @@
       defaultPanelPrefab: !<reference.ObjectPrefab> 00000000-0000-0000-0000-000000000000
       defaultFont: !<reference.Font> 00000000-0000-0000-0000-000000000000
       defaultImageMaterial: !<reference.Material> 00000000-0000-0000-0000-000000000000
+      fontIds: !<string[]>
+        []
+      fonts: !<reference.Font[]>
+        []
+      placeholderMaterial: !<reference.Material> 00000000-0000-0000-0000-000000000000
+      defaultMaterial: !<reference.Material> 00000000-0000-0000-0000-000000000000
+      defaultLineMaterial: !<reference.Material> 00000000-0000-0000-0000-000000000000
   ScriptTypes:
     -
       {}
@@ -74,3 +86,8 @@
     - // @input Asset.ObjectPrefab defaultPanelPrefab
     - // @input Asset.Font defaultFont
     - // @input Asset.Material defaultImageMaterial
+    - "// @input string[] fontIds = {}"
+    - "// @input Asset.Font[] fonts = {}"
+    - // @input Asset.Material placeholderMaterial
+    - // @input Asset.Material defaultMaterial
+    - // @input Asset.Material defaultLineMaterial

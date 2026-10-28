@@ -1,0 +1,30 @@
+{
+  "startedAt": "2026-10-28T11:50:56.360Z",
+  "project": "examples/specs-platform-lab/lens",
+  "steps": {
+    "recompile": {
+      "ok": true,
+      "ms": 564,
+      "result": "lens-compiled"
+    },
+    "device": {
+      "ok": true,
+      "ms": 88,
+      "result": {
+        "device": "SPECS 27",
+        "input": "Interactive",
+        "room": "Sunlit Room"
+      }
+    },
+    "preview": {
+      "ok": true,
+      "ms": 31031,
+      "result": {
+        "errors": 2,
+        "prints": 8,
+        "firstActivityAtMs": 123
+      }
+    }
+  },
+  "finishedAt": "2026-10-28T11:51:40.807Z"
+}

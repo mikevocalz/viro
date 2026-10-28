@@ -10,7 +10,8 @@
 //   --specs <dir>        @viro-external/specs package directory, for doctor/sync
 //                        (default $VIRO_SPECS_PACKAGE, then ../viro-external/packages/specs)
 //   --steps <a,b,...>    subset of: preflight,packages,sync,compile,recompile,
-//                        wire,chattool,device,preview,leaf (default: all, in that order)
+//                        materials,wire,chattool,device,preview,leaf (default: all, in that order)
+//   --viro <dir>         viro checkout whose bin/viro-specs.cjs compiles the scene (default: this repo)
 //   --evidence <dir>     where logs and captures go (default docs/evidence/specs/lens/run-<timestamp>)
 //   --create             save the project Lens Studio has open into --project first
 //   --replace-packages   remove existing package copies (for example the 4.0.0
@@ -30,7 +31,7 @@ import { fileURLToPath } from "node:url";
 import { LensStudioMcp } from "./specs-lens/mcp-client.mjs";
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const ALL_STEPS = ["preflight", "packages", "sync", "compile", "recompile", "wire", "chattool", "device", "preview", "leaf"];
+const ALL_STEPS = ["preflight", "packages", "sync", "compile", "recompile", "materials", "wire", "chattool", "device", "preview", "leaf"];
 
 // Asset Library names, pinned versions, and the directory names the Viro Lens
 // runtime imports.
@@ -93,6 +94,7 @@ const specs = path.resolve(
   options.specs ?? process.env.VIRO_SPECS_PACKAGE ?? path.join(repo, "../viro-external/packages/specs")
 );
 const steps = options.steps ? options.steps.split(",") : ALL_STEPS;
+const viroRoot = path.resolve(options.viro ?? repo);
 const stamp = new Date().toISOString().replace(/[:.]/g, "-");
 const evidence = path.resolve(options.evidence ?? path.join(repo, "docs/evidence/specs/lens", `run-${stamp}`));
 mkdirSync(evidence, { recursive: true });
@@ -220,9 +222,9 @@ const handlers = {
   async compile() {
     const out = path.join(project, "Assets/ViroSpecs/generated/ViroGeneratedSceneHost.ts");
     const started = Date.now();
-    runNode("compile-lens-ts", [path.join(repo, "bin/viro-specs.cjs"), "compile", "--entry", entry, "--out", out, "--format", "lens-ts"]);
+    runNode("compile-lens-ts", [path.join(viroRoot, "bin/viro-specs.cjs"), "compile", "--entry", entry, "--out", out, "--format", "lens-ts"]);
     runNode("compile-json", [
-      path.join(repo, "bin/viro-specs.cjs"),
+      path.join(viroRoot, "bin/viro-specs.cjs"),
       "compile",
       "--entry",
       entry,
@@ -243,9 +245,44 @@ const handlers = {
     return "lens-compiled";
   },
 
+  // Registry materials for the scene controller (scene protocol 2), created
+  // from asset-graphql presets as CLAD's materials skill describes.
+  async materials() {
+    const wanted = [
+      { name: "ViroPlaceholder", preset: "UnlitMaterialPreset", baseColor: "1.0, 0.35, 0.65, 0.85" },
+      { name: "ViroDefaultMaterial", preset: "SimplePBRMaterialPreset" },
+      { name: "ViroDefaultLine", preset: "UnlitMaterialPreset", baseColor: "0.75, 0.82, 0.9, 1.0" },
+    ];
+    const out = [];
+    for (const m of wanted) {
+      const found = await mcp.call("asset-graphql", {
+        query: `{ assetsByName(name: "${m.name}", exactMatch: true) { id name path } }`,
+      });
+      let asset = (found.data?.data?.assetsByName ?? []).find((a) => String(a.path ?? "").includes("ViroSpecsLab/"));
+      if (!asset) {
+        const created = await mcp.call("asset-graphql", {
+          query: `mutation { createAssetFromPreset(presetName: "${m.preset}", name: "${m.name}", destinationPath: "ViroSpecsLab/Materials") { id name } }`,
+        });
+        asset = created.data?.data?.createAssetFromPreset;
+        if (!asset?.id) throw new Error(`createAssetFromPreset ${m.preset} failed: ${JSON.stringify(created.data).slice(0, 600)}`);
+        out.push(`created ${m.name}`);
+      } else {
+        out.push(`present ${m.name}`);
+      }
+      if (m.baseColor) {
+        const set = await mcp.call("asset-graphql", {
+          query: `mutation { setProperty(id: "${asset.id}", propertyPath: "passInfos.0.baseColor", value: "${m.baseColor}", valueType: VEC4) { success } }`,
+        });
+        if (set.isError) throw new Error(`setProperty baseColor on ${m.name}: ${set.text.slice(0, 400)}`);
+      }
+    }
+    save("materials.json", out);
+    return out;
+  },
+
   async wire() {
     const manifest = JSON.parse(readFileSync(path.join(evidence, "manifest.json"), "utf8"));
-    const modelIds = manifest.scene.nodes.filter((node) => node.kind === "model").map((node) => node.source);
+    const modelIds = (manifest.scene?.nodes ?? manifest.nodes).filter((node) => node.kind === "model").map((node) => node.source);
     const result = await editorFile("scripts/specs-lens/editor/wire-generated-host.ts", {
       modelIds,
       // Compiled source IDs are repo-relative paths.

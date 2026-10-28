@@ -1,10 +1,8 @@
-import { ViroSpecsAnimationHost } from "../lens/ViroSpecsAnimationHost";
-import { ViroSpecsInteractionHost } from "../lens/ViroSpecsInteractionHost";
-import { ViroSpecsNavigationHost } from "../lens/ViroSpecsNavigationHost";
-import { ViroSpecsRuntimeHost } from "../lens/ViroSpecsRuntimeHost";
+import { ViroSpecsSceneControllerHost } from "../lens/ViroSpecsSceneControllerHost";
+import type { ViroSpecsSceneDocumentV2 } from "../lens/ViroSpecsProtocol";
 
-const GENERATED_SCENE: any = {
-  "version": 1,
+const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
+  "version": 2,
   "nodes": [
     {
       "id": "platform-lab-root",
@@ -40,155 +38,115 @@ const GENERATED_SCENE: any = {
         0.18,
         0.18
       ],
-      "source": "examples/visionos-sweep/assets/shiba.glb"
+      "source": "examples/visionos-sweep/assets/shiba.glb",
+      "format": "glb"
+    }
+  ],
+  "polylines": [
+    {
+      "id": "platform-lab-route",
+      "primitive": "volumetric-line",
+      "backendPackage": "VolumetricLine",
+      "points": [
+        [
+          -0.3,
+          -0.2,
+          -1.38
+        ],
+        [
+          0,
+          0.02,
+          -1.38
+        ],
+        [
+          0.3,
+          -0.08,
+          -1.38
+        ]
+      ],
+      "radiusMeters": 0.004
+    }
+  ],
+  "lights": [],
+  "materials": [],
+  "interactions": [
+    {
+      "nodeId": "platform-lab-model",
+      "interactable": true,
+      "manipulation": true,
+      "events": [
+        "select",
+        "drag"
+      ]
+    }
+  ],
+  "animations": [
+    {
+      "nodeId": "platform-lab-title",
+      "name": "platformLabPulse",
+      "plan": {
+        "engine": "AnimationPlayer",
+        "backendPackage": "AnimationExamples",
+        "durationSeconds": 0.5,
+        "delaySeconds": 0,
+        "easing": "ease-in-out",
+        "playbackMode": "loop",
+        "completionEvent": "viro-animation-complete:platform-lab-title:platformLabPulse",
+        "tracks": [
+          {
+            "target": "transform.scale.x",
+            "from": "current",
+            "to": 1.15
+          },
+          {
+            "target": "transform.scale.y",
+            "from": "current",
+            "to": 1.15
+          },
+          {
+            "target": "transform.scale.z",
+            "from": "current",
+            "to": 1.15
+          },
+          {
+            "target": "material.opacity",
+            "from": "current",
+            "to": 0.8
+          }
+        ]
+      }
     }
   ]
 };
-const GENERATED_POLYLINES: any[] = [
-  {
-    "id": "platform-lab-route",
-    "primitive": "volumetric-line",
-    "backendPackage": "VolumetricLine",
-    "points": [
-      [
-        -0.3,
-        -0.2,
-        -1.38
-      ],
-      [
-        0,
-        0.02,
-        -1.38
-      ],
-      [
-        0.3,
-        -0.08,
-        -1.38
-      ]
-    ],
-    "radiusMeters": 0.004
-  }
-];
-const GENERATED_INTERACTIONS: any[] = [
-  {
-    "nodeId": "platform-lab-model",
-    "interactable": true,
-    "manipulation": true,
-    "events": [
-      "select",
-      "drag"
-    ]
-  }
-];
-const GENERATED_ANIMATIONS: any[] = [
-  {
-    "nodeId": "platform-lab-title",
-    "name": "platformLabPulse",
-    "plan": {
-      "engine": "AnimationPlayer",
-      "backendPackage": "AnimationExamples",
-      "durationSeconds": 0.5,
-      "delaySeconds": 0,
-      "easing": "ease-in-out",
-      "playbackMode": "loop",
-      "completionEvent": "viro-animation-complete:platform-lab-title:platformLabPulse",
-      "tracks": [
-        {
-          "target": "transform.scale.x",
-          "from": "current",
-          "to": 1.15
-        },
-        {
-          "target": "transform.scale.y",
-          "from": "current",
-          "to": 1.15
-        },
-        {
-          "target": "transform.scale.z",
-          "from": "current",
-          "to": 1.15
-        },
-        {
-          "target": "material.opacity",
-          "from": "current",
-          "to": 0.8
-        }
-      ]
-    }
-  }
-];
 
 @component
 export class ViroGeneratedSceneHost extends BaseScriptComponent {
-  @input runtimeHostObject: SceneObject;
-  @input interactionHostObject: SceneObject;
-  @input animationHostObject: SceneObject;
-  @input navigationHostObject: SceneObject;
+  @input
+  @hint("SceneObject hosting ViroSpecsSceneControllerHost")
+  sceneHostObject: SceneObject;
 
-  private teardown: (() => void) | null = null;
+  private host: ViroSpecsSceneControllerHost | null = null;
 
   onAwake(): void {
     this.createEvent("OnStartEvent").bind(() => this.restartGeneratedScene());
     this.createEvent("OnDestroyEvent").bind(() => this.stopGeneratedScene());
   }
 
-  stopGeneratedScene(): void {
-    this.teardown?.();
-    this.teardown = null;
+  /** Presents the generated scene. Problems go to the Lens log as VS5xxx diagnostics; nothing throws. */
+  restartGeneratedScene(): void {
+    const host = this.sceneHostObject
+      ? (this.sceneHostObject.getComponent(ViroSpecsSceneControllerHost.getTypeName()) as ViroSpecsSceneControllerHost | null)
+      : null;
+    if (!host) {
+      print("[viro-specs-host] error: ViroGeneratedSceneHost needs ViroSpecsSceneControllerHost on sceneHostObject.");
+      return;
+    }
+    this.host = host;
+    host.present(GENERATED_SCENE);
   }
 
-  restartGeneratedScene(): void {
-    this.stopGeneratedScene();
-    const runtime = this.runtimeHostObject.getComponent(
-      ViroSpecsRuntimeHost.getTypeName()
-    ) as ViroSpecsRuntimeHost | null;
-    const interaction = this.interactionHostObject.getComponent(
-      ViroSpecsInteractionHost.getTypeName()
-    ) as ViroSpecsInteractionHost | null;
-    const animation = this.animationHostObject.getComponent(
-      ViroSpecsAnimationHost.getTypeName()
-    ) as ViroSpecsAnimationHost | null;
-    const navigation = this.navigationHostObject.getComponent(
-      ViroSpecsNavigationHost.getTypeName()
-    ) as ViroSpecsNavigationHost | null;
-
-    if (!runtime) {
-      throw new Error("Generated Viro scene requires ViroSpecsRuntimeHost.");
-    }
-
-    if (GENERATED_INTERACTIONS.length && !interaction) throw new Error("Generated Viro interactions require ViroSpecsInteractionHost.");
-    if (GENERATED_ANIMATIONS.length && !animation) throw new Error("Generated Viro animations require ViroSpecsAnimationHost.");
-    if (GENERATED_POLYLINES.length && !navigation) throw new Error("Generated Viro polylines require ViroSpecsNavigationHost.");
-
-    this.teardown = () => {
-      // ViroSpecsInteractionHost retires SIK targets before nodes are destroyed.
-      // ViroSpecsAnimationHost has no stop API; runtime.clear() destroys the
-      // animated nodes and their AnimationPlayers.
-      if (interaction && !isNull(interaction) && GENERATED_INTERACTIONS.length) interaction.resetTargets();
-      if (navigation && !isNull(navigation)) navigation.clearRoute();
-      if (!isNull(runtime)) runtime.clear();
-    };
-    runtime.applySceneSnapshot(GENERATED_SCENE);
-
-    if (interaction) {
-      for (const item of GENERATED_INTERACTIONS) {
-        interaction.setInteractable(item.nodeId, true);
-        if (item.manipulation) {
-          interaction.setManipulationEnabled(item.nodeId, true);
-        }
-      }
-    }
-
-    if (animation) {
-      for (const item of GENERATED_ANIMATIONS) {
-        animation.play(item.nodeId, item.plan);
-      }
-    }
-
-    if (navigation) {
-      for (const line of GENERATED_POLYLINES) {
-        navigation.presentPolyline(line);
-      }
-    }
+  stopGeneratedScene(): void {
+    if (this.host && !isNull(this.host)) this.host.clear();
+    this.host = null;
   }
 }

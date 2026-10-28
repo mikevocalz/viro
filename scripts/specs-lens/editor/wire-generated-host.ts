@@ -145,31 +145,12 @@ if (modelIds.length) {
 const runtime = ensureRoot("ViroSpecsRuntime");
 const registryObject = ensureChild(runtime, "AssetRegistry");
 const contentObject = ensureChild(runtime, "ViroGeneratedContent");
-const runtimeHostObject = ensureChild(runtime, "RuntimeHost");
-const interactionHostObject = ensureChild(runtime, "InteractionHost");
-const animationHostObject = ensureChild(runtime, "AnimationHost");
-const navigationObject = ensureChild(runtime, "Navigation");
 const generatedHostObject = ensureChild(runtime, "GeneratedHost");
 
 const registry = ensureScript(registryObject, "ViroSpecsAssetRegistry");
 setInput(registry, "AssetRegistry", "modelIds", modelIds, JSON.stringify(modelIds));
 setInput(registry, "AssetRegistry", "modelPrefabs", modelPrefabs, modelPrefabs.map((p) => p.name).join(","));
 
-const runtimeHost = ensureScript(runtimeHostObject, "ViroSpecsRuntimeHost");
-setInput(runtimeHost, "RuntimeHost", "root", contentObject, contentObject.name);
-setInput(runtimeHost, "RuntimeHost", "assetRegistryObject", registryObject, registryObject.name);
-
-const interactionHost = ensureScript(interactionHostObject, "ViroSpecsInteractionHost");
-setInput(interactionHost, "InteractionHost", "runtimeHostObject", runtimeHostObject, runtimeHostObject.name);
-
-const animationHost = ensureScript(animationHostObject, "ViroSpecsAnimationHost");
-setInput(animationHost, "AnimationHost", "runtimeHostObject", runtimeHostObject, runtimeHostObject.name);
-
-// Navigation: SpecsNavigationKit's NavigationDataComponent on the same object.
-// Its onAwake reads userCamera.getTransform(), so it needs the scene camera.
-const navigationData = ensureScript(navigationObject, "NavigationDataComponent");
-setInput(navigationData, "NavigationDataComponent", "userCamera", cameraComponent, camera.name);
-const navigationHost = ensureScript(navigationObject, "ViroSpecsNavigationHost");
 // Packed packages live under ../Cache/<package-uuid>/<hash>/Data/. Scope
 // lookups to the folder of a script the package ships, so a same-named
 // asset from another package cannot be picked up.
@@ -177,28 +158,87 @@ function packageFolder(anchorScript: string): string {
   const parts = sourcePath(scriptAsset(anchorScript)).split("/");
   return parts.slice(0, 4).join("/") + "/";
 }
-const lineFolder = packageFolder("VolumetricLine");
-const lineMaterial = findAsset(
-  "VolumetricLine 2.x PBR material",
-  (a: any) => String(a.type) === "Material" && a.name === "PBR" && sourcePath(a).startsWith(lineFolder)
-);
-const navigationFolder = packageFolder("NavigationDataComponent");
-const routeIcon = findAsset(
-  "SpecsNavigationKit texture for route places",
-  (a: any) => /Texture$/.test(String(a.type)) && sourcePath(a).startsWith(navigationFolder)
-);
-setInput(navigationHost, "Navigation", "navigationObject", navigationObject, navigationObject.name);
-setInput(navigationHost, "Navigation", "assetRegistryObject", registryObject, registryObject.name);
-setInput(navigationHost, "Navigation", "defaultLineMaterial", lineMaterial, lineMaterial.name);
-setInput(navigationHost, "Navigation", "routeIcon", routeIcon, routeIcon.name);
-setInput(navigationHost, "Navigation", "generatedContentRoot", contentObject, contentObject.name);
 
-// The generated host and its four @inputs.
+// The generated host's own inputs say which runtime it targets.
 const generatedHost = ensureScript(generatedHostObject, "ViroGeneratedSceneHost");
-setInput(generatedHost, "GeneratedHost", "runtimeHostObject", runtimeHostObject, runtimeHostObject.name);
-setInput(generatedHost, "GeneratedHost", "interactionHostObject", interactionHostObject, interactionHostObject.name);
-setInput(generatedHost, "GeneratedHost", "animationHostObject", animationHostObject, animationHostObject.name);
-setInput(generatedHost, "GeneratedHost", "navigationHostObject", navigationObject, navigationObject.name);
+const hostInputs: string[] = generatedHost.inputNames ?? [];
+
+if (hostInputs.includes("sceneHostObject")) {
+  // Scene protocol 2: one ViroSpecsSceneControllerHost does render,
+  // interaction, animation and polylines.
+  const sceneHostObject = ensureChild(runtime, "SceneHost");
+  const sceneHost = ensureScript(sceneHostObject, "ViroSpecsSceneControllerHost");
+  setInput(sceneHost, "SceneHost", "assetRegistryObject", registryObject, registryObject.name);
+  setInput(sceneHost, "SceneHost", "root", contentObject, contentObject.name);
+
+  // Materials created by the setup script's materials step (asset-graphql presets).
+  const material = (name: string) =>
+    findAsset(`material ${name}`, (a: any) => String(a.type) === "Material" && a.name === name && sourcePath(a).startsWith("ViroSpecsLab/"));
+  const placeholder = material("ViroPlaceholder");
+  const base = material("ViroDefaultMaterial");
+  const line = material("ViroDefaultLine");
+  setInput(registry, "AssetRegistry", "placeholderMaterial", placeholder, placeholder.name);
+  setInput(registry, "AssetRegistry", "defaultMaterial", base, base.name);
+  setInput(registry, "AssetRegistry", "defaultLineMaterial", line, line.name);
+  // No Font asset ships in the pinned packages and the lab scene sets no
+  // fontFamily, so fontIds/fonts stay empty.
+  setInput(registry, "AssetRegistry", "fontIds", [], "[]");
+  setInput(registry, "AssetRegistry", "fonts", [], "[]");
+
+  setInput(generatedHost, "GeneratedHost", "sceneHostObject", sceneHostObject, sceneHostObject.name);
+
+  // The four-input hosts from protocol 1 are unused now. Disable them so
+  // nothing else builds into ViroGeneratedContent (reversible).
+  for (const name of ["RuntimeHost", "InteractionHost", "AnimationHost", "Navigation"]) {
+    const legacy = runtime.children.find((o: any) => o.name === name);
+    if (legacy && legacy.enabled) {
+      legacy.enabled = false;
+      steps.push(`disable legacy ${name}`);
+    }
+  }
+} else {
+  const runtimeHostObject = ensureChild(runtime, "RuntimeHost");
+  const interactionHostObject = ensureChild(runtime, "InteractionHost");
+  const animationHostObject = ensureChild(runtime, "AnimationHost");
+  const navigationObject = ensureChild(runtime, "Navigation");
+
+  const runtimeHost = ensureScript(runtimeHostObject, "ViroSpecsRuntimeHost");
+  setInput(runtimeHost, "RuntimeHost", "root", contentObject, contentObject.name);
+  setInput(runtimeHost, "RuntimeHost", "assetRegistryObject", registryObject, registryObject.name);
+
+  const interactionHost = ensureScript(interactionHostObject, "ViroSpecsInteractionHost");
+  setInput(interactionHost, "InteractionHost", "runtimeHostObject", runtimeHostObject, runtimeHostObject.name);
+
+  const animationHost = ensureScript(animationHostObject, "ViroSpecsAnimationHost");
+  setInput(animationHost, "AnimationHost", "runtimeHostObject", runtimeHostObject, runtimeHostObject.name);
+
+  // Navigation: SpecsNavigationKit's NavigationDataComponent on the same object.
+  // Its onAwake reads userCamera.getTransform(), so it needs the scene camera.
+  const navigationData = ensureScript(navigationObject, "NavigationDataComponent");
+  setInput(navigationData, "NavigationDataComponent", "userCamera", cameraComponent, camera.name);
+  const navigationHost = ensureScript(navigationObject, "ViroSpecsNavigationHost");
+  const lineFolder = packageFolder("VolumetricLine");
+  const lineMaterial = findAsset(
+    "VolumetricLine 2.x PBR material",
+    (a: any) => String(a.type) === "Material" && a.name === "PBR" && sourcePath(a).startsWith(lineFolder)
+  );
+  const navigationFolder = packageFolder("NavigationDataComponent");
+  const routeIcon = findAsset(
+    "SpecsNavigationKit texture for route places",
+    (a: any) => /Texture$/.test(String(a.type)) && sourcePath(a).startsWith(navigationFolder)
+  );
+  setInput(navigationHost, "Navigation", "navigationObject", navigationObject, navigationObject.name);
+  setInput(navigationHost, "Navigation", "assetRegistryObject", registryObject, registryObject.name);
+  setInput(navigationHost, "Navigation", "defaultLineMaterial", lineMaterial, lineMaterial.name);
+  setInput(navigationHost, "Navigation", "routeIcon", routeIcon, routeIcon.name);
+  setInput(navigationHost, "Navigation", "generatedContentRoot", contentObject, contentObject.name);
+
+  // The protocol 1 generated host and its four @inputs.
+  setInput(generatedHost, "GeneratedHost", "runtimeHostObject", runtimeHostObject, runtimeHostObject.name);
+  setInput(generatedHost, "GeneratedHost", "interactionHostObject", interactionHostObject, interactionHostObject.name);
+  setInput(generatedHost, "GeneratedHost", "animationHostObject", animationHostObject, animationHostObject.name);
+  setInput(generatedHost, "GeneratedHost", "navigationHostObject", navigationObject, navigationObject.name);
+}
 
 // 5. LEAF index for the generated-host scenarios.
 if (opts.leafIndex !== false) {

@@ -659,7 +659,7 @@
   PrefabRemaps:
     []
   Name: InteractionHost
-  Enabled: true
+  Enabled: false
   Layers: 1
   LocalTransform: !<TransformEntity>
     Position: {x: 0.000000, y: 0.000000, z: 0.000000}
@@ -1670,6 +1670,8 @@
     defaultPanelPrefab: true
     defaultFont: true
     defaultImageMaterial: true
+    fontIds: true
+    fonts: true
   ScriptTypesDefault:
     {}
   ScriptInputs:
@@ -1689,6 +1691,13 @@
       defaultPanelPrefab: !<reference.ObjectPrefab> 00000000-0000-0000-0000-000000000000
       defaultFont: !<reference.Font> 00000000-0000-0000-0000-000000000000
       defaultImageMaterial: !<reference.Material> 00000000-0000-0000-0000-000000000000
+      fontIds: !<string[]>
+        []
+      fonts: !<reference.Font[]>
+        []
+      placeholderMaterial: !<reference.Material> 7eb4d539-3c4f-4010-9de2-13da760439d1
+      defaultMaterial: !<reference.Material> cd11d0de-dadf-4c9d-9ddc-a8be4002358b
+      defaultLineMaterial: !<reference.Material> f9b98fd6-130a-4273-9f45-8b46eeecacb6
   ScriptTypes:
     "":
       {}
@@ -2078,6 +2087,24 @@
     []
   Components:
     []
+- !<ScriptComponent/25acd267-aa2b-4326-b43e-d1c7c97a9aff>
+  PrefabRemaps:
+    []
+  Name: ViroSpecsSceneControllerHost
+  Enabled: true
+  ScriptAsset: !<reference> eb42a484-8ec1-48fb-a5cd-59fb1dd67e97
+  ScriptInputsDefault:
+    maxCachedMaterials: true
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      assetRegistryObject: !<reference.SceneObject> 0301367a-694e-47e3-89ec-dd72addee724
+      root: !<reference.SceneObject> dd60c603-b980-42aa-85f4-b3c648ae6638
+      maxCachedMaterials: !<float> 32.000000
+  ScriptTypes:
+    "":
+      {}
 - !<ScriptComponent/25e0f23e-7658-4d42-b4e8-549dd67c7ee2>
   PrefabRemaps:
     []
@@ -5375,7 +5402,7 @@
   PrefabRemaps:
     []
   Name: Navigation
-  Enabled: true
+  Enabled: false
   Layers: 1
   LocalTransform: !<TransformEntity>
     Position: {x: 0.000000, y: 0.000000, z: 0.000000}
@@ -8138,7 +8165,7 @@
   PrefabRemaps:
     []
   Name: AnimationHost
-  Enabled: true
+  Enabled: false
   Layers: 1
   LocalTransform: !<TransformEntity>
     Position: {x: 0.000000, y: 0.000000, z: 0.000000}
@@ -9812,10 +9839,7 @@
     {}
   ScriptInputs:
     "":
-      runtimeHostObject: !<reference.SceneObject> fb4453de-7b99-4954-a56f-f811041b7d83
-      interactionHostObject: !<reference.SceneObject> 0a2c6c6b-c110-4121-9724-d5148a08d961
-      animationHostObject: !<reference.SceneObject> 900bccb5-8859-4aee-b3cc-baac3ca38559
-      navigationHostObject: !<reference.SceneObject> 64df4574-5525-4dec-8e5a-a4fc72c75867
+      sceneHostObject: !<reference.SceneObject> bd1ea8f9-8d9c-490f-8ef8-6b75eb913770
   ScriptTypes:
     "":
       {}
@@ -10048,6 +10072,7 @@
     - !<own> 900bccb5-8859-4aee-b3cc-baac3ca38559
     - !<own> 64df4574-5525-4dec-8e5a-a4fc72c75867
     - !<own> 2b85b882-5fad-4b9f-8d90-39f5e1d9eb3d
+    - !<own> bd1ea8f9-8d9c-490f-8ef8-6b75eb913770
   Components:
     []
 - !<SceneObject/b063e8b0-6352-4d06-aeb2-21afab7b17f3>
@@ -10700,6 +10725,21 @@
     []
   Components:
     - !<own> 73bb9cb5-fa04-4471-b282-c198fe62723e
+- !<SceneObject/bd1ea8f9-8d9c-490f-8ef8-6b75eb913770>
+  PrefabRemaps:
+    []
+  Name: SceneHost
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    []
+  Components:
+    - !<own> 25acd267-aa2b-4326-b43e-d1c7c97a9aff
 - !<SceneObject/bd534645-d63e-40fc-8776-75563a310409>
   PrefabRemaps:
     []
@@ -14189,7 +14229,7 @@
     - fb8b33b4-04fb-40e0-9a94-7ee152925884: b6ee1ef8-3cc1-418b-600c-dfa301b30539
     - fcbcf8ae-1008-49ec-8760-5a35de47f0a5: 2b456f0e-2845-480d-50cb-fd0ee2025928
   Name: Example Surface
-  Enabled: true
+  Enabled: false
   Layers: 1
   LocalTransform: !<TransformEntity>
     Position: {x: 0.000000, y: 0.000000, z: 0.000000}
@@ -14864,7 +14904,7 @@
   PrefabRemaps:
     []
   Name: RuntimeHost
-  Enabled: true
+  Enabled: false
   Layers: 1
   LocalTransform: !<TransformEntity>
     Position: {x: 0.000000, y: 0.000000, z: 0.000000}
