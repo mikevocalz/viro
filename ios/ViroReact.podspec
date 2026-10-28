@@ -20,6 +20,8 @@ Pod::Spec.new do |s|
   # behind an availability check, so this is the version the code actually requires today.
   s.visionos.deployment_target = '26.0'
 
+  s.resource_bundles = { 'ViroReact_privacy' => ['PrivacyInfo.xcprivacy'] }
+
   # visionOS: CompositorServices drives the immersive render loop.
   s.visionos.frameworks = [
     'Metal', 'MetalKit', 'CompositorServices', 'ARKit',
@@ -34,6 +36,9 @@ Pod::Spec.new do |s|
     'AVFoundation', 'Accelerate', 'CoreVideo', 'ARKit',
     'CoreImage', 'ImageIO'
   ]
+
+  # zlib: VRTARSceneNavigatorModule computes the CRC-32 of the VPS scan zip with crc32().
+  s.libraries = 'z'
 
   # Base source files (always included)
   source_files_array = ['ViroReact/**/*.{h,m,mm,swift}']

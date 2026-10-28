@@ -18,6 +18,9 @@ android {
 
 dependencies {
     api files('react_viro-release.aar')
+    // A local AAR brings none of its dependencies, so an app gets the bridge's from here.
+    // Keep in step with viro_bridge/build.gradle.
+    api 'androidx.work:work-runtime:2.9.1'
 }
 
 // Same AGP 8.12+ bundleAar guard as viro_renderer — see that build.gradle.

@@ -50,6 +50,7 @@ import com.viromedia.bridge.component.VRTVRSceneNavigatorManager;
 import com.viromedia.bridge.component.node.VRTARImageMarkerManager;
 import com.viromedia.bridge.component.node.VRTARObjectMarkerManager;
 import com.viromedia.bridge.component.node.VRTARPlaneManager;
+import com.viromedia.bridge.component.node.VRTVPSAnchorManager;
 import com.viromedia.bridge.component.node.VRTARSceneManager;
 import com.viromedia.bridge.component.node.VRTSceneManagerImpl;
 import com.viromedia.bridge.component.node.control.VRT3DObjectManager;
@@ -97,6 +98,7 @@ import com.viromedia.bridge.module.VRT3DSceneNavigatorModule;
 import com.viromedia.bridge.module.VRTStudioModule;
 import com.viromedia.bridge.module.ViroSplatPassModule;
 import com.viromedia.bridge.module.ViroOrbPassModule;
+import com.viromedia.bridge.module.VRTUsageModule;
 import com.viromedia.bridge.module.StreamingAudioModule;
 import com.viromedia.bridge.module.VRLauncherModule;
 import com.viromedia.bridge.module.ViroEngineContractModule;
@@ -164,6 +166,7 @@ public class ReactViroPackage implements ReactPackage {
                 new ARTrackingTargetsModule(reactContext),
                 new VRT3DSceneNavigatorModule(reactContext),
                 new VRTStudioModule(reactContext),
+                new VRTUsageModule(reactContext),
                 new StreamingAudioModule(reactContext),
                 new ViroEngineContractModule(reactContext),
                 new ViroSplatPassModule(reactContext),
@@ -264,6 +267,7 @@ public class ReactViroPackage implements ReactPackage {
                 new VRTARSceneNavigatorManager(reactContext),
                 new VRTARSceneManager(reactContext),
                 new VRTARPlaneManager(reactContext),
+                new VRTVPSAnchorManager(reactContext),
                 new VRTARImageMarkerManager(reactContext),
                 new VRTARObjectMarkerManager(reactContext),
                 new VRTVirtualJoystickViewManager(reactContext),
