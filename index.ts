@@ -800,6 +800,10 @@ export type {
   ViroSpecsAmbientLight,
   ViroSpecsAnimationTarget,
   ViroSpecsAnimationTrack,
+  ViroSpecsButtonAuthoredState,
+  ViroSpecsButtonVisualState,
+  ViroSpecsComponentSpec,
+  ViroSpecsComponentType,
   ViroSpecsDirectionalLight,
   ViroSpecsEasing,
   ViroSpecsExtents,
@@ -815,6 +819,13 @@ export type {
   ViroSpecsManifestV2,
   ViroSpecsMaterial,
   ViroSpecsModelFormat,
+  ViroSpecsModelViewerSpec,
+  ViroSpecsPanelButtonSpec,
+  ViroSpecsPanelImageSpec,
+  ViroSpecsPanelTextSpec,
+  ViroSpecsScrollViewSpec,
+  ViroSpecsSpatialPanelSpec,
+  ViroSpecsTextRole,
   ViroSpecsModelNode,
   ViroSpecsNodeKind,
   ViroSpecsOmniLight,
@@ -844,6 +855,42 @@ export type {
   ViroSpecsValidationResult,
 } from "./components/Specs/core/validate";
 export { toSpecsSceneDocument, toSpecsSceneSnapshot } from "./components/Specs/core/lower";
+export {
+  checkSpecsExperience,
+  VIRO_SPECS_EXPERIENCE_CODES,
+  VIRO_SPECS_TEXT_EM_METERS_PER_POINT,
+} from "./components/Specs/core/experience";
+export {
+  resolveSpecsTokens,
+  specsAngleToMeters,
+  specsMetersToAngle,
+  VIRO_SPECS_DEFAULT_THEME,
+  VIRO_SPECS_HIGH_CONTRAST_TOKENS,
+  VIRO_SPECS_SPATIAL_TOKENS,
+} from "./components/Specs/core/tokens";
+export type {
+  ViroSpecsExperiencePreferences,
+  ViroSpecsHighContrastTokens,
+  ViroSpecsSpatialTokens,
+  ViroSpecsTheme,
+} from "./components/Specs/core/tokens";
+export {
+  ModelViewer,
+  PanelButton,
+  PanelImage,
+  PanelText,
+  SpatialPanel,
+  SpatialScrollView,
+} from "./components/Specs/premium";
+export type {
+  ModelViewerProps,
+  PanelButtonProps,
+  PanelImageProps,
+  PanelTextProps,
+  PremiumBaseProps,
+  SpatialPanelProps,
+  SpatialScrollViewProps,
+} from "./components/Specs/premium";
 export type { ViroSpecsLoweredScene } from "./components/Specs/core/lower";
 export {
   VIRO_SPECS_UNSUPPORTED_FEATURE_STATUS,

@@ -1,0 +1,2 @@
+scene.tsx:15:9 warning VS3018 [title]: Text "title" is 0.22 degrees tall at 1.92 m (fontSize 32); the minimum is 1.2 degrees.
+scene.tsx:16:9 warning VS3018 [subtitle]: Text "subtitle" is 0.34 degrees tall at 1.83 m (fontSize 48); the minimum is 1.2 degrees.

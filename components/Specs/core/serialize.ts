@@ -6,10 +6,10 @@ import type { ViroSpecsManifestV2, ViroSpecsSceneDocument } from "./manifest";
  * alphabetically after the listed ones.
  */
 const ORDER = {
-  top: ["$schema", "version", "generator", "source", "nodes", "polylines", "lights", "materials", "interactions", "animations"],
+  top: ["$schema", "version", "generator", "source", "nodes", "polylines", "lights", "materials", "interactions", "animations", "theme"],
   generator: ["name", "version"],
   node: [
-    "id", "kind", "parentId", "position", "rotation", "scale", "visible", "opacity", "materialId",
+    "id", "kind", "label", "parentId", "position", "rotation", "scale", "visible", "opacity", "materialId",
     "text", "style", "extents", "maxLines", "source", "format", "loop", "muted", "volume",
   ],
   polyline: ["id", "primitive", "backendPackage", "points", "radiusMeters", "materialId"],

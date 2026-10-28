@@ -1,0 +1,2 @@
+scene.tsx:11:11 warning VS3017 [one]: Node "one" is 0.00 m from the wearer; the band is 0.6-3 m.
+scene.tsx:13:13 warning VS3017 [two]: Node "two" is 0.00 m from the wearer; the band is 0.6-3 m.

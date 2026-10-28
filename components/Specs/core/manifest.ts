@@ -7,6 +7,8 @@
  * `[x, y, z, w]`, durations in seconds, colors as `#RRGGBB` or `#RRGGBBAA`.
  */
 
+import type { ViroSpecsTheme } from "./tokens";
+
 /** `[x, y, z]`. */
 export type ViroSpecsVec3 = readonly [number, number, number];
 
@@ -58,7 +60,106 @@ export interface ViroSpecsNodeBase {
   readonly opacity?: number;
   /** ID of an entry in {@linkcode ViroSpecsManifestV2.materials} or the Lens material registry. */
   readonly materialId?: string;
+  /**
+   * Accessible name: what the node is or does, not the control type
+   * ("Reset model", not "Button"). Required on every node an interaction
+   * targets; `VS3016` reports a missing one. The host appends ", selected" or
+   * ", unavailable" itself, so authors never write state into the label.
+   */
+  readonly label?: string;
+  /**
+   * Premium component the node was compiled from. The Lens host draws the
+   * component's visuals from {@linkcode ViroSpecsManifestV2.theme} tokens.
+   */
+  readonly component?: ViroSpecsComponentSpec;
 }
+
+/**
+ * States of a PanelButton the app sets. `hover` and `pressed` are added by
+ * the host from interaction phases, giving the seven visual states in
+ * `docs/ux/spatial-tokens.md#panelbutton`.
+ */
+export type ViroSpecsButtonAuthoredState = "idle" | "selected" | "disabled" | "loading" | "error";
+
+/** Every PanelButton visual state, authored or host-driven. */
+export type ViroSpecsButtonVisualState = ViroSpecsButtonAuthoredState | "hover" | "pressed";
+
+/** Type roles of PanelText, mapped to `type.titleDeg`, `type.bodyDeg` and `type.labelDeg`. */
+export type ViroSpecsTextRole = "title" | "body" | "label";
+
+/** SpatialPanel: a `panel` node with a surface, border and padding from tokens. */
+export interface ViroSpecsSpatialPanelSpec {
+  readonly type: "spatial-panel";
+  /** Title drawn at `type.title`. */
+  readonly title?: string;
+}
+
+/** PanelText: a `text` node sized by role, never below `type.minAngleDeg`. */
+export interface ViroSpecsPanelTextSpec {
+  readonly type: "panel-text";
+  readonly role: ViroSpecsTextRole;
+  readonly tone: "default" | "muted";
+}
+
+/** PanelButton: a `panel` node whose `label` is also the visible text. */
+export interface ViroSpecsPanelButtonSpec {
+  readonly type: "panel-button";
+  readonly state: ViroSpecsButtonAuthoredState;
+  /** Short reason shown under the button in the `error` state. */
+  readonly errorMessage?: string;
+}
+
+/** PanelImage: an `image` node with `radius.card` corners; missing images get a placeholder. */
+export interface ViroSpecsPanelImageSpec {
+  readonly type: "panel-image";
+}
+
+/**
+ * SpatialScrollView: a `panel` node whose extents are the viewport. Children
+ * scroll inside it and are clipped at its edges; the host keeps the scroll
+ * position for the node ID across updates and navigation.
+ */
+export interface ViroSpecsScrollViewSpec {
+  readonly type: "scroll-view";
+  /** Height of one row in meters; one scroll step. */
+  readonly itemHeightMeters: number;
+  /** Row shown first when nothing has been retained yet. */
+  readonly initialIndex: number;
+}
+
+/**
+ * Model viewer: a `model` node with load (progress ring), error
+ * (placeholder + `error.asset` copy), manipulate, animate and reset.
+ */
+export interface ViroSpecsModelViewerSpec {
+  readonly type: "model-viewer";
+  /** Slow turntable rotation. Always off under reduced motion. */
+  readonly autoRotate: boolean;
+  /** Shows a "Reset model" button that returns the authored transform. */
+  readonly resettable: boolean;
+}
+
+/** Premium component carried on a node. Discriminated by `type`. */
+export type ViroSpecsComponentSpec =
+  | ViroSpecsSpatialPanelSpec
+  | ViroSpecsPanelTextSpec
+  | ViroSpecsPanelButtonSpec
+  | ViroSpecsPanelImageSpec
+  | ViroSpecsScrollViewSpec
+  | ViroSpecsModelViewerSpec;
+
+/** Premium component type names. */
+export type ViroSpecsComponentType = ViroSpecsComponentSpec["type"];
+
+/** Node kind each premium component must sit on. */
+export const VIRO_SPECS_COMPONENT_NODE_KIND = {
+  "spatial-panel": "panel",
+  "panel-text": "text",
+  "panel-button": "panel",
+  "panel-image": "image",
+  "scroll-view": "panel",
+  "model-viewer": "model",
+} as const satisfies Record<ViroSpecsComponentType, string>;
 
 /** Transform-only container. Maps from ViroNode. */
 export interface ViroSpecsGroupNode extends ViroSpecsNodeBase {
@@ -282,6 +383,12 @@ export interface ViroSpecsManifestV2 {
   readonly materials: readonly ViroSpecsMaterial[];
   readonly interactions: readonly ViroSpecsManifestInteraction[];
   readonly animations: readonly ViroSpecsManifestAnimation[];
+  /**
+   * Spatial tokens and wearer preferences. Written by the compilers when a
+   * premium component compiled; absent otherwise. The Lens host falls back
+   * to its built-in copy of the default tokens when it is absent.
+   */
+  readonly theme?: ViroSpecsTheme;
 }
 
 /** Node kinds the scene protocol 1 wire format carries. */
@@ -363,6 +470,7 @@ export interface ViroSpecsSceneDocument {
   readonly materials: readonly ViroSpecsMaterial[];
   readonly interactions: readonly ViroSpecsManifestInteraction[];
   readonly animations: readonly ViroSpecsManifestAnimation[];
+  readonly theme?: ViroSpecsTheme;
 }
 
 /** `$id` of the published v2 schema. */

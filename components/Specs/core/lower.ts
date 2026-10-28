@@ -71,7 +71,7 @@ function lowerNode(
 /**
  * Lowers a manifest v2 to the scene protocol 1 snapshot the Lens runtime
  * reads today. Fields the protocol does not carry (text style, extents,
- * opacity, materialId, lights) are reported with `VS1015`
+ * opacity, materialId, label, component, lights) are reported with `VS1015`
  * instead of being dropped silently. Polylines, interactions and animations
  * already use their wire shapes and are sent unchanged.
  */
@@ -91,6 +91,15 @@ export function toSpecsSceneSnapshot(manifest: ViroSpecsManifestV2): ViroSpecsLo
       )
     );
   });
+  if (manifest.theme !== undefined) {
+    diagnostics.push(
+      createViroSpecsDiagnostic(
+        "VS1015",
+        "The theme (spatial tokens) is kept in the manifest and not sent to the Lens runtime; premium components render with the host's default tokens.",
+        { fieldPath: "/theme" }
+      )
+    );
+  }
   return { snapshot: { version: 1, nodes }, diagnostics };
 }
 
@@ -113,5 +122,6 @@ export function toSpecsSceneDocument(manifest: ViroSpecsManifestV2): ViroSpecsSc
     materials: manifest.materials,
     interactions: manifest.interactions,
     animations: manifest.animations,
+    ...(manifest.theme !== undefined ? { theme: manifest.theme } : {}),
   };
 }

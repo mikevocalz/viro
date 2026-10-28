@@ -18,6 +18,17 @@ import type { ViroSpecsDiagnostic } from "../components/Specs/core/diagnostic";
 import { validateSpecsSceneSnapshot } from "../components/Specs/core/validate";
 import { ViroNode } from "../components/ViroNode";
 import { ViroText } from "../components/ViroText";
+import { VIRO_SPECS_EXPERIENCE_CODES } from "../components/Specs/core/experience";
+
+/**
+ * Keeps transport and protocol findings. These scenes sit at the origin to
+ * test the transport, so comfort findings (VS3016-VS3021, covered in
+ * ViroSpecsExperience.test.tsx) are left out.
+ */
+function record(diagnostics: ViroSpecsDiagnostic[], diagnostic: ViroSpecsDiagnostic): void {
+  if ((VIRO_SPECS_EXPERIENCE_CODES as readonly string[]).includes(diagnostic.code)) return;
+  diagnostics.push(diagnostic);
+}
 
 type SpecsGlobal = typeof globalThis & { __VIRO_SPECS_BUILD__?: boolean; IS_REACT_ACT_ENVIRONMENT?: boolean };
 const specsGlobal = globalThis as SpecsGlobal;
@@ -57,7 +68,7 @@ describe("ViroSpecsScene", () => {
     const { transport, applyScene } = mockTransport();
     const diagnostics: ViroSpecsDiagnostic[] = [];
     await render(
-      <ViroSpecsScene transport={transport} onDiagnostic={(d) => diagnostics.push(d)}>
+      <ViroSpecsScene transport={transport} onDiagnostic={(d) => record(diagnostics, d)}>
         <ViroNode viroTag="root">
           <ViroText viroTag="t" text="Hi" />
         </ViroNode>
@@ -74,7 +85,7 @@ describe("ViroSpecsScene", () => {
     const { transport, applyScene } = mockTransport();
     const diagnostics: ViroSpecsDiagnostic[] = [];
     await render(
-      <ViroSpecsScene transport={transport} onDiagnostic={(d) => diagnostics.push(d)}>
+      <ViroSpecsScene transport={transport} onDiagnostic={(d) => record(diagnostics, d)}>
         <ViroNode viroTag="a" />
         <ViroNode viroTag="a" />
       </ViroSpecsScene>
@@ -88,7 +99,7 @@ describe("ViroSpecsScene", () => {
     const { transport, applyScene, presentPolyline } = mockTransport({ applySceneDocument });
     const diagnostics: ViroSpecsDiagnostic[] = [];
     await render(
-      <ViroSpecsScene transport={transport} onDiagnostic={(d) => diagnostics.push(d)}>
+      <ViroSpecsScene transport={transport} onDiagnostic={(d) => record(diagnostics, d)}>
         <ViroText viroTag="t" text="Hi" width={0.5} height={0.1} style={{ fontSize: 18, color: "#fff" }} />
       </ViroSpecsScene>
     );
@@ -105,7 +116,7 @@ describe("ViroSpecsScene", () => {
     const { transport, applyScene } = mockTransport();
     const diagnostics: ViroSpecsDiagnostic[] = [];
     await render(
-      <ViroSpecsScene transport={transport} onDiagnostic={(d) => diagnostics.push(d)}>
+      <ViroSpecsScene transport={transport} onDiagnostic={(d) => record(diagnostics, d)}>
         <ViroText viroTag="t" text="Hi" style={{ fontSize: 18 }} />
       </ViroSpecsScene>
     );
@@ -119,7 +130,7 @@ describe("ViroSpecsScene", () => {
     });
     const diagnostics: ViroSpecsDiagnostic[] = [];
     await render(
-      <ViroSpecsScene transport={transport} onDiagnostic={(d) => diagnostics.push(d)}>
+      <ViroSpecsScene transport={transport} onDiagnostic={(d) => record(diagnostics, d)}>
         <ViroNode viroTag="a" />
       </ViroSpecsScene>
     );

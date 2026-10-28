@@ -250,9 +250,11 @@ export function compileViroSpecsChildren(
 
     const record: ViroSpecsCallbackRecord = {};
     const onHover = asCallback<ViroSpecsCallbackRecord["onHover"]>(props.onHover);
+    const onPress = asCallback<() => void>(props.onPress);
     const onClick =
       asCallback<ViroSpecsCallbackRecord["onClick"]>(props.onClick) ??
-      asCallback<ViroSpecsCallbackRecord["onClick"]>(props.onClickState);
+      asCallback<ViroSpecsCallbackRecord["onClick"]>(props.onClickState) ??
+      (onPress ? () => onPress() : undefined);
     const onDrag = asCallback<ViroSpecsCallbackRecord["onDrag"]>(props.onDrag);
     if (onHover) record.onHover = onHover;
     if (onClick) record.onClick = onClick;

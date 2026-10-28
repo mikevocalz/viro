@@ -20,7 +20,10 @@ import {
 import { ViroSpecsIdAllocator } from "./ids";
 import { toSpecsSceneDocument, toSpecsSceneSnapshot } from "./lower";
 import {
+  VIRO_SPECS_COMPONENT_NODE_KIND,
   VIRO_SPECS_MANIFEST_SCHEMA_ID,
+  type ViroSpecsComponentType,
+  type ViroSpecsNodeBase,
   type ViroSpecsExtents,
   type ViroSpecsLight,
   type ViroSpecsManifestAnimation,
@@ -44,6 +47,14 @@ import {
   type ViroSpecsTransform,
 } from "./transform";
 import { validateSpecsManifestV2 } from "./validate";
+import { checkSpecsExperience, VIRO_SPECS_TEXT_EM_METERS_PER_POINT } from "./experience";
+import {
+  specsAngleToMeters,
+  VIRO_SPECS_DEFAULT_THEME,
+  VIRO_SPECS_SPATIAL_TOKENS,
+  type ViroSpecsSpatialTokens,
+  type ViroSpecsTheme,
+} from "./tokens";
 
 /** Lens package that provides the polyline primitive the manifest names. */
 export const VIRO_SPECS_POLYLINE_BACKEND = "VolumetricLine";
@@ -68,6 +79,38 @@ export interface ViroSpecsSceneBuilderOptions {
   readonly source?: string;
   readonly lookupAnimation: ViroSpecsAnimationLookup;
   readonly resolveSource: (value: unknown, kind: "image" | "model") => ViroSpecsSourceResolution;
+  /**
+   * Theme written to the manifest. Defaults to {@linkcode VIRO_SPECS_DEFAULT_THEME}
+   * when a premium component compiled; with neither, the manifest has no theme.
+   */
+  readonly theme?: ViroSpecsTheme;
+}
+
+/** What {@linkcode ViroSpecsSceneBuilder} passes to premium component compilation. */
+interface PremiumContext {
+  readonly props: Readonly<Record<string, unknown>>;
+  readonly written: (prop: string) => boolean;
+  readonly unresolved: ReadonlySet<string>;
+  readonly issues: ViroSpecsIssue[];
+  readonly name: string;
+  readonly id: string;
+  readonly source: string | undefined;
+  /** Distance from the wearer used to turn angular tokens into meters. */
+  readonly distance: number;
+}
+
+/**
+ * Distance used to size premium components: the node's distance from the
+ * scene origin, clamped into the comfort band. A node at the origin (no
+ * position yet) uses `distance.defaultMeters`.
+ */
+export function specsComfortDistance(
+  position: ViroSpecsVec3,
+  tokens: ViroSpecsSpatialTokens = VIRO_SPECS_SPATIAL_TOKENS
+): number {
+  const d = Math.sqrt(position[0] * position[0] + position[1] * position[1] + position[2] * position[2]);
+  if (d < 1e-6) return tokens.distance.defaultMeters;
+  return Math.min(tokens.distance.maxMeters, Math.max(tokens.distance.minMeters, d));
 }
 
 /**
@@ -280,6 +323,7 @@ export class ViroSpecsSceneBuilder {
   private readonly plans: ViroSpecsAnimationPlan[] = [];
   private readonly diagnostics: ViroSpecsDiagnostic[] = [];
   private readonly locations = new Map<string, ViroSpecsDiagnosticDetails[]>();
+  private usesPremium = false;
 
   constructor(options: ViroSpecsSceneBuilderOptions) {
     this.options = options;
@@ -314,6 +358,13 @@ export class ViroSpecsSceneBuilder {
       return { kind: "skipped" };
     }
     const target = classification.target;
+    const nodeKind: ViroSpecsManifestNode["kind"] | undefined =
+      target.category === "node"
+        ? target.kind
+        : target.category === "premium"
+          ? VIRO_SPECS_COMPONENT_NODE_KIND[target.component]
+          : undefined;
+    if (target.category === "premium") this.usesPremium = true;
     if (written("viroTag") && tag === undefined) {
       issues.push({ code: "VS1004", prop: "viroTag", message: name + " viroTag " + describe(props.viroTag) + " is not a non-empty string." });
     }
@@ -321,14 +372,14 @@ export class ViroSpecsSceneBuilder {
     // Source first: the asset ID is part of a content-hash ID.
     let source: string | undefined;
     let sourceFailed = false;
-    if (target.category === "node" && (target.kind === "image" || target.kind === "model")) {
+    if (nodeKind === "image" || nodeKind === "model") {
       if (unresolved.has("source")) {
         sourceFailed = true;
       } else if (props.source === undefined) {
         issues.push({ code: "VS3008", prop: "source", message: name + " has no source." });
         sourceFailed = true;
       } else {
-        const resolution = this.options.resolveSource(props.source, target.kind);
+        const resolution = this.options.resolveSource(props.source, nodeKind);
         if ("id" in resolution) source = resolution.id;
         else {
           issues.push(resolution.issue);
@@ -337,16 +388,19 @@ export class ViroSpecsSceneBuilder {
       }
     }
 
-    const idKind =
-      target.category === "node" ? target.kind : target.category === "polyline" ? "polyline" : "light";
+    const idKind = nodeKind ?? (target.category === "polyline" ? "polyline" : "light");
     const content =
       target.category === "light"
         ? target.type
         : target.category === "polyline"
           ? Array.isArray(props.points) ? JSON.stringify(props.points) : ""
-          : target.kind === "text"
+          : nodeKind === "text"
             ? typeof props.text === "string" ? props.text : ""
-            : source ?? "";
+            : target.category === "premium" && target.component === "panel-button"
+              ? typeof props.label === "string" ? props.label : ""
+              : target.category === "premium" && target.component === "spatial-panel"
+                ? typeof props.title === "string" ? props.title : ""
+                : source ?? "";
     let id: string;
     if (tag !== undefined) {
       id = tag;
@@ -397,7 +451,7 @@ export class ViroSpecsSceneBuilder {
     const world = composeSpecsTransform(scope.transform, local);
     const hidden = scope.hidden || input.conditionalRoot === true;
 
-    if (target.category !== "node") {
+    if (target.category === "polyline" || target.category === "light") {
       if (hidden) {
         issues.push({
           code: "VS2017",
@@ -466,8 +520,17 @@ export class ViroSpecsSceneBuilder {
       else issues.push({ code: "VS1004", prop: "opacity", message: name + " " + id + " opacity " + describe(props.opacity) + " is not a number." });
     }
 
+    const labelProp = target.category === "premium" ? "label" : "accessibilityLabel";
+    let label: string | undefined;
+    if (written(labelProp) && props[labelProp] !== undefined) {
+      const value = props[labelProp];
+      if (typeof value === "string" && value.trim() !== "") label = value;
+      else issues.push({ code: "VS1004", prop: labelProp, message: name + " " + id + " " + labelProp + " " + describe(value) + " is not a non-empty string." });
+    }
+
     const base = {
       id,
+      ...(label !== undefined ? { label } : {}),
       ...(scope.nodeId !== undefined ? { parentId: scope.nodeId } : {}),
       ...(local.position !== undefined ? { position: local.position } : {}),
       ...(local.rotation !== undefined ? { rotation: eulerDegreesToSpecsQuaternion(local.rotation) } : {}),
@@ -478,7 +541,18 @@ export class ViroSpecsSceneBuilder {
     };
 
     let node: ViroSpecsManifestNode | undefined;
-    switch (target.kind) {
+    if (target.category === "premium") {
+      node = this.compilePremium(target.component, base, {
+        props,
+        written,
+        unresolved,
+        issues,
+        name,
+        id,
+        source: sourceFailed ? undefined : source,
+        distance: specsComfortDistance(world.position),
+      });
+    } else switch (target.kind) {
       case "group":
         node = { ...base, kind: "group" };
         break;
@@ -550,6 +624,177 @@ export class ViroSpecsSceneBuilder {
     if (node === undefined) return { kind: "skipped" };
     this.nodes.push(node);
     return { kind: "compiled", id, childScope: { nodeId: id, transform: world, hidden } };
+  }
+
+  /** Builds the node for a premium component. Returns `undefined` when a required prop failed. */
+  private compilePremium(
+    component: ViroSpecsComponentType,
+    base: ViroSpecsNodeBase,
+    context: PremiumContext
+  ): ViroSpecsManifestNode | undefined {
+    const { props, written, unresolved, issues, name, id, distance } = context;
+    const tokens = (this.options.theme ?? VIRO_SPECS_DEFAULT_THEME).tokens;
+    const invalid = (prop: string, expected: string) =>
+      issues.push({ code: "VS3022", prop, message: name + " " + id + " " + prop + " " + describe(props[prop]) + " is not " + expected + "." });
+    const has = (prop: string) => written(prop) && props[prop] !== undefined;
+    const readString = (prop: string): string | undefined => {
+      if (!has(prop)) return undefined;
+      const value = props[prop];
+      if (typeof value === "string" && value !== "") return value;
+      invalid(prop, "a non-empty string");
+      return undefined;
+    };
+    const readPositive = (prop: string): number | undefined => {
+      if (!has(prop)) return undefined;
+      if (isPositiveNumber(props[prop])) return props[prop];
+      invalid(prop, "a positive number of meters");
+      return undefined;
+    };
+    const readBoolean = (prop: string, fallback: boolean): boolean => {
+      if (!has(prop)) return fallback;
+      if (typeof props[prop] === "boolean") return props[prop];
+      invalid(prop, "a boolean");
+      return fallback;
+    };
+    const readChoice = <T extends string>(prop: string, allowed: readonly T[], fallback: T): T => {
+      if (!has(prop)) return fallback;
+      const value = props[prop];
+      const match = allowed.find((entry) => entry === value);
+      if (match !== undefined) return match;
+      invalid(prop, "one of " + allowed.join(", "));
+      return fallback;
+    };
+    const extentsOr = (width: number, height: number): ViroSpecsExtents => ({
+      width: readPositive("width") ?? width,
+      height: readPositive("height") ?? height,
+    });
+    const meters = (deg: number) => specsAngleToMeters(deg, distance);
+
+    switch (component) {
+      case "spatial-panel": {
+        const title = readString("title");
+        return {
+          ...base,
+          kind: "panel",
+          extents: extentsOr(meters(20), meters(12)),
+          component: { type: "spatial-panel", ...(title !== undefined ? { title } : {}) },
+        };
+      }
+      case "panel-text": {
+        if (unresolved.has("text")) return undefined;
+        if (typeof props.text !== "string") {
+          issues.push({ code: "VS1005", prop: "text", message: "PanelText " + id + " has no text." });
+          return undefined;
+        }
+        const role = readChoice("role", ["title", "body", "label"] as const, "body");
+        const tone = readChoice("tone", ["default", "muted"] as const, "default");
+        const roleDeg = role === "title" ? tokens.type.titleDeg : role === "body" ? tokens.type.bodyDeg : tokens.type.labelDeg;
+        const angle = Math.max(roleDeg, tokens.type.minAngleDeg);
+        // Round up to 0.1 pt so the compiled size never falls under the angle.
+        const fontSize = Math.ceil((meters(angle) / VIRO_SPECS_TEXT_EM_METERS_PER_POINT) * 10) / 10;
+        let maxLines = role === "body" ? 4 : 2;
+        if (has("maxLines")) {
+          const value = props.maxLines;
+          if (typeof value === "number" && Number.isInteger(value) && value >= 1) maxLines = value;
+          else invalid("maxLines", "a positive integer");
+        }
+        const width = readPositive("width");
+        const height = readPositive("height");
+        return {
+          ...base,
+          kind: "text",
+          text: props.text,
+          style: {
+            fontSize,
+            fontWeight: role === "title" ? "600" : role === "label" ? "500" : "400",
+            color: tone === "muted" ? tokens.color.textMuted : tokens.color.text,
+          },
+          ...(width !== undefined && height !== undefined ? { extents: { width, height } } : {}),
+          maxLines,
+          component: { type: "panel-text", role, tone },
+        };
+      }
+      case "panel-button": {
+        if (base.label === undefined) {
+          if (!unresolved.has("label")) {
+            issues.push({ code: "VS3022", prop: "label", message: "PanelButton " + id + " has no label; the label is also the button's visible text." });
+          }
+          return undefined;
+        }
+        const state = readChoice("state", ["idle", "selected", "disabled", "loading", "error"] as const, "idle");
+        const errorMessage = readString("errorMessage");
+        const labelMeters = meters(tokens.type.labelDeg);
+        const height = labelMeters * tokens.type.lineHeight + 2 * meters(tokens.space.smDeg);
+        // Width estimate: 0.55 em per character plus md padding each side; the host re-measures.
+        const width = Math.max(height * 2.5, base.label.length * 0.55 * labelMeters + 2 * meters(tokens.space.mdDeg));
+        return {
+          ...base,
+          kind: "panel",
+          extents: extentsOr(width, height),
+          component: { type: "panel-button", state, ...(errorMessage !== undefined ? { errorMessage } : {}) },
+        };
+      }
+      case "panel-image": {
+        if (context.source === undefined) return undefined;
+        const width = readPositive("width");
+        const height = readPositive("height");
+        return {
+          ...base,
+          kind: "image",
+          source: context.source,
+          ...(width !== undefined && height !== undefined ? { extents: { width, height } } : {}),
+          component: { type: "panel-image" },
+        };
+      }
+      case "scroll-view": {
+        const width = readPositive("width");
+        const height = readPositive("height");
+        const itemHeight = readPositive("itemHeight");
+        if (width === undefined || height === undefined || itemHeight === undefined) {
+          for (const prop of ["width", "height", "itemHeight"]) {
+            if (!has(prop) && !unresolved.has(prop)) {
+              issues.push({ code: "VS3022", prop, message: "SpatialScrollView " + id + " needs " + prop + " in meters." });
+            }
+          }
+          return undefined;
+        }
+        let initialIndex = 0;
+        if (has("initialIndex")) {
+          const value = props.initialIndex;
+          if (typeof value === "number" && Number.isInteger(value) && value >= 0) initialIndex = value;
+          else invalid("initialIndex", "an integer >= 0");
+        }
+        return {
+          ...base,
+          kind: "panel",
+          extents: { width, height },
+          component: { type: "scroll-view", itemHeightMeters: itemHeight, initialIndex },
+        };
+      }
+      case "model-viewer": {
+        if (context.source === undefined) return undefined;
+        let format: ReturnType<typeof specsModelFormat>;
+        if (has("type")) {
+          format = specsModelFormat(props.type);
+          if (format === "vrx") {
+            issues.push({ code: "VS3013", prop: "type", message: "ModelViewer " + id + " uses VRX." });
+            return undefined;
+          }
+          if (format === undefined) invalid("type", "glb, gltf, obj or fbx");
+        }
+        return {
+          ...base,
+          kind: "model",
+          source: context.source,
+          ...(format !== undefined && format !== "vrx" ? { format } : {}),
+          component: {
+            type: "model-viewer",
+            autoRotate: readBoolean("autoRotate", false),
+            resettable: readBoolean("resettable", true),
+          },
+        };
+      }
+    }
   }
 
   private readMaterial(
@@ -654,7 +899,10 @@ export class ViroSpecsSceneBuilder {
 
   private compileInteraction(props: Readonly<Record<string, unknown>>, id: string): void {
     const hover = typeof props.onHover === "function";
-    const select = typeof props.onClick === "function" || typeof props.onClickState === "function";
+    const select =
+      typeof props.onClick === "function" ||
+      typeof props.onClickState === "function" ||
+      typeof props.onPress === "function";
     const drag = typeof props.onDrag === "function";
     if (!hover && !select && !drag) return;
     this.interactions.push({
@@ -737,6 +985,7 @@ export class ViroSpecsSceneBuilder {
    * a duplicate ID points at the second element and names the first.
    */
   finish(): ViroSpecsBuiltScene {
+    const theme = this.options.theme ?? (this.usesPremium ? VIRO_SPECS_DEFAULT_THEME : undefined);
     const manifest: ViroSpecsManifestV2 = {
       $schema: VIRO_SPECS_MANIFEST_SCHEMA_ID,
       version: 2,
@@ -748,9 +997,15 @@ export class ViroSpecsSceneBuilder {
       materials: [],
       interactions: this.interactions,
       animations: this.animations,
+      ...(theme !== undefined ? { theme } : {}),
     };
     const diagnostics = [...this.diagnostics];
-    for (const diagnostic of validateSpecsManifestV2(manifest).diagnostics) {
+    const validation = validateSpecsManifestV2(manifest);
+    const findings = [
+      ...validation.diagnostics,
+      ...(validation.ok ? checkSpecsExperience(validation.value) : []),
+    ];
+    for (const diagnostic of findings) {
       const recorded = diagnostic.nodeId !== undefined ? this.locations.get(diagnostic.nodeId) : undefined;
       if (!recorded || recorded.length === 0) {
         diagnostics.push(diagnostic);

@@ -4,10 +4,13 @@ import {
   type ViroSpecsDiagnostic,
 } from "./diagnostic";
 import type { ViroSpecsDiagnosticCode } from "./diagnosticCodes";
-import type {
-  ViroSpecsManifestV2,
-  ViroSpecsWireSceneSnapshot,
+import {
+  VIRO_SPECS_COMPONENT_NODE_KIND,
+  type ViroSpecsComponentType,
+  type ViroSpecsManifestV2,
+  type ViroSpecsWireSceneSnapshot,
 } from "./manifest";
+import { VIRO_SPECS_HIGH_CONTRAST_TOKENS, VIRO_SPECS_SPATIAL_TOKENS } from "./tokens";
 
 /** Result of validating one manifest or snapshot. */
 export type ViroSpecsValidationResult<T> =
@@ -58,6 +61,8 @@ const V2_NODE_COMMON = [
   "visible",
   "opacity",
   "materialId",
+  "label",
+  "component",
 ];
 
 const V2_NODE_FIELDS: Readonly<
@@ -265,6 +270,101 @@ function checkTextStyle(checker: Checker, node: JsonRecord, path: string, nodeId
   checker.oneOf(style, "textAlignVertical", at, ["top", "center", "bottom"], nodeId);
 }
 
+const COMPONENT_FIELDS: Readonly<
+  Record<ViroSpecsComponentType, { readonly required: readonly string[]; readonly optional: readonly string[] }>
+> = {
+  "spatial-panel": { required: [], optional: ["title"] },
+  "panel-text": { required: ["role", "tone"], optional: [] },
+  "panel-button": { required: ["state"], optional: ["errorMessage"] },
+  "panel-image": { required: [], optional: [] },
+  "scroll-view": { required: ["itemHeightMeters", "initialIndex"], optional: [] },
+  "model-viewer": { required: ["autoRotate", "resettable"], optional: [] },
+};
+
+function isComponentType(value: unknown): value is ViroSpecsComponentType {
+  return typeof value === "string" && value in COMPONENT_FIELDS;
+}
+
+/** Checks `node.component` and that it sits on the node kind it needs. */
+function checkComponent(checker: Checker, node: JsonRecord, kind: string, path: string, nodeId?: string): void {
+  if (!("component" in node)) return;
+  const component = node.component;
+  const at = pointer(path, "component");
+  if (!isRecord(component)) {
+    checker.invalid(at, "a component object", component, nodeId);
+    return;
+  }
+  const type = component.type;
+  if (!isComponentType(type)) {
+    checker.invalid(pointer(at, "type"), "one of " + Object.keys(COMPONENT_FIELDS).join(", "), type, nodeId);
+    return;
+  }
+  const spec = COMPONENT_FIELDS[type];
+  checker.fields(component, at, ["type", ...spec.required], spec.optional, nodeId);
+  const expectedKind = VIRO_SPECS_COMPONENT_NODE_KIND[type];
+  if (kind !== expectedKind) {
+    checker.invalid(pointer(at, "type"), "a component for node kind " + kind + " (" + type + " needs " + expectedKind + ")", type, nodeId);
+  }
+  checker.string(component, "title", at, nodeId);
+  checker.oneOf(component, "role", at, ["title", "body", "label"], nodeId);
+  checker.oneOf(component, "tone", at, ["default", "muted"], nodeId);
+  checker.oneOf(component, "state", at, ["idle", "selected", "disabled", "loading", "error"], nodeId);
+  checker.string(component, "errorMessage", at, nodeId);
+  checker.number(component, "itemHeightMeters", at, { exclusiveMin: 0 }, nodeId);
+  checker.number(component, "initialIndex", at, { min: 0, integer: true }, nodeId);
+  checker.boolean(component, "autoRotate", at, nodeId);
+  checker.boolean(component, "resettable", at, nodeId);
+}
+
+/**
+ * Checks a token group against the default tokens: the same keys, numbers
+ * where the default is a number, hex colors where it is a string.
+ */
+function checkTokenGroup(checker: Checker, value: unknown, reference: Readonly<Record<string, unknown>>, at: string): void {
+  if (!isRecord(value)) {
+    checker.invalid(at, "an object", value);
+    return;
+  }
+  const keys = Object.keys(reference);
+  checker.fields(value, at, keys, []);
+  for (const key of keys) {
+    const expected = reference[key];
+    if (typeof expected === "number") checker.number(value, key, at, { min: 0 });
+    else if (typeof expected === "string") checker.color(value, key, at);
+    else if (isRecord(expected)) {
+      if (key in value) checkTokenGroup(checker, value[key], expected, pointer(at, key));
+    }
+  }
+}
+
+/** Checks the manifest `theme` block against the token contract in `tokens.ts`. */
+function checkTheme(checker: Checker, theme: unknown): void {
+  const at = "/theme";
+  if (!isRecord(theme)) {
+    checker.invalid(at, "a theme object", theme);
+    return;
+  }
+  checker.fields(theme, at, ["version", "tokens", "highContrast", "preferences"], []);
+  if ("version" in theme && theme.version !== 1) {
+    checker.invalid(pointer(at, "version"), "1", theme.version);
+  }
+  if ("tokens" in theme) checkTokenGroup(checker, theme.tokens, VIRO_SPECS_SPATIAL_TOKENS, pointer(at, "tokens"));
+  if ("highContrast" in theme) {
+    checkTokenGroup(checker, theme.highContrast, VIRO_SPECS_HIGH_CONTRAST_TOKENS, pointer(at, "highContrast"));
+  }
+  if ("preferences" in theme) {
+    const preferences = theme.preferences;
+    const prefAt = pointer(at, "preferences");
+    if (!isRecord(preferences)) {
+      checker.invalid(prefAt, "an object", preferences);
+    } else {
+      checker.fields(preferences, prefAt, ["highContrast", "reducedMotion"], []);
+      checker.boolean(preferences, "highContrast", prefAt);
+      checker.boolean(preferences, "reducedMotion", prefAt);
+    }
+  }
+}
+
 function checkV2Node(checker: Checker, node: unknown, path: string): void {
   if (!isRecord(node)) {
     checker.invalid(path, "a node object", node);
@@ -290,6 +390,8 @@ function checkV2Node(checker: Checker, node: unknown, path: string): void {
   checker.boolean(node, "visible", path, nodeId);
   checker.number(node, "opacity", path, { min: 0, max: 1 }, nodeId);
   checker.string(node, "materialId", path, nodeId);
+  checker.string(node, "label", path, nodeId);
+  checkComponent(checker, node, kind, path, nodeId);
 
   if ("text" in node && typeof node.text !== "string") {
     checker.invalid(pointer(path, "text"), "a string", node.text, nodeId);
@@ -623,7 +725,7 @@ export function validateSpecsManifestV2(
     input,
     "",
     ["version", "nodes"],
-    ["$schema", "generator", "source", "polylines", "lights", "materials", "interactions", "animations"]
+    ["$schema", "generator", "source", "polylines", "lights", "materials", "interactions", "animations", "theme"]
   );
   if (input.version !== 2) {
     checker.report("VS1003", "validateSpecsManifestV2 reads version 2, got " + describe(input.version) + ".", "/version");
@@ -641,6 +743,8 @@ export function validateSpecsManifestV2(
       checker.string(generator, "version", "/generator");
     }
   }
+
+  if ("theme" in input) checkTheme(checker, input.theme);
 
   const nodes = checker.array(input, "nodes", "");
   const polylines = checker.array(input, "polylines", "");

@@ -1,4 +1,5 @@
 import * as React from "react";
+import { withoutSpecsExperienceFindings } from "../components/Specs/core/experience";
 
 jest.mock("react-native", () => ({
   NativeModules: {},
@@ -60,7 +61,8 @@ describe("Viro Specs JSX compiler", () => {
 
     const compiled = compileViroSpecsChildren(tree);
 
-    expect(compiled.diagnostics).toEqual([]);
+    // Comfort findings on this fixture are covered in ViroSpecsExperience.test.tsx.
+    expect(withoutSpecsExperienceFindings(compiled.diagnostics)).toEqual([]);
     expect(compiled.scene.nodes.map((node) => node.id)).toEqual([
       "root",
       "title",
@@ -194,7 +196,7 @@ describe("Viro Specs runtime compiler diagnostics", () => {
       extents: { width: 0.5, height: 0.1 },
     });
     // Scene protocol 2 carries style and extents, so compiling reports nothing.
-    expect(compiled.diagnostics).toEqual([]);
+    expect(withoutSpecsExperienceFindings(compiled.diagnostics)).toEqual([]);
     expect(compiled.document.nodes[1]).toEqual(compiled.manifest.nodes[1]);
     // The protocol 1 snapshot drops them; ViroSpecsScene reports these only
     // when a transport has no applySceneDocument.
@@ -267,7 +269,7 @@ describe("Viro Specs runtime compiler diagnostics", () => {
     const bounce = compileViroSpecsChildren(
       React.createElement(ViroText, { viroTag: "a", text: "x", animation: { name: "specsBounce", run: true } })
     );
-    expect(codesOf(bounce)).toEqual(["VS3006"]);
+    expect(codesOf({ diagnostics: withoutSpecsExperienceFindings(bounce.diagnostics) })).toEqual(["VS3006"]);
     expect(bounce.animations).toEqual([]);
 
     const slide = compileViroSpecsChildren(
@@ -278,7 +280,7 @@ describe("Viro Specs runtime compiler diagnostics", () => {
         animation: { name: "specsSlide", run: true },
       })
     );
-    expect(slide.diagnostics).toEqual([]);
+    expect(withoutSpecsExperienceFindings(slide.diagnostics)).toEqual([]);
     expect(slide.manifest.animations[0].plan.tracks).toEqual([
       { target: "transform.position.x", from: "current", to: 1.5 },
     ]);

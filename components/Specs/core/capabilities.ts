@@ -1,4 +1,5 @@
 import type { ViroSpecsDiagnosticCode } from "./diagnosticCodes";
+import type { ViroSpecsComponentType } from "./manifest";
 
 /**
  * Evidence labels, weakest to strongest. A label is only claimed when its
@@ -99,6 +100,7 @@ export const VIRO_SPECS_UNSUPPORTED_PROPS: Readonly<
 /** What a supported Viro component compiles to. */
 export type ViroSpecsComponentTarget =
   | { readonly category: "node"; readonly kind: "group" | "text" | "image" | "model" }
+  | { readonly category: "premium"; readonly component: ViroSpecsComponentType }
   | { readonly category: "polyline" }
   | {
       readonly category: "light";
@@ -116,6 +118,12 @@ export const VIRO_SPECS_COMPONENTS: Readonly<Record<string, ViroSpecsComponentTa
   ViroDirectionalLight: { category: "light", type: "directional" },
   ViroOmniLight: { category: "light", type: "omni" },
   ViroSpotLight: { category: "light", type: "spot" },
+  SpatialPanel: { category: "premium", component: "spatial-panel" },
+  PanelText: { category: "premium", component: "panel-text" },
+  PanelButton: { category: "premium", component: "panel-button" },
+  PanelImage: { category: "premium", component: "panel-image" },
+  SpatialScrollView: { category: "premium", component: "scroll-view" },
+  ModelViewer: { category: "premium", component: "model-viewer" },
 };
 
 const COMMON_PROPS = [
@@ -133,6 +141,21 @@ const COMMON_PROPS = [
   "onClick",
   "onClickState",
   "onDrag",
+  "accessibilityLabel",
+];
+
+/** Props every premium component accepts. `label` is the accessible name. */
+const PREMIUM_PROPS = [
+  "viroTag",
+  "key",
+  "ref",
+  "children",
+  "position",
+  "rotation",
+  "scale",
+  "visible",
+  "opacity",
+  "label",
 ];
 
 const LIGHT_PROPS = ["viroTag", "key", "ref", "color", "intensity"];
@@ -160,4 +183,10 @@ export const VIRO_SPECS_HANDLED_PROPS: Readonly<Record<string, readonly string[]
   ViroDirectionalLight: [...LIGHT_PROPS, "direction"],
   ViroOmniLight: [...LIGHT_PROPS, "position"],
   ViroSpotLight: [...LIGHT_PROPS, "position", "direction", "innerAngle", "outerAngle"],
+  SpatialPanel: [...PREMIUM_PROPS, "title", "width", "height"],
+  PanelText: [...PREMIUM_PROPS, "text", "role", "tone", "maxLines", "width", "height", "animation"],
+  PanelButton: [...PREMIUM_PROPS, "state", "errorMessage", "width", "height", "onPress", "onHover"],
+  PanelImage: [...PREMIUM_PROPS, "source", "width", "height"],
+  SpatialScrollView: [...PREMIUM_PROPS, "width", "height", "itemHeight", "initialIndex"],
+  ModelViewer: [...PREMIUM_PROPS, "source", "type", "autoRotate", "resettable", "onClick", "onHover", "onDrag", "animation"],
 };

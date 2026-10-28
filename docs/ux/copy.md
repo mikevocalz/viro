@@ -102,3 +102,40 @@ Unverified: the exact name of the settings location on Snap OS. "Spectacles sett
 ## Accessibility labels
 
 Every interactable carries a `label` (pack section 2). Labels name the action or object, not the control type: "Reset model", not "Button". Selected and disabled states are announced by the host appending ", selected" or ", unavailable"; authors do not write them into the label.
+
+## Gallery content and host strings (added by WS4)
+
+Strings the handoff docs name without a key, plus host strings the WS4 code needs. Same voice rules as above. `components/Specs/core/copy.ts` holds every key on this page and `__test__/ViroSpecsExperience.test.tsx` checks the two match.
+
+| Key | Copy | Source |
+| --- | --- | --- |
+| `gallery.hello.body` | This scene runs the same Viro JSX as the phone. | `handoff/hello.md` layout |
+| `gallery.hello.model` | Shiba model | `handoff/hello.md` labels |
+| `gallery.interaction.body` | Pinch a button. Drag the model. | `handoff/interaction.md` layout |
+| `gallery.interaction.optionA` | Option A | `handoff/interaction.md` labels |
+| `gallery.interaction.optionB` | Option B | `handoff/interaction.md` labels |
+| `gallery.interaction.optionC` | Option C | `handoff/interaction.md` labels |
+| `gallery.interaction.retry` | Retry | `handoff/interaction.md` labels |
+| `gallery.interaction.retryFailed` | That didn't go through. Pinch Retry to try again. | PanelButton error state, `spatial-tokens.md` |
+| `gallery.navigation.card` | Card {n} | `handoff/navigation.md` labels |
+| `gallery.navigation.cardBody` | Change the setting below, then go back. The list keeps your place. | `handoff/navigation.md` detail body |
+| `gallery.navigation.showLabels` | Show labels | `handoff/navigation.md` labels |
+| `surface.floor` | Floor | `{surface}` values above |
+| `surface.table` | Table | same |
+| `surface.wall` | Wall | same |
+| `surface.seat` | Seat | same |
+| `surface.ceiling` | Ceiling | same |
+| `placement.placeHere` | Place here | `handoff/placement.md` gaze-only |
+| `placement.placeAgain` | Place again | `handoff/placement.md` cancelled |
+| `placement.cancelling` | Cancelling | `handoff/placement.md` reduced motion |
+| `button.loading` | Working | `spatial-tokens.md` PanelButton loading |
+| `gaze.moveLeft` | Move left | `handoff/interaction.md` gaze-only |
+| `gaze.moveRight` | Move right | same |
+| `gaze.moveCloser` | Move closer | same |
+| `gaze.moveAway` | Move away | same |
+| `gaze.scrollUp` | Scroll up | `handoff/navigation.md` gaze-only |
+| `gaze.scrollDown` | Scroll down | same |
+| `error.assetMany.title` | {n} models didn't load | `handoff/error.md` several node errors |
+| `a11y.selected` | , selected | Accessibility labels above |
+| `a11y.unavailable` | , unavailable | same |
+| `a11y.placeholder` | {label}, didn't load | `handoff/error.md` placeholder label |

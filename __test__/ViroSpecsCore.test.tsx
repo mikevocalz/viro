@@ -1,4 +1,5 @@
 import * as React from "react";
+import { withoutSpecsExperienceFindings } from "../components/Specs/core/experience";
 
 jest.mock("../index", () => require("./fixtures/specs/compiler/viro"));
 
@@ -131,7 +132,7 @@ describe("asset IDs", () => {
     expect(bytes(windows)).toBe(bytes(fromRoot));
     expect((fromRoot.manifest as ViroSpecsManifestV2).nodes[0]).toMatchObject({ source: "src/assets/robot.glb" });
     // Diagnostics stay relative to the working directory, for clickable output.
-    expect(fromElsewhere.diagnostics).toEqual([]);
+    expect(withoutSpecsExperienceFindings(fromElsewhere.diagnostics)).toEqual([]);
   });
 });
 
@@ -227,7 +228,7 @@ describe("static analysis edge cases", () => {
 
   it("reports VS2012 for a runtime animation name and keeps the element", () => {
     const result = compile('export const S = ({ n }) => <ViroSpecsScene><ViroText viroTag="t" text="x" animation={{ name: n, run: true }} /></ViroSpecsScene>;');
-    expect(result.diagnostics.map((d) => d.code)).toEqual(["VS2012"]);
+    expect(withoutSpecsExperienceFindings(result.diagnostics).map((d) => d.code)).toEqual(["VS2012"]);
     expect((result.manifest as ViroSpecsManifestV2).nodes.map((node) => node.id)).toEqual(["t"]);
   });
 
@@ -244,7 +245,7 @@ describe("static analysis edge cases", () => {
 
   it("treats a prop set to undefined as not written, like React", () => {
     const result = compile('export const S = () => <ViroSpecsScene><ViroText viroTag="t" text="x" extrusionDepth={undefined} {...{ visible: undefined }} /></ViroSpecsScene>;');
-    expect(result.diagnostics).toEqual([]);
+    expect(withoutSpecsExperienceFindings(result.diagnostics)).toEqual([]);
     expect((result.manifest as ViroSpecsManifestV2).nodes).toEqual([{ id: "t", kind: "text", text: "x" }]);
   });
 
@@ -323,7 +324,7 @@ describe("static analysis edge cases", () => {
       '<ViroText viroTag="t" text="x" animation={{ name: "a", run: true, onStart: props.go, onFinish: props.done }} />',
       "ViroAnimations.registerAnimations({ a: { properties: { scaleX: 2 }, duration: 10 } });"
     ));
-    expect(result.diagnostics).toEqual([]);
+    expect(withoutSpecsExperienceFindings(result.diagnostics)).toEqual([]);
     expect((result.manifest as ViroSpecsManifestV2).animations.map((animation) => animation.name)).toEqual(["a"]);
   });
 
@@ -340,7 +341,7 @@ describe("static analysis edge cases", () => {
   });
 
   it("resolves dotted module names to code modules", () => {
-    expect(codesOf(scene('<ViroText viroTag="t" text={X} />', 'import { X } from "./utils.helpers";'), { "/p/utils.helpers.ts": 'export const X = "ok";' })).toEqual([]);
+    expect(withoutSpecsExperienceFindings(compile(scene('<ViroText viroTag="t" text={X} />', 'import { X } from "./utils.helpers";'), { "/p/utils.helpers.ts": 'export const X = "ok";' }).diagnostics)).toEqual([]);
   });
 
   it("reports an expression inside .map() once, not once per item", () => {

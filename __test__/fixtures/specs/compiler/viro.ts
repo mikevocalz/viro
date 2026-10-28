@@ -13,3 +13,11 @@ export { ViroPolyline } from "../../../../components/ViroPolyline";
 export { ViroSpotLight } from "../../../../components/ViroSpotLight";
 export { ViroText } from "../../../../components/ViroText";
 export { ViroSpecsScene } from "../../../../components/Specs/ViroSpecsScene";
+export {
+  ModelViewer,
+  PanelButton,
+  PanelImage,
+  PanelText,
+  SpatialPanel,
+  SpatialScrollView,
+} from "../../../../components/Specs/premium";

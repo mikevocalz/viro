@@ -1,1 +1,2 @@
+scene.tsx:12:7 warning VS3017 [bouncy]: Node "bouncy" is 0.00 m from the wearer; the band is 0.6-3 m.
 scene.tsx:12:43 error VS3006 [bouncy]: Animation goldenBounce uses easing Bounce, which Specs does not play.

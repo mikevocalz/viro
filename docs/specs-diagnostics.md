@@ -487,6 +487,76 @@ Emitted by the runtime compiler and `viro-specs-compile --entry`.
 
 Fix: Specs polylines and lights are leaves. Move the children into a ViroNode.
 
+### VS3016 · warning
+
+Interactable has no label.
+
+Emitted by the runtime compiler, `viro-specs-compile --entry` and `viro-specs-compile --manifest` (`checkSpecsExperience`).
+
+Fix: Set accessibilityLabel on every Viro element with onClick, onHover or onDrag (label on premium components). Name the action or object ("Reset model"), not the control type. --strict fails without one.
+
+The compilers read `accessibilityLabel` on Viro elements and `label` on premium components, and write it to the node's `label`. The host appends ", selected" and ", unavailable" itself. See `docs/specs-experience.md#labels`.
+
+### VS3017 · warning
+
+Content is outside the 0.6-3.0 m comfort band.
+
+Emitted by the runtime compiler, `viro-specs-compile --entry` and `viro-specs-compile --manifest` (`checkSpecsExperience`).
+
+Fix: Move the node so its distance from the wearer (the scene origin) is between 0.6 and 3.0 m.
+
+The wearer is assumed at the scene origin, where the Lens camera starts. Checked for rendered nodes (text, image, model, panel) by their composed world position; groups and polylines are not checked.
+
+### VS3018 · warning
+
+Text is smaller than 1.2 degrees.
+
+Emitted by the runtime compiler, `viro-specs-compile --entry` and `viro-specs-compile --manifest` (`checkSpecsExperience`).
+
+Fix: Raise fontSize or move the text closer, or use PanelText, which sizes text from the type tokens at its distance.
+
+Measured on the em square: `fontSize` points become meters through the Lens Text scale (43.886 size units per centimeter, so 48 points is 1.09 cm), times the node's world scale, then as an angle at its distance. A ViroText with no `fontSize` is checked at the host default of 48. PanelText computes its size from the type tokens and never triggers this.
+
+### VS3019 · warning
+
+Animation is longer than 500 ms.
+
+Emitted by the runtime compiler, `viro-specs-compile --entry` and `viro-specs-compile --manifest` (`checkSpecsExperience`).
+
+Fix: Keep transitions at or under 500 ms (motion.maxMs). Split a long movement into a state change instead.
+
+Continuous indicators the host draws (the loading ring, the look-away countdown) are not manifest animations and are not checked.
+
+### VS3020 · warning
+
+Animation easing is not EaseInEaseOut.
+
+Emitted by the runtime compiler, `viro-specs-compile --entry` and `viro-specs-compile --manifest` (`checkSpecsExperience`).
+
+Fix: Use EaseInEaseOut for transitions. Linear is only for host-drawn continuous indicators.
+
+Reported for linear, ease-in and ease-out. Animations that Specs would have to substitute are rejected earlier with `VS3006`.
+
+### VS3021 · warning
+
+Large surface moves across the view.
+
+Emitted by the runtime compiler, `viro-specs-compile --entry` and `viro-specs-compile --manifest` (`checkSpecsExperience`).
+
+Fix: Do not animate the position of a surface 10 degrees or wider. Fade and scale it in place, and swap content inside the panel instead of sliding the panel.
+
+A surface is a node with extents (or a node whose descendants have extents) whose larger side subtends 10 degrees or more at its distance. 10 degrees is half the 20 degree panel in the handoff docs; it is a starting value, not a measured threshold. Animations that only scale or fade do not trigger it.
+
+### VS3022 · error
+
+Premium component prop is invalid.
+
+Emitted by the runtime compiler and `viro-specs-compile --entry`.
+
+Fix: See docs/specs-experience.md for each component's props and their allowed values.
+
+Covers PanelButton without `label`, SpatialScrollView without `width`, `height` or `itemHeight`, and values outside a prop's allowed set. The element is not compiled when a required prop is missing.
+
 ## Capability errors (VS4xxx)
 
 ### VS4001 · error
@@ -665,3 +735,43 @@ Backend operation failed.
 Emitted by ViroSpecsSceneController (`@viro-external/specs`).
 
 Fix: A Lens call threw while updating a committed node. The node keeps its previous state; the message names the operation.
+
+### VS5015 · info
+
+Capability degraded; dependent UI hidden.
+
+Emitted by the experience layer in `@viro-external/specs` (`ViroSpecsExperienceController`).
+
+Fix: No action needed for the build. The message names the capability, its state and the UI the experience layer hid; the wearer sees a one-line notice.
+
+Reported by the experience layer (`ViroSpecsExperienceController`) each time a capability changes to a degraded state. The wearer sees the one-line notice from `docs/ux/copy.md`; the message names the capability, state and the hidden UI.
+
+### VS5016 · warning
+
+Text raised to the 1.2 degree minimum.
+
+Emitted by the experience layer in `@viro-external/specs` (`ViroSpecsExperienceController`).
+
+Fix: The text rendered smaller than 1.2 degrees at its distance, so the host raised its size. Size it from the type tokens (PanelText) to avoid the clamp.
+
+The host measures the text at its placed distance, which can differ from the compile-time distance after placement or drag.
+
+### VS5017 · warning
+
+Position clamped into the 0.6-3.0 m comfort band.
+
+Emitted by the experience layer in `@viro-external/specs` (`ViroSpecsExperienceController`).
+
+Fix: A placement or drag would have put the node nearer than 0.6 m or farther than 3.0 m; the host stopped it at the band edge.
+
+Placement and drag stop at the band edge; they do not bounce.
+
+### VS5018 · info
+
+Gaze-only input active.
+
+Emitted by the experience layer in `@viro-external/specs` (`ViroSpecsExperienceController`).
+
+Fix: Hand tracking is not available, so selection works by gaze dwell and drag is replaced by step buttons. It switches back when hand tracking returns.
+
+Gaze dwell is 1000 ms (provisional, see `docs/specs-experience.md#gaze-dwell`).

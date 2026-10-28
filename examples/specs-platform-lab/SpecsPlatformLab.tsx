@@ -1,15 +1,19 @@
 import * as React from "react";
 import {
-  Viro3DObject,
+  ModelViewer,
+  PanelButton,
+  PanelText,
+  SpatialPanel,
   ViroAnimations,
-  ViroNode,
   ViroPolyline,
   ViroSpecsScene,
-  ViroText,
   type ViroSpecsSceneTransport,
   type ViroSpecsSourceResolver,
 } from "../../index";
+import { VIRO_SPECS_COPY } from "../../components/Specs/core/copy";
 
+// Runs once when the scene is ready (critique: a looping pulse on the only
+// text in view keeps pulling the eye). 500 ms EaseInEaseOut is the motion cap.
 ViroAnimations.registerAnimations({
   platformLabPulse: {
     properties: {
@@ -28,46 +32,54 @@ export type SpecsPlatformLabProps = {
   sourceResolver: ViroSpecsSourceResolver;
   onSelect?: () => void;
   onDrag?: (position: [number, number, number]) => void;
+  onNext?: () => void;
 };
 
 /**
- * One scene source for ViroCore and SPECS.
+ * Platform Lab gallery, scene 1: Hello (`docs/ux/handoff/hello.md`).
  *
- * ViroCore targets render the children normally. SPECS compiles the same JSX
- * into the portable scene consumed by the Lens Studio backend.
+ * One scene source for ViroCore and SPECS. ViroCore targets render the
+ * children normally; SPECS compiles the same JSX into the portable scene the
+ * Lens host renders. The other gallery scenes are `PlacementScene`,
+ * `InteractionScene` and `NavigationScene` next to this file.
  */
 export function SpecsPlatformLab({
   transport,
   sourceResolver,
   onSelect,
   onDrag,
+  onNext,
 }: SpecsPlatformLabProps) {
   return (
     <ViroSpecsScene transport={transport} sourceResolver={sourceResolver}>
-      <ViroNode viroTag="platform-lab-root" position={[0, 0, -1.5]}>
-        <ViroText
+      <SpatialPanel viroTag="platform-lab-root" position={[0, 0, -1.5]} width={0.53} height={0.42}>
+        <PanelText
           viroTag="platform-lab-title"
-          text="Viro Cross-Platform Lab"
-          position={[0, 0.25, 0]}
-          animation={{
-            name: "platformLabPulse",
-            run: true,
-            loop: true,
-          }}
+          role="title"
+          text={VIRO_SPECS_COPY["gallery.hello.title"]}
+          position={[0, 0.15, 0.005]}
+          animation={{ name: "platformLabPulse", run: true }}
         />
-
-        <Viro3DObject
+        <PanelText
+          viroTag="hello-body"
+          role="body"
+          tone="muted"
+          text={VIRO_SPECS_COPY["gallery.hello.body"]}
+          position={[0, 0.07, 0.005]}
+          width={0.46}
+          height={0.1}
+          maxLines={2}
+        />
+        <ModelViewer
           viroTag="platform-lab-model"
+          label={VIRO_SPECS_COPY["gallery.hello.model"]}
           source={require("../visionos-sweep/assets/shiba.glb")}
           type="GLB"
-          position={[-0.2, -0.05, 0]}
+          position={[-0.2, -0.05, 0.005]}
           scale={[0.18, 0.18, 0.18]}
           onClick={() => onSelect?.()}
-          onDrag={(position) =>
-            onDrag?.(position as [number, number, number])
-          }
+          onDrag={(position) => onDrag?.(position)}
         />
-
         <ViroPolyline
           viroTag="platform-lab-route"
           points={[
@@ -77,7 +89,13 @@ export function SpecsPlatformLab({
           ]}
           thickness={0.008}
         />
-      </ViroNode>
+        <PanelButton
+          viroTag="hello-next"
+          label={VIRO_SPECS_COPY["nav.next"]}
+          position={[0.15, -0.16, 0.005]}
+          onPress={() => onNext?.()}
+        />
+      </SpatialPanel>
     </ViroSpecsScene>
   );
 }

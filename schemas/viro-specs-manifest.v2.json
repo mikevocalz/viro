@@ -79,6 +79,9 @@
         "$ref": "#/$defs/animation"
       },
       "default": []
+    },
+    "theme": {
+      "$ref": "#/$defs/theme"
     }
   },
   "$defs": {
@@ -217,6 +220,11 @@
             },
             "kind": {
               "const": "group"
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Accessible name. Required on interactable nodes (VS3016)."
             }
           }
         },
@@ -274,6 +282,14 @@
             "maxLines": {
               "type": "integer",
               "minimum": 1
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Accessible name. Required on interactable nodes (VS3016)."
+            },
+            "component": {
+              "$ref": "#/$defs/componentPanelText"
             }
           }
         },
@@ -325,6 +341,14 @@
             },
             "extents": {
               "$ref": "#/$defs/extents"
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Accessible name. Required on interactable nodes (VS3016)."
+            },
+            "component": {
+              "$ref": "#/$defs/componentPanelImage"
             }
           }
         },
@@ -381,6 +405,14 @@
                 "obj",
                 "fbx"
               ]
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Accessible name. Required on interactable nodes (VS3016)."
+            },
+            "component": {
+              "$ref": "#/$defs/componentModelViewer"
             }
           }
         },
@@ -428,6 +460,24 @@
             },
             "extents": {
               "$ref": "#/$defs/extents"
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Accessible name. Required on interactable nodes (VS3016)."
+            },
+            "component": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/componentSpatialPanel"
+                },
+                {
+                  "$ref": "#/$defs/componentPanelButton"
+                },
+                {
+                  "$ref": "#/$defs/componentScrollView"
+                }
+              ]
             }
           }
         },
@@ -485,6 +535,11 @@
             },
             "muted": {
               "type": "boolean"
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Accessible name. Required on interactable nodes (VS3016)."
             }
           }
         },
@@ -541,6 +596,11 @@
               "type": "number",
               "minimum": 0,
               "maximum": 1
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Accessible name. Required on interactable nodes (VS3016)."
             }
           }
         }
@@ -945,6 +1005,590 @@
             "preview-validated",
             "hardware-validated"
           ]
+        }
+      }
+    },
+    "theme": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Spatial tokens and wearer preferences for premium components. Written by the compilers when a premium component compiled. Token names and defaults: components/Specs/core/tokens.ts and docs/ux/spatial-tokens.md.",
+      "required": [
+        "version",
+        "tokens",
+        "highContrast",
+        "preferences"
+      ],
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "tokens": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "distance",
+            "type",
+            "color",
+            "tint",
+            "space",
+            "shape",
+            "depth",
+            "motion",
+            "opacity",
+            "input"
+          ],
+          "properties": {
+            "distance": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "minMeters",
+                "defaultMeters",
+                "maxMeters"
+              ],
+              "properties": {
+                "minMeters": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "defaultMeters": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "maxMeters": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              }
+            },
+            "type": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "minAngleDeg",
+                "titleDeg",
+                "bodyDeg",
+                "labelDeg",
+                "lineHeight"
+              ],
+              "properties": {
+                "minAngleDeg": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "titleDeg": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "bodyDeg": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "labelDeg": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "lineHeight": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              }
+            },
+            "color": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "surface",
+                "surfaceRaised",
+                "surfacePressed",
+                "text",
+                "textMuted",
+                "textDisabled",
+                "border",
+                "borderStrong",
+                "focus",
+                "onFocus",
+                "selectedFill",
+                "error",
+                "errorSurface",
+                "degraded",
+                "degradedSurface",
+                "success",
+                "placeholder"
+              ],
+              "properties": {
+                "surface": {
+                  "$ref": "#/$defs/color"
+                },
+                "surfaceRaised": {
+                  "$ref": "#/$defs/color"
+                },
+                "surfacePressed": {
+                  "$ref": "#/$defs/color"
+                },
+                "text": {
+                  "$ref": "#/$defs/color"
+                },
+                "textMuted": {
+                  "$ref": "#/$defs/color"
+                },
+                "textDisabled": {
+                  "$ref": "#/$defs/color"
+                },
+                "border": {
+                  "$ref": "#/$defs/color"
+                },
+                "borderStrong": {
+                  "$ref": "#/$defs/color"
+                },
+                "focus": {
+                  "$ref": "#/$defs/color"
+                },
+                "onFocus": {
+                  "$ref": "#/$defs/color"
+                },
+                "selectedFill": {
+                  "$ref": "#/$defs/color"
+                },
+                "error": {
+                  "$ref": "#/$defs/color"
+                },
+                "errorSurface": {
+                  "$ref": "#/$defs/color"
+                },
+                "degraded": {
+                  "$ref": "#/$defs/color"
+                },
+                "degradedSurface": {
+                  "$ref": "#/$defs/color"
+                },
+                "success": {
+                  "$ref": "#/$defs/color"
+                },
+                "placeholder": {
+                  "$ref": "#/$defs/color"
+                }
+              }
+            },
+            "tint": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "floor",
+                "table",
+                "wall",
+                "seat",
+                "ceiling",
+                "opacity"
+              ],
+              "properties": {
+                "floor": {
+                  "$ref": "#/$defs/color"
+                },
+                "table": {
+                  "$ref": "#/$defs/color"
+                },
+                "wall": {
+                  "$ref": "#/$defs/color"
+                },
+                "seat": {
+                  "$ref": "#/$defs/color"
+                },
+                "ceiling": {
+                  "$ref": "#/$defs/color"
+                },
+                "opacity": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              }
+            },
+            "space": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "xsDeg",
+                "smDeg",
+                "mdDeg",
+                "lgDeg",
+                "xlDeg"
+              ],
+              "properties": {
+                "xsDeg": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "smDeg": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "mdDeg": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "lgDeg": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "xlDeg": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              }
+            },
+            "shape": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "borderWidthDeg",
+                "borderWidthFocusDeg",
+                "radiusPanelDeg",
+                "radiusButtonDeg",
+                "radiusCardDeg"
+              ],
+              "properties": {
+                "borderWidthDeg": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "borderWidthFocusDeg": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "radiusPanelDeg": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "radiusButtonDeg": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "radiusCardDeg": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              }
+            },
+            "depth": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "baseMeters",
+                "raisedMeters",
+                "hoverMeters",
+                "overlayMeters"
+              ],
+              "properties": {
+                "baseMeters": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "raisedMeters": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "hoverMeters": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "overlayMeters": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              }
+            },
+            "motion": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "fastMs",
+                "baseMs",
+                "slowMs",
+                "maxMs",
+                "progressLoopMs",
+                "appearScaleFrom",
+                "hoverScale"
+              ],
+              "properties": {
+                "fastMs": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "baseMs": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "slowMs": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "maxMs": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "progressLoopMs": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "appearScaleFrom": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "hoverScale": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              }
+            },
+            "opacity": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "surface",
+                "placeholder",
+                "disabledBorder"
+              ],
+              "properties": {
+                "surface": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "placeholder": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "disabledBorder": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              }
+            },
+            "input": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "gazeDwellMs",
+                "lookAwayCancelMs",
+                "gazeStepMeters",
+                "reticleDeg"
+              ],
+              "properties": {
+                "gazeDwellMs": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "lookAwayCancelMs": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "gazeStepMeters": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "reticleDeg": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              }
+            }
+          }
+        },
+        "highContrast": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "color",
+            "surfaceOpacity",
+            "borderScale",
+            "typeBoostDeg"
+          ],
+          "properties": {
+            "color": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "surface",
+                "text",
+                "textMuted",
+                "border",
+                "focus"
+              ],
+              "properties": {
+                "surface": {
+                  "$ref": "#/$defs/color"
+                },
+                "text": {
+                  "$ref": "#/$defs/color"
+                },
+                "textMuted": {
+                  "$ref": "#/$defs/color"
+                },
+                "border": {
+                  "$ref": "#/$defs/color"
+                },
+                "focus": {
+                  "$ref": "#/$defs/color"
+                }
+              }
+            },
+            "surfaceOpacity": {
+              "type": "number",
+              "minimum": 0
+            },
+            "borderScale": {
+              "type": "number",
+              "minimum": 0
+            },
+            "typeBoostDeg": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        },
+        "preferences": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "highContrast",
+            "reducedMotion"
+          ],
+          "properties": {
+            "highContrast": {
+              "type": "boolean"
+            },
+            "reducedMotion": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "componentSpatialPanel": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "SpatialPanel on a panel node.",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "const": "spatial-panel"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "componentPanelText": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "PanelText on a text node.",
+      "required": [
+        "type",
+        "role",
+        "tone"
+      ],
+      "properties": {
+        "type": {
+          "const": "panel-text"
+        },
+        "role": {
+          "enum": [
+            "title",
+            "body",
+            "label"
+          ]
+        },
+        "tone": {
+          "enum": [
+            "default",
+            "muted"
+          ]
+        }
+      }
+    },
+    "componentPanelButton": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "PanelButton on a panel node. hover and pressed are host-driven.",
+      "required": [
+        "type",
+        "state"
+      ],
+      "properties": {
+        "type": {
+          "const": "panel-button"
+        },
+        "state": {
+          "enum": [
+            "idle",
+            "selected",
+            "disabled",
+            "loading",
+            "error"
+          ]
+        },
+        "errorMessage": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "componentPanelImage": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "PanelImage on an image node.",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "const": "panel-image"
+        }
+      }
+    },
+    "componentScrollView": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "SpatialScrollView on a panel node.",
+      "required": [
+        "type",
+        "itemHeightMeters",
+        "initialIndex"
+      ],
+      "properties": {
+        "type": {
+          "const": "scroll-view"
+        },
+        "itemHeightMeters": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "initialIndex": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "componentModelViewer": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Model viewer on a model node.",
+      "required": [
+        "type",
+        "autoRotate",
+        "resettable"
+      ],
+      "properties": {
+        "type": {
+          "const": "model-viewer"
+        },
+        "autoRotate": {
+          "type": "boolean"
+        },
+        "resettable": {
+          "type": "boolean"
         }
       }
     }
