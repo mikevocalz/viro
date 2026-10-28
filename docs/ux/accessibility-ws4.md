@@ -45,7 +45,7 @@ Issues found: 6. Critical: 1 (open). Major: 3 (2 fixed, 1 open). Minor: 2 (open)
 | # | Issue | WCAG | Severity | Recommendation |
 | --- | --- | --- | --- | --- |
 | 1 | "{n} models didn't load" names images as models | 1.1.1, 3.3.1 | Minor | Image-specific error copy (see `critique-ws4.md`) |
-| 2 | Pure black high-contrast surface may render transparent on an additive display | 1.4.6 (adopted) | Minor | Verify on device; the doubled white border is the fallback |
+| 2 | Pure black high-contrast surface rendered as no surface on the additive display | 1.4.6 (adopted) | Minor | Fixed: the surface is #42525f (white text 8.07:1); `spatial-tokens.md` has the reasoning |
 
 ### Operable
 
@@ -89,7 +89,8 @@ background.
 | Notice builder line | #a9b6bf | #1e2c3d | 6.83:1 | 4.5:1 | yes |
 | Loading title (accent) | #f2b544 | #1b2630 | 8.39:1 | 4.5:1 | yes |
 | Disabled border at 50% | #43525e | #1b2630 | 1.91:1 | exempt (inactive) | yes |
-| High-contrast focus | #ffd25e | #000000 | 14.63:1 | 3:1 | yes |
+| High-contrast text | #ffffff | #42525f | 8.07:1 | 7:1 | yes |
+| High-contrast focus | #ffd25e | #42525f | 5.62:1 | 3:1 | yes |
 
 The idle border against the raised fill sits exactly at 3.00:1. It passes,
 but any darkening of `color.border` fails it; the token sheet should say so.
@@ -117,5 +118,5 @@ but any darkening of `color.border` fails it; the token sheet should say so.
 ## Priority fixes
 
 1. **On-device contrast and legibility**, bright and dark room, including the
-   high-contrast black surface on the additive display.
+   high-contrast #42525f surface on the additive display.
 2. **Image-specific error copy.**

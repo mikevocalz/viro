@@ -396,7 +396,7 @@ describe("tokens", () => {
 
   it("applies high contrast and reduced motion", () => {
     const hc = resolveSpecsTokens(VIRO_SPECS_DEFAULT_THEME, { highContrast: true, reducedMotion: false });
-    expect(hc.color.surface).toBe("#000000");
+    expect(hc.color.surface).toBe("#42525f");
     expect(hc.color.text).toBe("#ffffff");
     expect(hc.color.textMuted).toBe("#ffffff");
     expect(hc.color.focus).toBe("#ffd25e");
@@ -410,6 +410,33 @@ describe("tokens", () => {
     expect(rm.motion.appearScaleFrom).toBe(1);
     expect(rm.color).toEqual(VIRO_SPECS_SPATIAL_TOKENS.color);
     expect(resolveSpecsTokens(VIRO_SPECS_DEFAULT_THEME)).toEqual(VIRO_SPECS_SPATIAL_TOKENS);
+  });
+
+  // SPECS is an additive display: a pixel adds light to the room and black
+  // adds none, so a black panel shows as no panel. High contrast must keep
+  // every surface it can draw visible and still meet 7:1 (1.4.6) for text.
+  it("never resolves a high-contrast surface to black or near-black", () => {
+    const linear = (v: number) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+    const luminance = (hex: string) => {
+      const [r, g, b] = [1, 3, 5].map((i) => linear(parseInt(hex.slice(i, i + 2), 16) / 255));
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+    const ratio = (a: string, b: string) => {
+      const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+      return (hi + 0.05) / (lo + 0.05);
+    };
+    // Near-black: dimmer than the default panel surface (#1b2630, relative
+    // luminance 0.018), the dimmest surface the Preview captures show.
+    const NEAR_BLACK = 0.015;
+    const hc = resolveSpecsTokens(VIRO_SPECS_DEFAULT_THEME, { highContrast: true, reducedMotion: false });
+    const surfaces = Object.entries(hc.color).filter(([name]) => /surface|fill/i.test(name));
+    expect(surfaces.map(([name]) => name).sort()).toEqual(["degradedSurface", "errorSurface", "selectedFill", "surface", "surfacePressed", "surfaceRaised"]);
+    expect(surfaces.filter(([, hex]) => luminance(hex) < NEAR_BLACK)).toEqual([]);
+    expect(luminance(hc.color.surface)).toBeGreaterThan(luminance(VIRO_SPECS_SPATIAL_TOKENS.color.surface));
+    expect(ratio(hc.color.text, hc.color.surface)).toBeGreaterThanOrEqual(7);
+    expect(ratio(hc.color.textMuted, hc.color.surface)).toBeGreaterThanOrEqual(7);
+    expect(ratio(hc.color.focus, hc.color.surface)).toBeGreaterThanOrEqual(3);
+    expect(ratio(hc.color.border, hc.color.surface)).toBeGreaterThanOrEqual(3);
   });
 
   it("keeps every duration at or under the motion cap, except the exempt progress loop", () => {

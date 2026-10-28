@@ -101,14 +101,14 @@ Selected by the app or by a system setting when one is exposed (unverified wheth
 
 | Token | Default | High contrast |
 | --- | --- | --- |
-| `color.surface` | #1B2630 at 92% | #000000 at 100% |
-| `color.text` | #EEF2F0 | #FFFFFF (21:1) |
+| `color.surface` | #1B2630 at 92% | #42525F at 100% |
+| `color.text` | #EEF2F0 | #FFFFFF (8.07:1) |
 | `color.textMuted` | #A9B6BF | #FFFFFF. Muted styling is dropped |
 | `color.border` | #6B7D8C | #FFFFFF, width doubled |
-| `color.focus` | #F2B544 | #FFD25E (14.63:1), ring width doubled |
+| `color.focus` | #F2B544 | #FFD25E (5.62:1), ring width doubled |
 | `type.*` | as above | +0.2 deg each |
 
-On additive displays pure black may render as transparent; if so, high contrast relies on the white outline. Verify on device.
+SPECS is an additive display: each pixel adds light to the room, and black adds none, so a black surface shows as no surface. The high-contrast surface is a mid slate, #42525F (relative luminance 0.080, about four times the light of the default surface), so the panel stays visible and white text on it is still 8.07:1, above the 7:1 that 1.4.6 asks for. The other surface tokens (`surfaceRaised`, `surfacePressed`, `errorSurface`, `degradedSurface`, `selectedFill`) keep their default values in high contrast; a button's raised fill is then darker than the panel, and its doubled white border marks its edge. A test in each repo fails if any surface in the resolved high-contrast set drops below relative luminance 0.015 (dimmer than the default panel), if the high-contrast surface is no brighter than the default one, or if text falls under 7:1 or focus and border under 3:1 against it. The contrast ratios are against the panel color; the room behind adds light on device.
 
 ## Spacing
 

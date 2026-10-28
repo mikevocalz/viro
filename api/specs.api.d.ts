@@ -2693,10 +2693,16 @@ export declare const VIRO_SPECS_SPATIAL_TOKENS: {
         readonly reticleDeg: 2;
     };
 };
-/** Default high-contrast replacements from `docs/ux/spatial-tokens.md`. */
+/**
+ * Default high-contrast replacements from `docs/ux/spatial-tokens.md`.
+ *
+ * SPECS is an additive display, where black adds no light and shows as the
+ * room, so the surface is a mid slate (#42525f) rather than black: visible,
+ * and white text on it is 8.07:1.
+ */
 export declare const VIRO_SPECS_HIGH_CONTRAST_TOKENS: {
     readonly color: {
-        readonly surface: "#000000";
+        readonly surface: "#42525f";
         readonly text: "#ffffff";
         readonly textMuted: "#ffffff";
         readonly border: "#ffffff";

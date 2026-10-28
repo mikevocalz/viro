@@ -3,7 +3,7 @@
   "source": {
     "repository": "mikevocalz/viro-external",
     "branch": "feat/specs-release",
-    "commit": "e6cac8db6ff9c77eb6a93466981b17f9f6a1b7d4",
+    "commit": "e1cece1f81f5c53ac5bae34da506f62d4e7db5be",
     "dirty": false
   },
   "files": {
@@ -55,7 +55,7 @@
     "ViroSpecsExperienceTokens.ts": {
       "upstream": "packages/specs/lens/ViroSpecsExperienceTokens.ts",
       "local": "src/vendor/lens-core/ViroSpecsExperienceTokens.ts",
-      "sha256": "e55781bccfeb8e6fc2c370a5d9783dc90e33166cea94d753a2e0721e85144af9"
+      "sha256": "514967f84d99b542010a7e170cbc7e5ae06b3108eac57c000eb21269192fa2af"
     },
     "ViroSpecsExperienceCopy.ts": {
       "upstream": "packages/specs/lens/ViroSpecsExperienceCopy.ts",

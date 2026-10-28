@@ -303,7 +303,7 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       "color": {
         "border": "#ffffff",
         "focus": "#ffd25e",
-        "surface": "#000000",
+        "surface": "#42525f",
         "text": "#ffffff",
         "textMuted": "#ffffff"
       },
