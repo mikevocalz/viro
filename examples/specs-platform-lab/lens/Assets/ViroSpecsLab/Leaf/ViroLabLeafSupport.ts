@@ -26,7 +26,8 @@ export const LAB = {
   sceneHost: "SceneHost",
   generatedHost: "GeneratedHost",
   generatedContent: "ViroGeneratedContent",
-  titleText: "Viro Cross-Platform Lab",
+  // WS4 Hello scene: the title is a PanelText on the SpatialPanel root.
+  titleText: "Hello",
   // SpecsPlatformLab.tsx: root at [0, 0, -1.5] m, polyline points relative to
   // the root, all converted to Lens centimeters.
   rootWorldCm: [0, 0, -150] as const,

@@ -9,6 +9,8 @@
 // args:
 //   modelIds:      string[]  portable model source IDs from the compiled scene
 //   modelGlb:      string    absolute path of the GLB to import for modelIds[0]
+//   imageIds:      string[]  portable image source IDs (the WS4 gallery's PanelImages)
+//   imageFiles:    string[]  absolute paths of the images to import for imageIds, same order
 //   leafIndex:     boolean   attach ViroLabLeafIndex (default true)
 //   save:          boolean   save the project at the end (default true)
 //
@@ -186,6 +188,51 @@ if (hostInputs.includes("sceneHostObject")) {
   setInput(registry, "AssetRegistry", "fonts", [], "[]");
 
   setInput(generatedHost, "GeneratedHost", "sceneHostObject", sceneHostObject, sceneHostObject.name);
+
+  // Images for the WS4 gallery (PanelImage sources), imported once and
+  // registered under their portable source IDs.
+  const imageIds: string[] = opts.imageIds ?? [];
+  const imageFiles: string[] = opts.imageFiles ?? [];
+  const imageTextures: any[] = [];
+  for (let i = 0; i < imageIds.length; i++) {
+    const file = imageFiles[i];
+    if (!file) throw new Error(`imageFiles[${i}] is missing for ${imageIds[i]}.`);
+    const imageName = file.split("/").pop()!.replace(/\.[^.]+$/, "");
+    let texture = am.assets.find((a: any) => /Texture$/.test(String(a.type)) && a.name === imageName && sourcePath(a).startsWith("ViroSpecsLab/"));
+    if (!texture) {
+      const imported = await am.importExternalFileAsync(new Editor.Path(file), new Editor.Path("ViroSpecsLab/Images"), Editor.Model.ResultType.Auto);
+      texture = imported.primary;
+      steps.push(`import ${imageName} -> ${String(texture?.type)}`);
+    }
+    if (!texture || !/Texture$/.test(String(texture.type))) throw new Error(`Importing ${file} did not produce a Texture (got ${String(texture?.type)}).`);
+    imageTextures.push(texture);
+  }
+  setInput(registry, "AssetRegistry", "imageIds", imageIds, JSON.stringify(imageIds));
+  setInput(registry, "AssetRegistry", "imageTextures", imageTextures, imageTextures.map((t) => t.name).join(","));
+  const imageMaterial = material("ViroImageMaterial");
+  setInput(registry, "AssetRegistry", "defaultImageMaterial", imageMaterial, imageMaterial.name);
+
+  // WS4 experience layer around the same scene controller: lifecycle panels,
+  // premium component decorations, gaze dwell and placement. Disabled like
+  // ActionsLab; the experience LEAF scenarios enable it for their run, so the
+  // generated-host scenarios see the scene without decorations.
+  const experienceObject = ensureChild(runtime, "ExperienceHost");
+  // The script asset is named after its file; the component class is ViroSpecsExperienceHost.
+  const experience = ensureScript(experienceObject, "ViroSpecsExperienceLensView");
+  setInput(experience, "ExperienceHost", "sceneHostObject", sceneHostObject, sceneHostObject.name);
+  setInput(experience, "ExperienceHost", "cameraObject", camera, camera.name);
+  const uiKitFolder = packageFolder("ScrollWindow");
+  const unitPlane = findAsset(
+    "SpectaclesUIKit Unit Plane mesh",
+    (a: any) => /Mesh$/.test(String(a.type)) && a.name === "Unit Plane" && sourcePath(a).startsWith(uiKitFolder + "Data/Meshes/")
+  );
+  setInput(experience, "ExperienceHost", "panelMesh", unitPlane, unitPlane.name);
+  const panelMaterial = material("ViroExperiencePanel");
+  setInput(experience, "ExperienceHost", "panelMaterial", panelMaterial, panelMaterial.name);
+  if (experienceObject.enabled) {
+    experienceObject.enabled = false;
+    steps.push("disable ExperienceHost");
+  }
 
   // Typed actions (WS3b): the standalone reference flow on the same scene
   // controller. It presents its own scene on start, so it stays disabled and

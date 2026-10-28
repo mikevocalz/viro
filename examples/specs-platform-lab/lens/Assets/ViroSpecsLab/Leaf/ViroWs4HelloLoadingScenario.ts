@@ -1,0 +1,64 @@
+import { Scenario } from "Leaf.lspkg/Scenarios/scenario/Scenario";
+import type { ScenarioConfig } from "Leaf.lspkg/Scenarios/scenario/ScenarioConfig";
+import { DefaultLeafInteractor } from "Leaf.lspkg/Interactors/interactor/DefaultLeafInteractor";
+import { findSceneObjectByName } from "Leaf.lspkg/Utils/common/Utils";
+import { expect } from "Leaf.lspkg/Utils/common/Expect";
+import { controllerHost, pinch, settle, textOf } from "./ViroLabLeafSupport";
+import {
+  cameraPose,
+  controllerOf,
+  decorationBacking,
+  decorationText,
+  diagnosticsDuring,
+  hold,
+  injectWorldQuery,
+  nodeInteractable,
+  nodeOf,
+  panelAction,
+  panelOpen,
+  panelText,
+  placeInGaze,
+  presentGallery,
+  sleep,
+  startExperience,
+  stopExperience,
+  viewOf,
+  waitFor,
+  withSlowAssets,
+} from "./ViroLabExperienceSupport";
+
+/**
+ * viro_ws4_hello_loading: Hello, loading: with the GLB load slowed to 2.5 s, the loading panel
+ * appears after motion.fast (120 ms) reading "Loading 0 of 1", the scene
+ * shows no interactables while loading, and the panel goes away when the
+ * model arrives.
+ */
+@component
+export class ViroWs4HelloLoadingScenario extends Scenario {
+  async run(config?: ScenarioConfig): Promise<void> {
+    const host = await startExperience();
+    try {
+      await withSlowAssets(2500, async () => {
+        const result = presentGallery("hello");
+        expect(result.status).toBe("committed");
+        expect(await waitFor(() => panelOpen("loading"), 1000)).toBe(true);
+        const view = viewOf(host);
+        print("VIRO_WS4 hello_loading lifecycle=" + controllerHost().lifecycle + " body=" + panelText("loading", "body"));
+        expect(controllerHost().lifecycle).toBe("loading");
+        expect(view.sceneVisible).toBe(false);
+        expect(panelText("loading", "title")).toBe("Loading scene");
+        expect(panelText("loading", "body").startsWith("Loading 0 of 1")).toBe(true);
+        expect(findSceneObjectByName("viro-interactable:hello-next")).toBeFalsy();
+        await hold(config, "hello_loading");
+        expect(await waitFor(() => controllerHost().lifecycle === "ready", 6000)).toBe(true);
+      });
+      await settle(300);
+      expect(panelOpen("loading")).toBe(false);
+      expect(viewOf(host).sceneVisible).toBe(true);
+      expect(findSceneObjectByName("viro:platform-lab-model")?.getChildrenCount() ?? 0).toBeGreaterThan(0);
+      print("VIRO_WS4 hello_loading PASS");
+    } finally {
+      await stopExperience();
+    }
+  }
+}

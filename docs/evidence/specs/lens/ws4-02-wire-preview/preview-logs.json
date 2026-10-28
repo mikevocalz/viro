@@ -1,0 +1,18 @@
+{
+  "byteOffset": 5112895,
+  "errors": [],
+  "errorsCapped": false,
+  "firstActivityAtMs": 219,
+  "logFile": "~/Library/Preferences/Snap/Lens Studio/logs/LensStudioLog-2026-10-28-07-08-05-361-a3223.txt",
+  "mode": "refresh",
+  "newBytes": 2847,
+  "prints": [],
+  "printsCapped": false,
+  "rotated": false,
+  "settleElapsedMs": 1735,
+  "settleMaxMs": 6000,
+  "settleMaxRaised": false,
+  "status": "success",
+  "tail": "I 11:14:12.685 ${CONFIG_DIR}/Bundle/Plugins/Agents-Docs@5.24.0@08e348d53ce98611d4eee3d880ae9a15/dist/docs/AgentsMdInjector.js:50 inject] [AgentsDocs] Injected AGENTS.md\nI 11:14:12.762 Lens has been reset\nI 11:14:12.915 Lens has been reset",
+  "truncated": false
+}

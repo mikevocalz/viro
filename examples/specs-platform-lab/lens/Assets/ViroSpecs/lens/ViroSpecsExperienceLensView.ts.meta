@@ -24,11 +24,19 @@
   VersionPatch: 0
   VersionPrerelease: ""
   UpdateOrder: 0
-  ComponentUid: 00000000-0000-0000-0000-000000000000
+  ComponentUid: 362ab536-1ab9-471f-acca-ba3c29525747
   ExportUid: 00000000-0000-0000-0000-000000000000
   PackagePolicy: CanBeUnpacked
   ScriptInputsHidden:
-    {}
+    builderMode: false
+    cameraObject: false
+    gazeOnly: false
+    highContrast: false
+    panelMaterial: false
+    panelMesh: false
+    placementScene: false
+    reducedMotion: false
+    sceneHostObject: false
   ScriptTypesHidden:
     {}
   ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
@@ -38,10 +46,25 @@
   Attachments:
     []
   DefaultScriptInputs:
-    -
-      {}
+    - sceneHostObject: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      cameraObject: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      panelMesh: !<reference.RenderMesh> 00000000-0000-0000-0000-000000000000
+      panelMaterial: !<reference.Material> 00000000-0000-0000-0000-000000000000
+      placementScene: false
+      gazeOnly: true
+      builderMode: false
+      highContrast: false
+      reducedMotion: false
   ScriptTypes:
     -
       {}
   InputLines:
-    []
+    - '// @input SceneObject sceneHostObject {"hint":"SceneObject with ViroSpecsSceneControllerHost"}'
+    - '// @input SceneObject cameraObject {"hint":"The camera; panels open 1.5 m along its view"}'
+    - '// @input Asset.RenderMesh panelMesh {"hint":"Unit plane (1 x 1 cm) for panel backings and the reticle disc"}'
+    - '// @input Asset.Material panelMaterial {"hint":"Unlit material tinted from the tokens; cloned per visual"}'
+    - '// @input bool placementScene {"hint":"The scene places content on surfaces"}'
+    - '// @input bool gazeOnly = true {"hint":"Every function has a gaze path (dwell, step buttons)"}'
+    - '// @input bool builderMode {"hint":"Show unverified notices and diagnostic lines (debug builds)"}'
+    - // @input bool highContrast
+    - // @input bool reducedMotion

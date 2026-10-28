@@ -274,6 +274,10 @@ const handlers = {
       { name: "ViroPlaceholder", preset: "UnlitMaterialPreset", baseColor: "1.0, 0.35, 0.65, 0.85" },
       { name: "ViroDefaultMaterial", preset: "SimplePBRMaterialPreset" },
       { name: "ViroDefaultLine", preset: "UnlitMaterialPreset", baseColor: "0.75, 0.82, 0.9, 1.0" },
+      // WS4: PanelImage textures and the experience layer's panel backings
+      // (ViroSpecsExperienceHost tints a clone per visual from the tokens).
+      { name: "ViroImageMaterial", preset: "ImageMaterialPreset" },
+      { name: "ViroExperiencePanel", preset: "UnlitMaterialPreset", baseColor: "0.1, 0.11, 0.13, 0.92" },
     ];
     const out = [];
     for (const m of wanted) {
@@ -305,7 +309,14 @@ const handlers = {
   async wire() {
     const manifest = JSON.parse(readFileSync(path.join(evidence, "manifest.json"), "utf8"));
     const modelIds = (manifest.scene?.nodes ?? manifest.nodes).filter((node) => node.kind === "model").map((node) => node.source);
+    // WS4 gallery images (scripts/specs-lens/gen-gallery.mjs lists them).
+    const gallery = path.join(project, "Assets/ViroSpecsLab/Gallery/ViroLabGallery.ts");
+    const imageIds = existsSync(gallery)
+      ? JSON.parse(/GALLERY_IMAGE_SOURCES: readonly string\[\] = (\[.*\]);/.exec(readFileSync(gallery, "utf8"))?.[1] ?? "[]")
+      : [];
     const result = await editorFile("scripts/specs-lens/editor/wire-generated-host.ts", {
+      imageIds,
+      imageFiles: imageIds.map((id) => path.join(repo, id)),
       modelIds,
       // Compiled source IDs are repo-relative paths.
       modelGlb: modelIds.length ? path.join(repo, modelIds[0]) : undefined,
