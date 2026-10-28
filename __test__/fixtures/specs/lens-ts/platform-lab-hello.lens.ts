@@ -9,7 +9,7 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       "kind": "panel",
       "position": [
         0,
-        0,
+        -0.22,
         -1.5
       ],
       "extents": {
@@ -31,7 +31,7 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       ],
       "text": "Hello",
       "style": {
-        "fontSize": 231.1,
+        "fontSize": 229.1,
         "fontWeight": "600",
         "color": "#eef2f0"
       },
@@ -53,7 +53,7 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       ],
       "text": "This scene runs the same Viro JSX as the phone.",
       "style": {
-        "fontSize": 160.7,
+        "fontSize": 161,
         "fontWeight": "400",
         "color": "#a9b6bf"
       },
@@ -74,8 +74,8 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       "label": "Shiba model",
       "parentId": "platform-lab-root",
       "position": [
-        -0.2,
-        -0.08,
+        -0.13,
+        -0.06,
         0.005
       ],
       "scale": [
@@ -102,8 +102,8 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
         0.005
       ],
       "extents": {
-        "width": 0.23761077750253867,
-        "height": 0.08342692623633134
+        "width": 0.24436875652101966,
+        "height": 0.08579970335952164
       },
       "component": {
         "state": "idle",
@@ -119,17 +119,17 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       "points": [
         [
           -0.3,
-          -0.2,
+          -0.42000000000000004,
           -1.38
         ],
         [
           0,
-          0.02,
+          -0.2,
           -1.38
         ],
         [
           0.3,
-          -0.08,
+          -0.3,
           -1.38
         ]
       ],

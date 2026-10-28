@@ -23,7 +23,7 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       "format": "glb",
       "component": {
         "autoRotate": false,
-        "resettable": true,
+        "resettable": false,
         "type": "model-viewer"
       }
     },

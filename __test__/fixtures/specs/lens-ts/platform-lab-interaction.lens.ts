@@ -9,7 +9,7 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       "kind": "panel",
       "position": [
         0,
-        0,
+        -0.27,
         -1.5
       ],
       "extents": {
@@ -31,7 +31,7 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       ],
       "text": "Interaction",
       "style": {
-        "fontSize": 233.4,
+        "fontSize": 229.1,
         "fontWeight": "600",
         "color": "#eef2f0"
       },
@@ -53,7 +53,7 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       ],
       "text": "Pinch a button. Drag the model.",
       "style": {
-        "fontSize": 161.8,
+        "fontSize": 160.5,
         "fontWeight": "400",
         "color": "#a9b6bf"
       },
@@ -80,7 +80,7 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       ],
       "extents": {
         "width": 0.23,
-        "height": 0.08290846041551164
+        "height": 0.08330377467644681
       },
       "component": {
         "state": "idle",
@@ -99,7 +99,7 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       ],
       "extents": {
         "width": 0.23,
-        "height": 0.08290846041551164
+        "height": 0.08330377467644681
       },
       "component": {
         "state": "selected",
@@ -118,7 +118,7 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       ],
       "extents": {
         "width": 0.23,
-        "height": 0.08274456735443075
+        "height": 0.0841715386522624
       },
       "component": {
         "state": "disabled",
@@ -137,7 +137,7 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       ],
       "extents": {
         "width": 0.23,
-        "height": 0.08274456735443075
+        "height": 0.0841715386522624
       },
       "component": {
         "errorMessage": "That didn't go through. Pinch Retry to try again.",
@@ -164,7 +164,7 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       "format": "glb",
       "component": {
         "autoRotate": false,
-        "resettable": true,
+        "resettable": false,
         "type": "model-viewer"
       }
     },
@@ -180,7 +180,7 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       ],
       "extents": {
         "width": 0.23,
-        "height": 0.08342692623633134
+        "height": 0.08656739463904159
       },
       "component": {
         "state": "idle",
@@ -199,7 +199,7 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       ],
       "extents": {
         "width": 0.23,
-        "height": 0.0842455927868346
+        "height": 0.08824530359276707
       },
       "component": {
         "state": "idle",
