@@ -1501,7 +1501,7 @@ export declare const VIRO_SPECS_DIAGNOSTICS: {
     readonly VS5025: {
         readonly severity: "warning";
         readonly title: "Premium component feature not drawn by this host";
-        readonly hint: "The scene carries the feature but this host version does not render it yet; the message names the node and the features. See doc/Experience.md#not-drawn-yet.";
+        readonly hint: "The scene carries a premium feature this host version does not draw; the message names the node and the features. The current Lens host draws every premium feature (ModelViewer load ring, Reset model button and autoRotate; PanelImage radius.card corners), so it reports none. See doc/Experience.md#not-drawn-yet.";
     };
 };
 /** A code from {@linkcode VIRO_SPECS_DIAGNOSTICS}. */
@@ -2837,7 +2837,7 @@ export interface ModelViewerProps extends PremiumBaseProps {
 }
 /**
  * A model with load, error, manipulate, animate and reset states. Loading
- * shows a progress ring at the model's bounds; a missing model shows a
+ * shows a progress ring at the model's origin; a missing model shows a
  * placeholder box with the `error.asset` copy and a Retry action.
  */
 export declare function ModelViewer({ source, type, autoRotate: _autoRotate, resettable: _resettable, onClick, onHover, onDrag, label, viroTag, ...transform }: ModelViewerProps): React.ReactElement;
