@@ -197,8 +197,8 @@ describe("preview parity with the mock host", () => {
     expect(list.scroll.rows).toEqual({ stepMeters: 0.13, initialOffsetMeters: 0 });
     expect(mockList.state.scrollRows).toEqual({ stepMeters: 0.13, initialOffsetMeters: 0 });
     expect(list.scroll.normalized).toEqual([0, 1]);
-    // Content y = 0 is the window's top edge: 0.3 m window, so the anchor sits 15 cm up.
-    expect(list.contentParent.position.y).toBeCloseTo(15, 5);
+    // Content y = 0 is the window's top edge: 0.26 m window, so the anchor sits 13 cm up.
+    expect(list.contentParent.position.y).toBeCloseTo(13, 5);
     const card = hosts.three.backend.liveHandles().find((h) => h.id === "nav-card-1");
     if (!card) throw new Error("no nav-card-1");
     const before = card.object.getWorldPosition(new Vector3()).y;
@@ -207,12 +207,12 @@ describe("preview parity with the mock host", () => {
     expect(hosts.mock.controller.scrollByRows("nav-list", 1)).toBe(true);
     expectParity(hosts);
     expect(card.object.getWorldPosition(new Vector3()).y - before).toBeCloseTo(13, 4);
-    // Past the end clamps: 0.56 m content in a 0.3 m window leaves 26 cm.
+    // Past the end clamps: 0.52 m content in a 0.26 m window leaves 26 cm.
     hosts.three.controller.scrollByRows("nav-list", 10);
     hosts.mock.controller.scrollByRows("nav-list", 10);
     expectParity(hosts);
     expect(list.scroll.normalized[1]).toBeCloseTo(-1, 6);
-    expect(list.contentParent.position.y).toBeCloseTo(15 + 26, 4);
+    expect(list.contentParent.position.y).toBeCloseTo(13 + 26, 4);
     expect(hosts.three.controller.scrollByRows("nav-title", 1)).toBe(false);
 
     hosts.three.backend.update(0, 1280, 720);

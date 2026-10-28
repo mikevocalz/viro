@@ -3,7 +3,7 @@
   "source": {
     "repository": "mikevocalz/viro-external",
     "branch": "feat/specs-release",
-    "commit": "4aa25ab0d116a2c27f987c8b4bebad1d15787778",
+    "commit": "e6cac8db6ff9c77eb6a93466981b17f9f6a1b7d4",
     "dirty": false
   },
   "files": {
@@ -15,7 +15,7 @@
     "ViroSpecsHostDiagnostics.ts": {
       "upstream": "packages/specs/lens/ViroSpecsHostDiagnostics.ts",
       "local": "src/vendor/lens-core/ViroSpecsHostDiagnostics.ts",
-      "sha256": "6a96ba25f19ae50ee4edc07c794b997591220d4d380db0a4b723462a1ef0eed7"
+      "sha256": "39118e5b0245032def1681fb3306358990b6f7e21941bada9d8165413e4a01b9"
     },
     "ViroSpecsActionContract.ts": {
       "upstream": "packages/specs/lens/ViroSpecsActionContract.ts",
@@ -40,7 +40,7 @@
     "ViroSpecsSceneController.ts": {
       "upstream": "packages/specs/lens/ViroSpecsSceneController.ts",
       "local": "src/vendor/lens-core/ViroSpecsSceneController.ts",
-      "sha256": "d0521e2edd9651637074d2917fd1beb219d5a3bd861834d4668913c19e1062f7"
+      "sha256": "b588fc4945aa1344f5512a228359e2e789e3197e102669284bae2acd5fa4c602"
     },
     "ViroSpecsActionRuntime.ts": {
       "upstream": "packages/specs/lens/ViroSpecsActionRuntime.ts",
@@ -50,7 +50,7 @@
     "ViroSpecsReferenceFlow.ts": {
       "upstream": "packages/specs/lens/ViroSpecsReferenceFlow.ts",
       "local": "src/vendor/lens-core/ViroSpecsReferenceFlow.ts",
-      "sha256": "05deb5a20c0a123b95c0a81f5e6b61db3470c73d8ecd695342dc9c7554463966"
+      "sha256": "5493db7a0007ffad3aadad8deb7c52ee14e6ee6e2c490aeb63e340379e69204d"
     },
     "ViroSpecsExperienceTokens.ts": {
       "upstream": "packages/specs/lens/ViroSpecsExperienceTokens.ts",
@@ -70,12 +70,12 @@
     "ViroSpecsExperience.ts": {
       "upstream": "packages/specs/lens/ViroSpecsExperience.ts",
       "local": "src/vendor/lens-core/ViroSpecsExperience.ts",
-      "sha256": "a48bcb2a1e57773560477fdd59b80ebdd82c9136c2e999feb12d54140d86437c"
+      "sha256": "c6e3694fc7081fe46e03700d091e7606124144577066eb3c75d8cc1168e46aed"
     },
     "ViroSpecsLensSceneBackend.ts": {
       "upstream": "packages/specs/lens/ViroSpecsLensSceneBackend.ts",
       "local": "src/vendor/lens-reference/ViroSpecsLensSceneBackend.ts.txt",
-      "sha256": "e6a5a3fdd10a814b5014bb4b4c62f66f38d778ea8a0aaee88373b719c545b827"
+      "sha256": "7e50ca9dfba2290aff758c39c91bb49a1b0a1e9b02161c3ce749e99177cfc88d"
     },
     "ViroSpecsAnimationRuntime.ts": {
       "upstream": "packages/specs/lens/ViroSpecsAnimationRuntime.ts",

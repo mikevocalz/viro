@@ -43,7 +43,7 @@ describe("preview experience layer", () => {
     experience.update();
     const panel = child(stage, "nav-panel", "viro-experience-backing:nav-panel");
     expect(panel?.scale.x).toBeCloseTo(53, 6);
-    expect(panel?.scale.y).toBeCloseTo(50, 6);
+    expect(panel?.scale.y).toBeCloseTo(60, 6);
     expect(hex(panel)).toBe(tokens.color.surface);
     expect((panel?.material as MeshBasicMaterial).opacity).toBe(tokens.opacity.surface);
     const card = child(stage, "nav-card-2", "viro-experience-backing:nav-card-2");
@@ -74,14 +74,14 @@ describe("preview experience layer", () => {
     expect(card?.position.z).toBeCloseTo(tokens.depth.raisedMeters * 100, 6);
   });
 
-  it("reports VS5025 once per premium feature the host does not draw", () => {
+  it("reports no VS5025: the host draws every premium feature the model viewer uses", () => {
     const { stage, experience } = setup();
     const codes: string[] = [];
     stage.controller.diagnostics.addOnDiagnosticListener((d) => codes.push(d.code + " " + (d.nodeId ?? "")));
     stage.controller.present(json("__test__/fixtures/specs/reference-apps/model-viewer/scene.json"));
     experience.update();
     experience.update();
-    expect(codes.filter((c) => c.startsWith("VS5025"))).toEqual(["VS5025 mv-model"]);
+    expect(codes.filter((c) => c.startsWith("VS5025"))).toEqual([]);
   });
 
   it("a rejected first scene hides the content; its no-fallback panel stays up after Close", () => {

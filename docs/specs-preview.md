@@ -73,7 +73,7 @@ hover and press from `ViroSpecsButtonTracker` (scale and depth on the
 backing), PanelText tone colors, the loading, notice, error and permission
 panels placed 1.5 m along the view when they open, the `sceneVisible` gate
 on the content root, and `VS5025` for premium features the host does not
-draw. The error panel's Retry fetches failed assets again and re-presents
+draw (the vendored core draws all of them, so it reports none). The error panel's Retry fetches failed assets again and re-presents
 the scene.
 
 `src/backend/lensSemantics.ts` holds the copied constants.
@@ -101,8 +101,8 @@ v1 fixture, an invalid manifest, each gallery primitive, the three
 reference apps' compiled `scene.json`, the Navigation scroll group (row
 step, initial position, `scrollByRows`, clamping, clipping), an update, a
 scroll-keeping update and a navigation. `test/experience.test.ts` checks
-the decorations against the default tokens, PanelButton hover, `VS5025`
-and the no-fallback error panel.
+the decorations against the default tokens, PanelButton hover, that the model
+viewer raises no `VS5025`, and the no-fallback error panel.
 
 `scripts/screenshot.mjs` also shoots the Navigation scene scrolled two
 rows and with Card 2 hovered, through `window.__specsPreview.scrollByRows`
