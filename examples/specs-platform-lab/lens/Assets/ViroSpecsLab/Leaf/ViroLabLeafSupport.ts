@@ -30,13 +30,13 @@ export const LAB = {
   generatedContent: "ViroGeneratedContent",
   // WS4 Hello scene: the title is a PanelText on the SpatialPanel root.
   titleText: "Hello",
-  // SpecsPlatformLab.tsx: root at [0, 0, -1.5] m, polyline points relative to
-  // the root, all converted to Lens centimeters.
-  rootWorldCm: [0, 0, -150] as const,
+  // SpecsPlatformLab.tsx: root at [0, -0.22, -1.5] m, polyline points relative
+  // to the root, all converted to Lens centimeters.
+  rootWorldCm: [0, -22, -150] as const,
   linePointsWorldCm: [
-    [-30, -20, -138],
-    [0, 2, -138],
-    [30, -8, -138],
+    [-30, -42, -138],
+    [0, -20, -138],
+    [30, -30, -138],
   ] as const,
 };
 
