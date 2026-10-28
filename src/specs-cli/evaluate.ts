@@ -67,6 +67,12 @@ export type SpecsEvaluation = SpecsStaticValue | SpecsUnresolved;
 export interface SpecsEvalScope {
   readonly module: SpecsModule;
   readonly locals: ReadonlyMap<string, SpecsStaticValue>;
+  /**
+   * Parameters and locals of the functions around the JSX being compiled.
+   * They shadow module bindings of the same name and are only known at
+   * runtime.
+   */
+  readonly shadowed?: ReadonlySet<string>;
 }
 
 /** The exact source text of a node, for diagnostics. */
@@ -114,9 +120,27 @@ function truthy(value: SpecsStaticValue): boolean {
   return Boolean(value);
 }
 
-function looselyEqual(left: SpecsStaticValue, right: SpecsStaticValue): boolean {
-  if ((left === null || left === undefined) && (right === null || right === undefined)) return true;
-  return left === right;
+type Primitive = string | number | boolean | null | undefined;
+
+function isPrimitive(value: SpecsStaticValue): value is Primitive {
+  return value === null || value === undefined || typeof value === "string" || typeof value === "number" || typeof value === "boolean";
+}
+
+/**
+ * JavaScript `==` for primitives (IsLooselyEqual). Objects compare by
+ * identity; `undefined` means "not evaluated" for object-to-primitive
+ * comparisons, which need ToPrimitive.
+ */
+function looselyEqual(left: SpecsStaticValue, right: SpecsStaticValue): boolean | undefined {
+  if (!isPrimitive(left) || !isPrimitive(right)) {
+    return isPrimitive(left) === isPrimitive(right) ? left === right : undefined;
+  }
+  const leftNullish = left === null || left === undefined;
+  const rightNullish = right === null || right === undefined;
+  if (leftNullish || rightNullish) return leftNullish && rightNullish;
+  if (typeof left === typeof right) return left === right;
+  const toNumber = (value: string | number | boolean) => (typeof value === "string" ? (value.trim() === "" ? 0 : Number(value)) : Number(value));
+  return toNumber(left) === toNumber(right);
 }
 
 /**
@@ -213,6 +237,7 @@ export class SpecsEvaluator {
           else if (property.key.type === "NumericLiteral") key = String(property.key.value);
           if (key === undefined) return unresolved("an object key is not static");
           if (property.type === "ObjectMethod") {
+            if (property.kind !== "method") return unresolved("getters and setters are not evaluated");
             setSpecsStaticKey(out, key, new SpecsStaticFunction(property));
             continue;
           }
@@ -268,9 +293,11 @@ export class SpecsEvaluator {
           case "!==":
             return left !== right;
           case "==":
-            return looselyEqual(left, right);
-          case "!=":
-            return !looselyEqual(left, right);
+          case "!=": {
+            const equal = looselyEqual(left, right);
+            if (equal === undefined) return unresolved("== between an object and a primitive is not evaluated");
+            return node.operator === "==" ? equal : !equal;
+          }
         }
         if (node.operator === "+" && (typeof left === "string" || typeof right === "string")) {
           if ((typeof left === "string" || typeof left === "number") && (typeof right === "string" || typeof right === "number")) {
@@ -343,6 +370,7 @@ export class SpecsEvaluator {
       callee.type === "Identifier" &&
       callee.name === "require" &&
       !scope.locals.has("require") &&
+      !scope.shadowed?.has("require") &&
       node.arguments.length === 1 &&
       node.arguments[0].type === "StringLiteral"
     ) {
@@ -361,9 +389,11 @@ export class SpecsEvaluator {
     }
     if (Array.isArray(object)) {
       if (key === "length") return object.length;
-      const index = typeof key === "number" ? key : Number(key);
-      if (Number.isInteger(index)) return (object as readonly SpecsStaticValue[])[index];
-      return new SpecsUnresolved(node, scope.module, "array member " + String(key) + " is not evaluated");
+      const text = String(key);
+      // Only canonical array indices ("0", "12") read elements, as in JavaScript.
+      if (/^(0|[1-9][0-9]*)$/.test(text)) return (object as readonly SpecsStaticValue[])[Number(text)];
+      if (text in Array.prototype) return new SpecsUnresolved(node, scope.module, "array member " + text + " is not evaluated");
+      return undefined;
     }
     if (typeof object === "string") {
       if (key === "length") return object.length;
@@ -377,6 +407,9 @@ export class SpecsEvaluator {
 
   private identifier(name: string, node: AstNode, scope: SpecsEvalScope): SpecsEvaluation {
     if (scope.locals.has(name)) return scope.locals.get(name);
+    if (scope.shadowed?.has(name)) {
+      return new SpecsUnresolved(node, scope.module, name + " is a parameter or local of the enclosing function, so it is only known at runtime");
+    }
     if (name === "undefined") return undefined;
     return this.bindingValue(scope.module, name, node);
   }
@@ -450,7 +483,7 @@ export class SpecsEvaluator {
       case "json": {
         const value = fromJson(resolved.value);
         if (imported === "default" || imported === "*require*") return value;
-        return isSpecsStaticObject(value) ? value[imported] : undefined;
+        return value !== null && value !== undefined && isSpecsStaticObject(value) ? ownSpecsValue(value, imported) : undefined;
       }
       case "error":
         return new SpecsUnresolved(node, module, localName !== undefined ? localName + " is imported from " + resolved.reason : resolved.reason, "VS2018");
@@ -478,7 +511,8 @@ export class SpecsEvaluator {
       if (target.kind === "error") return new SpecsUnresolved(node, module, "export " + name + ": " + target.reason, "VS2018");
       return new SpecsUnresolved(node, module, "export " + name + " re-exports a non-module");
     }
-    for (const request of module.starExports) {
+    // `export * from` never re-exports `default`.
+    for (const request of name === "default" ? [] : module.starExports) {
       const target = this.loader.resolve(module, request);
       if (target.kind !== "module") continue;
       if (!target.module.exports.has(name) && target.module.starExports.length === 0) continue;
@@ -502,11 +536,16 @@ export class SpecsEvaluator {
     for (let index = 0; index < params.length; index++) {
       if (!bindPattern(params[index], values[index], locals)) return undefined;
     }
-    return { module: scope.module, locals };
+    return { module: scope.module, locals, ...(scope.shadowed ? { shadowed: scope.shadowed } : {}) };
   }
 }
 
 const PATTERN_MISMATCH: unique symbol = Symbol("pattern-mismatch");
+
+/** Own enumerable value of `key`, never an inherited Object.prototype member. */
+export function ownSpecsValue(object: SpecsStaticObject, key: string): SpecsStaticValue {
+  return Object.prototype.hasOwnProperty.call(object, key) ? object[key] : undefined;
+}
 
 function applyPatternStep(
   value: SpecsStaticValue,
@@ -514,7 +553,7 @@ function applyPatternStep(
 ): SpecsStaticValue | typeof PATTERN_MISMATCH {
   switch (step.kind) {
     case "key":
-      if (value !== null && value !== undefined && isSpecsStaticObject(value)) return value[step.key];
+      if (value !== null && value !== undefined && isSpecsStaticObject(value)) return ownSpecsValue(value, step.key);
       if (Array.isArray(value) && step.key === "length") return value.length;
       return PATTERN_MISMATCH;
     case "index":
@@ -558,7 +597,7 @@ function bindPattern(param: AstNode, value: SpecsStaticValue, locals: Map<string
         const key = property.key.type === "Identifier" ? property.key.name : property.key.type === "StringLiteral" ? property.key.value : undefined;
         if (key === undefined) return false;
         seen.push(key);
-        if (!bindPattern(property.value, value[key], locals)) return false;
+        if (!bindPattern(property.value, ownSpecsValue(value, key), locals)) return false;
       }
       return true;
     }

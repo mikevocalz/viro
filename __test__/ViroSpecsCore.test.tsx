@@ -256,4 +256,36 @@ describe("static analysis edge cases", () => {
     expect(node).toEqual({ id: "t", kind: "text", text: "x", style: { fontSize: 12 } });
     expect(result.diagnostics.map((d) => d.message).join("\n")).toMatch(/style\.__proto__ is not carried/);
   });
+
+  const textOf = (prelude: string, expression: string, files: Record<string, string> = {}) => {
+    const result = compile(prelude + '\nexport const S = () => <ViroSpecsScene><ViroText viroTag="t" text={' + expression + '} /></ViroSpecsScene>;', files);
+    const node = (result.manifest as ViroSpecsManifestV2).nodes[0];
+    return { text: node && node.kind === "text" ? node.text : undefined, codes: result.diagnostics.map((d) => d.code) };
+  };
+
+  it("evaluates == like JavaScript for primitives", () => {
+    expect(textOf("", '1 == "1" ? "loose" : "strict"').text).toBe("loose");
+    expect(textOf("", '0 == false ? "yes" : "no"').text).toBe("yes");
+    expect(textOf("", 'null == 0 ? "yes" : "no"').text).toBe("no");
+    expect(textOf("const O = {};", 'O == "x" ? "a" : "b"').codes).toContain("VS2009");
+  });
+
+  it("reads only canonical array indices", () => {
+    expect(textOf('const A = ["a", "b"];', 'A[""] ?? "missing"').text).toBe("missing");
+    expect(textOf('const A = ["a", "b"];', 'A["1"]').text).toBe("b");
+  });
+
+  it("never reads Object.prototype members as values", () => {
+    expect(textOf("const { toString } = {};", 'toString === undefined ? "own only" : "leaked"').text).toBe("own only");
+  });
+
+  it("does not evaluate getters as functions", () => {
+    expect(textOf("const O = { get label() { return \"x\"; } };", "O.label").codes).toContain("VS2009");
+  });
+
+  it("does not forward default through export *", () => {
+    const files = { "/p/a.ts": 'export * from "./b";', "/p/b.ts": 'export default "from b";' };
+    expect(textOf('import A from "./a";', "A", files).codes).toContain("VS2018");
+  });
 });
+
