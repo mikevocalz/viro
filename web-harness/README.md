@@ -73,3 +73,9 @@ ngrok http 5199             # open https://<id>.ngrok-free.app/?mode=ar on the p
 `vite.config.ts` already allows `.ngrok-free.app` hosts. `models/` (the
 DamagedHelmet GLB and the dragon VRX) is gitignored, and `harness:assets` does
 not copy it, so it must already be in place.
+
+## Specs preview
+
+`specs-preview/` is a separate package: a three.js preview of Specs
+manifests that runs the Lens host's scene controller, plus a primitive
+gallery. See [docs/specs-preview.md](../docs/specs-preview.md).

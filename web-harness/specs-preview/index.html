@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Specs Preview</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="shell" class="shell">
+      <main class="stage" aria-label="Scene preview">
+        <div id="viewport" class="viewport"></div>
+        <div id="display-window" class="display-window" aria-hidden="true">
+          <span>Specs display, looking straight ahead</span>
+        </div>
+        <div class="stage-bar">
+          <button id="reset-view" type="button">Back to eye view</button>
+          <p class="hint">Drag to orbit. Click and drag interactable nodes.</p>
+        </div>
+      </main>
+
+      <aside class="rail" aria-label="Scene inspector">
+        <header class="rail-head">
+          <h1>Specs Preview</h1>
+          <p>Renders a Viro Specs manifest with the Lens host's scene controller.</p>
+        </header>
+
+        <section class="block" aria-labelledby="scene-h">
+          <h2 id="scene-h">Scene</h2>
+          <label class="field">
+            <span>Open a fixture</span>
+            <select id="fixture"></select>
+          </label>
+          <label class="field file">
+            <span>Or open a manifest or scene file</span>
+            <input id="file" type="file" accept="application/json,.json" />
+          </label>
+          <p class="drop-hint">You can also drop a JSON file anywhere on the page.</p>
+          <p id="load-error" class="load-error" role="alert" hidden></p>
+        </section>
+
+        <section class="block" aria-labelledby="state-h">
+          <h2 id="state-h">State</h2>
+          <p id="state" class="state" data-state="empty" aria-live="polite">No scene loaded</p>
+          <p class="meta"><span id="source"></span> <span id="revision"></span></p>
+          <p id="counts" class="meta"></p>
+        </section>
+
+        <section class="block" aria-labelledby="diag-h">
+          <h2 id="diag-h">Diagnostics</h2>
+          <ul id="diagnostics" class="diagnostics"></ul>
+          <p id="diagnostics-empty" class="empty">No diagnostics. The scene renders as written.</p>
+        </section>
+
+        <section class="block" aria-labelledby="nodes-h">
+          <h2 id="nodes-h">Nodes</h2>
+          <ul id="nodes" class="nodes"></ul>
+        </section>
+
+        <section class="block" aria-labelledby="input-h">
+          <h2 id="input-h">Input sent to the scene</h2>
+          <ul id="input-log" class="input-log"></ul>
+          <p id="input-empty" class="empty">Hover or select an interactable node to see the events it receives.</p>
+        </section>
+
+        <footer class="rail-foot"><a href="./gallery.html">Primitive gallery</a></footer>
+      </aside>
+    </div>
+    <script type="module" src="./src/app/main.ts"></script>
+  </body>
+</html>

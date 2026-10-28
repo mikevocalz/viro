@@ -1,0 +1,27 @@
+{
+  "name": "@reactvision/viro-specs-preview",
+  "private": true,
+  "version": "0.1.0",
+  "description": "three.js preview of Viro Specs manifests with Lens host parity semantics.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "screenshot": "node scripts/screenshot.mjs",
+    "vendor:check": "node scripts/sync-lens-core.mjs --check",
+    "vendor:sync": "node scripts/sync-lens-core.mjs"
+  },
+  "dependencies": {
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "@types/three": "0.186.0",
+    "playwright": "1.64.1",
+    "typescript": "5.9.3",
+    "vite": "8.3.5",
+    "vitest": "5.0.5"
+  }
+}
