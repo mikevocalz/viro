@@ -14,6 +14,10 @@ compiler, `npm run test:specs-compiler`), `R` is
 `__test__/ViroSpecsManifest.test.ts` (schema and validator over
 `__test__/fixtures/specs/`), `G` is the Platform Lab golden
 `__test__/fixtures/specs/manifest-v2/valid/platform-lab.json`, checked by `S`.
+`A` is `__test__/ViroSpecsActions.test.tsx` (React Native action layer and
+`SpecsActionsLab`); `L` is viro-external `packages/specs/scripts/actions.test.mjs`
+and `actions-fixtures.test.mjs` (Lens controller, registry and runtime on a
+mock host).
 
 | Viro semantic | ViroCore | SPECS 27 Lens backend | Manifest v2 field | Diagnostic when unsupported | Test |
 | --- | --- | --- | --- | --- | --- |
@@ -27,6 +31,11 @@ compiler, `npm run test:specs-compiler`), `R` is
 | hover | Viro event delegate | SIK hover | `interactions[].events: "hover"` | `VS1010` unknown target | `M` unknown-target; `R` "routes portable interactions" |
 | click/select | Viro click | SIK trigger/pinch | `interactions[].events: "select"` | `VS1010` | `S` first case; `G` |
 | drag | Viro drag | InteractableManipulation | `interactions[].manipulation`, `events: "drag"` | `VS1010` | `S` first case; `G` |
+| typed action | `onClick` plus app code | trigger resolved by `ViroSpecsSceneController`, delivered one frame later | `interactions[].triggers[]`, `actions[]` | `VS1016` duplicate, `VS1017` undeclared, `VS1018` ill-typed payload, `VS1019` event not enabled, `VS3014` closure or non-JSON trigger; Lens `VS5015`–`VS5017` | `M` actions, action-*, trigger-*; `S` typed actions; `A` reference flow, dispatcher; `L` scene validation |
+| app state from actions | app store (Zustand) | `ViroSpecsActionRegistry` + `ViroSpecsActionRuntime` (standalone) | none (runtime API: `bindSpecsActionsToStore`, `ViroSpecsActionRegistry.on`) | `VS3015`, Lens `VS5019` no handler; Lens `VS5009` handler threw | `A` Zustand store; `L` registry, forward |
+| action lifetime | n/a (synchronous) | queued per scene; retired scene drops it | none | Lens `VS5018` (info) | `L` "queued when navigation happens"; `A` late pinch on a retired card |
+| route / navigation | app navigator | update with a new `route` is a transactional present | `route` | none | `A` reference flow; `L` reference flow |
+| scroll position across back navigation | native scroll view | route memory in the controller (`maxRememberedRoutes`) | `nodes[kind=group].scroll` | `VS1015` on protocol 1; Lens `VS5020` (info) eviction | `L` reference flow, 100 cycles, fixtures; `A` fixtures |
 | animation | Viro animation manager | AnimationPlayer | `animations[].plan` | `VS3003` missing/chain, `VS3004` property, `VS3005` value, `VS3006` easing, `VS2011`/`VS2012` non-static | `S` bounce; `R` "refuses easings"; `M` bad-easing; `G` |
 | hit test | native AR hit test | WorldQuery | none (runtime API `ViroSpecsARRuntime`) | WS3 | WS3 |
 | placement | native AR placement patterns | SurfacePlacement | none (runtime API) | WS3/WS4 | WS4 |
