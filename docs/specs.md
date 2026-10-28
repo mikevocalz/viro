@@ -49,3 +49,13 @@ viro-specs go --project "/path/to/LensProject"
 The CLI delegates to the validated SPECS 27 backend and preserves the same
 doctor/sync/CLAD behavior that is covered by the backend's Lens Studio and LEAF
 regression suite.
+
+`viro-specs watch` recompiles a scene on every save and writes the generated
+Lens host atomically, keeping the last valid output when a build fails and
+any generated file you edited: see [specs-watch.md](specs-watch.md).
+
+## Web preview
+
+`web-harness/specs-preview/` renders a manifest in the browser with the Lens
+host's scene controller on three.js, for design review before a Lens build:
+see [specs-preview.md](specs-preview.md).
