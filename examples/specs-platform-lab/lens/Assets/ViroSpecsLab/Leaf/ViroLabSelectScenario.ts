@@ -21,8 +21,11 @@ export class ViroLabSelectScenario extends Scenario {
       await interactor.trigger(model);
     });
 
+    // The compiled model declares select and drag only (onClick/onDrag), and
+    // the scene controller forwards hover phases only for nodes that declare
+    // "hover", so this checks the select phases. viro_lab_interaction_phases
+    // covers hover.
     const seen = phases(events);
-    expect(seen.includes("hover-enter")).toBe(true);
     expect(seen.includes("select-start")).toBe(true);
     expect(seen.includes("select-end")).toBe(true);
     expect(seen.indexOf("select-start") < seen.indexOf("select-end")).toBe(true);

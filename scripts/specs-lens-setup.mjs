@@ -72,6 +72,11 @@ const SCENARIOS = [
   { id: "viro_lab_select_ik", expect: "succeeded", parameters: { __leaf__diagnostic_policy: "fail-fast" } },
   { id: "viro_lab_drag", expect: "succeeded" },
   { id: "viro_lab_navigate", expect: "succeeded" },
+  { id: "viro_lab_missing_asset", expect: "succeeded" },
+  { id: "viro_lab_state_update", expect: "succeeded" },
+  { id: "viro_lab_scene_replacement", expect: "succeeded" },
+  { id: "viro_lab_interaction_phases", expect: "succeeded" },
+  { id: "viro_lab_scroll_window", expect: "succeeded" },
   // Proves the suite reports failures. It must fail.
   { id: "viro_lab_deliberate_failure", expect: "failed" },
 ];

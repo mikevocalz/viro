@@ -1,5 +1,10 @@
 import { scenariosIndex } from "Leaf.lspkg/Scenarios/decorator/ScenarioIndexDecorator";
 import { ScenarioMetadata } from "Leaf.lspkg/Scenarios/scenario/ScenarioMetadata";
+import { ViroLabMissingAssetScenario } from "./ViroLabMissingAssetScenario";
+import { ViroLabStateUpdateScenario } from "./ViroLabStateUpdateScenario";
+import { ViroLabSceneReplacementScenario } from "./ViroLabSceneReplacementScenario";
+import { ViroLabInteractionPhasesScenario } from "./ViroLabInteractionPhasesScenario";
+import { ViroLabScrollWindowScenario } from "./ViroLabScrollWindowScenario";
 import { ViroLabDeliberateFailureScenario } from "./ViroLabDeliberateFailureScenario";
 import { ViroLabDragScenario } from "./ViroLabDragScenario";
 import { ViroLabNavigateScenario } from "./ViroLabNavigateScenario";
@@ -17,6 +22,11 @@ export class ViroLabLeafIndex extends BaseScriptComponent {
     { id: "viro_lab_select_ik", typename: ViroLabSelectIKScenario.getTypeName() },
     { id: "viro_lab_drag", typename: ViroLabDragScenario.getTypeName() },
     { id: "viro_lab_navigate", typename: ViroLabNavigateScenario.getTypeName() },
+    { id: "viro_lab_missing_asset", typename: ViroLabMissingAssetScenario.getTypeName() },
+    { id: "viro_lab_state_update", typename: ViroLabStateUpdateScenario.getTypeName() },
+    { id: "viro_lab_scene_replacement", typename: ViroLabSceneReplacementScenario.getTypeName() },
+    { id: "viro_lab_interaction_phases", typename: ViroLabInteractionPhasesScenario.getTypeName() },
+    { id: "viro_lab_scroll_window", typename: ViroLabScrollWindowScenario.getTypeName() },
     { id: "viro_lab_deliberate_failure", typename: ViroLabDeliberateFailureScenario.getTypeName() },
   ];
 }

@@ -23,6 +23,11 @@ export class ViroLabScenarioClient extends BaseScriptComponent {
     "viro_lab_select_ik",
     "viro_lab_drag",
     "viro_lab_navigate",
+    "viro_lab_missing_asset",
+    "viro_lab_state_update",
+    "viro_lab_scene_replacement",
+    "viro_lab_interaction_phases",
+    "viro_lab_scroll_window",
     "viro_lab_deliberate_failure",
   ];
 

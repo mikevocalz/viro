@@ -1,0 +1,12 @@
+{
+  "startedAt": "2026-10-28T12:03:45.506Z",
+  "project": "examples/specs-platform-lab/lens",
+  "steps": {
+    "recompile": {
+      "ok": true,
+      "ms": 791,
+      "result": "lens-compiled"
+    }
+  },
+  "finishedAt": "2026-10-28T12:03:46.324Z"
+}
