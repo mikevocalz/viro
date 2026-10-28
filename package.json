@@ -41,7 +41,9 @@
     "test:plugin-load": "node scripts/check-plugin-loads.cjs",
     "check:ios-bridge": "bash scripts/check-ios-bridge.sh",
     "test:specs-consumer": "node scripts/check-specs-consumer.cjs",
-    "typecheck:specs-examples": "tsc -p tsconfig.specs-examples.json"
+    "typecheck:specs-examples": "tsc -p tsconfig.specs-examples.json",
+    "test:specs-api": "node scripts/specs-api-snapshot.cjs",
+    "docs:specs-errors": "npm run build:specs-cli && node scripts/specs-error-reference.cjs"
   },
   "peerDependencies": {
     "@reactvision/react-native-visionos": ">=0.86.0 <0.89.0",
