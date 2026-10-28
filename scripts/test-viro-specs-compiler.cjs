@@ -146,13 +146,18 @@ for (const pattern of [
   /animation\.play/,
   /navigation\.presentPolyline/,
   /OnDestroyEvent/,
-  /interaction\.remove/,
-  /animation\.stop/,
+  /interaction\.resetTargets\(\)/,
   /navigation\.clearRoute/,
   /runtime\.clear/,
 ]) {
   assert.match(generated, pattern);
 }
+// Only call methods the @viro-external/specs Lens hosts expose: the
+// interaction host has setInteractable, setManipulationEnabled and
+// resetTargets; the animation host has only play. Lens Studio 5.24.1 rejected
+// remove() and stop() with TS2339 (fix carried from 0f51d86f on feat/specs-lens).
+assert.doesNotMatch(generated, /interaction\.remove\(/);
+assert.doesNotMatch(generated, /animation\.stop\(/);
 checks += 1;
 
 // --- Static-analysis diagnostics carry codes and source positions ---------
