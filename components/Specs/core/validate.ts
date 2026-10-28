@@ -4,6 +4,12 @@ import {
   type ViroSpecsDiagnostic,
 } from "./diagnostic";
 import type { ViroSpecsDiagnosticCode } from "./diagnosticCodes";
+import {
+  checkSpecsActionDeclaration,
+  checkSpecsActionPayload,
+  isSpecsActionPayload,
+  type ViroSpecsActionDeclaration,
+} from "./actions";
 import type {
   ViroSpecsManifestV2,
   ViroSpecsWireSceneSnapshot,
@@ -402,7 +408,7 @@ function checkInteraction(checker: Checker, interaction: unknown, path: string):
     return;
   }
   const nodeId = typeof interaction.nodeId === "string" ? interaction.nodeId : undefined;
-  checker.fields(interaction, path, ["nodeId", "interactable", "manipulation", "events"], [], nodeId);
+  checker.fields(interaction, path, ["nodeId", "interactable", "manipulation", "events"], ["triggers"], nodeId);
   checker.string(interaction, "nodeId", path, nodeId);
   if ("interactable" in interaction && interaction.interactable !== true) {
     checker.invalid(pointer(path, "interactable"), "true", interaction.interactable, nodeId);
@@ -420,6 +426,78 @@ function checkInteraction(checker: Checker, interaction: unknown, path: string):
       checker.invalid(pointer(path, "events"), "a non-empty array of unique hover, select, drag", events, nodeId);
     }
   }
+  if (!("triggers" in interaction)) return;
+  const triggers = interaction.triggers;
+  const at = pointer(path, "triggers");
+  if (!Array.isArray(triggers) || triggers.length === 0) {
+    checker.invalid(at, "a non-empty array of triggers", triggers, nodeId);
+    return;
+  }
+  triggers.forEach((trigger: unknown, index: number) => {
+    const triggerAt = pointer(at, index);
+    if (!isRecord(trigger)) {
+      checker.invalid(triggerAt, "a trigger object", trigger, nodeId);
+      return;
+    }
+    checker.fields(trigger, triggerAt, ["on", "actionId"], ["payload"], nodeId);
+    checker.oneOf(trigger, "on", triggerAt, ["select", "hover-enter", "hover-exit"], nodeId);
+    checker.string(trigger, "actionId", triggerAt, nodeId);
+    if ("payload" in trigger && !isSpecsActionPayload(trigger.payload)) {
+      checker.invalid(pointer(triggerAt, "payload"), "a flat object of strings, finite numbers and booleans", trigger.payload, nodeId);
+    }
+  });
+}
+
+function checkActions(checker: Checker, actions: readonly unknown[]): Map<string, ViroSpecsActionDeclaration> {
+  const declared = new Map<string, ViroSpecsActionDeclaration>();
+  const firstAt = new Map<string, string>();
+  actions.forEach((action, index) => {
+    const at = pointer("/actions", index);
+    const problems = checkSpecsActionDeclaration(action);
+    for (const problem of problems) checker.report("VS1004", problem.message, at + problem.path);
+    if (problems.length > 0 || !isRecord(action) || typeof action.id !== "string") return;
+    const first = firstAt.get(action.id);
+    if (first !== undefined) {
+      checker.report("VS1016", "Action " + describe(action.id) + " is already declared at " + first + ".", pointer(at, "id"));
+      return;
+    }
+    firstAt.set(action.id, pointer(at, "id"));
+    // Shape checked above.
+    declared.set(action.id, action as unknown as ViroSpecsActionDeclaration);
+  });
+  return declared;
+}
+
+const TRIGGER_NEEDS: Readonly<Record<string, string>> = { select: "select", "hover-enter": "hover", "hover-exit": "hover" };
+
+function checkTriggerReferences(
+  checker: Checker,
+  interactions: readonly unknown[],
+  declared: ReadonlyMap<string, ViroSpecsActionDeclaration>
+): void {
+  interactions.forEach((interaction, index) => {
+    if (!isRecord(interaction) || !Array.isArray(interaction.triggers)) return;
+    const nodeId = typeof interaction.nodeId === "string" ? interaction.nodeId : undefined;
+    const events = Array.isArray(interaction.events) ? interaction.events : [];
+    interaction.triggers.forEach((trigger: unknown, t: number) => {
+      if (!isRecord(trigger)) return;
+      const at = pointer(pointer(pointer("/interactions", index), "triggers"), t);
+      const needs = typeof trigger.on === "string" ? TRIGGER_NEEDS[trigger.on] : undefined;
+      if (needs !== undefined && !events.includes(needs)) {
+        checker.report("VS1019", "Trigger on " + String(trigger.on) + " needs " + describe(needs) + " in events.", pointer(at, "on"), nodeId);
+      }
+      if (typeof trigger.actionId !== "string") return;
+      const declaration = declared.get(trigger.actionId);
+      if (!declaration) {
+        checker.report("VS1017", "Trigger fires undeclared action " + describe(trigger.actionId) + ".", pointer(at, "actionId"), nodeId);
+        return;
+      }
+      if (!isSpecsActionPayload(trigger.payload ?? {})) return;
+      for (const problem of checkSpecsActionPayload(declaration, trigger.payload)) {
+        checker.report("VS1018", trigger.actionId + ": " + problem.message, pointer(at, "payload") + problem.path, nodeId);
+      }
+    });
+  });
 }
 
 function checkAnimation(checker: Checker, animation: unknown, path: string): void {
@@ -623,7 +701,7 @@ export function validateSpecsManifestV2(
     input,
     "",
     ["version", "nodes"],
-    ["$schema", "generator", "source", "polylines", "lights", "materials", "interactions", "animations"]
+    ["$schema", "generator", "source", "route", "actions", "polylines", "lights", "materials", "interactions", "animations"]
   );
   if (input.version !== 2) {
     checker.report("VS1003", "validateSpecsManifestV2 reads version 2, got " + describe(input.version) + ".", "/version");
@@ -631,6 +709,7 @@ export function validateSpecsManifestV2(
   }
   checker.string(input, "$schema", "");
   checker.string(input, "source", "");
+  checker.string(input, "route", "");
   if ("generator" in input) {
     const generator = input.generator;
     if (!isRecord(generator)) {
@@ -648,6 +727,7 @@ export function validateSpecsManifestV2(
   const materials = checker.array(input, "materials", "");
   const interactions = checker.array(input, "interactions", "");
   const animations = checker.array(input, "animations", "");
+  const actions = checker.array(input, "actions", "");
 
   nodes.forEach((node, index) => checkV2Node(checker, node, pointer("/nodes", index)));
   polylines.forEach((polyline, index) => checkPolyline(checker, polyline, pointer("/polylines", index)));
@@ -666,6 +746,7 @@ export function validateSpecsManifestV2(
   checkDuplicates(checker, collectIds(materials, "/materials"), "VS1013");
   checkHierarchy(checker, nodes, lights);
   checkReferences(checker, nodes, polylines, materials, interactions, animations);
+  checkTriggerReferences(checker, interactions, checkActions(checker, actions));
 
   if (hasViroSpecsErrors(checker.diagnostics)) {
     return { ok: false, diagnostics: checker.diagnostics };

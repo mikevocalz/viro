@@ -117,6 +117,26 @@ export const VIRO_SPECS_DIAGNOSTICS = {
     title: "Field is not carried by scene protocol 1",
     hint: "The transport only implements applyScene (protocol 1), which drops this field. Implement applySceneDocument (protocol 2) or use the generated Lens host, which renders it.",
   },
+  VS1016: {
+    severity: "error",
+    title: "Action is declared twice",
+    hint: "Action IDs are unique within a manifest. Remove or rename the second declaration.",
+  },
+  VS1017: {
+    severity: "error",
+    title: "Action is not declared",
+    hint: "Add the action to ViroSpecsScene's actions prop (defineSpecsActions) or to the manifest's actions list.",
+  },
+  VS1018: {
+    severity: "error",
+    title: "Action payload does not match its declaration",
+    hint: "fieldPath names the field: missing, not declared, wrong type, not a whole number, or not in enum.",
+  },
+  VS1019: {
+    severity: "error",
+    title: "Trigger fires on an event its node does not enable",
+    hint: "A select trigger needs select in the interaction's events, a hover trigger needs hover. The compilers add them; fix hand-written manifests.",
+  },
   VS2001: {
     severity: "error",
     title: "No ViroSpecsScene root",
@@ -252,6 +272,16 @@ export const VIRO_SPECS_DIAGNOSTICS = {
     title: "Model format is not supported on Specs",
     hint: "Lens Studio cannot import VRX. Export the model as GLB.",
   },
+  VS3014: {
+    severity: "error",
+    title: "specsAction is not a JSON trigger",
+    hint: "specsAction takes { actionId, on?, payload? } with a flat payload of strings, numbers and booleans. Functions and other closures cannot cross to the Lens; handle the action in the store instead.",
+  },
+  VS3015: {
+    severity: "warning",
+    title: "Declared action has no handler",
+    hint: "Add a reducer for the action to bindSpecsActionsToStore or a handler to createSpecsActionDispatcher. The action was dropped.",
+  },
   VS4001: {
     severity: "error",
     title: "Portals are not supported on Specs",
@@ -356,6 +386,36 @@ export const VIRO_SPECS_DIAGNOSTICS = {
     severity: "error",
     title: "Backend operation failed",
     hint: "A Lens call threw while updating a committed node. The node keeps its previous state; the message names the operation.",
+  },
+  VS5015: {
+    severity: "error",
+    title: "Action is not declared",
+    hint: "Declare the action ID in the scene's actions list and in the ViroSpecsActionRegistry. The trigger or dispatch was dropped.",
+  },
+  VS5016: {
+    severity: "error",
+    title: "Action is declared or handled twice",
+    hint: "Action IDs are unique per scene and per registry. The first declaration or handler stays; remove the second.",
+  },
+  VS5017: {
+    severity: "error",
+    title: "Action payload does not match its declaration",
+    hint: "The fieldPath names the field: missing, unknown, wrong type or not in enum. The action was dropped and state is unchanged.",
+  },
+  VS5018: {
+    severity: "info",
+    title: "Queued action invalidated by navigation",
+    hint: "No action needed. The scene that showed the node was retired before the action ran, so it was dropped.",
+  },
+  VS5019: {
+    severity: "warning",
+    title: "Declared action has no handler",
+    hint: "Register a handler with ViroSpecsActionRegistry.on, or set forward on ViroSpecsActionRuntime to send the action to a phone app.",
+  },
+  VS5020: {
+    severity: "info",
+    title: "Route memory is full; least recently used route forgotten",
+    hint: "Scroll positions of the forgotten route reset when it is shown again. Raise maxRememberedRoutes if this repeats.",
   },
 } as const satisfies Record<string, ViroSpecsDiagnosticDefinition>;
 

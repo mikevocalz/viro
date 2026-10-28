@@ -6,6 +6,7 @@
  * Units: positions and extents in meters, rotations as unit quaternions
  * `[x, y, z, w]`, durations in seconds, colors as `#RRGGBB` or `#RRGGBBAA`.
  */
+import type { ViroSpecsActionDeclaration, ViroSpecsActionTrigger } from "./actions";
 
 /** `[x, y, z]`. */
 export type ViroSpecsVec3 = readonly [number, number, number];
@@ -210,6 +211,11 @@ export interface ViroSpecsManifestInteraction {
   /** True when the node has onDrag. */
   readonly manipulation: boolean;
   readonly events: readonly ("hover" | "select" | "drag")[];
+  /**
+   * Actions the node fires, from its `specsAction` prop. A `select` trigger
+   * needs `select` in `events`; hover triggers need `hover`.
+   */
+  readonly triggers?: readonly ViroSpecsActionTrigger[];
 }
 
 /** Property a {@linkcode ViroSpecsAnimationTrack} drives. */
@@ -276,6 +282,14 @@ export interface ViroSpecsManifestV2 {
   readonly generator?: ViroSpecsManifestGenerator;
   /** Entry file the manifest was compiled from, relative to the working directory. */
   readonly source?: string;
+  /**
+   * Route the scene belongs to, from `ViroSpecsScene`'s `route` prop. The
+   * Lens host navigates (and restores remembered scroll positions) when the
+   * route changes, and patches when it stays the same.
+   */
+  readonly route?: string;
+  /** Actions that triggers fire. Present when any trigger exists. */
+  readonly actions?: readonly ViroSpecsActionDeclaration[];
   readonly nodes: readonly ViroSpecsManifestNode[];
   readonly polylines: readonly ViroSpecsManifestPolyline[];
   readonly lights: readonly ViroSpecsLight[];
@@ -357,6 +371,8 @@ export type ViroSpecsSceneDocumentNode = Exclude<ViroSpecsManifestNode, ViroSpec
  */
 export interface ViroSpecsSceneDocument {
   readonly version: 2;
+  readonly route?: string;
+  readonly actions?: readonly ViroSpecsActionDeclaration[];
   readonly nodes: readonly ViroSpecsSceneDocumentNode[];
   readonly polylines: readonly ViroSpecsManifestPolyline[];
   readonly lights: readonly ViroSpecsLight[];

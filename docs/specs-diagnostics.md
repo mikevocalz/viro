@@ -196,6 +196,38 @@ Emitted by toSpecsSceneSnapshot, and by ViroSpecsScene and applySpecsManifest wh
 
 Fix: The transport only implements applyScene (protocol 1), which drops this field. Implement applySceneDocument (protocol 2) or use the generated Lens host, which renders it.
 
+### VS1016 · error
+
+Action is declared twice.
+
+Emitted by validation (both compilers, `parseSpecsManifest`, `applySpecsManifest`).
+
+Fix: Action IDs are unique within a manifest. Remove or rename the second declaration. See [specs-actions.md](specs-actions.md).
+
+### VS1017 · error
+
+Action is not declared.
+
+Emitted by validation when a trigger names an action the manifest's `actions` list lacks, and by `createSpecsActionDispatcher` when a transport delivers an undeclared action (the action is dropped).
+
+Fix: Add the action to `ViroSpecsScene`'s `actions` prop (`defineSpecsActions`) or to the manifest's `actions` list.
+
+### VS1018 · error
+
+Action payload does not match its declaration.
+
+Emitted by validation for trigger payloads, and by `createSpecsActionDispatcher` for payloads that arrive over a transport (the action is dropped and state is unchanged).
+
+Fix: `fieldPath` names the field: missing, not declared, wrong type, not a whole number for `integer`, or not in `enum`.
+
+### VS1019 · error
+
+Trigger fires on an event its node does not enable.
+
+Emitted by validation.
+
+Fix: A `select` trigger needs `select` in the interaction's `events`, a hover trigger needs `hover`. The compilers add them; fix hand-written manifests.
+
 ## Static source analysis (VS2xxx)
 
 ### VS2001 · error
@@ -416,6 +448,22 @@ Emitted by the runtime compiler and `viro-specs-compile --entry`.
 
 Fix: Lens Studio cannot import VRX. Export the model as GLB.
 
+### VS3014 · error
+
+specsAction is not a JSON trigger.
+
+Emitted by the runtime compiler and `viro-specs-compile --entry`.
+
+Fix: `specsAction` takes `{ actionId, on?, payload? }` (or an array of them) with a flat payload of strings, finite numbers and booleans. Functions and other React closures cannot cross to the Lens; put the behavior in the store's reducer for the action.
+
+### VS3015 · warning
+
+Declared action has no handler.
+
+Emitted by `createSpecsActionDispatcher` and `bindSpecsActionsToStore` when a declared action arrives with no handler. The action is dropped.
+
+Fix: Add a reducer for the action to `bindSpecsActionsToStore`, or a handler to `createSpecsActionDispatcher`.
+
 ## Capability errors (VS4xxx)
 
 ### VS4001 · error
@@ -594,3 +642,51 @@ Backend operation failed.
 Emitted by ViroSpecsSceneController (`@viro-external/specs`).
 
 Fix: A Lens call threw while updating a committed node. The node keeps its previous state; the message names the operation.
+
+### VS5015 · error
+
+Action is not declared.
+
+Emitted by ViroSpecsSceneController and ViroSpecsActionRegistry (`@viro-external/specs`).
+
+Fix: Declare the action ID in the scene's actions list and in the ViroSpecsActionRegistry. The trigger or dispatch was dropped.
+
+### VS5016 · error
+
+Action is declared or handled twice.
+
+Emitted by ViroSpecsSceneController and ViroSpecsActionRegistry (`@viro-external/specs`).
+
+Fix: Action IDs are unique per scene and per registry. The first declaration or handler stays; remove the second.
+
+### VS5017 · error
+
+Action payload does not match its declaration.
+
+Emitted by ViroSpecsSceneController and ViroSpecsActionRegistry (`@viro-external/specs`).
+
+Fix: The fieldPath names the field: missing, unknown, wrong type or not in enum. The action was dropped and state is unchanged.
+
+### VS5018 · info
+
+Queued action invalidated by navigation.
+
+Emitted by ViroSpecsSceneController (`@viro-external/specs`).
+
+Fix: No action needed. The scene that showed the node was retired before the action ran, so it was dropped.
+
+### VS5019 · warning
+
+Declared action has no handler.
+
+Emitted by ViroSpecsActionRuntime (`@viro-external/specs`).
+
+Fix: Register a handler with ViroSpecsActionRegistry.on, or set forward on ViroSpecsActionRuntime to send the action to a phone app.
+
+### VS5020 · info
+
+Route memory is full; least recently used route forgotten.
+
+Emitted by ViroSpecsSceneController (`@viro-external/specs`).
+
+Fix: Scroll positions of the forgotten route reset when it is shown again. Raise maxRememberedRoutes if this repeats.

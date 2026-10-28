@@ -1,3 +1,4 @@
+export * from "./actions";
 export * from "./capabilities";
 export * from "./compileSupport";
 export * from "./diagnostic";
