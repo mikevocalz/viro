@@ -14,7 +14,7 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       ],
       "extents": {
         "width": 0.53,
-        "height": 0.66
+        "height": 0.68
       },
       "component": {
         "type": "spatial-panel"
@@ -26,12 +26,12 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       "parentId": "ix-panel",
       "position": [
         0,
-        0.28,
+        0.29,
         0.005
       ],
       "text": "Interaction",
       "style": {
-        "fontSize": 233.1,
+        "fontSize": 233.4,
         "fontWeight": "600",
         "color": "#eef2f0"
       },
@@ -48,12 +48,12 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       "parentId": "ix-panel",
       "position": [
         0,
-        0.19,
+        0.2,
         0.005
       ],
       "text": "Pinch a button. Drag the model.",
       "style": {
-        "fontSize": 161.7,
+        "fontSize": 161.8,
         "fontWeight": "400",
         "color": "#a9b6bf"
       },
@@ -75,12 +75,12 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       "parentId": "ix-panel",
       "position": [
         -0.125,
-        0.085,
+        0.095,
         0.005
       ],
       "extents": {
         "width": 0.23,
-        "height": 0.08287543244470974
+        "height": 0.08290846041551164
       },
       "component": {
         "state": "idle",
@@ -94,12 +94,12 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       "parentId": "ix-panel",
       "position": [
         0.125,
-        0.085,
+        0.095,
         0.005
       ],
       "extents": {
         "width": 0.23,
-        "height": 0.08287543244470974
+        "height": 0.08290846041551164
       },
       "component": {
         "state": "selected",
@@ -113,12 +113,12 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       "parentId": "ix-panel",
       "position": [
         -0.125,
-        -0.02,
+        -0.01,
         0.005
       ],
       "extents": {
         "width": 0.23,
-        "height": 0.08275008163702356
+        "height": 0.08274456735443075
       },
       "component": {
         "state": "disabled",
@@ -132,12 +132,12 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       "parentId": "ix-panel",
       "position": [
         0.125,
-        -0.02,
+        -0.01,
         0.005
       ],
       "extents": {
         "width": 0.23,
-        "height": 0.08275008163702356
+        "height": 0.08274456735443075
       },
       "component": {
         "errorMessage": "That didn't go through. Pinch Retry to try again.",
@@ -152,7 +152,7 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       "parentId": "ix-panel",
       "position": [
         -0.14,
-        -0.18,
+        -0.24,
         0.06
       ],
       "scale": [
@@ -175,12 +175,12 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       "parentId": "ix-panel",
       "position": [
         0.13,
-        -0.13,
+        -0.19,
         0.005
       ],
       "extents": {
         "width": 0.23,
-        "height": 0.08307614957655172
+        "height": 0.08342692623633134
       },
       "component": {
         "state": "idle",
@@ -194,12 +194,12 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       "parentId": "ix-panel",
       "position": [
         0.13,
-        -0.235,
+        -0.285,
         0.005
       ],
       "extents": {
         "width": 0.23,
-        "height": 0.08377487253319703
+        "height": 0.0842455927868346
       },
       "component": {
         "state": "idle",
