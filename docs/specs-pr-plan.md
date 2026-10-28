@@ -55,6 +55,6 @@ snapshot carries the regenerated snapshot and a CHANGELOG line.
    latest host fixes.
 2. Decide whether PR 7 lands before PR 8. PR 8 does not need it; the
    compatibility matrix and docs do not claim the web preview.
-3. Configure the `VIRO_EXTERNAL_READ_TOKEN` secret in the viro repo, or
-   accept that the viro `consumer` job checks the Viro tarball alone and
-   says so in its summary.
+3. Merge the viro-external release PR first. The viro `consumer` job packs
+   `@viro-external/specs` from viro-external `main` (a public repo, so no
+   token), and viro's `^0.3.0` peer needs the 0.3.0 that PR ships.
