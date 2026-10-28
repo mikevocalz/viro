@@ -85,7 +85,15 @@ in Node with the Lens Studio modules stubbed.
 
 ## Known traps
 
-- SpectaclesUIKit 4.0.0 depends on Icons 4.0.0, which ships an editor plugin
+- Package line: the setup pins the 2.x Asset Library packages (SIK, UIKit,
+  SurfacePlacement, VolumetricLine and NavigationKit 2.0.0, Leaf 2.0.2). The
+  4.0.0 line renamed SIK to `InteractionKit.lspkg`, and every other 4.0.0
+  package imports `"InteractionKit.lspkg/..."`. The `@viro-external/specs`
+  runtime imports `"SpectaclesInteractionKit.lspkg/..."`, so no directory name
+  satisfies both. The `packages` step refuses a project holding 4.0.0
+  packages. Moving to 4.0.0 needs a runtime change in `viro-external`.
+
+- SpectaclesUIKit 4.0.0 (not used by this setup) depends on Icons 4.0.0, which ships an editor plugin
   (Icon Atlas). Importing it opens a plugin permission dialog in Lens Studio.
   Until someone answers it, every later import waits, the project cannot save,
   and the scene model is read-only (`Invalid transition from Immutable to

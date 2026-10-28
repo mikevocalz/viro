@@ -30,15 +30,31 @@ import { LensStudioMcp } from "./specs-lens/mcp-client.mjs";
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const ALL_STEPS = ["preflight", "packages", "sync", "compile", "recompile", "wire", "chattool", "preview", "leaf"];
 
-// Asset Library names, and the directory names the Viro Lens runtime imports.
+// Asset Library names, pinned versions, and the directory names the Viro Lens
+// runtime imports.
+//
+// Pinned to the 2.x line on purpose. The 4.0.0 Asset Library packages renamed
+// SIK to InteractionKit.lspkg, and UIKit, SurfacePlacement, VolumetricLine,
+// NavigationKit and Leaf 4.0.0 all import "InteractionKit.lspkg/...", while
+// the @viro-external/specs runtime imports "SpectaclesInteractionKit.lspkg/...".
+// No directory name satisfies both. The 2.x packages all use the
+// SpectaclesInteractionKit name and ship no editor plugins.
 const PACKAGES = [
-  { search: "SpectaclesInteractionKit", assetName: "SpectaclesInteractionKit" },
-  { search: "SpectaclesUIKit", assetName: "SpectaclesUIKit" },
-  { search: "Surface Placement", assetName: "SurfacePlacement" },
-  { search: "Volumetric Line", assetName: "VolumetricLine" },
-  { search: "Navigation Kit", assetName: "SpecsNavigationKit" },
-  { search: "Leaf", assetName: "Leaf" },
+  { search: "SpectaclesInteractionKit", assetName: "SpectaclesInteractionKit", version: "2.0.0" },
+  { search: "SpectaclesUIKit", assetName: "SpectaclesUIKit", version: "2.0.0" },
+  { search: "Surface Placement", assetName: "SurfacePlacement", version: "2.0.0" },
+  { search: "Volumetric Line", assetName: "VolumetricLine", version: "2.0.0" },
+  { search: "Navigation Kit", assetName: "SpecsNavigationKit", version: "2.0.0" },
+  { search: "Leaf", assetName: "Leaf", version: "2.0.2" },
 ];
+
+const versionOf = (resource) => `${resource.version.major}.${resource.version.minor}.${resource.version.patch}`;
+
+// True when an installed package imports the 4.0.0 InteractionKit name.
+function importsRenamedSik(file) {
+  const listing = spawnSync("unzip", ["-p", file, "*.ts"], { encoding: "utf8", maxBuffer: 256 * 1024 * 1024 });
+  return /"InteractionKit\.lspkg\//.test(listing.stdout ?? "");
+}
 
 const SCENARIOS = [
   { id: "viro_lab_render", expect: "succeeded" },
@@ -135,23 +151,28 @@ const handlers = {
 
   async packages() {
     const installed = [];
+    const renamed = [];
     for (const pkg of PACKAGES) {
-      if (existsSync(path.join(project, "Packages", `${pkg.assetName}.lspkg`))) {
+      const file = path.join(project, "Packages", `${pkg.assetName}.lspkg`);
+      if (existsSync(file)) {
+        if (pkg.assetName !== "SpectaclesInteractionKit" && importsRenamedSik(file)) renamed.push(pkg.assetName);
         installed.push(`${pkg.assetName}: present`);
         continue;
       }
-      const search = await mcp.call("SearchLensStudioAssetLibrary", { keywordFilter: [pkg.search], onlyMostRecent: true });
+      const search = await mcp.call("SearchLensStudioAssetLibrary", { keywordFilter: [pkg.search], onlyMostRecent: false });
       const asset = (search.data.assets ?? []).find(
         (a) => a.type === "AssetPackage" && a.name.replace(/\s/g, "") === pkg.search.replace(/\s/g, "")
       );
-      if (!asset) throw new Error(`Asset Library has no package named ${pkg.search}`);
-      const resource = asset.resources.at(-1);
-      // UIKit 4.0.0 pulls in Icons.lspkg, whose editor plugin makes Lens Studio
-      // show a one-time permission dialog. Imports queue behind it until
-      // someone answers it in the Lens Studio window.
+      const resource = asset?.resources.find((r) => versionOf(r) === pkg.version);
+      if (!resource) throw new Error(`Asset Library has no ${pkg.search} ${pkg.version}`);
       await mcp.call("InstallLensStudioPackage", { packageUri: resource.uri, assetName: pkg.assetName });
-      const version = resource.version;
-      installed.push(`${pkg.assetName}: installed ${version.major}.${version.minor}.${version.patch}`);
+      installed.push(`${pkg.assetName}: installed ${pkg.version}`);
+    }
+    if (renamed.length) {
+      throw new Error(
+        `${renamed.join(", ")} import InteractionKit.lspkg (the 4.0.0 package line), which the Viro runtime cannot use. ` +
+          "Remove those packages from the project and rerun to install the pinned 2.x versions."
+      );
     }
     return installed;
   },
