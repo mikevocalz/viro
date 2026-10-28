@@ -24,12 +24,6 @@ const EYE_HEIGHT_CM = 150;
 /** Comfort band from the Specs pack (section 2): 0.6 m to 3.0 m. */
 const COMFORT_NEAR_CM = 60;
 const COMFORT_FAR_CM = 300;
-/**
- * Diagonal field of view of the Spectacles (2024) display. Used only for the
- * display-window overlay; the viewport camera is wider so you can see what
- * falls outside it. Not confirmed for SPECS 27 hardware.
- */
-export const SPECS_DISPLAY_DIAGONAL_FOV_DEG = 46;
 
 /** Renders a {@linkcode PreviewStage} with orbit controls and pointer input. */
 export class PreviewViewport {
