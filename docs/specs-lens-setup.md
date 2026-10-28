@@ -28,7 +28,7 @@ node scripts/specs-lens-setup.mjs --create --project /abs/path/NewLab   # save t
 | `preflight` | Checks which project Lens Studio has open and that the MCP tools exist | none |
 | `packages` | Installs the pinned packages (below) from the Asset Library when `Packages/` lacks them. `--replace-packages` removes existing copies first | none |
 | `sync` | Copies the `@viro-external/specs` Lens runtime into `Assets/ViroSpecs/lens` without `--clean`, then runs the doctor | none |
-| `compile` | `viro-specs compile` to `lens-ts` (the generated host) and to JSON (kept as evidence) | implemented |
+| `compile` | `viro-specs compile` to `lens-ts --strict` (the generated host), and to JSON and `scene-json` (kept as evidence) | implemented |
 | `recompile` | `RecompileTypeScriptTool` | lens-compiled |
 | `materials` | Creates `ViroPlaceholder` (Unlit), `ViroDefaultMaterial` (SimplePBR) and `ViroDefaultLine` (Unlit) from asset-graphql presets for the scene controller's registry | none |
 | `wire` | Runs `scripts/specs-lens/editor/wire-generated-host.ts` in the editor: camera, SIK prefab, model import, the `ViroSpecsRuntime` hierarchy, every host `@input`, the LEAF index. It picks the scene-controller or four-host layout from the generated host's inputs | none |

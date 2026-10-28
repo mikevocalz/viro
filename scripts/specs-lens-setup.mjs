@@ -227,7 +227,19 @@ const handlers = {
   async compile() {
     const out = path.join(project, "Assets/ViroSpecs/generated/ViroGeneratedSceneHost.ts");
     const started = Date.now();
-    runNode("compile-lens-ts", [path.join(viroRoot, "bin/viro-specs.cjs"), "compile", "--entry", entry, "--out", out, "--format", "lens-ts"]);
+    // --strict: a warning (for example an element without viroTag) fails the
+    // generated host, so the Lens never ships content-hash IDs.
+    runNode("compile-lens-ts", [path.join(viroRoot, "bin/viro-specs.cjs"), "compile", "--entry", entry, "--out", out, "--format", "lens-ts", "--strict"]);
+    runNode("compile-scene-json", [
+      path.join(viroRoot, "bin/viro-specs.cjs"),
+      "compile",
+      "--entry",
+      entry,
+      "--out",
+      path.join(evidence, "scene.scene-v2.json"),
+      "--format",
+      "scene-json",
+    ]);
     runNode("compile-json", [
       path.join(viroRoot, "bin/viro-specs.cjs"),
       "compile",
