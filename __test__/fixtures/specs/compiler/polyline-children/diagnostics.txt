@@ -1,0 +1,1 @@
+scene.tsx:9:7 error VS3015 [line]: ViroPolyline line has children; Specs polylines cannot contain elements, so they were not compiled.

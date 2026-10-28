@@ -2,6 +2,8 @@ module.exports = {
   testEnvironment: "node",
   globals: { __DEV__: false },
   transform: {
+    "\\.(glb|gltf|obj|fbx|vrx|png|jpe?g|gif|webp|ktx2?|hdr|mp3|wav|mp4)$":
+      "<rootDir>/scripts/jest-specs-asset-transform.cjs",
     "^.+\\.[jt]sx?$": [
       "babel-jest",
       { configFile: "./babel.specs.config.cjs" },

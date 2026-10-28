@@ -1,0 +1,4 @@
+{
+  "description": "{ uri } and plain string sources pass through unchanged.",
+  "parity": true
+}

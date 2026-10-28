@@ -237,9 +237,12 @@ function extensionOf(filePath: string): string {
 export class SpecsModuleLoader {
   private readonly cache = new Map<string, SpecsModuleResolution>();
   private readonly fs: SpecsFileSystem;
+  /** Formats a path for messages, so diagnostics never carry machine-specific absolute paths. */
+  readonly display: (absolutePath: string) => string;
 
-  constructor(fs: SpecsFileSystem) {
+  constructor(fs: SpecsFileSystem, display: (absolutePath: string) => string) {
     this.fs = fs;
+    this.display = display;
   }
 
   /** Registers the already-parsed entry module. */
@@ -262,7 +265,7 @@ export class SpecsModuleLoader {
     if (extension !== "" && !CODE_EXTENSIONS.includes(extension) && extension !== ".json") {
       return this.fs.exists(base)
         ? { kind: "asset", path: base }
-        : { kind: "error", reason: "\"" + request + "\" does not exist at " + base };
+        : { kind: "error", reason: "\"" + request + "\" does not exist (resolved to " + this.display(base) + ")" };
     }
     const candidates =
       extension === ".json" || CODE_EXTENSIONS.includes(extension)
@@ -274,7 +277,10 @@ export class SpecsModuleLoader {
     for (const candidate of candidates) {
       if (this.fs.exists(candidate)) return this.load(candidate);
     }
-    return { kind: "error", reason: "\"" + request + "\" was not found next to " + from.path };
+    return {
+      kind: "error",
+      reason: "\"" + request + "\" was not found next to " + this.display(from.path) + " (tried " + CODE_EXTENSIONS.join(", ") + " and /index.*)",
+    };
   }
 
   private load(path: string): SpecsModuleResolution {
@@ -283,18 +289,18 @@ export class SpecsModuleLoader {
     const text = this.fs.readFile(path);
     let resolution: SpecsModuleResolution;
     if (text === undefined) {
-      resolution = { kind: "error", reason: path + " could not be read" };
+      resolution = { kind: "error", reason: this.display(path) + " could not be read" };
     } else if (extensionOf(path) === ".json") {
       try {
         resolution = { kind: "json", path, value: JSON.parse(text) };
       } catch (error) {
-        resolution = { kind: "error", reason: path + " is not valid JSON (" + (error instanceof Error ? error.message : String(error)) + ")" };
+        resolution = { kind: "error", reason: this.display(path) + " is not valid JSON (" + (error instanceof Error ? error.message : String(error)) + ")" };
       }
     } else {
       try {
         resolution = { kind: "module", module: buildModule(path, text, parseSpecsSource(text)) };
       } catch (error) {
-        resolution = { kind: "error", reason: path + " could not be parsed (" + (error instanceof Error ? error.message : String(error)) + ")" };
+        resolution = { kind: "error", reason: this.display(path) + " could not be parsed (" + (error instanceof Error ? error.message : String(error)) + ")" };
       }
     }
     this.cache.set(path, resolution);

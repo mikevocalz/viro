@@ -1,0 +1,2 @@
+scene.tsx:9:8 warning VS2016: Condition `showRoute` is only known at runtime (showRoute is not a top-level const or import (props, state and locals are only known at runtime)); every branch was emitted with visible: false.
+scene.tsx:9:21 error VS2017 [route]: ViroPolyline route is inside JSX whose condition is only known at runtime, and Specs cannot hide a polyline.

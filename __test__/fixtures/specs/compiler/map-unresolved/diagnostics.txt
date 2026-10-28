@@ -1,0 +1,2 @@
+scene.tsx:9:8 error VS2019: .map() array `items` cannot be resolved statically: items is not a top-level const or import (props, state and locals are only known at runtime).
+scene.tsx error VS2002: <ViroSpecsScene> in scene.tsx has no compiled content.

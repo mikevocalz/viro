@@ -1,0 +1,35 @@
+{
+  "$schema": "https://github.com/mikevocalz/viro/blob/main/schemas/viro-specs-manifest.v2.json",
+  "version": 2,
+  "generator": {
+    "name": "viro-specs-compile"
+  },
+  "source": "__test__/fixtures/specs/compiler/map-block-destructure/scene.tsx",
+  "nodes": [
+    {
+      "id": "row-top",
+      "kind": "text",
+      "position": [
+        0,
+        0.2,
+        -1
+      ],
+      "text": "top"
+    },
+    {
+      "id": "row-bottom",
+      "kind": "text",
+      "position": [
+        0,
+        -0.2,
+        -1
+      ],
+      "text": "bottom"
+    }
+  ],
+  "polylines": [],
+  "lights": [],
+  "materials": [],
+  "interactions": [],
+  "animations": []
+}

@@ -1,0 +1,1 @@
+scene.tsx:9:44 warning VS3002 [half]: ViroText half extents need width and height as positive numbers of meters; got width 0.6, height undefined. They were left out.

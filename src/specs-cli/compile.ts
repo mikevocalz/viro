@@ -693,7 +693,7 @@ export function compileSpecsEntry(
       loweringDiagnostics: [],
     };
   }
-  const loader = new SpecsModuleLoader(fs);
+  const loader = new SpecsModuleLoader(fs, (absolutePath) => displayPath(absolutePath, cwd));
   const entry = loader.addEntry(absoluteEntry, sourceText, ast);
   const compiler = new EntryCompiler(entry, loader, rootDir, cwd);
   compiler.compile();

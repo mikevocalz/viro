@@ -1,0 +1,1 @@
+scene.tsx:9:43 error VS2013 [spread]: ViroText spread `{...rest}` cannot be resolved statically (rest is not a top-level const or import (props, state and locals are only known at runtime)); its props were ignored.

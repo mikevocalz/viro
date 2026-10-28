@@ -14,7 +14,9 @@ on:
       - "__test__/ViroSpecs*.test.tsx"
       - "__test__/fixtures/specs/**"
       - "schemas/**"
-      - "tsconfig.specs-core.json"
+      - "tsconfig.specs-cli.json"
+      - "src/specs-cli/**"
+      - "scripts/jest-specs-asset-transform.cjs"
       - "docs/specs*.md"
       - "bin/viro-specs.cjs"
       - "bin/viro-specs-compile.cjs"
@@ -34,7 +36,9 @@ on:
       - "__test__/ViroSpecs*.test.tsx"
       - "__test__/fixtures/specs/**"
       - "schemas/**"
-      - "tsconfig.specs-core.json"
+      - "tsconfig.specs-cli.json"
+      - "src/specs-cli/**"
+      - "scripts/jest-specs-asset-transform.cjs"
       - "docs/specs*.md"
       - "bin/viro-specs.cjs"
       - "bin/viro-specs-compile.cjs"
@@ -62,9 +66,9 @@ jobs:
         run: npx tsc --noEmit
       - name: Typecheck (--strict)
         run: npx tsc --noEmit --strict
-      - name: Build Specs core for the CLI
-        run: npm run build:specs-core
-      - name: Specs suites (runtime compiler, manifest schema over every fixture, scene gates)
+      - name: Build and type-check the Specs CLI with the shared core (strict)
+        run: npm run build:specs-cli
+      - name: Specs suites (goldens, runtime/static byte identity, Platform Lab timing, schema, scene gates)
         run: npm run test:specs
       - name: Static Specs compiler regression
         run: npm run test:specs-compiler

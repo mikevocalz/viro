@@ -476,7 +476,7 @@ export class SpecsEvaluator {
       const value = this.exportValue(target.module, name, node, nextSeen);
       if (!(value instanceof SpecsUnresolved)) return value;
     }
-    return new SpecsUnresolved(node, module, module.path + " has no export named " + name, "VS2018");
+    return new SpecsUnresolved(node, module, this.loader.display(module.path) + " has no export named " + name, "VS2018");
   }
 
   /**
