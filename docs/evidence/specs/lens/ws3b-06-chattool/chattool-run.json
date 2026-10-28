@@ -1,0 +1,10 @@
+{
+  "route": "ExecuteEditorCode -> LensStudio:ChatTool IChatToolRegistry.execute(descriptor, Parameters{data:{command}}) on the already-registered tool com.reactvision.viro.specs.ChatTool (name viro-specs). This is the registry call Lens Studio's AI Assistant uses; the tool is not exposed as an MCP tool of its own.",
+  "config": "viro-specs.local.json (gitignored, machine-local) pointed specsPackage at viro-external feat/specs-actions 01c37de and viroRoot at viro feat/specs-integration-2 f6cea6e7",
+  "results": [
+    { "command": "doctor", "error": null, "exitCode": 0, "ms": 188, "stdout": "Viro Specs Lens project doctor ... Lens Studio: 5.24.1 / Target: Spectacles / Packages present: 22 / Interaction Kit: SpectaclesInteractionKit.lspkg / Runtime synced: yes / Project checks passed." },
+    { "command": "sync", "error": null, "exitCode": 0, "ms": 197, "stdout": "Synced Viro Specs Lens runtime to: <lens project>/Assets/ViroSpecs / Pinned upstream: specs-devs/packages df8820c0 / Target: SPECS 27 Lens Studio >=5.22.0 / Interaction Kit: SpectaclesInteractionKit.lspkg (line 2, detected)" },
+    { "command": "compile", "error": null, "exitCode": 0, "ms": 351, "stdout": "Wrote generated Lens Studio host: <lens project>/Assets/ViroSpecs/generated/ViroGeneratedSceneHost.ts" }
+  ],
+  "afterwards": "git status showed no change in the project: sync and compile reproduced the committed runtime and generated host byte for byte."
+}
