@@ -68,6 +68,7 @@ ViroSpecsRuntime
   AnimationHost          ViroSpecsAnimationHost (runtimeHostObject)
   Navigation             NavigationDataComponent (userCamera) + ViroSpecsNavigationHost
   GeneratedHost          ViroGeneratedSceneHost: the four host @inputs
+  ActionsLab             ViroSpecsActionsLab (controllerHostObject = SceneHost), disabled; the action scenarios enable it
 LeafIndex                ViroLabLeafIndex
 LeafScenarioClient       ViroLabScenarioClient, disabled except during the leaf step
 ```
@@ -91,10 +92,14 @@ The scenarios are in `examples/specs-platform-lab/lens/Assets/ViroSpecsLab/Leaf/
 | `viro_lab_scene_replacement` | 20 alternating scene commits leave one scene root and none of the previous scene's objects; the object count stays flat |
 | `viro_lab_interaction_phases` | All seven phases (hover-enter, hover-move, hover-exit, select-start, select-end, drag, cancel) arrive from SIK input on a node that declares hover, select and drag |
 | `viro_lab_scroll_window` | A scroll group stages with no VS5005 and scrolls under a SIK drag, compared with a ScrollWindow built on an enabled object |
+| `viro_lab_actions_reference_flow` | Typed actions through `ViroSpecsActionsLab`: list left scrolled to 0.4, pinch on the visible card (`exhibit.open`), details shows it, pinch on the units toggle (`settings.set-units`) patches the view in place, pinch on Back (`nav.back`) returns to the list at scroll 0.4. No warnings or errors from the host |
+| `viro_lab_actions_navigation_drop` | A pinch on a card queues `exhibit.open` for the next frame; app code opens a different card in the same frame, so the queued action is dropped with VS5018 (info) naming the pinched card and never reduced |
+| `viro_lab_actions_unknown_action` | A scene whose trigger names an undeclared action is rejected with VS5015 at `/interactions/0/triggers/0/actionId` and the committed scene stays; dispatching an undeclared action returns false with VS5015 and leaves the state unchanged |
 | `viro_lab_deliberate_failure` | Asserts a title the scene does not have. It must fail; if it passes, the harness is broken |
 
-The five scenarios above `viro_lab_deliberate_failure` need the scene
-controller; each presents its own scene and restores the generated one. The
+The scenarios from `viro_lab_state_update` down to the action scenarios need
+the scene controller; each presents its own scene (or enables ActionsLab) and
+restores the generated one. The
 controller forwards hover phases only for nodes that declare `"hover"`, so
 `viro_lab_select` checks select phases only.
 
@@ -102,6 +107,12 @@ The `leaf` step follows CLAD's `specs-leaf-run-in-preview`: `open_leaf_panel`,
 `list_leaf_scenarios` and `run_leaf_scenario` with `onDevice: false`, one
 scenario at a time, then the Lens-side `DefaultLeafScenarioManager`
 PASSED/FAILED line from the log, because the tool returns no reason.
+
+The step takes each verdict from the Lens-side `[<id>] PASSED|FAILED` line,
+read from the log offset taken before that run, and keeps the plugin's own
+status as `pluginStatus`. The two can disagree: the plugin has reported a
+timeout for runs the scenario manager logged as PASSED. Pass
+`--scenarios id1,id2` to run a subset.
 
 If the `[ChatTool] LEAF Plugin` is missing or fails to load, the step falls
 back to `ViroLabScenarioClient`. That component calls LEAF's
@@ -163,6 +174,27 @@ in Node with the Lens Studio modules stubbed.
   hand-written `ViroSpecsPlatformLab` component (button, status, panel). They do
   not apply to the generated host, so the lab registers `ViroLabLeafIndex`
   instead of `ViroSpecsLeafIndex`.
+- The first LEAF run after a TypeScript recompile can stall: the plugin logs
+  "Running scenario" and the Lens never logs RUNS. One more run (for example
+  `viro_lab_render`) gets the bridge going; later runs start normally.
+- Lens-side log lines can reach the Lens Studio log well after the run, and
+  `run_leaf_scenario` over MCP returns "The operation timed out" after about
+  60 s even when the scenario is still running. Read the scenario manager's
+  line from the log before drawing a conclusion.
+- LEAF's `hover` never finishes on an Interactable that a ScrollWindow has
+  clipped ("setTarget: probe missed"), so the scenario times out. The action
+  scenarios pinch the card nearest the window's centre.
+- A pinch whose action navigates away destroys the Interactable while LEAF's
+  `trigger` is still running, and LEAF throws "Exception in HostFunction:
+  Object is null". `pinch()` in `ViroLabLeafSupport.ts` accepts that error
+  only when the target is already destroyed.
+- A LEAF drag on a ScrollWindow flings: four runs of the same drag left the
+  list at 0.29, -0.35, -0.17 and 1. The reference flow sets the scroll
+  position on the ScrollWindow and relies on `viro_lab_scroll_window` for
+  SIK scrolling.
+- The lab sets no `defaultPanelPrefab`, so reference-flow panels draw
+  nothing; their text renders and each panel is its own pinch target with a
+  box collider. UI Kit 2.0.0 ships no ready panel prefab.
 - Git still reads the `.gitattributes` Lens Studio writes into the project even
   though it is ignored, and its `Assets/**/* filter=lfs` rule turns new binary
   assets into LFS pointers on commit. In a working copy where Lens Studio has

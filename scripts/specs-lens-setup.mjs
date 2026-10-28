@@ -16,6 +16,7 @@
 //   --create             save the project Lens Studio has open into --project first
 //   --replace-packages   remove existing package copies (for example the 4.0.0
 //                        line) before installing the pinned versions
+//   --scenarios <a,b>    leaf step: run only these scenario IDs
 //
 // Lens Studio must be running with its MCP server enabled (AI Assistant > AI
 // Model Context Protocol > Configure Server). The URL and bearer key come from
@@ -25,7 +26,7 @@
 // lens-compiled (recompile) and preview-validated (LEAF in Preview). It never
 // produces hardware-validated evidence.
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { LensStudioMcp } from "./specs-lens/mcp-client.mjs";
@@ -77,6 +78,10 @@ const SCENARIOS = [
   { id: "viro_lab_scene_replacement", expect: "succeeded" },
   { id: "viro_lab_interaction_phases", expect: "succeeded" },
   { id: "viro_lab_scroll_window", expect: "succeeded" },
+  // WS3b typed actions, through ViroSpecsActionsLab on the scene controller.
+  { id: "viro_lab_actions_reference_flow", expect: "succeeded" },
+  { id: "viro_lab_actions_navigation_drop", expect: "succeeded" },
+  { id: "viro_lab_actions_unknown_action", expect: "succeeded" },
   // Proves the suite reports failures. It must fail.
   { id: "viro_lab_deliberate_failure", expect: "failed" },
 ];
@@ -372,31 +377,46 @@ const handlers = {
       const listed = await mcp.call(list, { onDevice: false });
       save("leaf-list.json", listed.data);
       const registered = JSON.stringify(listed.data);
-      for (const scenario of SCENARIOS) {
+      const only = options.scenarios ? options.scenarios.split(",") : null;
+      // The Lens Studio log on this machine; each run is read from the byte
+      // offset taken just before it, so an older run's line never counts.
+      const logFile = (await mcp.call("RunAndCollectLogsTool", { mode: "tail", tailBytes: 1024 })).data.logFile;
+      const logSince = (offset) => {
+        const buffer = readFileSync(logFile);
+        return buffer.subarray(Math.min(offset, buffer.length)).toString("utf8");
+      };
+      for (const scenario of SCENARIOS.filter((s) => !only || only.includes(s.id))) {
         if (!registered.includes(scenario.id)) {
           results.push({ id: scenario.id, runner: "leaf-panel", status: "not-registered" });
           continue;
         }
         // Serial on purpose: each run resets the Lens and aborts a run in flight.
+        const offset = statSync(logFile).size;
         const outcome = await mcp.call(run, {
           scenarioId: scenario.id,
           onDevice: false,
           ...(scenario.parameters ? { parameters: scenario.parameters } : {}),
         });
-        const status = outcome.data?.status ?? (outcome.isError ? "error" : "unknown");
-        // The tool returns no reason; the Lens-side scenario manager's
-        // PASSED/FAILED line in the log is the authoritative detail.
-        const tail = await mcp.call("RunAndCollectLogsTool", { mode: "tail", tailBytes: 65536 });
-        const text = [...(tail.data.errors ?? []), ...(tail.data.prints ?? []), tail.data.tail ?? ""].join("\n");
-        const managerLines = text
-          .split("\n")
-          .filter((line) => line.includes("DefaultLeafScenarioManager") && line.includes(scenario.id) && /PASSED|FAILED/.test(line));
+        const pluginStatus = outcome.data?.status ?? (outcome.isError ? "error" : "unknown");
+        // The tool returns no reason, and it sometimes reports a timeout for a
+        // run the Lens finished. The Lens-side scenario manager's
+        // "[<id>] PASSED|FAILED" line is authoritative (CLAD
+        // specs-leaf-run-in-preview). Lens lines reach the log late, so poll.
+        let managerLine = null;
+        for (let attempt = 0; attempt < 45 && managerLine === null; attempt++) {
+          const lines = logSince(offset).split("\n").filter((line) => line.includes("[" + scenario.id + "] PASSED") || line.includes("[" + scenario.id + "] FAILED"));
+          if (lines.length) managerLine = lines.at(-1).replace(/^.*\[DefaultLeafScenarioManager\]\s*/, "");
+          else await new Promise((resolve) => setTimeout(resolve, 2000));
+        }
+        const status = managerLine === null ? pluginStatus : managerLine.includes("] PASSED") ? "succeeded" : "failed";
+        save(`leaf-${scenario.id}.log`, logSince(offset).split("\n").filter((line) => /\[Preview 1\]|LeafPlugin|LeafChatTool/.test(line)).join("\n"));
         results.push({
           id: scenario.id,
           runner: "leaf-panel",
           status,
-          managerLine: managerLines.at(-1)?.replace(/^.*\[DefaultLeafScenarioManager\]\s*/, "") ?? null,
-          raw: outcome.data,
+          pluginStatus,
+          managerLine,
+          raw: outcome.data ?? outcome.text ?? null,
         });
       }
     } else {
@@ -429,7 +449,8 @@ const handlers = {
       result.expected = scenario?.expect ?? "succeeded";
       result.asExpected = result.status === result.expected;
     }
-    for (const scenario of SCENARIOS) {
+    const only = options.scenarios ? options.scenarios.split(",") : null;
+    for (const scenario of SCENARIOS.filter((s) => !only || only.includes(s.id))) {
       if (!results.some((r) => r.id === scenario.id)) {
         results.push({ id: scenario.id, status: "no-result", expected: scenario.expect, asExpected: false });
       }
