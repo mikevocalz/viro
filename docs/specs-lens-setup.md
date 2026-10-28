@@ -138,3 +138,9 @@ in Node with the Lens Studio modules stubbed.
   hand-written `ViroSpecsPlatformLab` component (button, status, panel). They do
   not apply to the generated host, so the lab registers `ViroLabLeafIndex`
   instead of `ViroSpecsLeafIndex`.
+- Git still reads the `.gitattributes` Lens Studio writes into the project even
+  though it is ignored, and its `Assets/**/* filter=lfs` rule turns new binary
+  assets into LFS pointers on commit. In a working copy where Lens Studio has
+  opened the lab, add this line to `.git/info/attributes`:
+  `examples/specs-platform-lab/lens/** !filter !diff !merge`. Check with
+  `git lfs ls-files`, which should print nothing for the lab.
