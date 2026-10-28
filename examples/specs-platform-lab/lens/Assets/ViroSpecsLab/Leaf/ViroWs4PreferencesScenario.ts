@@ -30,7 +30,7 @@ import {
 
 /**
  * viro_ws4_preferences: High contrast and reduced motion at runtime: the tokens switch to the
- * high-contrast set (black surface, white text), button hover no longer
+ * high-contrast set (#42525f surface, white text), button hover no longer
  * scales, and the loading indicator is static.
  */
 @component
