@@ -1,0 +1,191 @@
+// Wires ViroGeneratedSceneHost into the open Lens Studio project.
+//
+// Runs inside Lens Studio through the MCP ExecuteEditorCode tool (pass this
+// file as `path`). It is an async function body: `pluginSystem` and `args` are
+// injected, and there are no top-level imports. Idempotent: objects are found
+// by name and reused, so a rerun repairs a partly wired scene instead of
+// duplicating it.
+//
+// args:
+//   modelIds:      string[]  portable model source IDs from the compiled scene
+//   modelGlb:      string    absolute path of the GLB to import for modelIds[0]
+//   leafIndex:     boolean   attach ViroLabLeafIndex (default true)
+//   save:          boolean   save the project at the end (default true)
+//
+// Returns { steps: string[], inputs: {...} } describing what it did.
+const model = pluginSystem.findInterface(Editor.Model.IModel) as any;
+const project = model.project;
+const scene = project.scene;
+const am = project.assetManager;
+const steps: string[] = [];
+const inputs: Record<string, Record<string, string>> = {};
+
+function sourcePath(asset: any): string {
+  try {
+    return String(asset.fileMeta?.sourcePath ?? "");
+  } catch {
+    return "";
+  }
+}
+
+function findAsset(label: string, predicate: (asset: any) => boolean): any {
+  const found = am.assets.find(predicate);
+  if (!found) throw new Error(`Asset not found: ${label}`);
+  return found;
+}
+
+function scriptAsset(name: string): any {
+  return findAsset(`script ${name}`, (a: any) => a.name === name && /ScriptAsset$/.test(String(a.type)));
+}
+
+function rootObject(name: string): any {
+  return scene.rootSceneObjects.find((o: any) => o.name === name) ?? null;
+}
+
+function ensureRoot(name: string): any {
+  const existing = rootObject(name);
+  if (existing) return existing;
+  steps.push(`create root ${name}`);
+  return scene.createSceneObject(name);
+}
+
+function ensureChild(parent: any, name: string): any {
+  const existing = parent.children.find((o: any) => o.name === name);
+  if (existing) return existing;
+  const created = scene.createSceneObject(name);
+  scene.reparentSceneObject(created, parent);
+  steps.push(`create ${parent.name}/${name}`);
+  return created;
+}
+
+function ensureScript(object: any, name: string): any {
+  const asset = scriptAsset(name);
+  const existing = object.components.find(
+    (c: any) => String(c.getTypeName?.() ?? "").endsWith("ScriptComponent") && c.scriptAsset && c.scriptAsset.isSame(asset)
+  );
+  if (existing) return existing;
+  const component = object.addComponent("ScriptComponent");
+  component.scriptAsset = asset;
+  steps.push(`attach ${name} to ${object.name}`);
+  return component;
+}
+
+function setInput(component: any, owner: string, name: string, value: any, label: string): void {
+  const names: string[] = component.inputNames ?? [];
+  if (!names.includes(name)) {
+    throw new Error(`${owner} has no @input ${name}; inputs are [${names.join(", ")}]`);
+  }
+  component[name] = value;
+  (inputs[owner] ??= {})[name] = label;
+}
+
+// 1. Camera: Perspective with World device tracking, as SPECS needs.
+const camera = scene.rootSceneObjects.find((o: any) => o.components.some((c: any) => String(c.getTypeName?.()) .endsWith("Camera")));
+if (!camera) throw new Error("No root Camera in the scene.");
+const cameraComponent = camera.components.find((c: any) => String(c.getTypeName?.()).endsWith("Camera"));
+if (cameraComponent.cameraType !== Editor.Components.CameraType.Perspective) {
+  cameraComponent.cameraType = Editor.Components.CameraType.Perspective;
+  steps.push("camera -> Perspective");
+}
+let tracking = camera.components.find((c: any) => String(c.getTypeName?.()).endsWith("DeviceTracking"));
+if (!tracking) {
+  tracking = camera.addComponent("DeviceTracking");
+  steps.push("camera + DeviceTracking");
+}
+if (tracking.deviceTrackingMode !== Editor.Components.DeviceTrackingMode.World) {
+  tracking.deviceTrackingMode = Editor.Components.DeviceTrackingMode.World;
+  steps.push("DeviceTracking -> World");
+}
+
+// 2. Spectacles Interaction Kit root prefab. SIK 4.0.0 names it InteractionKit.
+const sikPrefab = findAsset(
+  "SIK InteractionKit prefab",
+  (a: any) => String(a.type) === "ObjectPrefab" && (a.name === "InteractionKit" || a.name === "SpectaclesInteractionKit")
+);
+if (!rootObject(sikPrefab.name)) {
+  scene.instantiatePrefab(sikPrefab, null);
+  steps.push(`instantiate ${sikPrefab.name} prefab at root`);
+}
+
+// 3. Model prefab for the compiled model source.
+const modelIds: string[] = args.modelIds ?? [];
+const modelPrefabs: any[] = [];
+if (modelIds.length) {
+  if (!args.modelGlb) throw new Error("modelGlb is required when modelIds is set.");
+  const glbName = String(args.modelGlb).split("/").pop()!.replace(/\.[^.]+$/, "");
+  let prefab = am.assets.find((a: any) => String(a.type) === "ObjectPrefab" && a.name === glbName && sourcePath(a).startsWith("ViroSpecsLab/"));
+  if (!prefab) {
+    const imported = await am.importExternalFileAsync(
+      new Editor.Path(args.modelGlb),
+      new Editor.Path("ViroSpecsLab/Models"),
+      Editor.Model.ResultType.Auto
+    );
+    prefab = imported.primary;
+    steps.push(`import ${glbName} -> ${String(prefab?.type)}`);
+  }
+  if (!prefab || String(prefab.type) !== "ObjectPrefab") {
+    throw new Error(`Importing ${args.modelGlb} did not produce an ObjectPrefab (got ${String(prefab?.type)}).`);
+  }
+  modelPrefabs.push(prefab);
+}
+
+// 4. Runtime hierarchy.
+const runtime = ensureRoot("ViroSpecsRuntime");
+const registryObject = ensureChild(runtime, "AssetRegistry");
+const contentObject = ensureChild(runtime, "ViroGeneratedContent");
+const runtimeHostObject = ensureChild(runtime, "RuntimeHost");
+const interactionHostObject = ensureChild(runtime, "InteractionHost");
+const animationHostObject = ensureChild(runtime, "AnimationHost");
+const navigationObject = ensureChild(runtime, "Navigation");
+const generatedHostObject = ensureChild(runtime, "GeneratedHost");
+
+const registry = ensureScript(registryObject, "ViroSpecsAssetRegistry");
+setInput(registry, "AssetRegistry", "modelIds", modelIds, JSON.stringify(modelIds));
+setInput(registry, "AssetRegistry", "modelPrefabs", modelPrefabs, modelPrefabs.map((p) => p.name).join(","));
+
+const runtimeHost = ensureScript(runtimeHostObject, "ViroSpecsRuntimeHost");
+setInput(runtimeHost, "RuntimeHost", "root", contentObject, contentObject.name);
+setInput(runtimeHost, "RuntimeHost", "assetRegistryObject", registryObject, registryObject.name);
+
+const interactionHost = ensureScript(interactionHostObject, "ViroSpecsInteractionHost");
+setInput(interactionHost, "InteractionHost", "runtimeHostObject", runtimeHostObject, runtimeHostObject.name);
+
+const animationHost = ensureScript(animationHostObject, "ViroSpecsAnimationHost");
+setInput(animationHost, "AnimationHost", "runtimeHostObject", runtimeHostObject, runtimeHostObject.name);
+
+// Navigation: SpecsNavigationKit's NavigationDataComponent on the same object.
+ensureScript(navigationObject, "NavigationDataComponent");
+const navigationHost = ensureScript(navigationObject, "ViroSpecsNavigationHost");
+const lineMaterial = findAsset(
+  "VolumetricLine material",
+  (a: any) => String(a.type) === "Material" && /VolumetricLine/i.test(sourcePath(a) + a.name)
+);
+const routeIcon = findAsset(
+  "route icon texture",
+  (a: any) => /Texture$/.test(String(a.type)) && a.name === "arrow-right"
+);
+setInput(navigationHost, "Navigation", "navigationObject", navigationObject, navigationObject.name);
+setInput(navigationHost, "Navigation", "assetRegistryObject", registryObject, registryObject.name);
+setInput(navigationHost, "Navigation", "defaultLineMaterial", lineMaterial, lineMaterial.name);
+setInput(navigationHost, "Navigation", "routeIcon", routeIcon, routeIcon.name);
+setInput(navigationHost, "Navigation", "generatedContentRoot", contentObject, contentObject.name);
+
+// The generated host and its four @inputs.
+const generatedHost = ensureScript(generatedHostObject, "ViroGeneratedSceneHost");
+setInput(generatedHost, "GeneratedHost", "runtimeHostObject", runtimeHostObject, runtimeHostObject.name);
+setInput(generatedHost, "GeneratedHost", "interactionHostObject", interactionHostObject, interactionHostObject.name);
+setInput(generatedHost, "GeneratedHost", "animationHostObject", animationHostObject, animationHostObject.name);
+setInput(generatedHost, "GeneratedHost", "navigationHostObject", navigationObject, navigationObject.name);
+
+// 5. LEAF index for the generated-host scenarios.
+if (args.leafIndex !== false) {
+  const leafObject = ensureRoot("LeafIndex");
+  ensureScript(leafObject, "ViroLabLeafIndex");
+}
+
+if (args.save !== false) {
+  project.save();
+  steps.push("save");
+}
+
+return { steps, inputs };
