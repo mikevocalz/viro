@@ -88,7 +88,9 @@ function toProp(value: SpecsStaticValue): unknown {
   if (Array.isArray(value)) return (value as readonly SpecsStaticValue[]).map(toProp);
   if (value !== null && value !== undefined && isSpecsStaticObject(value)) {
     const out: Record<string, unknown> = {};
-    for (const [key, entry] of Object.entries(value)) out[key] = toProp(entry);
+    for (const [key, entry] of Object.entries(value)) {
+      Object.defineProperty(out, key, { value: toProp(entry), enumerable: true, writable: true, configurable: true });
+    }
     return out;
   }
   return value;
@@ -477,9 +479,18 @@ class EntryCompiler {
     let nodeIdForReports: string | undefined;
 
     const setProp = (prop: string, value: unknown, at: AstNode) => {
-      if (!written.includes(prop)) written.push(prop);
       unresolvedProps.delete(prop);
-      props[prop] = value;
+      if (value === undefined) {
+        // React drops undefined props, and so does the runtime compiler:
+        // `x={undefined}` (or a later spread setting it) means "not written".
+        const index = written.indexOf(prop);
+        if (index !== -1) written.splice(index, 1);
+        delete props[prop];
+        locations.delete(prop);
+        return;
+      }
+      if (!written.includes(prop)) written.push(prop);
+      Object.defineProperty(props, prop, { value, enumerable: true, writable: true, configurable: true });
       locations.set(prop, at);
     };
 

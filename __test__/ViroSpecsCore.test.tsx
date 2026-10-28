@@ -241,4 +241,19 @@ describe("static analysis edge cases", () => {
     const result = compile('const A = B;\nconst B = A;\nexport const S = () => <ViroSpecsScene><ViroText viroTag="t" text={A} /></ViroSpecsScene>;');
     expect(result.diagnostics.find((d) => d.code === "VS2009")?.message).toMatch(/refers to itself/);
   });
+
+  it("treats a prop set to undefined as not written, like React", () => {
+    const result = compile('export const S = () => <ViroSpecsScene><ViroText viroTag="t" text="x" extrusionDepth={undefined} {...{ visible: undefined }} /></ViroSpecsScene>;');
+    expect(result.diagnostics).toEqual([]);
+    expect((result.manifest as ViroSpecsManifestV2).nodes).toEqual([{ id: "t", kind: "text", text: "x" }]);
+  });
+
+  it("keeps a __proto__ key as data instead of a prototype", () => {
+    const result = compile(
+      'const STYLE = { "__proto__": { fontSize: 99 }, fontSize: 12 };\nexport const S = () => <ViroSpecsScene><ViroText viroTag="t" text="x" style={STYLE} /></ViroSpecsScene>;'
+    );
+    const node = (result.manifest as ViroSpecsManifestV2).nodes[0];
+    expect(node).toEqual({ id: "t", kind: "text", text: "x", style: { fontSize: 12 } });
+    expect(result.diagnostics.map((d) => d.message).join("\n")).toMatch(/style\.__proto__ is not carried/);
+  });
 });

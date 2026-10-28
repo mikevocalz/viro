@@ -88,6 +88,15 @@ export function isSpecsStaticObject(value: SpecsStaticValue): value is SpecsStat
   );
 }
 
+/**
+ * Sets an own key. Plain assignment would treat `"__proto__"` as the
+ * prototype setter, so a source object `{ "__proto__": x }` or a JSON key of
+ * that name would change the object's prototype instead of adding a key.
+ */
+export function setSpecsStaticKey(target: Record<string, SpecsStaticValue>, key: string, value: SpecsStaticValue): void {
+  Object.defineProperty(target, key, { value, enumerable: true, writable: true, configurable: true });
+}
+
 function fromJson(value: unknown): SpecsStaticValue {
   if (value === null || typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
     return value;
@@ -95,7 +104,7 @@ function fromJson(value: unknown): SpecsStaticValue {
   if (Array.isArray(value)) return value.map(fromJson);
   if (typeof value === "object") {
     const out: Record<string, SpecsStaticValue> = {};
-    for (const [key, entry] of Object.entries(value)) out[key] = fromJson(entry);
+    for (const [key, entry] of Object.entries(value)) setSpecsStaticKey(out, key, fromJson(entry));
     return out;
   }
   return undefined;
@@ -190,7 +199,7 @@ export class SpecsEvaluator {
             if (spread instanceof SpecsUnresolved) return spread;
             if (spread === null || spread === undefined) continue;
             if (!isSpecsStaticObject(spread)) return unresolved("`..." + specsSourceText(scope.module, property.argument) + "` is not an object");
-            Object.assign(out, spread);
+            for (const [key, entry] of Object.entries(spread)) setSpecsStaticKey(out, key, entry);
             continue;
           }
           let key: string | undefined;
@@ -204,7 +213,7 @@ export class SpecsEvaluator {
           else if (property.key.type === "NumericLiteral") key = String(property.key.value);
           if (key === undefined) return unresolved("an object key is not static");
           if (property.type === "ObjectMethod") {
-            out[key] = new SpecsStaticFunction(property);
+            setSpecsStaticKey(out, key, new SpecsStaticFunction(property));
             continue;
           }
           if (property.value.type === "AssignmentPattern" || property.value.type.endsWith("Pattern") || property.value.type === "RestElement") {
@@ -212,7 +221,7 @@ export class SpecsEvaluator {
           }
           const value = this.evaluate(property.value as Expression, scope);
           if (value instanceof SpecsUnresolved) return value;
-          out[key] = value;
+          setSpecsStaticKey(out, key, value);
         }
         return out;
       }
@@ -513,7 +522,7 @@ function applyPatternStep(
     case "rest-object": {
       if (value === null || value === undefined || !isSpecsStaticObject(value)) return PATTERN_MISMATCH;
       const out: Record<string, SpecsStaticValue> = {};
-      for (const [key, entry] of Object.entries(value)) if (!step.exclude.includes(key)) out[key] = entry;
+      for (const [key, entry] of Object.entries(value)) if (!step.exclude.includes(key)) setSpecsStaticKey(out, key, entry);
       return out;
     }
     case "rest-array":
@@ -541,7 +550,7 @@ function bindPattern(param: AstNode, value: SpecsStaticValue, locals: Map<string
         if (property.type === "RestElement") {
           if (property.argument.type !== "Identifier") return false;
           const rest: Record<string, SpecsStaticValue> = {};
-          for (const [key, entry] of Object.entries(value)) if (!seen.includes(key)) rest[key] = entry;
+          for (const [key, entry] of Object.entries(value)) if (!seen.includes(key)) setSpecsStaticKey(rest, key, entry);
           locals.set(property.argument.name, rest);
           continue;
         }
