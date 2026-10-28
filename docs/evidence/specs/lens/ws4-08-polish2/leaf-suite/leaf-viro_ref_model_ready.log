@@ -1,0 +1,17 @@
+16:25:24.232 [Packages/SpectaclesInteractionKit.lspkg/Utils/logger.ts:21] FrameCache: Initialized global cache flushing for FrameCache
+16:25:24.555 [Packages/SpectaclesInteractionKit.lspkg/Core/ConfigurationValidator/ConfigurationValidator.ts:16] SIK Version : 0.18.0
+16:25:24.921 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:25:24.922 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:25:25.026 [LeafPlugin][PluginViewModel] Loaded 39 scenario(s) from preview.
+16:25:25.027 [LeafPlugin][PluginViewModel] Running scenario: viro_ref_model_ready
+16:26:02.980 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_ref_model_ready with args: [(hold_ms: 0)]
+16:26:02.980 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.001s]Running with runner config: {"__leaf__log_level":"INFO","__leaf__timeout_secs":"600","__leaf__diagnostic_policy":"fallback","__leaf__diagnostic_report_duration_ms":"-1"}
+16:26:03.232 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node mv-status: Text "mv-status" maxLines 1 is approximated.
+16:26:03.443 [Assets/ViroSpecsRefApps/Leaf/ViroRefModelReadyScenario.ts:36] VIRO_REF model_ready findings=[]
+16:26:03.450 [Assets/ViroSpecsRefApps/Leaf/ViroRefAppsLeafSupport.ts:138] VIRO_REF_HOLD model_ready 0
+16:26:03.450 [Assets/ViroSpecsRefApps/Leaf/ViroRefModelReadyScenario.ts:43] VIRO_REF model_ready PASS
+16:26:03.451 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:26:03.452 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:26:03.775 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.796s]PASSED: viro_ref_model_ready
+16:26:03.775 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.796s][viro_ref_model_ready] PASSED
+16:26:03.776 [LeafPlugin][PluginViewModel] ✅ Scenario viro_ref_model_ready completed successfully.

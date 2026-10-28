@@ -1,0 +1,25 @@
+16:19:33.430 [Packages/SpectaclesInteractionKit.lspkg/Utils/logger.ts:21] FrameCache: Initialized global cache flushing for FrameCache
+16:19:33.844 [Packages/SpectaclesInteractionKit.lspkg/Core/ConfigurationValidator/ConfigurationValidator.ts:16] SIK Version : 0.18.0
+16:19:34.223 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:19:34.224 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:19:34.291 [LeafPlugin][PluginViewModel] Loaded 39 scenario(s) from preview.
+16:19:34.292 [LeafPlugin][PluginViewModel] Running scenario: viro_ws4_move_band
+16:20:10.733 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_ws4_move_band with args: [(hold_ms: 0)]
+16:20:10.733 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.001s]Running with runner config: {"__leaf__log_level":"INFO","__leaf__timeout_secs":"600","__leaf__diagnostic_policy":"fallback","__leaf__diagnostic_report_duration_ms":"-1"}
+16:20:10.981 [Assets/ViroSpecsLab/Leaf/ViroLabExperienceSupport.ts:43] VIRO_WS4 experience started placementScene=false panelMesh=Unit Plane panelMaterial=ViroExperiencePanel
+16:20:10.983 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node ix-title: Text "ix-title" maxLines 2 is approximated.
+16:20:10.983 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node ix-body: Text "ix-body" maxLines 2 is approximated.
+16:20:11.466 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5023 (experience) node ix-model: ix-model would be 3.03 m away; stopped at 3 m.
+16:20:11.836 [Assets/ViroSpecsLab/Leaf/ViroWs4MoveBandScenario.ts:55] VIRO_WS4 move_band distance m=3 VS5023=1
+16:20:11.838 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node ix-title: Text "ix-title" maxLines 2 is approximated.
+16:20:11.838 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node ix-body: Text "ix-body" maxLines 2 is approximated.
+16:20:12.673 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5023 (experience) node ix-model: ix-model would be 3.01 m away; stopped at 3 m.
+16:20:13.251 [Assets/ViroSpecsLab/Leaf/ViroWs4MoveBandScenario.ts:85] VIRO_WS4 move_band drag events=24 farthest reported m=3.000000305175781 worst offset from node cm=0
+16:20:13.253 [Assets/ViroSpecsLab/Leaf/ViroWs4MoveBandScenario.ts:91] VIRO_WS4 move_band hand drag frames=20 distance m=3 VS5023=1
+16:20:13.253 [Assets/ViroSpecsLab/Leaf/ViroLabExperienceSupport.ts:213] VIRO_WS4_HOLD interaction_band 0
+16:20:13.253 [Assets/ViroSpecsLab/Leaf/ViroWs4MoveBandScenario.ts:96] VIRO_WS4 move_band PASS
+16:20:13.256 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:20:13.257 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:20:13.479 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  2.746s]PASSED: viro_ws4_move_band
+16:20:13.479 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  2.747s][viro_ws4_move_band] PASSED
+16:20:13.480 [LeafPlugin][PluginViewModel] ✅ Scenario viro_ws4_move_band completed successfully.

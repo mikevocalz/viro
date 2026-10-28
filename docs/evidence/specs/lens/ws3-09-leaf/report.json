@@ -1,0 +1,30 @@
+{
+  "startedAt": "2026-10-28T12:03:56.486Z",
+  "project": "examples/specs-platform-lab/lens",
+  "steps": {
+    "device": {
+      "ok": true,
+      "ms": 71,
+      "result": {
+        "device": "SPECS 27",
+        "input": "Interactive",
+        "room": "Sunlit Room"
+      }
+    },
+    "preview": {
+      "ok": true,
+      "ms": 18242,
+      "result": {
+        "errors": 2,
+        "prints": 13,
+        "firstActivityAtMs": 144
+      }
+    },
+    "leaf": {
+      "ok": false,
+      "ms": 459540,
+      "error": "LEAF outcomes differ from expectations: viro_lab_select=failed, viro_lab_scene_replacement=failed, viro_lab_interaction_phases=failed, viro_lab_scroll_window=failed"
+    }
+  },
+  "finishedAt": "2026-10-28T12:12:05.832Z"
+}

@@ -1,0 +1,22 @@
+16:29:05.292 [Packages/SpectaclesInteractionKit.lspkg/Utils/logger.ts:21] FrameCache: Initialized global cache flushing for FrameCache
+16:29:05.610 [Packages/SpectaclesInteractionKit.lspkg/Core/ConfigurationValidator/ConfigurationValidator.ts:16] SIK Version : 0.18.0
+16:29:05.956 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:29:05.957 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:29:06.026 [LeafPlugin][PluginViewModel] Loaded 39 scenario(s) from preview.
+16:29:06.027 [LeafPlugin][PluginViewModel] Running scenario: viro_ref_expected_failure
+16:29:40.948 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_ref_expected_failure with args: []
+16:29:40.949 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.001s]Running with runner config: {"__leaf__log_level":"INFO","__leaf__timeout_secs":"600","__leaf__diagnostic_policy":"fallback","__leaf__diagnostic_report_duration_ms":"-1"}
+16:29:41.195 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node dash-title: Text "dash-title" maxLines 2 is approximated.
+16:29:41.196 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node dash-card-temp-label: Text "dash-card-temp-label" maxLines 2 is approximated.
+16:29:41.196 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node dash-card-temp-value: Text "dash-card-temp-value" maxLines 2 is approximated.
+16:29:41.196 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node dash-card-humidity-label: Text "dash-card-humidity-label" maxLines 2 is approximated.
+16:29:41.196 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node dash-card-humidity-value: Text "dash-card-humidity-value" maxLines 2 is approximated.
+16:29:41.196 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node dash-card-co2-label: Text "dash-card-co2-label" maxLines 2 is approximated.
+16:29:41.196 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node dash-card-co2-value: Text "dash-card-co2-value" maxLines 2 is approximated.
+16:29:41.196 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node dash-status: Text "dash-status" maxLines 1 is approximated.
+16:29:41.424 [Assets/ViroSpecsRefApps/Leaf/ViroRefExpectedFailureScenario.ts:22] VIRO_REF expected_failure asserting a missing title
+16:29:41.427 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:29:41.428 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:29:41.735 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] E [DefaultLeafScenarioManager] [  0.787s]FAILED: viro_ref_expected_failure - AssertionError: Expected: "REF_EXPECTED_FAILURE: this title does not exist" - Received: "Workshop sensors"
+16:29:41.736 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] E [DefaultLeafScenarioManager] [  0.788s][viro_ref_expected_failure] FAILED - AssertionError: Expected: "REF_EXPECTED_FAILURE: this title does not exist" - Received: "Workshop sensors"
+16:29:41.737 [LeafPlugin][PluginViewModel] ❌ Scenario viro_ref_expected_failure failed.

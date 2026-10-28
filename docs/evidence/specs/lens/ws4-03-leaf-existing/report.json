@@ -1,0 +1,20 @@
+{
+  "startedAt": "2026-10-28T15:14:42.638Z",
+  "project": "examples/specs-platform-lab/lens",
+  "steps": {
+    "preflight": {
+      "ok": true,
+      "ms": 3680,
+      "result": {
+        "open": "<repo>/examples/specs-platform-lab/lens/ViroSpecsPlatformLab.esproj",
+        "tools": 40
+      }
+    },
+    "leaf": {
+      "ok": false,
+      "ms": 903996,
+      "error": "LEAF outcomes differ from expectations: viro_lab_render=failed, viro_lab_drag=failed, viro_lab_scroll_window=failed"
+    }
+  },
+  "finishedAt": "2026-10-28T15:29:51.476Z"
+}

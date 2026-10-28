@@ -1,0 +1,97 @@
+{
+  "startedAt": "2026-10-28T15:40:37.958Z",
+  "project": "examples/specs-platform-lab/lens",
+  "steps": {
+    "preflight": {
+      "ok": true,
+      "ms": 1077,
+      "result": {
+        "open": "<repo>/examples/specs-platform-lab/lens/ViroSpecsPlatformLab.esproj",
+        "tools": 40
+      }
+    },
+    "compile": {
+      "ok": true,
+      "ms": 990,
+      "result": {
+        "ms": 990
+      }
+    },
+    "materials": {
+      "ok": true,
+      "ms": 662,
+      "result": [
+        "present ViroPlaceholder",
+        "present ViroDefaultMaterial",
+        "present ViroDefaultLine",
+        "present ViroImageMaterial",
+        "present ViroExperiencePanel"
+      ]
+    },
+    "wire": {
+      "ok": true,
+      "ms": 1983,
+      "result": {
+        "inputs": {
+          "ActionsLab": {
+            "controllerHostObject": "SceneHost",
+            "forwardActions": "true"
+          },
+          "AssetRegistry": {
+            "defaultImageMaterial": "ViroImageMaterial",
+            "defaultLineMaterial": "ViroDefaultLine",
+            "defaultMaterial": "ViroDefaultMaterial",
+            "fontIds": "[]",
+            "fonts": "[]",
+            "imageIds": "[\"examples/visionos-sweep/assets/button.png\"]",
+            "imageTextures": "button",
+            "modelIds": "[\"examples/visionos-sweep/assets/shiba.glb\"]",
+            "modelPrefabs": "shiba",
+            "placeholderMaterial": "ViroPlaceholder"
+          },
+          "ExperienceHost": {
+            "cameraObject": "Camera Object",
+            "panelMaterial": "ViroExperiencePanel",
+            "panelMesh": "Unit Plane",
+            "sceneHostObject": "SceneHost"
+          },
+          "GeneratedHost": {
+            "sceneHostObject": "SceneHost"
+          },
+          "SceneHost": {
+            "assetRegistryObject": "AssetRegistry",
+            "root": "ViroGeneratedContent"
+          }
+        },
+        "steps": [
+          "disable ExperienceHost",
+          "save"
+        ]
+      }
+    },
+    "recompile": {
+      "ok": true,
+      "ms": 535,
+      "result": "lens-compiled"
+    },
+    "device": {
+      "ok": true,
+      "ms": 32,
+      "result": {
+        "device": "SPECS 27",
+        "input": "Interactive",
+        "room": "Sunlit Room"
+      }
+    },
+    "preview": {
+      "ok": true,
+      "ms": 32725,
+      "result": {
+        "errors": 1,
+        "prints": 34,
+        "firstActivityAtMs": 225
+      }
+    }
+  },
+  "finishedAt": "2026-10-28T15:41:16.040Z"
+}

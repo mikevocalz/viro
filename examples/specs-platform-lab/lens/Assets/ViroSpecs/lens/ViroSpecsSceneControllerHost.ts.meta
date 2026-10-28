@@ -1,0 +1,52 @@
+- !<AssetImportMetadata/3f70441a-7bc3-45fe-8575-6b0006b7deb8>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> eb42a484-8ec1-48fb-a5cd-59fb1dd67e97
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> eb42a484-8ec1-48fb-a5cd-59fb1dd67e97
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> e3569dbb-c088-46ed-9ce8-6de200e1db55
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/e3569dbb-c088-46ed-9ce8-6de200e1db55>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: c109a84b-961b-46aa-8992-713bc022f37f
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    assetRegistryObject: false
+    maxCachedMaterials: false
+    root: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - assetRegistryObject: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      root: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      maxCachedMaterials: !<float> 32.000000
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - // @input SceneObject assetRegistryObject
+    - // @input SceneObject root
+    - '// @input float maxCachedMaterials = 32 {"hint":"Idle scene-defined materials kept for reuse across scenes"}'

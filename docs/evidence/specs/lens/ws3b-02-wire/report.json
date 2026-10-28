@@ -1,0 +1,71 @@
+{
+  "startedAt": "2026-10-28T13:05:52.584Z",
+  "project": "examples/specs-platform-lab/lens",
+  "steps": {
+    "compile": {
+      "ok": true,
+      "ms": 962,
+      "result": {
+        "ms": 961
+      }
+    },
+    "recompile": {
+      "ok": true,
+      "ms": 110,
+      "result": "lens-compiled"
+    },
+    "materials": {
+      "ok": true,
+      "ms": 291,
+      "result": [
+        "present ViroPlaceholder",
+        "present ViroDefaultMaterial",
+        "present ViroDefaultLine"
+      ]
+    },
+    "wire": {
+      "ok": true,
+      "ms": 1495,
+      "result": {
+        "inputs": {
+          "ActionsLab": {
+            "controllerHostObject": "SceneHost",
+            "forwardActions": "true"
+          },
+          "AssetRegistry": {
+            "defaultLineMaterial": "ViroDefaultLine",
+            "defaultMaterial": "ViroDefaultMaterial",
+            "fontIds": "[]",
+            "fonts": "[]",
+            "modelIds": "[\"examples/visionos-sweep/assets/shiba.glb\"]",
+            "modelPrefabs": "shiba",
+            "placeholderMaterial": "ViroPlaceholder"
+          },
+          "GeneratedHost": {
+            "sceneHostObject": "SceneHost"
+          },
+          "SceneHost": {
+            "assetRegistryObject": "AssetRegistry",
+            "root": "ViroGeneratedContent"
+          }
+        },
+        "steps": [
+          "create ViroSpecsRuntime/ActionsLab",
+          "attach ViroSpecsActionsLab to ActionsLab",
+          "disable ActionsLab",
+          "save"
+        ]
+      }
+    },
+    "device": {
+      "ok": true,
+      "ms": 57,
+      "result": {
+        "device": "SPECS 27",
+        "input": "Interactive",
+        "room": "Sunlit Room"
+      }
+    }
+  },
+  "finishedAt": "2026-10-28T13:06:09.607Z"
+}

@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "generatedBy": "@viro-external/specs",
+  "sdkVersion": "0.2.0",
+  "profile": "validation",
+  "files": {
+    "lens/ViroSpecsActionsLab.ts": "65f74cf69be3406cd51145692ce553d5d1e4722c7fe7810ff254a6a44a2a4a1e",
+    "lens/ViroSpecsAgentValidation.ts": "2092012b2747590eec0c63ea308a7e34608950aaec9452ab247330c7a7e4cb67",
+    "lens/ViroSpecsLeafIndex.ts": "6f669a0e8bfbd26490d71966c69df622122251fe4c382cdc71b1c9f379585608",
+    "lens/ViroSpecsLeafInteractionScenario.ts": "f3751da1e3d1bba9bf9708fa02744a69a5c8e244acbc1e92c007d58c44dd354a",
+    "lens/ViroSpecsLeafSceneSmokeScenario.ts": "caf4af2dd85cc9838fba53f69c081999f6502295f6ac68906649288def82dae0",
+    "lens/ViroSpecsPlatformLab.ts": "a18de648a24925ee92ecd222df50fa2a55046f345fb0dd56101c3f07bc7b3657",
+    "lens/ViroSpecsReferenceFlow.ts": "dc8337c26c0a3c9641e7164db1f62dc80f15575382cf14e9e073c85507eb6933",
+    "lens/ViroSpecsRuntimeValidation.ts": "e781e42157bcf2ac766d987b7d25a83d1c264a4e910f0db43e24ae1e39c763ea"
+  }
+}

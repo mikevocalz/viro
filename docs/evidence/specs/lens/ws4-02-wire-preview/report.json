@@ -1,0 +1,85 @@
+{
+  "startedAt": "2026-10-28T15:13:54.107Z",
+  "project": "examples/specs-platform-lab/lens",
+  "steps": {
+    "preflight": {
+      "ok": true,
+      "ms": 2621,
+      "result": {
+        "open": "<repo>/examples/specs-platform-lab/lens/ViroSpecsPlatformLab.esproj",
+        "tools": 40
+      }
+    },
+    "compile": {
+      "ok": true,
+      "ms": 1117,
+      "result": {
+        "ms": 1117
+      }
+    },
+    "recompile": {
+      "ok": true,
+      "ms": 6486,
+      "result": "lens-compiled"
+    },
+    "materials": {
+      "ok": true,
+      "ms": 1775,
+      "result": [
+        "present ViroPlaceholder",
+        "present ViroDefaultMaterial",
+        "present ViroDefaultLine"
+      ]
+    },
+    "wire": {
+      "ok": true,
+      "ms": 3388,
+      "result": {
+        "inputs": {
+          "ActionsLab": {
+            "controllerHostObject": "SceneHost",
+            "forwardActions": "true"
+          },
+          "AssetRegistry": {
+            "defaultLineMaterial": "ViroDefaultLine",
+            "defaultMaterial": "ViroDefaultMaterial",
+            "fontIds": "[]",
+            "fonts": "[]",
+            "modelIds": "[\"examples/visionos-sweep/assets/shiba.glb\"]",
+            "modelPrefabs": "shiba",
+            "placeholderMaterial": "ViroPlaceholder"
+          },
+          "GeneratedHost": {
+            "sceneHostObject": "SceneHost"
+          },
+          "SceneHost": {
+            "assetRegistryObject": "AssetRegistry",
+            "root": "ViroGeneratedContent"
+          }
+        },
+        "steps": [
+          "save"
+        ]
+      }
+    },
+    "device": {
+      "ok": true,
+      "ms": 209,
+      "result": {
+        "device": "SPECS 27",
+        "input": "Interactive",
+        "room": "Sunlit Room"
+      }
+    },
+    "preview": {
+      "ok": true,
+      "ms": 23380,
+      "result": {
+        "errors": 0,
+        "prints": 0,
+        "firstActivityAtMs": 219
+      }
+    }
+  },
+  "finishedAt": "2026-10-28T15:14:35.772Z"
+}

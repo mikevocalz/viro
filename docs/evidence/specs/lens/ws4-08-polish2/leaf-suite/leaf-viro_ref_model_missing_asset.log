@@ -1,0 +1,19 @@
+16:26:47.074 [Packages/SpectaclesInteractionKit.lspkg/Utils/logger.ts:21] FrameCache: Initialized global cache flushing for FrameCache
+16:26:47.358 [Packages/SpectaclesInteractionKit.lspkg/Core/ConfigurationValidator/ConfigurationValidator.ts:16] SIK Version : 0.18.0
+16:26:47.686 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:26:47.687 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:26:47.739 [LeafPlugin][PluginViewModel] Loaded 39 scenario(s) from preview.
+16:26:47.739 [LeafPlugin][PluginViewModel] Running scenario: viro_ref_model_missing_asset
+16:27:16.859 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_ref_model_missing_asset with args: [(hold_ms: 0)]
+16:27:16.859 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.001s]Running with runner config: {"__leaf__log_level":"INFO","__leaf__timeout_secs":"600","__leaf__diagnostic_policy":"fallback","__leaf__diagnostic_report_duration_ms":"-1"}
+16:27:17.227 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5003 (stage) node mv-model: No model asset is registered for "examples/visionos-sweep/assets/missing-reference-model.glb" (node "mv-model"). A placeholder is shown.
+16:27:17.234 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node mv-status: Text "mv-status" maxLines 1 is approximated.
+16:27:17.429 [Assets/ViroSpecsRefApps/Leaf/ViroRefModelMissingAssetScenario.ts:52] VIRO_REF model_missing diagnostics=["VS5003 mv-model","VS5008 mv-status"]
+16:27:17.433 [Assets/ViroSpecsRefApps/Leaf/ViroRefAppsLeafSupport.ts:138] VIRO_REF_HOLD model_missing 0
+16:27:18.641 [Assets/ViroSpecsRefApps/Leaf/ViroRefModelMissingAssetScenario.ts:82] VIRO_REF model_missing retried=["mv-model"]
+16:27:18.641 [Assets/ViroSpecsRefApps/Leaf/ViroRefModelMissingAssetScenario.ts:84] VIRO_REF model_missing PASS
+16:27:18.644 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:27:18.644 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:27:19.003 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  2.145s]PASSED: viro_ref_model_missing_asset
+16:27:19.004 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  2.146s][viro_ref_model_missing_asset] PASSED
+16:27:19.005 [LeafPlugin][PluginViewModel] ✅ Scenario viro_ref_model_missing_asset completed successfully.

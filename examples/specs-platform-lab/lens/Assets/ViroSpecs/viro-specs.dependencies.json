@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "generatedBy": "@viro-external/specs",
+  "sdkVersion": "0.2.0",
+  "wireVersion": 1,
+  "sceneProtocols": [
+    1,
+    2
+  ],
+  "interactionKit": {
+    "line": 2,
+    "package": "SpectaclesInteractionKit.lspkg"
+  },
+  "target": "SPECS 27",
+  "lensStudio": ">=5.22.0",
+  "upstream": {
+    "repository": "specs-devs/packages",
+    "commit": "df8820c0c4970f052e545b8da1dd288c2516d912"
+  },
+  "requiredPackages": [
+    "SpectaclesInteractionKit.lspkg",
+    "SpectaclesUIKit.lspkg",
+    "SurfacePlacement.lspkg",
+    "VolumetricLine.lspkg",
+    "SpecsNavigationKit.lspkg"
+  ],
+  "packageRequirements": [
+    {
+      "package": "SpectaclesInteractionKit.lspkg",
+      "minVersion": "2.0.0"
+    },
+    {
+      "package": "SpectaclesUIKit.lspkg",
+      "minVersion": "2.0.0"
+    },
+    {
+      "package": "SurfacePlacement.lspkg",
+      "minVersion": "2.0.0"
+    },
+    {
+      "package": "VolumetricLine.lspkg",
+      "minVersion": "2.0.0"
+    },
+    {
+      "package": "SpecsNavigationKit.lspkg",
+      "minVersion": "2.0.0"
+    }
+  ],
+  "editorValidationPackages": [
+    "Leaf.lspkg",
+    "AiPreviewAgentInspect.lspkg",
+    "AiPreviewAgentInteract.lspkg"
+  ],
+  "notes": [
+    "Install required .lspkg dependencies through the Lens Studio Asset Library before preview or device builds. specs:doctor checks the installed versions.",
+    "Editor validation scripts sync to Assets/ViroSpecsValidation only with --with-validation; they need the editorValidationPackages."
+  ]
+}

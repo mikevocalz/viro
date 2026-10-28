@@ -1,0 +1,16 @@
+{
+  "scenario": "viro_lab_actions_reference_flow",
+  "hold": "reference_list_top",
+  "note": "QueryRuntimeSceneTool during the hold, before the fix. World cm. The ScrollWindow viro-scroll:exhibit-list is centred at y=-2 with windowSize 44 x 28, so it shows y -16..12. Orrery and Foucault Pendulum sit above the window top and are masked out when the list opens at the top.",
+  "window": { "centerY": -2, "height": 28, "top": 12, "bottom": -16 },
+  "cardLabelsY": {
+    "orrery": 22.5,
+    "pendulum": 15.5,
+    "tesla-coil": 8.5,
+    "planetarium": 1.5,
+    "wind-tunnel": -5.5,
+    "seismograph": -12.5,
+    "cloud-chamber": -19.5,
+    "lighthouse-lens": -26.5
+  }
+}

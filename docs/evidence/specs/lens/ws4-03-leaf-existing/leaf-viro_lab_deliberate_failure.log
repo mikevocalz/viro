@@ -1,0 +1,3 @@
+I 11:29:23.270 ${CONFIG_DIR}/Bundle/Plugins/[ChatTool] LEAF Plugin@5.23.0@362f6c78a8b5e47e6431049afb6a7109/dist/main.js:805 log] [LeafPlugin][PluginViewModel] Loaded 14 scenario(s) from preview.
+I 11:29:23.271 ${CONFIG_DIR}/Bundle/Plugins/[ChatTool] LEAF Plugin@5.23.0@362f6c78a8b5e47e6431049afb6a7109/dist/main.js:805 log] [LeafPlugin][PluginViewModel] Running scenario: viro_lab_deliberate_failure
+I 11:29:51.437 ${CONFIG_DIR}/Bundle/Plugins/[ChatTool] LEAF Plugin@5.23.0@362f6c78a8b5e47e6431049afb6a7109/dist/main.js:805 log] [LeafPlugin][PluginViewModel] ❌ Scenario viro_lab_deliberate_failure failed.

@@ -1,0 +1,36 @@
+I 07:18:05.516 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_lab_render with args: []
+I 07:18:05.536 [Assets/ViroSpecsLab/Leaf/ViroLabRenderScenario.ts:25] VIRO_LAB_LEAF render PASS title=Viro Cross-Platform Lab
+I 07:18:09.480 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_lab_select with args: []
+I 07:18:10.426 [Assets/ViroSpecsLab/Leaf/ViroLabSelectScenario.ts:29] VIRO_LAB_LEAF select PASS phases=hover-enter,hover-exit,hover-enter,select-start,drag,drag,drag,drag,select-end,hover-exit
+I 07:18:34.014 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.001s]RUNS: viro_lab_select_ik with args: []
+I 07:18:39.382 [Assets/ViroSpecsLab/Leaf/ViroLabSelectIKScenario.ts:29] VIRO_LAB_LEAF select_ik PASS phases=hover-enter,select-start,drag,drag,drag,drag,drag,select-end,hover-exit
+I 07:18:43.847 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_lab_drag with args: []
+I 07:18:44.872 [Assets/ViroSpecsLab/Leaf/ViroLabDragScenario.ts:35] VIRO_LAB_LEAF drag PASS movedCm=4.64 phases=hover-enter,select-start,drag,drag,drag,drag,drag,drag,drag,drag,drag,drag,select-end,hover-exit
+I 07:18:48.090 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_lab_navigate with args: []
+I 07:18:48.110 [Assets/ViroSpecsLab/Leaf/ViroLabNavigateScenario.ts:25] VIRO_LAB_LEAF navigate PASS points=3
+I 07:18:52.459 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_lab_deliberate_failure with args: []
+I 07:19:48.962 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_lab_select_ik with args: []
+I 07:19:52.524 [Assets/ViroSpecsLab/Leaf/ViroLabSelectIKScenario.ts:29] VIRO_LAB_LEAF select_ik PASS phases=hover-enter,select-start,drag,drag,drag,drag,drag,select-end,hover-exit
+I 07:43:11.798 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:43] [viro-specs-host] error VS5005 (stage): Staging failed: Cannot read property 'debug' of undefined
+I 07:44:21.711 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:43] [viro-specs-host] error VS5005 (stage): Staging failed: Cannot read property 'debug' of undefined
+I 08:04:45.056 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_lab_render with args: []
+I 08:04:46.716 [Assets/ViroSpecsLab/Leaf/ViroLabRenderScenario.ts:25] VIRO_LAB_LEAF render PASS title=Viro Cross-Platform Lab
+I 08:05:14.123 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_lab_select with args: []
+I 08:05:55.023 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_lab_select_ik with args: []
+I 08:06:00.046 [Assets/ViroSpecsLab/Leaf/ViroLabSelectIKScenario.ts:29] VIRO_LAB_LEAF select_ik PASS phases=select-start,drag,drag,drag,drag,drag,select-end
+I 08:06:23.856 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_lab_drag with args: []
+I 08:06:24.988 [Assets/ViroSpecsLab/Leaf/ViroLabDragScenario.ts:35] VIRO_LAB_LEAF drag PASS movedCm=5.42 phases=select-start,drag,drag,drag,drag,drag,drag,drag,drag,drag,drag,drag,select-end
+I 08:06:47.244 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_lab_navigate with args: []
+I 08:06:47.920 [Assets/ViroSpecsLab/Leaf/ViroLabNavigateScenario.ts:24] VIRO_LAB_LEAF navigate PASS points=3
+I 08:08:06.019 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_lab_missing_asset with args: []
+I 08:08:06.386 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:43] [viro-specs-host] warning VS5003 (stage) node missing-model: No model asset is registered for "examples/missing/not-in-registry.glb" (node "missing-model"). A placeholder is shown.
+I 08:08:06.601 [Assets/ViroSpecsLab/Leaf/ViroLabMissingAssetScenario.ts:47] VIRO_LAB_LEAF missing_asset PASS codes=VS5003 lifecycle=degraded
+I 08:08:47.451 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_lab_state_update with args: []
+I 08:08:48.069 [Assets/ViroSpecsLab/Leaf/ViroLabStateUpdateScenario.ts:60] VIRO_LAB_LEAF state_update PASS ops=["update"] objects=5
+I 08:09:26.981 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_lab_scene_replacement with args: []
+I 08:10:47.115 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_lab_interaction_phases with args: []
+I 08:10:53.399 [Assets/ViroSpecsLab/Leaf/ViroLabInteractionPhasesScenario.ts:59] VIRO_LAB_LEAF interaction_phases phases=select-start,drag,drag,drag,drag,select-end,select-start,drag,drag,drag,drag,drag,drag,drag,select-end,select-start,drag,drag,drag,drag,drag,drag,cancel,drag sources=synthetic missing=hover-enter,hover-move,hover-exit
+I 08:11:31.029 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_lab_scroll_window with args: []
+I 08:11:31.904 [Assets/ViroSpecsLab/Leaf/ViroLabScrollWindowScenario.ts:37] VIRO_LAB_LEAF scroll_window status=committed diagnostics=[]
+I 08:11:33.103 [Assets/ViroSpecsLab/Leaf/ViroLabScrollWindowScenario.ts:54] VIRO_LAB_LEAF scroll_window scrollPosition before={x: 0, y: -5.16639} after={x: 0, y: -5.16639}
+I 08:12:05.312 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_lab_deliberate_failure with args: []

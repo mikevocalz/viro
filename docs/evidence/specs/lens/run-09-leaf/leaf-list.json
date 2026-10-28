@@ -1,0 +1,59 @@
+{
+  "scenarios": [
+    {
+      "config": {
+        "__leaf__diagnostic_policy": "fallback",
+        "__leaf__diagnostic_report_duration_ms": "-1",
+        "__leaf__log_level": "INFO",
+        "__leaf__timeout_secs": "600"
+      },
+      "id": "viro_lab_render"
+    },
+    {
+      "config": {
+        "__leaf__diagnostic_policy": "fallback",
+        "__leaf__diagnostic_report_duration_ms": "-1",
+        "__leaf__log_level": "INFO",
+        "__leaf__timeout_secs": "600"
+      },
+      "id": "viro_lab_select"
+    },
+    {
+      "config": {
+        "__leaf__diagnostic_policy": "fallback",
+        "__leaf__diagnostic_report_duration_ms": "-1",
+        "__leaf__log_level": "INFO",
+        "__leaf__timeout_secs": "600"
+      },
+      "id": "viro_lab_select_ik"
+    },
+    {
+      "config": {
+        "__leaf__diagnostic_policy": "fallback",
+        "__leaf__diagnostic_report_duration_ms": "-1",
+        "__leaf__log_level": "INFO",
+        "__leaf__timeout_secs": "600"
+      },
+      "id": "viro_lab_drag"
+    },
+    {
+      "config": {
+        "__leaf__diagnostic_policy": "fallback",
+        "__leaf__diagnostic_report_duration_ms": "-1",
+        "__leaf__log_level": "INFO",
+        "__leaf__timeout_secs": "600"
+      },
+      "id": "viro_lab_navigate"
+    },
+    {
+      "config": {
+        "__leaf__diagnostic_policy": "fallback",
+        "__leaf__diagnostic_report_duration_ms": "-1",
+        "__leaf__log_level": "INFO",
+        "__leaf__timeout_secs": "600"
+      },
+      "id": "viro_lab_deliberate_failure"
+    }
+  ],
+  "target": "preview"
+}

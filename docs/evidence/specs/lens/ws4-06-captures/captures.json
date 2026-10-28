@@ -1,0 +1,222 @@
+[
+  {
+    "scenario": "viro_ws4_hello_loading",
+    "hold": "hello_loading",
+    "captured": true,
+    "file": "hello_loading-preview.png"
+  },
+  {
+    "scenario": "viro_ws4_hello_loading",
+    "hold": "hello_loading",
+    "captured": true,
+    "file": "hello_loading-front.png"
+  },
+  {
+    "scenario": "viro_ws4_hello_loading",
+    "verdict": "[ 11.636s][viro_ws4_hello_loading] PASSED"
+  },
+  {
+    "scenario": "viro_ws4_hello_ready",
+    "hold": "hello_ready_hover",
+    "captured": true,
+    "file": "hello_ready_hover-preview.png"
+  },
+  {
+    "scenario": "viro_ws4_hello_ready",
+    "hold": "hello_ready_hover",
+    "captured": true,
+    "file": "hello_ready_hover-front.png"
+  },
+  {
+    "scenario": "viro_ws4_hello_ready",
+    "verdict": "[ 12.002s][viro_ws4_hello_ready] PASSED"
+  },
+  {
+    "scenario": "viro_ws4_hello_error",
+    "hold": "hello_error",
+    "captured": true,
+    "file": "hello_error-preview.png"
+  },
+  {
+    "scenario": "viro_ws4_hello_error",
+    "hold": "hello_error",
+    "captured": true,
+    "file": "hello_error-front.png"
+  },
+  {
+    "scenario": "viro_ws4_hello_error",
+    "verdict": "[ 11.167s][viro_ws4_hello_error] PASSED"
+  },
+  {
+    "scenario": "viro_ws4_hello_degraded",
+    "hold": "hello_degraded",
+    "captured": true,
+    "file": "hello_degraded-preview.png"
+  },
+  {
+    "scenario": "viro_ws4_hello_degraded",
+    "hold": "hello_degraded",
+    "captured": true,
+    "file": "hello_degraded-front.png"
+  },
+  {
+    "scenario": "viro_ws4_hello_degraded",
+    "verdict": "[ 11.699s][viro_ws4_hello_degraded] PASSED"
+  },
+  {
+    "scenario": "viro_ws4_placement_table",
+    "hold": "placement_reticle",
+    "captured": true,
+    "file": "placement_reticle-preview.png"
+  },
+  {
+    "scenario": "viro_ws4_placement_table",
+    "hold": "placement_reticle",
+    "captured": true,
+    "file": "placement_reticle-front.png"
+  },
+  {
+    "scenario": "viro_ws4_placement_table",
+    "verdict": "[ 10.550s][viro_ws4_placement_table] PASSED"
+  },
+  {
+    "scenario": "viro_ws4_placement_degraded",
+    "hold": "placement_degraded",
+    "captured": true,
+    "file": "placement_degraded-preview.png"
+  },
+  {
+    "scenario": "viro_ws4_placement_degraded",
+    "hold": "placement_degraded",
+    "captured": true,
+    "file": "placement_degraded-front.png"
+  },
+  {
+    "scenario": "viro_ws4_placement_degraded",
+    "verdict": "[ 11.152s][viro_ws4_placement_degraded] PASSED"
+  },
+  {
+    "scenario": "viro_ws4_button_states",
+    "hold": "interaction_buttons",
+    "captured": true,
+    "file": "interaction_buttons-preview.png"
+  },
+  {
+    "scenario": "viro_ws4_button_states",
+    "hold": "interaction_buttons",
+    "captured": true,
+    "file": "interaction_buttons-front.png"
+  },
+  {
+    "scenario": "viro_ws4_button_states",
+    "verdict": "[ 11.481s][viro_ws4_button_states] PASSED"
+  },
+  {
+    "scenario": "viro_ws4_navigation_scroll",
+    "hold": "navigation_top",
+    "captured": true,
+    "file": "navigation_top-preview.png"
+  },
+  {
+    "scenario": "viro_ws4_navigation_scroll",
+    "hold": "navigation_top",
+    "captured": true,
+    "file": "navigation_top-front.png"
+  },
+  {
+    "scenario": "viro_ws4_navigation_scroll",
+    "hold": "navigation_bottom",
+    "captured": true,
+    "file": "navigation_bottom-preview.png"
+  },
+  {
+    "scenario": "viro_ws4_navigation_scroll",
+    "hold": "navigation_bottom",
+    "captured": true,
+    "file": "navigation_bottom-front.png"
+  },
+  {
+    "scenario": "viro_ws4_navigation_scroll",
+    "hold": "navigation_detail",
+    "captured": true,
+    "file": "navigation_detail-preview.png"
+  },
+  {
+    "scenario": "viro_ws4_navigation_scroll",
+    "hold": "navigation_detail",
+    "captured": true,
+    "file": "navigation_detail-front.png"
+  },
+  {
+    "scenario": "viro_ws4_navigation_scroll",
+    "hold": "navigation_back",
+    "captured": true,
+    "file": "navigation_back-preview.png"
+  },
+  {
+    "scenario": "viro_ws4_navigation_scroll",
+    "hold": "navigation_back",
+    "captured": true,
+    "file": "navigation_back-front.png"
+  },
+  {
+    "scenario": "viro_ws4_navigation_scroll",
+    "verdict": "[ 44.651s][viro_ws4_navigation_scroll] PASSED"
+  },
+  {
+    "scenario": "viro_ws4_scene_rejection",
+    "hold": "rejection_update",
+    "captured": true,
+    "file": "rejection_update-preview.png"
+  },
+  {
+    "scenario": "viro_ws4_scene_rejection",
+    "hold": "rejection_update",
+    "captured": true,
+    "file": "rejection_update-front.png"
+  },
+  {
+    "scenario": "viro_ws4_scene_rejection",
+    "hold": "rejection_first",
+    "captured": true,
+    "file": "rejection_first-preview.png"
+  },
+  {
+    "scenario": "viro_ws4_scene_rejection",
+    "hold": "rejection_first",
+    "captured": true,
+    "file": "rejection_first-front.png"
+  },
+  {
+    "scenario": "viro_ws4_scene_rejection",
+    "verdict": "[ 21.905s][viro_ws4_scene_rejection] PASSED"
+  },
+  {
+    "scenario": "viro_ws4_preferences",
+    "hold": "preferences_ready",
+    "captured": true,
+    "file": "preferences_ready-preview.png"
+  },
+  {
+    "scenario": "viro_ws4_preferences",
+    "hold": "preferences_ready",
+    "captured": true,
+    "file": "preferences_ready-front.png"
+  },
+  {
+    "scenario": "viro_ws4_preferences",
+    "hold": "preferences_loading",
+    "captured": true,
+    "file": "preferences_loading-preview.png"
+  },
+  {
+    "scenario": "viro_ws4_preferences",
+    "hold": "preferences_loading",
+    "captured": true,
+    "file": "preferences_loading-front.png"
+  },
+  {
+    "scenario": "viro_ws4_preferences",
+    "verdict": "[ 24.933s][viro_ws4_preferences] PASSED"
+  }
+]

@@ -1,0 +1,124 @@
+{
+ "console": [],
+ "returnValue": {
+  "camera": {
+   "perspective": true,
+   "world": true
+  },
+  "roots": [
+   "Camera Object",
+   "Lighting",
+   "SurfacePlacement",
+   "VolumetricLine",
+   "NavigationKit",
+   "Example Surface",
+   "VolumetricLineExample",
+   "NavigationKit",
+   "SpectaclesInteractionKit",
+   "ViroSpecsRuntime",
+   "LeafIndex",
+   "LeafScenarioClient"
+  ],
+  "scripts": [
+   {
+    "enabled": true,
+    "inputs": {
+     "defaultFont": null,
+     "defaultImageMaterial": null,
+     "defaultPanelPrefab": null,
+     "imageIds": [],
+     "imageTextures": [],
+     "materialIds": [],
+     "materials": [],
+     "modelIds": [
+      "examples/visionos-sweep/assets/shiba.glb"
+     ],
+     "modelPrefabs": [
+      "shiba"
+     ]
+    },
+    "object": "ViroSpecsRuntime/AssetRegistry",
+    "script": "ViroSpecsAssetRegistry"
+   },
+   {
+    "enabled": true,
+    "inputs": {
+     "assetRegistryObject": "AssetRegistry",
+     "root": "ViroGeneratedContent"
+    },
+    "object": "ViroSpecsRuntime/RuntimeHost",
+    "script": "ViroSpecsRuntimeHost"
+   },
+   {
+    "enabled": true,
+    "inputs": {
+     "runtimeHostObject": "RuntimeHost"
+    },
+    "object": "ViroSpecsRuntime/InteractionHost",
+    "script": "ViroSpecsInteractionHost"
+   },
+   {
+    "enabled": true,
+    "inputs": {
+     "runtimeHostObject": "RuntimeHost"
+    },
+    "object": "ViroSpecsRuntime/AnimationHost",
+    "script": "ViroSpecsAnimationHost"
+   },
+   {
+    "enabled": true,
+    "inputs": {
+     "tourMode": false,
+     "updateThreshold": 1,
+     "userCamera": "Camera"
+    },
+    "object": "ViroSpecsRuntime/Navigation",
+    "script": "NavigationDataComponent"
+   },
+   {
+    "enabled": true,
+    "inputs": {
+     "assetRegistryObject": "AssetRegistry",
+     "defaultLineMaterial": "PBR",
+     "generatedContentRoot": "ViroGeneratedContent",
+     "navigationObject": "Navigation",
+     "routeIcon": "baseColor"
+    },
+    "object": "ViroSpecsRuntime/Navigation",
+    "script": "ViroSpecsNavigationHost"
+   },
+   {
+    "enabled": true,
+    "inputs": {
+     "animationHostObject": "AnimationHost",
+     "interactionHostObject": "InteractionHost",
+     "navigationHostObject": "Navigation",
+     "runtimeHostObject": "RuntimeHost"
+    },
+    "object": "ViroSpecsRuntime/GeneratedHost",
+    "script": "ViroGeneratedSceneHost"
+   },
+   {
+    "enabled": true,
+    "inputs": {},
+    "object": "LeafIndex",
+    "script": "ViroLabLeafIndex"
+   },
+   {
+    "enabled": false,
+    "inputs": {
+     "scenarioIds": [
+      "viro_lab_render",
+      "viro_lab_select",
+      "viro_lab_drag",
+      "viro_lab_navigate",
+      "viro_lab_deliberate_failure"
+     ]
+    },
+    "object": "LeafScenarioClient",
+    "script": "ViroLabScenarioClient"
+   }
+  ]
+ },
+ "status": "Execution Succeeded"
+}

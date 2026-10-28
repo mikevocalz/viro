@@ -1,0 +1,29 @@
+16:21:33.578 [Packages/SpectaclesInteractionKit.lspkg/Utils/logger.ts:21] FrameCache: Initialized global cache flushing for FrameCache
+16:21:33.861 [Packages/SpectaclesInteractionKit.lspkg/Core/ConfigurationValidator/ConfigurationValidator.ts:16] SIK Version : 0.18.0
+16:21:34.236 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:21:34.237 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:21:34.304 [LeafPlugin][PluginViewModel] Loaded 39 scenario(s) from preview.
+16:21:34.304 [LeafPlugin][PluginViewModel] Running scenario: viro_ws4_navigation_image_error
+16:22:05.727 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_ws4_navigation_image_error with args: [(hold_ms: 0)]
+16:22:05.728 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.001s]Running with runner config: {"__leaf__log_level":"INFO","__leaf__timeout_secs":"600","__leaf__diagnostic_policy":"fallback","__leaf__diagnostic_report_duration_ms":"-1"}
+16:22:05.962 [Assets/ViroSpecsLab/Leaf/ViroLabExperienceSupport.ts:43] VIRO_WS4 experience started placementScene=false panelMesh=Unit Plane panelMaterial=ViroExperiencePanel
+16:22:05.970 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node nav-title: Text "nav-title" maxLines 2 is approximated.
+16:22:05.975 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5003 (stage) node nav-card-1-image: No image asset is registered for "examples/visionos-sweep/assets/missing.png" (node "nav-card-1-image"). A placeholder is shown.
+16:22:05.983 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5003 (stage) node nav-card-2-image: No image asset is registered for "examples/visionos-sweep/assets/missing.png" (node "nav-card-2-image"). A placeholder is shown.
+16:22:05.984 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5003 (stage) node nav-card-3-image: No image asset is registered for "examples/visionos-sweep/assets/missing.png" (node "nav-card-3-image"). A placeholder is shown.
+16:22:05.984 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5003 (stage) node nav-card-4-image: No image asset is registered for "examples/visionos-sweep/assets/missing.png" (node "nav-card-4-image"). A placeholder is shown.
+16:22:05.985 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5003 (stage) node nav-card-5-image: No image asset is registered for "examples/visionos-sweep/assets/missing.png" (node "nav-card-5-image"). A placeholder is shown.
+16:22:05.985 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5003 (stage) node nav-card-6-image: No image asset is registered for "examples/visionos-sweep/assets/missing.png" (node "nav-card-6-image"). A placeholder is shown.
+16:22:05.986 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5003 (stage) node nav-card-7-image: No image asset is registered for "examples/visionos-sweep/assets/missing.png" (node "nav-card-7-image"). A placeholder is shown.
+16:22:05.986 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5003 (stage) node nav-card-8-image: No image asset is registered for "examples/visionos-sweep/assets/missing.png" (node "nav-card-8-image"). A placeholder is shown.
+16:22:05.986 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node nav-detail-title: Text "nav-detail-title" maxLines 2 is approximated.
+16:22:05.986 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5003 (stage) node nav-detail-image: No image asset is registered for "examples/visionos-sweep/assets/missing.png" (node "nav-detail-image"). A placeholder is shown.
+16:22:05.987 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node nav-detail-body: Text "nav-detail-body" maxLines 4 is approximated.
+16:22:06.284 [Assets/ViroSpecsLab/Leaf/ViroWs4NavigationImageErrorScenario.ts:51] VIRO_WS4 navigation_image_error VS5003=9 lines=["VS5003 (nav-card-1-image)","VS5003 (nav-card-2-image)","VS5003 (nav-card-3-image)","VS5003 (nav-card-4-image)","VS5003 (nav-card-5-image)","VS5003 (nav-card-6-image)","VS5003 (nav-card-7-image)","VS5003 (nav-card-8-image)","VS5003 (nav-detail-image)"] title=9 models didn't load
+16:22:06.286 [Assets/ViroSpecsLab/Leaf/ViroLabExperienceSupport.ts:213] VIRO_WS4_HOLD navigation_image_error 0
+16:22:06.286 [Assets/ViroSpecsLab/Leaf/ViroWs4NavigationImageErrorScenario.ts:57] VIRO_WS4 navigation_image_error PASS
+16:22:06.288 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:22:06.288 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:22:06.496 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.768s]PASSED: viro_ws4_navigation_image_error
+16:22:06.496 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.769s][viro_ws4_navigation_image_error] PASSED
+16:22:06.496 [LeafPlugin][PluginViewModel] ✅ Scenario viro_ws4_navigation_image_error completed successfully.

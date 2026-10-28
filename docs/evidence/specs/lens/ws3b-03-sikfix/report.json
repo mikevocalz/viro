@@ -1,0 +1,17 @@
+{
+  "startedAt": "2026-10-28T13:50:19.962Z",
+  "project": "examples/specs-platform-lab/lens",
+  "steps": {
+    "sync": {
+      "ok": true,
+      "ms": 288,
+      "result": "synced; doctor passed"
+    },
+    "recompile": {
+      "ok": true,
+      "ms": 105199,
+      "result": "lens-compiled"
+    }
+  },
+  "finishedAt": "2026-10-28T13:52:05.493Z"
+}

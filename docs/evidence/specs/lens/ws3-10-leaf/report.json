@@ -1,0 +1,38 @@
+{
+  "startedAt": "2026-10-28T12:15:17.741Z",
+  "project": "examples/specs-platform-lab/lens",
+  "steps": {
+    "recompile": {
+      "ok": true,
+      "ms": 541,
+      "result": "lens-compiled"
+    },
+    "preview": {
+      "ok": true,
+      "ms": 22742,
+      "result": {
+        "errors": 2,
+        "prints": 26,
+        "firstActivityAtMs": 204
+      }
+    },
+    "leaf": {
+      "ok": true,
+      "ms": 320451,
+      "result": [
+        "viro_lab_render: succeeded",
+        "viro_lab_select: succeeded",
+        "viro_lab_select_ik: succeeded",
+        "viro_lab_drag: succeeded",
+        "viro_lab_navigate: succeeded",
+        "viro_lab_missing_asset: succeeded",
+        "viro_lab_state_update: succeeded",
+        "viro_lab_scene_replacement: succeeded",
+        "viro_lab_interaction_phases: succeeded",
+        "viro_lab_scroll_window: succeeded",
+        "viro_lab_deliberate_failure: failed"
+      ]
+    }
+  },
+  "finishedAt": "2026-10-28T12:21:22.786Z"
+}
