@@ -24,11 +24,12 @@
   VersionPatch: 0
   VersionPrerelease: ""
   UpdateOrder: 0
-  ComponentUid: 00000000-0000-0000-0000-000000000000
+  ComponentUid: 3966c629-4f3e-41af-8bcd-9ba858ea4810
   ExportUid: 00000000-0000-0000-0000-000000000000
   PackagePolicy: CanBeUnpacked
   ScriptInputsHidden:
-    {}
+    interactionHostObject: false
+    runtimeHostObject: false
   ScriptTypesHidden:
     {}
   ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
@@ -38,10 +39,11 @@
   Attachments:
     []
   DefaultScriptInputs:
-    -
-      {}
+    - runtimeHostObject: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      interactionHostObject: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
   ScriptTypes:
     -
       {}
   InputLines:
-    []
+    - '// @input SceneObject runtimeHostObject {"hint":"SceneObject hosting ViroSpecsRuntimeHost"}'
+    - '// @input SceneObject interactionHostObject {"hint":"SceneObject hosting ViroSpecsInteractionHost"}'

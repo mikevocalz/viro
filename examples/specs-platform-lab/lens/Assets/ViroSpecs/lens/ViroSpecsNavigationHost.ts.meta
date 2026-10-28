@@ -24,11 +24,15 @@
   VersionPatch: 0
   VersionPrerelease: ""
   UpdateOrder: 0
-  ComponentUid: 00000000-0000-0000-0000-000000000000
+  ComponentUid: c9e9d745-c6f2-4e14-aff2-16d731c432d4
   ExportUid: 00000000-0000-0000-0000-000000000000
   PackagePolicy: CanBeUnpacked
   ScriptInputsHidden:
-    {}
+    assetRegistryObject: false
+    defaultLineMaterial: false
+    generatedContentRoot: false
+    navigationObject: false
+    routeIcon: false
   ScriptTypesHidden:
     {}
   ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
@@ -38,10 +42,17 @@
   Attachments:
     []
   DefaultScriptInputs:
-    -
-      {}
+    - navigationObject: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      assetRegistryObject: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      defaultLineMaterial: !<reference.Material> 00000000-0000-0000-0000-000000000000
+      routeIcon: !<reference.Texture> 00000000-0000-0000-0000-000000000000
+      generatedContentRoot: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
   ScriptTypes:
     -
       {}
   InputLines:
-    []
+    - // @input SceneObject navigationObject
+    - // @input SceneObject assetRegistryObject
+    - // @input Asset.Material defaultLineMaterial
+    - // @input Asset.Texture routeIcon
+    - // @input SceneObject generatedContentRoot

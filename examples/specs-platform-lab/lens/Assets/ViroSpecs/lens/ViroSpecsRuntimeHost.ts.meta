@@ -24,11 +24,12 @@
   VersionPatch: 0
   VersionPrerelease: ""
   UpdateOrder: 0
-  ComponentUid: 00000000-0000-0000-0000-000000000000
+  ComponentUid: c95fe38b-ceea-46e0-956d-29bcf1d36cee
   ExportUid: 00000000-0000-0000-0000-000000000000
   PackagePolicy: CanBeUnpacked
   ScriptInputsHidden:
-    {}
+    assetRegistryObject: false
+    root: false
   ScriptTypesHidden:
     {}
   ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
@@ -38,10 +39,11 @@
   Attachments:
     []
   DefaultScriptInputs:
-    -
-      {}
+    - root: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      assetRegistryObject: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
   ScriptTypes:
     -
       {}
   InputLines:
-    []
+    - // @input SceneObject root
+    - // @input SceneObject assetRegistryObject

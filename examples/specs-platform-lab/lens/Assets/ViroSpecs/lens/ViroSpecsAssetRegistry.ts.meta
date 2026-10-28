@@ -24,11 +24,19 @@
   VersionPatch: 0
   VersionPrerelease: ""
   UpdateOrder: 0
-  ComponentUid: 00000000-0000-0000-0000-000000000000
+  ComponentUid: a4e89969-0eb1-468b-b54f-75c2c9a279c7
   ExportUid: 00000000-0000-0000-0000-000000000000
   PackagePolicy: CanBeUnpacked
   ScriptInputsHidden:
-    {}
+    defaultFont: false
+    defaultImageMaterial: false
+    defaultPanelPrefab: false
+    imageIds: false
+    imageTextures: false
+    materialIds: false
+    materials: false
+    modelIds: false
+    modelPrefabs: false
   ScriptTypesHidden:
     {}
   ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
@@ -38,10 +46,31 @@
   Attachments:
     []
   DefaultScriptInputs:
-    -
-      {}
+    - modelIds: !<string[]>
+        []
+      modelPrefabs: !<reference.ObjectPrefab[]>
+        []
+      imageIds: !<string[]>
+        []
+      imageTextures: !<reference.Texture[]>
+        []
+      materialIds: !<string[]>
+        []
+      materials: !<reference.Material[]>
+        []
+      defaultPanelPrefab: !<reference.ObjectPrefab> 00000000-0000-0000-0000-000000000000
+      defaultFont: !<reference.Font> 00000000-0000-0000-0000-000000000000
+      defaultImageMaterial: !<reference.Material> 00000000-0000-0000-0000-000000000000
   ScriptTypes:
     -
       {}
   InputLines:
-    []
+    - "// @input string[] modelIds = {}"
+    - "// @input Asset.ObjectPrefab[] modelPrefabs = {}"
+    - "// @input string[] imageIds = {}"
+    - "// @input Asset.Texture[] imageTextures = {}"
+    - "// @input string[] materialIds = {}"
+    - "// @input Asset.Material[] materials = {}"
+    - // @input Asset.ObjectPrefab defaultPanelPrefab
+    - // @input Asset.Font defaultFont
+    - // @input Asset.Material defaultImageMaterial

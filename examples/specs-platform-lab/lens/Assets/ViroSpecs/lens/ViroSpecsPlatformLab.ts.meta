@@ -24,11 +24,13 @@
   VersionPatch: 0
   VersionPrerelease: ""
   UpdateOrder: 0
-  ComponentUid: 00000000-0000-0000-0000-000000000000
+  ComponentUid: a9ba64c9-8bbf-40ef-97be-cc3f6b2e1ea7
   ExportUid: 00000000-0000-0000-0000-000000000000
   PackagePolicy: CanBeUnpacked
   ScriptInputsHidden:
-    {}
+    interactionHostObject: false
+    modelSourceId: false
+    runtimeHostObject: false
   ScriptTypesHidden:
     {}
   ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
@@ -38,10 +40,13 @@
   Attachments:
     []
   DefaultScriptInputs:
-    -
-      {}
+    - runtimeHostObject: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      interactionHostObject: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      modelSourceId: platform-lab-model
   ScriptTypes:
     -
       {}
   InputLines:
-    []
+    - // @input SceneObject runtimeHostObject
+    - // @input SceneObject interactionHostObject
+    - '// @input string modelSourceId = "platform-lab-model"'

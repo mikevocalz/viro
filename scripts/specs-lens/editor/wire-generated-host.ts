@@ -108,6 +108,17 @@ if (!rootObject(sikPrefab.name)) {
   steps.push(`instantiate ${sikPrefab.name} prefab at root`);
 }
 
+// Installing SurfacePlacement, VolumetricLine and NavigationKit through the
+// Asset Library drops their demo content at the scene root. Disable it so it
+// cannot interfere with the generated scene (reversible; nothing is deleted).
+const DEMO_ROOTS = ["SurfacePlacement", "VolumetricLine", "NavigationKit", "Example Surface", "VolumetricLineExample"];
+for (const root of scene.rootSceneObjects) {
+  if (DEMO_ROOTS.includes(root.name) && root.enabled) {
+    root.enabled = false;
+    steps.push(`disable package demo root ${root.name}`);
+  }
+}
+
 // 3. Model prefab for the compiled model source.
 const modelIds: string[] = opts.modelIds ?? [];
 const modelPrefabs: any[] = [];
@@ -155,15 +166,26 @@ const animationHost = ensureScript(animationHostObject, "ViroSpecsAnimationHost"
 setInput(animationHost, "AnimationHost", "runtimeHostObject", runtimeHostObject, runtimeHostObject.name);
 
 // Navigation: SpecsNavigationKit's NavigationDataComponent on the same object.
-ensureScript(navigationObject, "NavigationDataComponent");
+// Its onAwake reads userCamera.getTransform(), so it needs the scene camera.
+const navigationData = ensureScript(navigationObject, "NavigationDataComponent");
+setInput(navigationData, "NavigationDataComponent", "userCamera", cameraComponent, camera.name);
 const navigationHost = ensureScript(navigationObject, "ViroSpecsNavigationHost");
+// Packed packages live under ../Cache/<package-uuid>/<hash>/Data/. Scope
+// lookups to the folder of a script the package ships, so a same-named
+// asset from another package cannot be picked up.
+function packageFolder(anchorScript: string): string {
+  const parts = sourcePath(scriptAsset(anchorScript)).split("/");
+  return parts.slice(0, 4).join("/") + "/";
+}
+const lineFolder = packageFolder("VolumetricLine");
 const lineMaterial = findAsset(
-  "VolumetricLine material",
-  (a: any) => String(a.type) === "Material" && /VolumetricLine/i.test(sourcePath(a) + a.name)
+  "VolumetricLine 2.x PBR material",
+  (a: any) => String(a.type) === "Material" && a.name === "PBR" && sourcePath(a).startsWith(lineFolder)
 );
+const navigationFolder = packageFolder("NavigationDataComponent");
 const routeIcon = findAsset(
-  "route icon texture",
-  (a: any) => /Texture$/.test(String(a.type)) && a.name === "arrow-right"
+  "SpecsNavigationKit texture for route places",
+  (a: any) => /Texture$/.test(String(a.type)) && sourcePath(a).startsWith(navigationFolder)
 );
 setInput(navigationHost, "Navigation", "navigationObject", navigationObject, navigationObject.name);
 setInput(navigationHost, "Navigation", "assetRegistryObject", registryObject, registryObject.name);

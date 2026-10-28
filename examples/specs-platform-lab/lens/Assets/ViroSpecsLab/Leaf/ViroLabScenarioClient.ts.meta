@@ -24,11 +24,11 @@
   VersionPatch: 0
   VersionPrerelease: ""
   UpdateOrder: 0
-  ComponentUid: 00000000-0000-0000-0000-000000000000
+  ComponentUid: 54d3a602-77db-49a7-aee7-84f5014df70e
   ExportUid: 00000000-0000-0000-0000-000000000000
   PackagePolicy: CanBeUnpacked
   ScriptInputsHidden:
-    {}
+    scenarioIds: false
   ScriptTypesHidden:
     {}
   ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
@@ -38,10 +38,14 @@
   Attachments:
     []
   DefaultScriptInputs:
-    -
-      {}
+    - scenarioIds: !<string[]>
+        - viro_lab_render
+        - viro_lab_select
+        - viro_lab_drag
+        - viro_lab_navigate
+        - viro_lab_deliberate_failure
   ScriptTypes:
     -
       {}
   InputLines:
-    []
+    - '// @input string[] scenarioIds = {"viro_lab_render","viro_lab_select","viro_lab_drag","viro_lab_navigate","viro_lab_deliberate_failure"}'
