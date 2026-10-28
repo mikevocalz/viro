@@ -27,6 +27,7 @@ on:
       - "index.ts"
       - "package.json"
       - ".github/workflows/specs-public-api.yml"
+      - "web-harness/specs-preview/**"
   pull_request:
     paths:
       - "components/Specs/**"
@@ -48,6 +49,7 @@ on:
       - "index.ts"
       - "package.json"
       - ".github/workflows/specs-public-api.yml"
+      - "web-harness/specs-preview/**"
   workflow_dispatch:
 
 jobs:
@@ -76,3 +78,32 @@ jobs:
         run: |
           node --check bin/viro-specs.cjs
           node --check bin/viro-specs-compile.cjs
+
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: web-harness/specs-preview
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: web-harness/specs-preview/package-lock.json
+      - name: Install the preview package
+        run: npm ci --no-audit --no-fund
+      - name: Vendored Lens core matches VENDOR.json
+        run: npm run vendor:check
+      - name: Typecheck (strict)
+        run: npm run typecheck
+      - name: Parity with the viro-external mock host, Lens constants, animation
+        run: npm test
+      - name: Headless screenshots (installed Chrome)
+        run: node scripts/screenshot.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: specs-preview-screenshots
+          path: web-harness/specs-preview/screenshots/
