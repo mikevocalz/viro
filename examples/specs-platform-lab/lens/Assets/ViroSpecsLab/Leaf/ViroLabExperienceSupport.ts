@@ -245,6 +245,24 @@ export function injectWorldQuery(host: ViroSpecsExperienceHost, hit: { position:
   (host as unknown as { hitSession: unknown }).hitSession = stub;
 }
 
+/**
+ * Like {@linkcode injectWorldQuery}, but the hit lands on the head ray the
+ * host tests, `distanceCm` from its start, the only place a real hit test can
+ * report one. A hit off the ray (40 cm below it, as the scenarios used to
+ * inject) put the reticle below the Preview frame.
+ */
+export function injectWorldQueryOnRay(host: ViroSpecsExperienceHost, distanceCm: number, normal: vec3): void {
+  const stub = {
+    hitTest: (start: vec3, end: vec3, callback: HitCallback): void => {
+      const position = start.add(end.sub(start).normalize().uniformScale(distanceCm));
+      callback({ position, normal } as unknown as WorldQueryHitTestResult);
+    },
+    start: (): void => undefined,
+    stop: (): void => undefined,
+  };
+  (host as unknown as { hitSession: unknown }).hitSession = stub;
+}
+
 /** The scene camera's world position and forward direction. */
 export function cameraPose(): { position: vec3; forward: vec3 } {
   const camera = findSceneObjectByName("Camera Object");

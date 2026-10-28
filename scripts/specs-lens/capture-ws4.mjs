@@ -29,6 +29,9 @@ const PLAN = {
   viro_ws4_navigation_scroll: ["navigation_top", "navigation_bottom", "navigation_detail", "navigation_back"],
   viro_ws4_scene_rejection: ["rejection_update", "rejection_first"],
   viro_ws4_preferences: ["preferences_ready", "preferences_loading"],
+  viro_ws4_gaze: ["gaze_scroll_buttons"],
+  viro_ws4_move_band: ["interaction_band"],
+  viro_lab_actions_reference_flow: ["reference_list_top"],
 };
 const only = arg("--scenarios", null)?.split(",");
 mkdirSync(out, { recursive: true });

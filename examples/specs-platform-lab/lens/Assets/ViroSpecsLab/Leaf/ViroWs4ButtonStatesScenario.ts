@@ -12,6 +12,7 @@ import {
   diagnosticsDuring,
   hold,
   injectWorldQuery,
+  injectWorldQueryOnRay,
   nodeInteractable,
   nodeOf,
   panelAction,
@@ -66,7 +67,7 @@ export class ViroWs4ButtonStatesScenario extends Scenario {
       const sub = controllerHost().addOnInteractionListener((event) => commits.push(event.nodeId + ":" + event.phase));
       try {
         host.startPlacement();
-        injectWorldQuery(host, { position: cameraPose().position.add(new vec3(0, -40, -110)), normal: vec3.up() });
+        injectWorldQueryOnRay(host, 110, vec3.up());
         const interactor = new DefaultLeafInteractor();
         await pinch(interactor, nodeInteractable("ix-btn-a"));
         await settle(300);

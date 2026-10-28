@@ -12,6 +12,7 @@ import {
   diagnosticsDuring,
   hold,
   injectWorldQuery,
+  injectWorldQueryOnRay,
   nodeInteractable,
   nodeOf,
   panelAction,
@@ -49,7 +50,7 @@ export class ViroWs4PlacementErrorScenario extends Scenario {
       const subscription = host.addOnPlacementListener((pose) => poses.push(JSON.stringify(pose.position)));
       try {
         host.startPlacement();
-        injectWorldQuery(host, { position: cameraPose().position.add(new vec3(0, -40, -110)), normal: vec3.up() });
+        injectWorldQueryOnRay(host, 110, vec3.up());
         expect(await waitFor(() => findSceneObjectByName("ViroSpecsReticle")?.enabled ?? false, 3000)).toBe(true);
         await hold(config, "placement_error");
         expect(host.confirmPlacement()).toBe(true);

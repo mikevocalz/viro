@@ -12,6 +12,7 @@ import {
   diagnosticsDuring,
   hold,
   injectWorldQuery,
+  injectWorldQueryOnRay,
   nodeInteractable,
   nodeOf,
   panelAction,
@@ -29,7 +30,7 @@ import {
 } from "./ViroLabExperienceSupport";
 
 /**
- * viro_ws4_placement_table: Placement: a WorldQuery hit on a table (normal up, injected because
+ * viro_ws4_placement_table: Placement: a WorldQuery hit on a table (normal up, on the head ray, injected because
  * Preview has no SPECS depth) shows the reticle labelled "Table. Pinch to
  * place.", and confirming places the model: the placement listener gets a
  * pose inside the comfort band.
@@ -45,8 +46,7 @@ export class ViroWs4PlacementTableScenario extends Scenario {
       const subscription = host.addOnPlacementListener((pose) => poses.push(JSON.stringify(pose.position)));
       try {
         host.startPlacement();
-        const camera = cameraPose();
-        injectWorldQuery(host, { position: camera.position.add(new vec3(0, -40, -110)), normal: vec3.up() });
+        injectWorldQueryOnRay(host, 110, vec3.up());
         const reticle = findSceneObjectByName("ViroSpecsReticleLabel");
         expect(await waitFor(() => (findSceneObjectByName("ViroSpecsReticle")?.enabled ?? false) && (textOf("ViroSpecsReticleLabel") ?? "").startsWith("Table"), 3000)).toBe(true);
         print("VIRO_WS4 placement_table label=" + JSON.stringify(textOf("ViroSpecsReticleLabel")) + " " + (reticle !== null));

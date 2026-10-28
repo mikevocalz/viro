@@ -39,8 +39,11 @@ import {
 export class ViroWs4HelloLoadingScenario extends Scenario {
   async run(config?: ScenarioConfig): Promise<void> {
     const host = await startExperience();
+    // A capture hold keeps the model loading for the whole hold, so the
+    // loading panel is still up when the capture is taken.
+    const holdMs = Number(config?.get("hold_ms") ?? "0");
     try {
-      await withSlowAssets(2500, async () => {
+      await withSlowAssets(2500 + holdMs, async () => {
         const result = presentGallery("hello");
         expect(result.status).toBe("committed");
         expect(await waitForExperience(host, "loading", () => panelOpen("loading"), 1000)).toBe(true);
@@ -53,7 +56,7 @@ export class ViroWs4HelloLoadingScenario extends Scenario {
         // Content and its SIK targets stay hidden until the scene is ready (A-check L4).
         expect(isEnabled(findInteractableByName("viro-interactable:hello-next"))).toBe(false);
         await hold(config, "hello_loading");
-        expect(await waitFor(() => controllerHost().lifecycle === "ready", 6000)).toBe(true);
+        expect(await waitFor(() => controllerHost().lifecycle === "ready", 6000 + holdMs)).toBe(true);
       });
       await settle(300);
       expect(panelOpen("loading")).toBe(false);

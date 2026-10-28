@@ -4,6 +4,8 @@ import { findInteractableByName } from "Leaf.lspkg/Interactors/InteractableUtils
 import { findSceneObjectByName, sleep } from "Leaf.lspkg/Utils/common/Utils";
 import { expect } from "Leaf.lspkg/Utils/common/Expect";
 import { ScrollWindow } from "SpectaclesUIKit.lspkg/Scripts/Components/ScrollWindow/ScrollWindow";
+import type { ScenarioConfig } from "Leaf.lspkg/Scenarios/scenario/ScenarioConfig";
+import { hold } from "./ViroLabExperienceSupport";
 import {
   contentChildren,
   controllerHost,
@@ -36,7 +38,7 @@ function listScroll(): ScrollWindow {
  */
 @component
 export class ViroLabActionsReferenceFlowScenario extends Scenario {
-  async run(): Promise<void> {
+  async run(config?: ScenarioConfig): Promise<void> {
     const lab = await startActionsLab();
     const host = controllerHost();
     const interactor = new DefaultLeafInteractor();
@@ -48,6 +50,9 @@ export class ViroLabActionsReferenceFlowScenario extends Scenario {
     try {
       const diagnostics = await recordDiagnostics(async () => {
         expect(lab.state?.route).toBe("list");
+        // The list as it first opens, scrolled to the top, for a capture.
+        await settle();
+        await hold(config, "reference_list_top");
 
         // The wearer leaves the list scrolled part way. The position is set on
         // the ScrollWindow directly: a LEAF drag reaches it (see

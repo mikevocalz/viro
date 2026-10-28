@@ -54,7 +54,9 @@ export class ViroWs4PreferencesScenario extends Scenario {
       print("VIRO_WS4 preferences hover width " + rest + " -> " + hovered);
       expect(Math.abs(hovered - rest)).toBeLessThan(0.001);
       await hold(config, "preferences_ready");
-      await withSlowAssets(2000, async () => {
+      // Loading lasts through a capture hold (see viro_ws4_hello_loading).
+      const holdMs = Number(config?.get("hold_ms") ?? "0");
+      await withSlowAssets(2000 + holdMs, async () => {
         controllerHost().clear();
         expect(presentGallery("hello").status).toBe("committed");
         expect(await waitForExperience(host, "loading", () => panelOpen("loading"), 1000)).toBe(true);
@@ -62,7 +64,7 @@ export class ViroWs4PreferencesScenario extends Scenario {
         print("VIRO_WS4 preferences loading=" + JSON.stringify(loading));
         expect(loading.visible === true ? loading.indicator : "none").toBe("arc-static");
         await hold(config, "preferences_loading");
-        expect(await waitFor(() => controllerHost().lifecycle === "ready", 5000)).toBe(true);
+        expect(await waitFor(() => controllerHost().lifecycle === "ready", 5000 + holdMs)).toBe(true);
       });
       print("VIRO_WS4 preferences PASS");
     } finally {
