@@ -36,7 +36,8 @@ function option(name) {
 const keep = process.argv.includes("--keep");
 const specsTarballs = option("--specs-tarballs") ? path.resolve(option("--specs-tarballs")) : undefined;
 let viroTarball = option("--viro-tarball") ? path.resolve(option("--viro-tarball")) : undefined;
-const out = option("--out") ? path.resolve(option("--out")) : fs.mkdtempSync(path.join(os.tmpdir(), "viro-specs-app-"));
+// realpath: on macOS os.tmpdir() is /var/..., which require.resolve reports as /private/var/...
+const out = fs.realpathSync(option("--out") ? path.resolve(option("--out")) : fs.mkdtempSync(path.join(os.tmpdir(), "viro-specs-app-")));
 
 if (!viroTarball) {
   const packDir = fs.mkdtempSync(path.join(os.tmpdir(), "viro-pack-"));
