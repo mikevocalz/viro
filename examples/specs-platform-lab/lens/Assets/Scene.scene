@@ -13,8 +13,8 @@
     - !<own> afb5885b-3269-4c80-bc86-7263f61e10c0
     - !<own> 9f373517-8ce1-4e57-840f-062a98c36b5a
     - !<own> 0c6c80d8-8e1a-47b0-871c-5058ea57a89a
-    - !<own> 714730d7-d7c6-4215-94db-5c4e955bb2f2
     - !<own> bac5adc6-a233-49c0-bdb9-56f7d6770981
+    - !<own> 873a92f8-65c8-41ab-8a0b-bd26f0037aac
   layers: !<Layers/267ee9a7-aff2-4f9d-9a49-f71214747d03>
     userLayers:
       - id: 1
@@ -5946,21 +5946,6 @@
     []
   Components:
     []
-- !<SceneObject/714730d7-d7c6-4215-94db-5c4e955bb2f2>
-  PrefabRemaps:
-    []
-  Name: AiPreviewAgent Handler
-  Enabled: true
-  Layers: 1
-  LocalTransform: !<TransformEntity>
-    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
-    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
-    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
-    HasSegmentScaleCompensation: false
-  Children:
-    []
-  Components:
-    - !<own> 8e2446e0-d96e-46c8-a391-8f030cbcdb73
 - !<SceneObject/71547ff4-4b7a-45dd-9484-c8d2d1354c82>
   PrefabRemaps:
     []
@@ -7606,6 +7591,21 @@
   BlendNormals: false
   BlendShapes:
     {}
+- !<SceneObject/873a92f8-65c8-41ab-8a0b-bd26f0037aac>
+  PrefabRemaps:
+    []
+  Name: AiPreviewAgent Handler
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    []
+  Components:
+    - !<own> cae8d36e-333e-4705-91d3-9fd3edf6d908
 - !<SceneObject/8824fec1-3632-4482-922a-2e51d2669bec>
   PrefabRemaps:
     []
@@ -7947,22 +7947,6 @@
   Name: ViroLabLeafIndex
   Enabled: true
   ScriptAsset: !<reference> 3721bd71-25c5-406f-8ddb-4cafd2e3245e
-  ScriptInputsDefault:
-    {}
-  ScriptTypesDefault:
-    {}
-  ScriptInputs:
-    "":
-      {}
-  ScriptTypes:
-    "":
-      {}
-- !<ScriptComponent/8e2446e0-d96e-46c8-a391-8f030cbcdb73>
-  PrefabRemaps:
-    []
-  Name: AgentInspectScript
-  Enabled: true
-  ScriptAsset: !<reference> 0b25079c-f5bf-4c6d-96c4-f43b89dfa213
   ScriptInputsDefault:
     {}
   ScriptTypesDefault:
@@ -10073,6 +10057,7 @@
     - !<own> 64df4574-5525-4dec-8e5a-a4fc72c75867
     - !<own> 2b85b882-5fad-4b9f-8d90-39f5e1d9eb3d
     - !<own> bd1ea8f9-8d9c-490f-8ef8-6b75eb913770
+    - !<own> e976e26a-0237-4866-9075-12cc3aacaabc
   Components:
     []
 - !<SceneObject/b063e8b0-6352-4d06-aeb2-21afab7b17f3>
@@ -11824,6 +11809,22 @@
     []
   Components:
     []
+- !<ScriptComponent/cae8d36e-333e-4705-91d3-9fd3edf6d908>
+  PrefabRemaps:
+    []
+  Name: AgentInspectScript
+  Enabled: true
+  ScriptAsset: !<reference> 0b25079c-f5bf-4c6d-96c4-f43b89dfa213
+  ScriptInputsDefault:
+    {}
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      {}
+  ScriptTypes:
+    "":
+      {}
 - !<SceneObject/cbabfb4f-fa58-4d13-8bc2-17af5965a61b>
   PrefabRemaps:
     []
@@ -13567,6 +13568,38 @@
     - !<own> 8fcdb332-2241-43c9-ad42-0ad78cc9c091
   Components:
     []
+- !<SceneObject/e976e26a-0237-4866-9075-12cc3aacaabc>
+  PrefabRemaps:
+    []
+  Name: ActionsLab
+  Enabled: false
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    []
+  Components:
+    - !<own> ea299f48-537f-4bca-9afd-d061205489e1
+- !<ScriptComponent/ea299f48-537f-4bca-9afd-d061205489e1>
+  PrefabRemaps:
+    []
+  Name: ViroSpecsActionsLab
+  Enabled: true
+  ScriptAsset: !<reference> 8add13c2-db5c-4bc8-b227-e7364f118f98
+  ScriptInputsDefault:
+    {}
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      controllerHostObject: !<reference.SceneObject> bd1ea8f9-8d9c-490f-8ef8-6b75eb913770
+      forwardActions: true
+  ScriptTypes:
+    "":
+      {}
 - !<SceneObject/ea29c5da-57ae-40f7-9800-43fec821e945>
   PrefabRemaps:
     []

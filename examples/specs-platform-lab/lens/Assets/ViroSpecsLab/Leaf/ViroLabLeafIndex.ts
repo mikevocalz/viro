@@ -6,6 +6,9 @@ import { ViroLabSceneReplacementScenario } from "./ViroLabSceneReplacementScenar
 import { ViroLabInteractionPhasesScenario } from "./ViroLabInteractionPhasesScenario";
 import { ViroLabScrollWindowScenario } from "./ViroLabScrollWindowScenario";
 import { ViroLabDeliberateFailureScenario } from "./ViroLabDeliberateFailureScenario";
+import { ViroLabActionsNavigationDropScenario } from "./ViroLabActionsNavigationDropScenario";
+import { ViroLabActionsReferenceFlowScenario } from "./ViroLabActionsReferenceFlowScenario";
+import { ViroLabActionsUnknownActionScenario } from "./ViroLabActionsUnknownActionScenario";
 import { ViroLabDragScenario } from "./ViroLabDragScenario";
 import { ViroLabNavigateScenario } from "./ViroLabNavigateScenario";
 import { ViroLabRenderScenario } from "./ViroLabRenderScenario";
@@ -27,6 +30,9 @@ export class ViroLabLeafIndex extends BaseScriptComponent {
     { id: "viro_lab_scene_replacement", typename: ViroLabSceneReplacementScenario.getTypeName() },
     { id: "viro_lab_interaction_phases", typename: ViroLabInteractionPhasesScenario.getTypeName() },
     { id: "viro_lab_scroll_window", typename: ViroLabScrollWindowScenario.getTypeName() },
+    { id: "viro_lab_actions_reference_flow", typename: ViroLabActionsReferenceFlowScenario.getTypeName() },
+    { id: "viro_lab_actions_navigation_drop", typename: ViroLabActionsNavigationDropScenario.getTypeName() },
+    { id: "viro_lab_actions_unknown_action", typename: ViroLabActionsUnknownActionScenario.getTypeName() },
     { id: "viro_lab_deliberate_failure", typename: ViroLabDeliberateFailureScenario.getTypeName() },
   ];
 }

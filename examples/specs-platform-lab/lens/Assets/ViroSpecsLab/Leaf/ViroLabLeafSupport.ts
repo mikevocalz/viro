@@ -3,6 +3,8 @@ import { expect } from "Leaf.lspkg/Utils/common/Expect";
 import { ViroSpecsSceneControllerHost } from "../../ViroSpecs/lens/ViroSpecsSceneControllerHost";
 import { ViroGeneratedSceneHost } from "../../ViroSpecs/generated/ViroGeneratedSceneHost";
 import type { ViroSpecsSceneDocumentV2 } from "../../ViroSpecs/lens/ViroSpecsProtocol";
+import type { ViroSpecsHostDiagnostic } from "../../ViroSpecs/lens/ViroSpecsHostDiagnostics";
+import { ViroSpecsActionsLab } from "../../ViroSpecs/lens/ViroSpecsActionsLab";
 
 /**
  * Shared lookups for the generated Platform Lab scenarios.
@@ -142,4 +144,59 @@ export function document(parts: Partial<ViroSpecsSceneDocumentV2> & { nodes: Vir
     interactions: parts.interactions ?? [],
     animations: parts.animations ?? [],
   };
+}
+
+/** Object the setup script's wire step creates for the typed-actions reference flow. */
+export const ACTIONS_LAB = "ActionsLab";
+
+/** Polls `ready` every 50 ms until it holds or `timeoutMs` passes; returns the last answer. */
+export async function waitFor(ready: () => boolean, timeoutMs: number = 3000): Promise<boolean> {
+  for (let waited = 0; waited < timeoutMs; waited += 50) {
+    if (ready()) return true;
+    await sleep(50);
+  }
+  return ready();
+}
+
+/**
+ * Enables the disabled ActionsLab object and waits until its
+ * ViroSpecsActionsLab has started the reference flow on the scene
+ * controller and the list scene is committed.
+ */
+export async function startActionsLab(): Promise<ViroSpecsActionsLab> {
+  await waitForGeneratedScene();
+  const object = findSceneObjectByName(ACTIONS_LAB);
+  expect(object).toBeTruthy();
+  object.enabled = true;
+  const lookup = (): ViroSpecsActionsLab | null =>
+    object.getComponent(ViroSpecsActionsLab.getTypeName()) as ViroSpecsActionsLab | null;
+  const started = await waitFor(() => {
+    const candidate = lookup();
+    return candidate !== null && candidate.state !== undefined && findSceneObjectByName("viro:list-title") !== null;
+  });
+  expect(started).toBe(true);
+  const lab = lookup();
+  expect(lab).toBeTruthy();
+  // SIK binds one frame after commit.
+  await settle();
+  return lab as ViroSpecsActionsLab;
+}
+
+/** Disables ActionsLab again and presents the compiled Platform Lab scene. */
+export async function stopActionsLab(): Promise<void> {
+  const object = findSceneObjectByName(ACTIONS_LAB);
+  if (object) object.enabled = false;
+  await restoreGeneratedScene();
+}
+
+/** Collects host diagnostics while `body` runs. */
+export async function recordDiagnostics(body: () => Promise<void>): Promise<ViroSpecsHostDiagnostic[]> {
+  const seen: ViroSpecsHostDiagnostic[] = [];
+  const subscription = controllerHost().addOnDiagnosticListener((d) => seen.push(d));
+  try {
+    await body();
+  } finally {
+    subscription.remove();
+  }
+  return seen;
 }

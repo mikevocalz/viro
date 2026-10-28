@@ -187,6 +187,19 @@ if (hostInputs.includes("sceneHostObject")) {
 
   setInput(generatedHost, "GeneratedHost", "sceneHostObject", sceneHostObject, sceneHostObject.name);
 
+  // Typed actions (WS3b): the standalone reference flow on the same scene
+  // controller. It presents its own scene on start, so it stays disabled and
+  // the LEAF action scenarios enable it for their run; a Lens reset puts it
+  // back to disabled.
+  const actionsLabObject = ensureChild(runtime, "ActionsLab");
+  const actionsLab = ensureScript(actionsLabObject, "ViroSpecsActionsLab");
+  setInput(actionsLab, "ActionsLab", "controllerHostObject", sceneHostObject, sceneHostObject.name);
+  setInput(actionsLab, "ActionsLab", "forwardActions", true, "true");
+  if (actionsLabObject.enabled) {
+    actionsLabObject.enabled = false;
+    steps.push("disable ActionsLab");
+  }
+
   // The four-input hosts from protocol 1 are unused now. Disable them so
   // nothing else builds into ViroGeneratedContent (reversible).
   for (const name of ["RuntimeHost", "InteractionHost", "AnimationHost", "Navigation"]) {
