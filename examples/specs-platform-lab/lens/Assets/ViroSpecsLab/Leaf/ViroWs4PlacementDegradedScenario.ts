@@ -24,6 +24,7 @@ import {
   stopExperience,
   viewOf,
   waitFor,
+  waitForExperience,
   withSlowAssets,
 } from "./ViroLabExperienceSupport";
 
@@ -36,7 +37,7 @@ import {
 @component
 export class ViroWs4PlacementDegradedScenario extends Scenario {
   async run(config?: ScenarioConfig): Promise<void> {
-    const host = await startExperience();
+    const host = await startExperience({ placementScene: true });
     try {
       expect(presentGallery("placement").status).toBe("committed");
       expect(await waitFor(() => controllerHost().lifecycle === "ready")).toBe(true);

@@ -24,6 +24,7 @@ import {
   stopExperience,
   viewOf,
   waitFor,
+  waitForExperience,
   withSlowAssets,
 } from "./ViroLabExperienceSupport";
 
@@ -41,7 +42,7 @@ export class ViroWs4SceneRejectionScenario extends Scenario {
       expect(await waitFor(() => controllerHost().lifecycle === "ready")).toBe(true);
       const bad = { version: 2, nodes: [{ id: "x", kind: "text" }], polylines: [], lights: [], materials: [], interactions: [], animations: [] };
       expect(controllerHost().update(bad).status).toBe("rejected");
-      expect(await waitFor(() => panelOpen("error"), 2000)).toBe(true);
+      expect(await waitForExperience(host, "error", () => panelOpen("error"), 2000)).toBe(true);
       expect(panelText("error", "title")).toBe("Scene couldn't open");
       expect(panelText("error", "body")).toBe("The last working scene is still here.");
       expect(panelText("error", "label")).toBe("Close");
@@ -53,7 +54,7 @@ export class ViroWs4SceneRejectionScenario extends Scenario {
       controllerHost().clear();
       await settle(200);
       expect(controllerHost().present(bad).status).toBe("rejected");
-      expect(await waitFor(() => panelOpen("error"), 2000)).toBe(true);
+      expect(await waitForExperience(host, "error", () => panelOpen("error"), 2000)).toBe(true);
       print("VIRO_WS4 scene_rejection first-scene body=" + panelText("error", "body"));
       expect(panelText("error", "body").startsWith("Close this lens and open it again.")).toBe(true);
       await hold(config, "rejection_first");

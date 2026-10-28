@@ -3,7 +3,7 @@ import type { ScenarioConfig } from "Leaf.lspkg/Scenarios/scenario/ScenarioConfi
 import { DefaultLeafInteractor } from "Leaf.lspkg/Interactors/interactor/DefaultLeafInteractor";
 import { findSceneObjectByName } from "Leaf.lspkg/Utils/common/Utils";
 import { expect } from "Leaf.lspkg/Utils/common/Expect";
-import { controllerHost, pinch, settle, textOf } from "./ViroLabLeafSupport";
+import { controllerHost, describeTree, pinch, settle, textOf } from "./ViroLabLeafSupport";
 import {
   cameraPose,
   controllerOf,
@@ -24,6 +24,7 @@ import {
   stopExperience,
   viewOf,
   waitFor,
+  waitForExperience,
   withSlowAssets,
 } from "./ViroLabExperienceSupport";
 
@@ -51,6 +52,7 @@ export class ViroWs4ButtonStatesScenario extends Scenario {
       print("VIRO_WS4 button_states labels " + JSON.stringify(states));
       expect(decorationText("ix-btn-b", "label")?.text.startsWith("\u2713")).toBe(true);
       expect(decorationText("ix-btn-retry", "label")?.text.startsWith("! ")).toBe(true);
+      print("VIRO_WS4 button_states retry tree:\n" + describeTree(controllerHost().getNode("ix-btn-retry")));
       const errorLine = decorationText("ix-btn-retry", "errorMessage");
       expect(errorLine?.getSceneObject().enabled ?? false).toBe(true);
       expect(errorLine?.text).toBe("That didn't go through. Pinch Retry to try again.");

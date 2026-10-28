@@ -24,6 +24,7 @@ import {
   stopExperience,
   viewOf,
   waitFor,
+  waitForExperience,
   withSlowAssets,
 } from "./ViroLabExperienceSupport";
 
@@ -35,13 +36,13 @@ import {
 @component
 export class ViroWs4PlacementErrorScenario extends Scenario {
   async run(config?: ScenarioConfig): Promise<void> {
-    const host = await startExperience();
+    const host = await startExperience({ placementScene: true });
     try {
       const result = presentGallery("placement", (doc) => {
         nodeOf(doc, "placement-model").source = "examples/visionos-sweep/assets/missing.glb";
       });
       expect(result.status).toBe("committed");
-      expect(await waitFor(() => panelOpen("error"), 3000)).toBe(true);
+      expect(await waitForExperience(host, "error", () => panelOpen("error"), 3000)).toBe(true);
       expect(findSceneObjectByName("viro-placeholder:placement-model")).toBeTruthy();
       expect(panelText("error", "title")).toBe("Model didn't load");
       const poses: string[] = [];

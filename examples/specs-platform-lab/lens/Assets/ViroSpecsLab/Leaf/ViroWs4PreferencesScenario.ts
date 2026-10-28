@@ -24,6 +24,7 @@ import {
   stopExperience,
   viewOf,
   waitFor,
+  waitForExperience,
   withSlowAssets,
 } from "./ViroLabExperienceSupport";
 
@@ -56,7 +57,7 @@ export class ViroWs4PreferencesScenario extends Scenario {
       await withSlowAssets(2000, async () => {
         controllerHost().clear();
         expect(presentGallery("hello").status).toBe("committed");
-        expect(await waitFor(() => panelOpen("loading"), 1000)).toBe(true);
+        expect(await waitForExperience(host, "loading", () => panelOpen("loading"), 1000)).toBe(true);
         const loading = viewOf(host).loading;
         print("VIRO_WS4 preferences loading=" + JSON.stringify(loading));
         expect(loading.visible === true ? loading.indicator : "none").toBe("arc-static");

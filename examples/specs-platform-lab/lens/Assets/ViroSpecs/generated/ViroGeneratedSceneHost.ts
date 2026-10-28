@@ -153,6 +153,7 @@ const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = {
       "interactable": true,
       "manipulation": false,
       "events": [
+        "hover",
         "select"
       ]
     }

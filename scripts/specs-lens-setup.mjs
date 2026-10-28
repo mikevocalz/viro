@@ -84,6 +84,24 @@ const SCENARIOS = [
   { id: "viro_lab_actions_unknown_action", expect: "succeeded" },
   // Proves the suite reports failures. It must fail.
   { id: "viro_lab_deliberate_failure", expect: "failed" },
+  // WS4 experience layer on the four gallery scenes (ExperienceHost).
+  ...[
+    "viro_ws4_hello_loading",
+    "viro_ws4_hello_ready",
+    "viro_ws4_hello_error",
+    "viro_ws4_hello_degraded",
+    "viro_ws4_placement_table",
+    "viro_ws4_placement_cancel",
+    "viro_ws4_placement_degraded",
+    "viro_ws4_placement_error",
+    "viro_ws4_button_states",
+    "viro_ws4_move_band",
+    "viro_ws4_gaze",
+    "viro_ws4_navigation_scroll",
+    "viro_ws4_navigation_image_error",
+    "viro_ws4_scene_rejection",
+    "viro_ws4_preferences",
+  ].map((id) => ({ id, expect: "succeeded" })),
 ];
 
 function parseArgs(argv) {
@@ -420,7 +438,7 @@ const handlers = {
           else await new Promise((resolve) => setTimeout(resolve, 2000));
         }
         const status = managerLine === null ? pluginStatus : managerLine.includes("] PASSED") ? "succeeded" : "failed";
-        save(`leaf-${scenario.id}.log`, logSince(offset).split("\n").filter((line) => /\[Preview 1\]|LeafPlugin|LeafChatTool/.test(line)).join("\n"));
+        save(`leaf-${scenario.id}.log`, logSince(offset).split("\n").filter((line) => /\[Preview \d+\]|LeafPlugin|LeafChatTool/.test(line)).join("\n"));
         results.push({
           id: scenario.id,
           runner: "leaf-panel",

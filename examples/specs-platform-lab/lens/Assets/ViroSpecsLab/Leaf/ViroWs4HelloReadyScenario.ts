@@ -3,7 +3,7 @@ import type { ScenarioConfig } from "Leaf.lspkg/Scenarios/scenario/ScenarioConfi
 import { DefaultLeafInteractor } from "Leaf.lspkg/Interactors/interactor/DefaultLeafInteractor";
 import { findSceneObjectByName } from "Leaf.lspkg/Utils/common/Utils";
 import { expect } from "Leaf.lspkg/Utils/common/Expect";
-import { controllerHost, pinch, settle, textOf } from "./ViroLabLeafSupport";
+import { controllerHost, describeTree, pinch, settle, textOf } from "./ViroLabLeafSupport";
 import {
   cameraPose,
   controllerOf,
@@ -24,6 +24,7 @@ import {
   stopExperience,
   viewOf,
   waitFor,
+  waitForExperience,
   withSlowAssets,
 } from "./ViroLabExperienceSupport";
 
@@ -43,6 +44,7 @@ export class ViroWs4HelloReadyScenario extends Scenario {
       await settle(300);
       expect(viewOf(host).sceneVisible).toBe(true);
       expect(decorationText("hello-next", "label")?.text).toBe("Next scene");
+      print("VIRO_WS4 hello_ready tree:\n" + describeTree(controllerHost().getNode("hello-next")));
       const backing = decorationBacking("hello-next");
       expect(backing).toBeTruthy();
       const restWidth = (backing as RenderMeshVisual).getSceneObject().getTransform().getLocalScale().x;

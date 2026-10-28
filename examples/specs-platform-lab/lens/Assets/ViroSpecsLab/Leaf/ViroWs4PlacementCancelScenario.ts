@@ -24,6 +24,7 @@ import {
   stopExperience,
   viewOf,
   waitFor,
+  waitForExperience,
   withSlowAssets,
 } from "./ViroLabExperienceSupport";
 
@@ -35,7 +36,7 @@ import {
 @component
 export class ViroWs4PlacementCancelScenario extends Scenario {
   async run(config?: ScenarioConfig): Promise<void> {
-    const host = await startExperience();
+    const host = await startExperience({ placementScene: true });
     try {
       expect(presentGallery("placement").status).toBe("committed");
       expect(await waitFor(() => controllerHost().lifecycle === "ready")).toBe(true);
@@ -55,7 +56,8 @@ export class ViroWs4PlacementCancelScenario extends Scenario {
           await sleep(200);
         }
         print("VIRO_WS4 placement_cancel after look-away " + JSON.stringify(labels));
-        expect(labels.every((l) => !l.includes("Look away to cancel"))).toBe(true);
+        // While the wearer keeps looking away the reticle, and its cancel hint, stay hidden.
+        expect(labels.every((l) => l.startsWith("off:"))).toBe(true);
         expect(host.confirmPlacement()).toBe(false);
         await hold(config, "placement_cancelled");
       } finally {

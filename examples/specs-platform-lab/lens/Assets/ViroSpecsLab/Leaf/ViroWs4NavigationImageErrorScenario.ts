@@ -24,6 +24,7 @@ import {
   stopExperience,
   viewOf,
   waitFor,
+  waitForExperience,
   withSlowAssets,
 } from "./ViroLabExperienceSupport";
 
@@ -42,7 +43,7 @@ export class ViroWs4NavigationImageErrorScenario extends Scenario {
           for (const node of doc.nodes) if (node.kind === "image") node.source = "examples/visionos-sweep/assets/missing.png";
         });
         expect(result.status).toBe("committed");
-        expect(await waitFor(() => panelOpen("error"), 3000)).toBe(true);
+        expect(await waitForExperience(host, "error", () => panelOpen("error"), 3000)).toBe(true);
         await settle(300);
       });
       const vs5003 = diagnostics.filter((d) => d.code === "VS5003").map((d) => d.nodeId ?? "");

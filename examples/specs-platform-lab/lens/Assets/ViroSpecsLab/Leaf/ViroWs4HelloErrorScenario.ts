@@ -24,6 +24,7 @@ import {
   stopExperience,
   viewOf,
   waitFor,
+  waitForExperience,
   withSlowAssets,
 } from "./ViroLabExperienceSupport";
 
@@ -45,7 +46,7 @@ export class ViroWs4HelloErrorScenario extends Scenario {
           nodeOf(doc, "platform-lab-model").source = "examples/visionos-sweep/assets/missing.glb";
         });
         expect(result.status).toBe("committed");
-        expect(await waitFor(() => panelOpen("error"), 3000)).toBe(true);
+        expect(await waitForExperience(host, "error", () => panelOpen("error"), 3000)).toBe(true);
       });
       const lines = diagnostics.map((d) => d.code + " " + (d.nodeId ?? ""));
       print("VIRO_WS4 hello_error diagnostics=" + JSON.stringify(lines));

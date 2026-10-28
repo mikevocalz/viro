@@ -29,15 +29,22 @@ export const EXPERIENCE_HOST = "ExperienceHost";
 export const WS4_PARAMETERS: Record<string, string> = { hold_ms: "0" };
 
 /** Enables ExperienceHost and waits until its controller is attached to the scene controller. */
-export async function startExperience(): Promise<ViroSpecsExperienceHost> {
+export async function startExperience(inputs: { placementScene?: boolean; gazeOnly?: boolean } = {}): Promise<ViroSpecsExperienceHost> {
   await waitForGeneratedScene();
+  configureExperience(inputs);
   const object = findSceneObjectByName(EXPERIENCE_HOST);
   expect(object).toBeTruthy();
   object.enabled = true;
   const lookup = (): ViroSpecsExperienceHost | null =>
     object.getComponent(ViroSpecsExperienceHost.getTypeName()) as ViroSpecsExperienceHost | null;
   expect(await waitFor(() => lookup()?.controller !== null && lookup()?.controller !== undefined)).toBe(true);
-  return lookup() as ViroSpecsExperienceHost;
+  const started = lookup() as ViroSpecsExperienceHost;
+  print(
+    "VIRO_WS4 experience started placementScene=" + started.placementScene +
+      " panelMesh=" + (started.panelMesh ? started.panelMesh.name : "null") +
+      " panelMaterial=" + (started.panelMaterial ? started.panelMaterial.name : "null")
+  );
+  return started;
 }
 
 /** Disables ExperienceHost and presents the compiled Platform Lab scene again. */
@@ -81,7 +88,39 @@ export function panel(key: "loading" | "notice" | "error" | "permission"): Scene
 
 export function panelOpen(key: "loading" | "notice" | "error" | "permission"): boolean {
   const object = panel(key);
-  return object !== null && object.enabled;
+  return !!object && object.enabled;
+}
+
+/** One line describing the experience view and the overlay panels, for failure logs. */
+export function describeExperience(host: ViroSpecsExperienceHost): string {
+  const view = host.controller?.view();
+  const panels = (["loading", "notice", "error", "permission"] as const)
+    .map((key) => key + "=" + (panel(key) ? (panelOpen(key) ? "open" : "closed") : "none"))
+    .join(" ");
+  return (
+    "lifecycle=" + controllerHost().lifecycle +
+    " sceneVisible=" + view?.sceneVisible +
+    " error=" + JSON.stringify(view?.errorPanel ?? null) +
+    " notice=" + JSON.stringify(view?.notice ?? null) +
+    " " + panels
+  );
+}
+
+/** Like waitFor, but prints the experience state when the condition never holds. */
+export async function waitForExperience(host: ViroSpecsExperienceHost, label: string, ready: () => boolean, timeoutMs: number = 3000): Promise<boolean> {
+  const ok = await waitFor(ready, timeoutMs);
+  if (!ok) print("VIRO_WS4 wait failed (" + label + "): " + describeExperience(host));
+  return ok;
+}
+
+/** Sets ExperienceHost inputs read at start (they are fixed once it starts). */
+export function configureExperience(inputs: { placementScene?: boolean; gazeOnly?: boolean }): void {
+  const object = findSceneObjectByName(EXPERIENCE_HOST);
+  expect(object).toBeTruthy();
+  const host = (object as SceneObject).getComponent(ViroSpecsExperienceHost.getTypeName()) as ViroSpecsExperienceHost | null;
+  expect(host).toBeTruthy();
+  if (inputs.placementScene !== undefined) (host as ViroSpecsExperienceHost).placementScene = inputs.placementScene;
+  if (inputs.gazeOnly !== undefined) (host as ViroSpecsExperienceHost).gazeOnly = inputs.gazeOnly;
 }
 
 /** Text of a panel row ("title", "body", "detail", or the action "label"). */
@@ -131,13 +170,17 @@ export function decorationText(id: string, child: "label" | "title" | "errorMess
   return null;
 }
 
-/** The backing RenderMeshVisual the experience layer added to a premium node. */
+/**
+ * The backing RenderMeshVisual the experience layer added to a premium node:
+ * its first child with a mesh. SIK binds a button's interaction on it, which
+ * renames it "viro-interactable:<id>".
+ */
 export function decorationBacking(id: string): RenderMeshVisual | null {
   const object = controllerHost().getNode(id);
   if (!object) return null;
   for (let i = 0; i < object.getChildrenCount(); i++) {
-    const c = object.getChild(i);
-    if (c.name === "backing") return c.getComponent("Component.RenderMeshVisual") as RenderMeshVisual | null;
+    const visual = object.getChild(i).getComponent("Component.RenderMeshVisual") as RenderMeshVisual | null;
+    if (visual) return visual;
   }
   return null;
 }

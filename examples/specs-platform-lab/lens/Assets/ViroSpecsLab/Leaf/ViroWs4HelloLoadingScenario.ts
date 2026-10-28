@@ -3,6 +3,7 @@ import type { ScenarioConfig } from "Leaf.lspkg/Scenarios/scenario/ScenarioConfi
 import { DefaultLeafInteractor } from "Leaf.lspkg/Interactors/interactor/DefaultLeafInteractor";
 import { findSceneObjectByName } from "Leaf.lspkg/Utils/common/Utils";
 import { expect } from "Leaf.lspkg/Utils/common/Expect";
+import { findInteractableByName, isEnabled } from "Leaf.lspkg/Interactors/InteractableUtils";
 import { controllerHost, pinch, settle, textOf } from "./ViroLabLeafSupport";
 import {
   cameraPose,
@@ -24,6 +25,7 @@ import {
   stopExperience,
   viewOf,
   waitFor,
+  waitForExperience,
   withSlowAssets,
 } from "./ViroLabExperienceSupport";
 
@@ -41,21 +43,24 @@ export class ViroWs4HelloLoadingScenario extends Scenario {
       await withSlowAssets(2500, async () => {
         const result = presentGallery("hello");
         expect(result.status).toBe("committed");
-        expect(await waitFor(() => panelOpen("loading"), 1000)).toBe(true);
+        expect(await waitForExperience(host, "loading", () => panelOpen("loading"), 1000)).toBe(true);
         const view = viewOf(host);
         print("VIRO_WS4 hello_loading lifecycle=" + controllerHost().lifecycle + " body=" + panelText("loading", "body"));
         expect(controllerHost().lifecycle).toBe("loading");
         expect(view.sceneVisible).toBe(false);
         expect(panelText("loading", "title")).toBe("Loading scene");
         expect(panelText("loading", "body").startsWith("Loading 0 of 1")).toBe(true);
-        expect(findSceneObjectByName("viro-interactable:hello-next")).toBeFalsy();
+        // Content and its SIK targets stay hidden until the scene is ready (A-check L4).
+        expect(isEnabled(findInteractableByName("viro-interactable:hello-next"))).toBe(false);
         await hold(config, "hello_loading");
         expect(await waitFor(() => controllerHost().lifecycle === "ready", 6000)).toBe(true);
       });
       await settle(300);
       expect(panelOpen("loading")).toBe(false);
       expect(viewOf(host).sceneVisible).toBe(true);
-      expect(findSceneObjectByName("viro:platform-lab-model")?.getChildrenCount() ?? 0).toBeGreaterThan(0);
+      expect(isEnabled(findInteractableByName("viro-interactable:hello-next"))).toBe(true);
+      // The model node holds the instantiated prefab once the slow load lands.
+      expect(controllerHost().getNode("platform-lab-model")?.getChildrenCount() ?? 0).toBeGreaterThan(0);
       print("VIRO_WS4 hello_loading PASS");
     } finally {
       await stopExperience();
