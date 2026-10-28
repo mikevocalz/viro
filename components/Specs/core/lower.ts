@@ -107,6 +107,8 @@ export function toSpecsSceneDocument(manifest: ViroSpecsManifestV2): ViroSpecsSc
   );
   return {
     version: 2,
+    ...(manifest.route !== undefined ? { route: manifest.route } : {}),
+    ...(manifest.actions !== undefined && manifest.actions.length > 0 ? { actions: manifest.actions } : {}),
     nodes,
     polylines: manifest.polylines,
     lights: manifest.lights,

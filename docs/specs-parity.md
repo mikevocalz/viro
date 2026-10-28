@@ -23,6 +23,10 @@ Test references:
   `__test__/ViroSpecsManifest.test.ts` (schema and validator over
   `__test__/fixtures/specs/manifest-v2/`), `S` is
   `scripts/test-viro-specs-compiler.cjs` (CLI exit codes and formats).
+- `A` is `__test__/ViroSpecsActions.test.tsx` (React Native action layer and
+  `SpecsActionsLab`); `L` is viro-external `packages/specs/scripts/actions.test.mjs`
+  and `actions-fixtures.test.mjs` (Lens controller, registry and runtime on a
+  mock host).
 
 | Viro semantic | ViroCore | SPECS 27 Lens backend | Manifest v2 field | Diagnostic when unsupported | Test |
 | --- | --- | --- | --- | --- | --- |
@@ -38,6 +42,11 @@ Test references:
 | hover | Viro event delegate | SIK hover | `interactions[].events: "hover"` | `VS1010` unknown target | `G:interaction-hover-select-drag=`; `R` routes interactions |
 | click/select | Viro click | SIK trigger/pinch | `interactions[].events: "select"` | `VS1010` | `G:interaction-hover-select-drag=`, `G:interaction-click-state=`, `PL` |
 | drag | Viro drag | InteractableManipulation | `interactions[].manipulation`, `events: "drag"` | `VS1010` | `G:interaction-hover-select-drag=`, `PL` |
+| typed action | `onClick` plus app code | trigger resolved by `ViroSpecsSceneController`, delivered one frame later | `interactions[].triggers[]`, `actions[]` | `VS1016` duplicate, `VS1017` undeclared, `VS1018` ill-typed payload, `VS1019` event not enabled, `VS3016` closure or non-JSON trigger; Lens `VS5015`–`VS5017` | `G:actions-triggers=`, `G:actions-invalid=`; `M` actions, action-*, trigger-*; `S` typed actions; `A` reference flow, dispatcher; `L` scene validation |
+| app state from actions | app store (Zustand) | `ViroSpecsActionRegistry` + `ViroSpecsActionRuntime` (standalone) | none (runtime API: `bindSpecsActionsToStore`, `ViroSpecsActionRegistry.on`) | `VS3017`, Lens `VS5019` no handler; Lens `VS5009` handler threw | `A` Zustand store; `L` registry, forward |
+| action lifetime | n/a (synchronous) | queued per scene; retired scene drops it | none | Lens `VS5018` (info) | `L` "queued when navigation happens"; `A` late pinch on a retired card |
+| route / navigation | app navigator | update with a new `route` is a transactional present | `route` | none | `G:actions-triggers=`; `A` reference flow; `L` reference flow |
+| scroll position across back navigation | native scroll view | route memory in the controller (`maxRememberedRoutes`) | `nodes[kind=group].scroll` | `VS1015` on protocol 1; Lens `VS5020` (info) eviction | `G:actions-triggers=`; `L` reference flow, 100 cycles, fixtures; `A` fixtures |
 | animation | Viro animation manager | AnimationPlayer | `animations[].plan` | `VS3003` missing/chain, `VS3004` property, `VS3005` value, `VS3006` easing, `VS3014` timing, `VS2011`/`VS2012` not static | `G:anim-relative-add=`, `G:anim-relative-multiply-divide=`, `G:anim-translate-offset=`, `G:anim-rotate-relative=`, `G:anim-opacity-relative=`, `G:timing-delay-sum=`, `G:timing-invalid-duration=`, `G:timing-easing-rejected=`, `G:timing-run-false=`, `PL`; `C` division by zero; `M` bad-easing |
 | element IDs | `viroTag` | SceneObject binding key | `nodes[].id` and every reference | `VS3012` no `viroTag` (content-hash ID assigned; `--strict` fails), `VS1007` duplicate | `G:ids-content-hash=`, `G:ids-key-hash=`, `G:ids-duplicate=`; `C` reorder stability in both compilers; `S` `--strict` |
 | static analysis | n/a | n/a | n/a | `VS2003` unexpandable JSX, `VS2013` unresolved spread, `VS2014` unresolved expression, `VS2018` unresolved import, `VS2019` unexpandable `.map()` | `G:imports-constants=`, `G:spread-static=`, `G:spread-unresolved`, `G:map-static-array=`, `G:map-block-destructure=`, `G:map-unresolved`, `G:dynamic-expression`; `C` edge cases |

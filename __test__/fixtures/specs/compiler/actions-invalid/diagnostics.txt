@@ -1,0 +1,2 @@
+scene.tsx:9:43 error VS3016 [nested]: ViroText nested specsAction.payload must be a flat object of strings, finite numbers and booleans; functions and nested objects cannot reach the Lens.
+scene.tsx:10:7 error VS1017 [undeclared]: Trigger fires undeclared action "c.d".

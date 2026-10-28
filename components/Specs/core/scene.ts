@@ -1,4 +1,10 @@
 import {
+  readSpecsActionProp,
+  specsTriggerEvents,
+  type ViroSpecsActionDeclaration,
+  type ViroSpecsActionTrigger,
+} from "./actions";
+import {
   resolveSpecsAnimation,
   type ViroSpecsAnimationLookup,
   type ViroSpecsAnimationPlan,
@@ -29,6 +35,7 @@ import {
   type ViroSpecsManifestPolyline,
   type ViroSpecsManifestV2,
   type ViroSpecsSceneDocument,
+  type ViroSpecsScroll,
   type ViroSpecsTextStyle,
   type ViroSpecsVec3,
   type ViroSpecsWireSceneSnapshot,
@@ -120,6 +127,17 @@ export type ViroSpecsElementResult =
       /** Scope for children, or `undefined` when children are not compiled. */
       readonly childScope?: ViroSpecsScope;
     };
+
+/**
+ * Scene-level inputs, from `ViroSpecsScene` props. Both compilers pass them
+ * to {@linkcode ViroSpecsSceneBuilder.setScene}.
+ */
+export interface ViroSpecsSceneInput {
+  /** Route of the scene. A new route is navigation on the Lens host. */
+  readonly route?: string;
+  /** Actions the tree's `specsAction` triggers may fire. Copied to the manifest. */
+  readonly actions?: readonly ViroSpecsActionDeclaration[];
+}
 
 /** Portable polyline the runtime transport presents. */
 export interface ViroSpecsScenePolyline {
@@ -280,6 +298,7 @@ export class ViroSpecsSceneBuilder {
   private readonly plans: ViroSpecsAnimationPlan[] = [];
   private readonly diagnostics: ViroSpecsDiagnostic[] = [];
   private readonly locations = new Map<string, ViroSpecsDiagnosticDetails[]>();
+  private scene: ViroSpecsSceneInput = {};
 
   constructor(options: ViroSpecsSceneBuilderOptions) {
     this.options = options;
@@ -288,6 +307,15 @@ export class ViroSpecsSceneBuilder {
   /** Adds a diagnostic found outside element compilation (static analysis). */
   report(diagnostic: ViroSpecsDiagnostic): void {
     this.diagnostics.push(diagnostic);
+  }
+
+  /**
+   * Sets the scene's `route` and `actions`. The manifest copies them; an
+   * empty `actions` list is left out. Validation in {@linkcode finish} checks
+   * them and every trigger against them (`VS1016`-`VS1019`).
+   */
+  setScene(scene: ViroSpecsSceneInput): void {
+    this.scene = scene;
   }
 
   /** True once any element, polyline or light compiled. */
@@ -479,9 +507,11 @@ export class ViroSpecsSceneBuilder {
 
     let node: ViroSpecsManifestNode | undefined;
     switch (target.kind) {
-      case "group":
-        node = { ...base, kind: "group" };
+      case "group": {
+        const scroll = this.readScroll(props, written, issues, id);
+        node = { ...base, kind: "group", ...(scroll !== undefined ? { scroll } : {}) };
         break;
+      }
       case "text": {
         let text: string | undefined;
         if (unresolved.has("text")) text = undefined;
@@ -543,7 +573,7 @@ export class ViroSpecsSceneBuilder {
     }
 
     if (node !== undefined) {
-      this.compileInteraction(props, id);
+      this.compileInteraction(props, written, unresolved, issues, name, id);
       this.compileAnimation(props, written, unresolved, id, local, opacity, issues, name);
     }
     flush();
@@ -569,6 +599,29 @@ export class ViroSpecsSceneBuilder {
       return value[0];
     }
     issues.push({ code: "VS1004", prop: "materials", message: name + " " + id + " materials " + describe(value) + " is not a string or a non-empty string array." });
+    return undefined;
+  }
+
+  private readScroll(
+    props: Readonly<Record<string, unknown>>,
+    written: (prop: string) => boolean,
+    issues: ViroSpecsIssue[],
+    id: string
+  ): ViroSpecsScroll | undefined {
+    if (!written("specsScroll") || props.specsScroll === undefined) return undefined;
+    const value = props.specsScroll;
+    if (isRecord(value)) {
+      const { width, height, contentHeight } = value;
+      if (typeof width === "number" && typeof height === "number" && typeof contentHeight === "number") {
+        // Ranges are checked by validation (VS1004 with a fieldPath).
+        return { width, height, contentHeight };
+      }
+    }
+    issues.push({
+      code: "VS1004",
+      prop: "specsScroll",
+      message: "ViroNode " + id + " specsScroll " + describe(value) + " needs numeric width, height and contentHeight; it was left out.",
+    });
     return undefined;
   }
 
@@ -652,9 +705,27 @@ export class ViroSpecsSceneBuilder {
     }
   }
 
-  private compileInteraction(props: Readonly<Record<string, unknown>>, id: string): void {
-    const hover = typeof props.onHover === "function";
-    const select = typeof props.onClick === "function" || typeof props.onClickState === "function";
+  private compileInteraction(
+    props: Readonly<Record<string, unknown>>,
+    written: (prop: string) => boolean,
+    unresolved: ReadonlySet<string>,
+    issues: ViroSpecsIssue[],
+    name: string,
+    id: string
+  ): void {
+    let triggers: readonly ViroSpecsActionTrigger[] = [];
+    // An unresolved specsAction was already reported (VS2014) by the caller.
+    if (written("specsAction") && !unresolved.has("specsAction") && props.specsAction !== undefined) {
+      const read = readSpecsActionProp(props.specsAction);
+      for (const message of read.invalid) {
+        issues.push({ code: "VS3016", prop: "specsAction", message: name + " " + id + " " + message });
+      }
+      triggers = read.triggers;
+    }
+    const triggerEvents = specsTriggerEvents(triggers);
+    const hover = typeof props.onHover === "function" || triggerEvents.includes("hover");
+    const select =
+      typeof props.onClick === "function" || typeof props.onClickState === "function" || triggerEvents.includes("select");
     const drag = typeof props.onDrag === "function";
     if (!hover && !select && !drag) return;
     this.interactions.push({
@@ -666,6 +737,7 @@ export class ViroSpecsSceneBuilder {
         ...(select ? (["select"] as const) : []),
         ...(drag ? (["drag"] as const) : []),
       ],
+      ...(triggers.length > 0 ? { triggers } : {}),
     });
   }
 
@@ -742,6 +814,8 @@ export class ViroSpecsSceneBuilder {
       version: 2,
       generator: { name: this.options.generator },
       ...(this.options.source !== undefined ? { source: this.options.source } : {}),
+      ...(this.scene.route !== undefined ? { route: this.scene.route } : {}),
+      ...(this.scene.actions !== undefined && this.scene.actions.length > 0 ? { actions: this.scene.actions } : {}),
       nodes: this.nodes,
       polylines: this.polylines,
       lights: this.lights,

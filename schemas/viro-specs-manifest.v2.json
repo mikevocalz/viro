@@ -39,6 +39,18 @@
       "minLength": 1,
       "description": "Entry file, relative to the working directory."
     },
+    "route": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Route the scene belongs to. A changed route is navigation in the Lens host; the same route is a patch."
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/actionDeclaration"
+      },
+      "description": "Actions that triggers fire. IDs are unique (VS1016); triggers may only name declared actions (VS1017)."
+    },
     "nodes": {
       "type": "array",
       "items": {
@@ -217,6 +229,32 @@
             },
             "kind": {
               "const": "group"
+            },
+            "scroll": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "width",
+                "height",
+                "contentHeight"
+              ],
+              "description": "Scroll window in meters, from ViroNode specsScroll. The Lens host keeps the position across patches and, per route, across back navigation.",
+              "properties": {
+                "width": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "maximum": 10
+                },
+                "height": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "maximum": 10
+                },
+                "contentHeight": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              }
             }
           }
         },
@@ -765,6 +803,107 @@
         }
       }
     },
+    "actionId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(?:\\.[a-z][a-z0-9-]*)*$"
+    },
+    "actionField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "string",
+            "number",
+            "integer",
+            "boolean"
+          ]
+        },
+        "enum": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          },
+          "description": "Only on string fields."
+        },
+        "optional": {
+          "type": "boolean"
+        }
+      },
+      "dependentSchemas": {
+        "enum": {
+          "properties": {
+            "type": {
+              "const": "string"
+            }
+          }
+        }
+      }
+    },
+    "actionDeclaration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/actionId"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/actionField"
+          }
+        }
+      }
+    },
+    "actionPayload": {
+      "type": "object",
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "boolean"
+          }
+        ]
+      },
+      "description": "Flat JSON payload. Checked against the action's declaration (VS1018)."
+    },
+    "actionTrigger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "on",
+        "actionId"
+      ],
+      "properties": {
+        "on": {
+          "enum": [
+            "select",
+            "hover-enter",
+            "hover-exit"
+          ]
+        },
+        "actionId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "payload": {
+          "$ref": "#/$defs/actionPayload"
+        }
+      }
+    },
     "interaction": {
       "type": "object",
       "additionalProperties": false,
@@ -796,6 +935,14 @@
               "drag"
             ]
           }
+        },
+        "triggers": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/actionTrigger"
+          },
+          "description": "A select trigger needs select in events, hover triggers need hover (VS1019)."
         }
       }
     },

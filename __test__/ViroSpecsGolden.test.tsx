@@ -63,14 +63,19 @@ function golden(file: string, actual: string): void {
   expect(actual).toBe(fs.readFileSync(file, "utf8"));
 }
 
-type SceneElement = { props: { children?: unknown } };
+type SceneElement = { props: { children?: unknown; route?: string; actions?: unknown } };
 
 function runtimeCompile(name: string) {
   // The fixture module registers its animations on import, like an app does.
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const module = require(path.join(fixtureRoot, name, "scene.tsx")) as { Scene: () => SceneElement };
   const element = module.Scene();
-  return compileViroSpecsChildren(element.props.children as Parameters<typeof compileViroSpecsChildren>[0]);
+  // ViroSpecsScene passes its route and actions props the same way.
+  const { route, actions } = element.props;
+  return compileViroSpecsChildren(element.props.children as Parameters<typeof compileViroSpecsChildren>[0], undefined, {
+    ...(route !== undefined ? { route } : {}),
+    ...(actions !== undefined ? { actions: actions as Parameters<typeof compileViroSpecsChildren>[2]["actions"] } : {}),
+  });
 }
 
 /** Diagnostics both compilers can report, as `CODE@nodeId`, sorted. */

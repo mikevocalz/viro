@@ -34,6 +34,7 @@
     "audit:events": "node scripts/audit-events.cjs",
     "test:specs-compiler": "npm run build:specs-cli && node scripts/test-viro-specs-compiler.cjs",
     "test:specs": "jest --runInBand --config jest.specs.config.cjs __test__/ViroSpecs",
+    "fixtures:specs-actions": "SPECS_UPDATE_FIXTURES=1 jest --runInBand --config jest.specs.config.cjs __test__/ViroSpecsActions -t fixtures",
     "test:rive-contract": "node scripts/test-rive-local-contract.cjs",
     "perf:tracesift:init": "npx --yes @callstack/tracesift@0.3.1 init",
     "perf:tracesift": "npx --yes @callstack/tracesift@0.3.1 start",

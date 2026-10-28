@@ -1,0 +1,4 @@
+{
+  "description": "route, actions, specsAction triggers and a specsScroll group reach the manifest; a select trigger adds the select event, a hover trigger adds hover.",
+  "parity": true
+}

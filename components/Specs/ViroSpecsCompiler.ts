@@ -13,6 +13,7 @@ import type {
   ViroSpecsAnimationLookup,
   ViroSpecsAnimationPlan as CoreAnimationPlan,
 } from "./core/animation";
+import type { ViroSpecsActionDeclaration } from "./core/actions";
 import { createViroSpecsDiagnostic, type ViroSpecsDiagnostic } from "./core/diagnostic";
 import { VIRO_SPECS_NO_ORIGIN } from "./core/diagnostics";
 import type {
@@ -179,6 +180,14 @@ function isBlankText(child: React.ReactNode): boolean {
   return typeof child === "string" && child.trim() === "";
 }
 
+/** Scene-level inputs of {@linkcode compileViroSpecsChildren}, from `ViroSpecsScene` props. */
+export type ViroSpecsCompileOptions = {
+  /** Actions the tree's `specsAction` triggers may fire. Copied to the manifest. */
+  readonly actions?: readonly ViroSpecsActionDeclaration[];
+  /** Route of the scene. A new route is navigation on the Lens host. */
+  readonly route?: string;
+};
+
 /**
  * Compiles a Viro JSX tree into the portable Specs scene.
  *
@@ -195,7 +204,8 @@ function isBlankText(child: React.ReactNode): boolean {
  */
 export function compileViroSpecsChildren(
   children: React.ReactNode,
-  sourceResolver: ViroSpecsSourceResolver = defaultSourceResolver
+  sourceResolver: ViroSpecsSourceResolver = defaultSourceResolver,
+  options: ViroSpecsCompileOptions = {}
 ): ViroSpecsCompiledScene {
   const callbacks = new Map<string, ViroSpecsCallbackRecord>();
   const builder = new ViroSpecsSceneBuilder({
@@ -214,6 +224,11 @@ export function compileViroSpecsChildren(
         };
       }
     },
+  });
+
+  builder.setScene({
+    ...(options.route !== undefined ? { route: options.route } : {}),
+    ...(options.actions !== undefined ? { actions: options.actions } : {}),
   });
 
   const visit = (child: React.ReactNode, scope: ViroSpecsScope): void => {

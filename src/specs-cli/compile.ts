@@ -1,4 +1,5 @@
 import * as nodeFs from "node:fs";
+import type { ViroSpecsActionDeclaration } from "../../components/Specs/core/actions";
 import { createViroSpecsDiagnostic, type ViroSpecsDiagnostic, type ViroSpecsDiagnosticDetails } from "../../components/Specs/core/diagnostic";
 import type { ViroSpecsDiagnosticCode } from "../../components/Specs/core/diagnosticCodes";
 import { sortViroSpecsDiagnostics, type ViroSpecsElementOrigin } from "../../components/Specs/core/diagnostics";
@@ -92,6 +93,10 @@ function callbackPlaceholder(): undefined {
  * placeholder function (the builder checks only `typeof`), assets stay
  * {@linkcode SpecsStaticAsset} for the source resolver.
  */
+function isRecordValue(value: unknown): value is Readonly<Record<string, unknown>> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 function toProp(value: SpecsStaticValue): unknown {
   if (value instanceof SpecsStaticFunction) return callbackPlaceholder;
   if (value instanceof SpecsStaticAsset || value instanceof SpecsStaticNamespace) return value;
@@ -400,6 +405,7 @@ class EntryCompiler {
         if (jsxName(element.openingElement.name) === "ViroSpecsScene") {
           this.roots += 1;
           const scope: SpecsEvalScope = { module: this.entry, locals: new Map(), shadowed };
+          this.sceneProps(element, scope);
           this.children(element.children, scope, VIRO_SPECS_ROOT_SCOPE, false);
           return;
         }
@@ -408,6 +414,75 @@ class EntryCompiler {
       for (const child of childNodes(node)) findRoots(child, inner);
     };
     findRoots(this.entry.ast, new Set());
+  }
+
+  /**
+   * Reads `route` and `actions` from the `<ViroSpecsScene>` root. `actions`
+   * is an array of declarations or an object with a `declarations` array, as
+   * `defineSpecsActions` returns; a call to `defineSpecsActions` itself is not
+   * evaluated and is reported with `VS2014`.
+   */
+  private sceneProps(element: JSXElement, evalScope: SpecsEvalScope): void {
+    const module = evalScope.module;
+    const values = new Map<string, { readonly value: unknown; readonly at: AstNode }>();
+    for (const attribute of element.openingElement.attributes) {
+      if (attribute.type === "JSXSpreadAttribute") {
+        const value = this.evaluator.evaluate(attribute.argument, evalScope);
+        if (value instanceof SpecsUnresolved) {
+          this.reportUnresolved("VS2013", "ViroSpecsScene spread", attribute.argument, evalScope, value);
+          continue;
+        }
+        if (value === null || value === undefined || !isSpecsStaticObject(value)) continue;
+        for (const prop of ["route", "actions"]) {
+          if (Object.prototype.hasOwnProperty.call(value, prop)) values.set(prop, { value: toProp(value[prop]), at: attribute });
+        }
+        continue;
+      }
+      if (attribute.name.type !== "JSXIdentifier") continue;
+      const prop = attribute.name.name;
+      if (prop !== "route" && prop !== "actions") continue;
+      const valueNode = attribute.value;
+      if (valueNode === null || valueNode === undefined) {
+        values.set(prop, { value: true, at: attribute });
+        continue;
+      }
+      if (valueNode.type === "StringLiteral") {
+        values.set(prop, { value: valueNode.value, at: attribute });
+        continue;
+      }
+      if (valueNode.type !== "JSXExpressionContainer" || valueNode.expression.type === "JSXEmptyExpression") continue;
+      const value = this.evaluator.evaluate(valueNode.expression, evalScope);
+      if (value instanceof SpecsUnresolved) {
+        values.delete(prop);
+        this.reportUnresolved("VS2014", "ViroSpecsScene " + prop, valueNode.expression, evalScope, value);
+        continue;
+      }
+      values.set(prop, { value: toProp(value), at: attribute });
+    }
+
+    let route: string | undefined;
+    const routeEntry = values.get("route");
+    if (routeEntry !== undefined && routeEntry.value !== undefined) {
+      if (typeof routeEntry.value === "string" && routeEntry.value !== "") route = routeEntry.value;
+      else this.report("VS1004", "ViroSpecsScene route must be a non-empty string.", module, routeEntry.at);
+    }
+    let actions: readonly ViroSpecsActionDeclaration[] | undefined;
+    const actionsEntry = values.get("actions");
+    if (actionsEntry !== undefined && actionsEntry.value !== undefined) {
+      const value = actionsEntry.value;
+      const list = Array.isArray(value)
+        ? value
+        : isRecordValue(value) && Array.isArray(value.declarations)
+          ? value.declarations
+          : undefined;
+      // Each declaration's shape is checked by validation (VS1004, VS1016).
+      if (list !== undefined) actions = list as readonly ViroSpecsActionDeclaration[];
+      else this.report("VS1004", "ViroSpecsScene actions must be an array of action declarations.", module, actionsEntry.at);
+    }
+    this.builder.setScene({
+      ...(route !== undefined ? { route } : {}),
+      ...(actions !== undefined ? { actions } : {}),
+    });
   }
 
   private children(children: readonly JSXChild[], evalScope: SpecsEvalScope, scope: ViroSpecsScope, conditional: boolean): void {

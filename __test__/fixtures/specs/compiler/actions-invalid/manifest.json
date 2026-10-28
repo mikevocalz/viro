@@ -1,0 +1,45 @@
+{
+  "$schema": "https://github.com/mikevocalz/viro/blob/main/schemas/viro-specs-manifest.v2.json",
+  "version": 2,
+  "generator": {
+    "name": "viro-specs-compile"
+  },
+  "source": "__test__/fixtures/specs/compiler/actions-invalid/scene.tsx",
+  "actions": [
+    {
+      "id": "a.b"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "nested",
+      "kind": "text",
+      "text": "x"
+    },
+    {
+      "id": "undeclared",
+      "kind": "text",
+      "text": "y"
+    }
+  ],
+  "polylines": [],
+  "lights": [],
+  "materials": [],
+  "interactions": [
+    {
+      "nodeId": "undeclared",
+      "interactable": true,
+      "manipulation": false,
+      "events": [
+        "select"
+      ],
+      "triggers": [
+        {
+          "on": "select",
+          "actionId": "c.d"
+        }
+      ]
+    }
+  ],
+  "animations": []
+}

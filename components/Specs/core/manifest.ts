@@ -6,6 +6,7 @@
  * Units: positions and extents in meters, rotations as unit quaternions
  * `[x, y, z, w]`, durations in seconds, colors as `#RRGGBB` or `#RRGGBBAA`.
  */
+import type { ViroSpecsActionDeclaration, ViroSpecsActionTrigger } from "./actions";
 
 /** `[x, y, z]`. */
 export type ViroSpecsVec3 = readonly [number, number, number];
@@ -60,9 +61,24 @@ export interface ViroSpecsNodeBase {
   readonly materialId?: string;
 }
 
-/** Transform-only container. Maps from ViroNode. */
+/**
+ * Scroll window of a group, in meters. Children lay out in a column of
+ * `contentHeight`; the Lens host shows `height` of it and keeps the scroll
+ * position across patches and, per route, across back navigation.
+ */
+export interface ViroSpecsScroll {
+  /** Greater than 0, at most 10. */
+  readonly width: number;
+  /** Greater than 0, at most 10. */
+  readonly height: number;
+  /** At least 0. */
+  readonly contentHeight: number;
+}
+
+/** Transform-only container. Maps from ViroNode; `specsScroll` makes it a scroll window. */
 export interface ViroSpecsGroupNode extends ViroSpecsNodeBase {
   readonly kind: "group";
+  readonly scroll?: ViroSpecsScroll;
 }
 
 /** Maps from ViroText. */
@@ -210,6 +226,11 @@ export interface ViroSpecsManifestInteraction {
   /** True when the node has onDrag. */
   readonly manipulation: boolean;
   readonly events: readonly ("hover" | "select" | "drag")[];
+  /**
+   * Actions the node fires, from its `specsAction` prop. A `select` trigger
+   * needs `select` in `events`; hover triggers need `hover`.
+   */
+  readonly triggers?: readonly ViroSpecsActionTrigger[];
 }
 
 /** Property a {@linkcode ViroSpecsAnimationTrack} drives. */
@@ -276,6 +297,14 @@ export interface ViroSpecsManifestV2 {
   readonly generator?: ViroSpecsManifestGenerator;
   /** Entry file the manifest was compiled from, relative to the working directory. */
   readonly source?: string;
+  /**
+   * Route the scene belongs to, from `ViroSpecsScene`'s `route` prop. The
+   * Lens host navigates (and restores remembered scroll positions) when the
+   * route changes, and patches when it stays the same.
+   */
+  readonly route?: string;
+  /** Actions that triggers fire. Present when any trigger exists. */
+  readonly actions?: readonly ViroSpecsActionDeclaration[];
   readonly nodes: readonly ViroSpecsManifestNode[];
   readonly polylines: readonly ViroSpecsManifestPolyline[];
   readonly lights: readonly ViroSpecsLight[];
@@ -357,6 +386,8 @@ export type ViroSpecsSceneDocumentNode = Exclude<ViroSpecsManifestNode, ViroSpec
  */
 export interface ViroSpecsSceneDocument {
   readonly version: 2;
+  readonly route?: string;
+  readonly actions?: readonly ViroSpecsActionDeclaration[];
   readonly nodes: readonly ViroSpecsSceneDocumentNode[];
   readonly polylines: readonly ViroSpecsManifestPolyline[];
   readonly lights: readonly ViroSpecsLight[];

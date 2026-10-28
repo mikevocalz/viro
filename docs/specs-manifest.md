@@ -45,6 +45,8 @@ previews.
 | `nodes` | yes | Scene graph nodes, parents before children by convention (not required). |
 | `polylines`, `lights`, `materials`, `interactions`, `animations` | no | Missing arrays read as empty. `parseSpecsManifest` always returns them. |
 | `generator` | no | `{ name, version? }` of the producer. |
+| `route` | no | Route key from `ViroSpecsScene` `route`. A new route is navigation in the Lens host. See [specs-actions.md](specs-actions.md). |
+| `actions` | no | Action declarations from `ViroSpecsScene` `actions`. Required for any trigger to validate. |
 | `source` | no | Entry file, relative to the working directory, `/`-separated. |
 | `$schema` | no | Lets editors validate hand-written files. |
 
@@ -70,7 +72,7 @@ Every node has `id` and `kind`, plus these optional fields:
 
 | `kind` | Viro source | Required | Optional |
 | --- | --- | --- | --- |
-| `group` | `ViroNode` | | |
+| `group` | `ViroNode` | | `scroll` (from `specsScroll`: `width`, `height` in (0, 10] m, `contentHeight` ≥ 0). Scene protocol 1 does not carry it (`VS1015`). |
 | `text` | `ViroText` | `text` | `style`, `extents` (from `width`/`height`), `maxLines` |
 | `image` | `ViroImage` | `source` | `extents` |
 | `model` | `Viro3DObject` | `source` | `format`: `glb`, `gltf`, `obj`, `fbx` |
@@ -133,6 +135,20 @@ One entry per node with `onHover`, `onClick`/`onClickState` or `onDrag`:
 `events` is a non-empty set of `hover`, `select`, `drag`. `nodeId` must name a
 node (`VS1010`). React callbacks never cross into the Lens; the IDs route back
 to them through the transport.
+
+An entry may carry `triggers` from the node's `specsAction` prop: typed
+actions the node fires, as JSON. A node with `specsAction` and no callback
+still gets an entry, with the events its triggers need.
+
+```json
+{ "nodeId": "card-orrery", "interactable": true, "manipulation": false, "events": ["select"],
+  "triggers": [{ "on": "select", "actionId": "exhibit.open", "payload": { "exhibitId": "orrery" } }] }
+```
+
+`on` is `select`, `hover-enter` or `hover-exit` (`VS1019` when the entry's
+`events` lack it). `actionId` must be declared in `actions` (`VS1017`, and
+`VS1016` for a repeated declaration), and `payload` must match the
+declaration (`VS1018`). The full contract is in [specs-actions.md](specs-actions.md).
 
 ## Animations
 

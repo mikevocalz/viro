@@ -7,6 +7,10 @@ The public package does **not** run ViroCore on Specs. ViroCore remains the
 native renderer for its supported targets; SPECS uses a Lens Studio backend
 that implements the same portable Viro semantics.
 
+Pinches become typed actions and app state through `specsAction`,
+`defineSpecsActions` and `bindSpecsActionsToStore`; see
+[specs-actions.md](specs-actions.md).
+
 ## Runtime detection
 
 ```ts

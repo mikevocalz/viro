@@ -6,16 +6,22 @@ import type { ViroSpecsManifestV2, ViroSpecsSceneDocument } from "./manifest";
  * alphabetically after the listed ones.
  */
 const ORDER = {
-  top: ["$schema", "version", "generator", "source", "nodes", "polylines", "lights", "materials", "interactions", "animations"],
+  top: ["$schema", "version", "generator", "source", "route", "actions", "nodes", "polylines", "lights", "materials", "interactions", "animations"],
   generator: ["name", "version"],
   node: [
     "id", "kind", "parentId", "position", "rotation", "scale", "visible", "opacity", "materialId",
-    "text", "style", "extents", "maxLines", "source", "format", "loop", "muted", "volume",
+    "text", "style", "extents", "maxLines", "source", "format", "loop", "muted", "volume", "scroll",
   ],
   polyline: ["id", "primitive", "backendPackage", "points", "radiusMeters", "materialId"],
   light: ["id", "type", "parentId", "color", "intensity", "position", "direction", "innerAngle", "outerAngle"],
   material: ["id", "color", "opacity", "texture", "lightingModel"],
-  interaction: ["nodeId", "interactable", "manipulation", "events"],
+  interaction: ["nodeId", "interactable", "manipulation", "events", "triggers"],
+  trigger: ["on", "actionId", "payload"],
+  action: ["id", "payload"],
+  // Field names are the author's; they sort alphabetically like any unlisted key.
+  actionPayload: [],
+  actionField: ["type", "enum", "optional"],
+  scroll: ["width", "height", "contentHeight"],
   animation: ["nodeId", "name", "plan"],
   plan: ["engine", "backendPackage", "durationSeconds", "delaySeconds", "easing", "playbackMode", "completionEvent", "tracks"],
   track: ["target", "from", "to"],
@@ -44,11 +50,19 @@ function childKind(parent: OrderKind, key: string): OrderKind | undefined {
           return "interaction";
         case "animations":
           return "animation";
+        case "actions":
+          return "action";
         default:
           return undefined;
       }
     case "node":
-      return key === "style" ? "style" : key === "extents" ? "extents" : undefined;
+      return key === "style" ? "style" : key === "extents" ? "extents" : key === "scroll" ? "scroll" : undefined;
+    case "interaction":
+      return key === "triggers" ? "trigger" : undefined;
+    case "action":
+      return key === "payload" ? "actionPayload" : undefined;
+    case "actionPayload":
+      return "actionField";
     case "animation":
       return key === "plan" ? "plan" : undefined;
     case "plan":
