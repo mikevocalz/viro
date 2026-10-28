@@ -83,5 +83,8 @@ Then copy each `scene.json` to `@viro-external/specs`
 The Lens Studio run steps are in that folder's README.
 
 Evidence: `portable-test-passed` (Jest, the CLI, and the mock-host suite in
-`@viro-external/specs`). The LEAF scenarios are written but have not run in
-Lens Studio Preview yet.
+`@viro-external/specs`), and `preview-validated` for the LEAF scenarios: the
+Platform Lab copy ran all ten in Lens Studio Preview, nine passed and
+`viro_ref_expected_failure` failed as required
+(`docs/evidence/specs/lens/ws4-08-polish2/leaf-suite/`). The
+dashboard's move to y -0.22 came after that run.

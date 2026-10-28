@@ -81,5 +81,11 @@ The steps, with the Lens project and file locations, are in viro-external
    the table above. Failure reasons are in the Lens Studio log
    (`FAILED`, and `VIRO_REF <name>` lines).
 
-Status: the Jest and mock-host suites pass (`portable-test-passed`). The
-LEAF scenarios have not run in Preview yet.
+Status: the Jest and mock-host suites pass (`portable-test-passed`), and
+the LEAF scenarios are `preview-validated`: all ten ran in Lens Studio
+5.24 SPECS 27 Preview (Sunlit Room) with the lab's 29, nine passed and
+`viro_ref_expected_failure` failed as required
+(`docs/evidence/specs/lens/ws4-08-polish2/leaf-suite/`). That run came before two
+later changes, the dashboard panel moving from y 0 to y -0.22 and the
+high-contrast surface changing from `#000000` to `#42525f`; neither has
+been run in Preview since.

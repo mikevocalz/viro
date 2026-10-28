@@ -43,7 +43,7 @@ React is a peer only. Through 3.0.3-moyo.1 it was also a dependency
 
 | Component | Supported | Validated | Tier |
 | --- | --- | --- | --- |
-| Lens Studio | 5.22.0 or later (`specs:doctor` reads `studioVersion`) | 5.24.0.26090816 | preview-validated for the Platform Lab; reference apps pending the run in [specs-examples.md](specs-examples.md) |
+| Lens Studio | 5.22.0 or later (`specs:doctor` reads `studioVersion`) | 5.24.0.26090816 | preview-validated for the Platform Lab and the reference apps ([specs-examples.md](specs-examples.md)) |
 | Target | SPECS 27, project `targetPlatform: Spectacles` | SPECS 27 Interactive Preview, Sunlit Room | preview-validated |
 | Interaction Kit, 2.x line | `SpectaclesInteractionKit.lspkg` 2.0.0 or later | 2.0.0 | preview-validated |
 | Interaction Kit, 4.0.0 line | `InteractionKit.lspkg` 4.0.0 or later, through the one import seam `lens/ViroSpecsInteractionKit.ts`; `specs:sync` rewrites the seam when it finds the 4.0.0 package, or force it with `--interaction-kit 4` | none yet | portable-test-passed (sync/doctor tests with real package archives). Pin the 2.x line for production Lenses until a Preview run of 4.0.0 passes |
