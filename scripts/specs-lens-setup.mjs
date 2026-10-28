@@ -1,0 +1,514 @@
+#!/usr/bin/env node
+// Sets up and checks a Viro Specs Lens project through the Lens Studio MCP
+// server, so nobody wires the Inspector by hand.
+//
+//   node scripts/specs-lens-setup.mjs [options]
+//
+// Options:
+//   --project <dir>      Lens project (default examples/specs-platform-lab/lens)
+//   --entry <tsx>        Viro scene to compile (default examples/specs-platform-lab/SpecsPlatformLab.tsx)
+//   --specs <dir>        @viro-external/specs package directory, for doctor/sync
+//                        (default $VIRO_SPECS_PACKAGE, then ../viro-external/packages/specs)
+//   --steps <a,b,...>    subset of: preflight,packages,sync,compile,recompile,
+//                        materials,wire,chattool,device,preview,leaf (default: all, in that order)
+//   --viro <dir>         viro checkout whose bin/viro-specs.cjs compiles the scene (default: this repo)
+//   --evidence <dir>     where logs and captures go (default docs/evidence/specs/lens/run-<timestamp>)
+//   --create             save the project Lens Studio has open into --project first
+//   --replace-packages   remove existing package copies (for example the 4.0.0
+//                        line) before installing the pinned versions
+//   --scenarios <a,b>    leaf step: run only these scenario IDs
+//
+// Lens Studio must be running with its MCP server enabled (AI Assistant > AI
+// Model Context Protocol > Configure Server). The URL and bearer key come from
+// LENS_STUDIO_MCP_URL / LENS_STUDIO_MCP_TOKEN, or the MCP config file named by
+// LENS_STUDIO_MCP_CONFIG.
+//
+// Evidence labels follow the Specs production pack: this script can reach
+// lens-compiled (recompile) and preview-validated (LEAF in Preview). It never
+// produces hardware-validated evidence.
+import { spawnSync } from "node:child_process";
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { LensStudioMcp } from "./specs-lens/mcp-client.mjs";
+
+const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const ALL_STEPS = ["preflight", "packages", "sync", "compile", "recompile", "materials", "wire", "chattool", "device", "preview", "leaf"];
+
+// Asset Library names, pinned versions, and the directory names the Viro Lens
+// runtime imports.
+//
+// Pinned to the 2.x line on purpose. The 4.0.0 Asset Library packages renamed
+// SIK to InteractionKit.lspkg, and UIKit, SurfacePlacement, VolumetricLine,
+// NavigationKit and Leaf 4.0.0 all import "InteractionKit.lspkg/...", while
+// the @viro-external/specs runtime imports "SpectaclesInteractionKit.lspkg/...".
+// No directory name satisfies both. The 2.x packages all use the
+// SpectaclesInteractionKit name and ship no editor plugins.
+const PACKAGES = [
+  { search: "SpectaclesInteractionKit", assetName: "SpectaclesInteractionKit", version: "2.0.0" },
+  { search: "SpectaclesUIKit", assetName: "SpectaclesUIKit", version: "2.0.0" },
+  { search: "Surface Placement", assetName: "SurfacePlacement", version: "2.0.0" },
+  { search: "Volumetric Line", assetName: "VolumetricLine", version: "2.0.0" },
+  { search: "Navigation Kit", assetName: "SpecsNavigationKit", version: "2.0.0" },
+  { search: "Leaf", assetName: "Leaf", version: "2.0.2" },
+  // Editor-only validation packages. The synced runtime's
+  // ViroSpecsAgentValidation.ts imports both, so the project does not compile
+  // without them.
+  { search: "AiPreviewAgentInspect", name: "AI Preview Agent \u2013 Inspect", assetName: "AiPreviewAgentInspect", version: "2.0.1" },
+  { search: "AiPreviewAgentInteract", name: "AI Preview Agent \u2013 Interact", assetName: "AiPreviewAgentInteract", version: "2.0.1" },
+];
+
+const versionOf = (resource) => `${resource.version.major}.${resource.version.minor}.${resource.version.patch}`;
+
+// True when an installed package imports the 4.0.0 InteractionKit name.
+function importsRenamedSik(file) {
+  const listing = spawnSync("unzip", ["-p", file, "*.ts"], { encoding: "utf8", maxBuffer: 256 * 1024 * 1024 });
+  return /"InteractionKit\.lspkg\//.test(listing.stdout ?? "");
+}
+
+const SCENARIOS = [
+  { id: "viro_lab_render", expect: "succeeded" },
+  { id: "viro_lab_select", expect: "succeeded" },
+  // fail-fast: a reach that does not converge throws instead of silently
+  // falling back to simulated SIK input (LEAF's default "fallback" policy).
+  { id: "viro_lab_select_ik", expect: "succeeded", parameters: { __leaf__diagnostic_policy: "fail-fast" } },
+  { id: "viro_lab_drag", expect: "succeeded" },
+  { id: "viro_lab_navigate", expect: "succeeded" },
+  { id: "viro_lab_missing_asset", expect: "succeeded" },
+  { id: "viro_lab_state_update", expect: "succeeded" },
+  { id: "viro_lab_scene_replacement", expect: "succeeded" },
+  { id: "viro_lab_interaction_phases", expect: "succeeded" },
+  { id: "viro_lab_scroll_window", expect: "succeeded" },
+  // WS3b typed actions, through ViroSpecsActionsLab on the scene controller.
+  { id: "viro_lab_actions_reference_flow", expect: "succeeded" },
+  { id: "viro_lab_actions_navigation_drop", expect: "succeeded" },
+  { id: "viro_lab_actions_unknown_action", expect: "succeeded" },
+  // Proves the suite reports failures. It must fail.
+  { id: "viro_lab_deliberate_failure", expect: "failed" },
+  // WS4 experience layer on the four gallery scenes (ExperienceHost).
+  ...[
+    "viro_ws4_hello_loading",
+    "viro_ws4_hello_ready",
+    "viro_ws4_hello_error",
+    "viro_ws4_hello_degraded",
+    "viro_ws4_placement_table",
+    "viro_ws4_placement_cancel",
+    "viro_ws4_placement_degraded",
+    "viro_ws4_placement_error",
+    "viro_ws4_button_states",
+    "viro_ws4_move_band",
+    "viro_ws4_gaze",
+    "viro_ws4_navigation_scroll",
+    "viro_ws4_navigation_image_error",
+    "viro_ws4_scene_rejection",
+    "viro_ws4_preferences",
+  ].map((id) => ({ id, expect: "succeeded" })),
+];
+
+function parseArgs(argv) {
+  const options = {};
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+    if (arg === "--create") options.create = true;
+    else if (arg === "--replace-packages") options.replacePackages = true;
+    else if (arg.startsWith("--")) options[arg.slice(2)] = argv[++i];
+  }
+  return options;
+}
+
+const options = parseArgs(process.argv.slice(2));
+const project = path.resolve(options.project ?? path.join(repo, "examples/specs-platform-lab/lens"));
+const entry = path.resolve(options.entry ?? path.join(repo, "examples/specs-platform-lab/SpecsPlatformLab.tsx"));
+const specs = path.resolve(
+  options.specs ?? process.env.VIRO_SPECS_PACKAGE ?? path.join(repo, "../viro-external/packages/specs")
+);
+const steps = options.steps ? options.steps.split(",") : ALL_STEPS;
+const viroRoot = path.resolve(options.viro ?? repo);
+const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+const evidence = path.resolve(options.evidence ?? path.join(repo, "docs/evidence/specs/lens", `run-${stamp}`));
+mkdirSync(evidence, { recursive: true });
+
+const report = { startedAt: new Date().toISOString(), project: path.relative(repo, project), steps: {} };
+
+function redact(text) {
+  return String(text).split(repo).join("<repo>").split(process.env.HOME ?? "\u0000").join("~");
+}
+
+function save(name, content) {
+  writeFileSync(path.join(evidence, name), typeof content === "string" ? redact(content) : redact(JSON.stringify(content, null, 2)));
+}
+
+function runNode(label, args, cwd = repo) {
+  const result = spawnSync(process.execPath, args, { cwd, encoding: "utf8" });
+  save(`${label}.log`, `${result.stdout}${result.stderr}\nexit=${result.status}\n`);
+  if (result.status !== 0) throw new Error(`${label} exited ${result.status}: ${redact(result.stderr || result.stdout).slice(-800)}`);
+  return result.stdout;
+}
+
+function esproj() {
+  const file = existsSync(project) ? (readdirSync(project).find((name) => name.endsWith(".esproj")) ?? null) : null;
+  return file ? path.join(project, file) : path.join(project, `${path.basename(project)}.esproj`);
+}
+
+const setClientEnabled =
+  "const m = pluginSystem.findInterface(Editor.Model.IModel) as any;" +
+  "const o = m.project.scene.rootSceneObjects.find((x: any) => x.name === 'LeafScenarioClient');" +
+  "if (!o) throw new Error('LeafScenarioClient is not in the scene; run the wire step.');" +
+  "o.enabled = (args as any).enabled; return o.enabled;";
+
+const mcp = await new LensStudioMcp().connect();
+const tools = (await mcp.listTools()).map((tool) => tool.name);
+
+async function editorFile(file, args) {
+  const result = await mcp.call("ExecuteEditorCode", { path: path.join(repo, file), args, timeoutMs: 600000 });
+  const data = result.data;
+  if (typeof data !== "object" || data.status !== "Execution Succeeded") {
+    throw new Error(`${file}: ${JSON.stringify(typeof data === "object" ? data.errors ?? data.error ?? data : data).slice(0, 1500)}`);
+  }
+  return data.returnValue;
+}
+
+const handlers = {
+  async preflight() {
+    const open = await mcp.editor(
+      "const m = pluginSystem.findInterface(Editor.Model.IModel) as any; " +
+        "return { file: String(m.project.projectFile), target: String(m.project.targetPlatform) };"
+    );
+    if (options.create) {
+      mkdirSync(project, { recursive: true });
+      await mcp.editor(
+        "const m = pluginSystem.findInterface(Editor.Model.IModel) as any; " +
+          "m.project.targetPlatform = Editor.TargetPlatform.Spectacles; m.project.saveTo(new Editor.Path((args as any).file)); return true;",
+        { file: esproj() }
+      );
+    } else if (path.resolve(open.file) !== esproj()) {
+      throw new Error(`Lens Studio has ${open.file} open; expected ${esproj()}. Open it, or pass --create.`);
+    }
+    const missing = ["ExecuteEditorCode", "InstallLensStudioPackage", "RecompileTypeScriptTool", "RunAndCollectLogsTool"].filter(
+      (name) => !tools.includes(name)
+    );
+    if (missing.length) throw new Error(`Lens Studio MCP lacks ${missing.join(", ")}`);
+    return { open: redact(open.file), tools: tools.length };
+  },
+
+  async packages() {
+    const installed = [];
+    const renamed = [];
+    if (options.replacePackages) {
+      // Remove the 4.0.0 line (and X      // in) through the asset manager so Lens Studio drops their metadata too.
+      const names = [...PACKAGES.map((p) => p.assetName), "Icons", "Motion", "SnapDecorators", "Utilities"];
+      const removed = await mcp.editor(
+        "const m = pluginSystem.findInterface(Editor.Model.IModel) as any; const am = m.project.assetManager;" +
+          "const out: string[] = [];" +
+          "for (const name of (args as any).names as string[]) {" +
+          // Package paths are relative to Assets/, like ../Cache/... entries.
+          "  for (const ext of ['.lspkg', '.lsc']) {" +
+          "    const file = new Editor.Path('../Packages/' + name + ext);" +
+          "    if (am.getFileMeta(file)) { am.remove(file); out.push(name + ext); }" +
+          "  }" +
+          "}" +
+          "return out;",
+        { names }
+      );
+      installed.push(`removed: ${removed.join(", ") || "none"}`);
+    }
+    for (const pkg of PACKAGES) {
+      const file = path.join(project, "Packages", `${pkg.assetName}.lspkg`);
+      if (existsSync(file)) {
+        if (pkg.assetName !== "SpectaclesInteractionKit" && importsRenamedSik(file)) renamed.push(pkg.assetName);
+        installed.push(`${pkg.assetName}: present`);
+        continue;
+      }
+      const search = await mcp.call("SearchLensStudioAssetLibrary", { keywordFilter: [pkg.search], onlyMostRecent: false });
+      const asset = (search.data.assets ?? []).find(
+        (a) => a.type === "AssetPackage" && (pkg.name ? a.name === pkg.name : a.name.replace(/\s/g, "") === pkg.search.replace(/\s/g, ""))
+      );
+      const resource = asset?.resources.find((r) => versionOf(r) === pkg.version);
+      if (!resource) throw new Error(`Asset Library has no ${pkg.search} ${pkg.version}`);
+      await mcp.call("InstallLensStudioPackage", { packageUri: resource.uri, assetName: pkg.assetName });
+      installed.push(`${pkg.assetName}: installed ${pkg.version}`);
+    }
+    if (renamed.length) {
+      throw new Error(
+        `${renamed.join(", ")} import InteractionKit.lspkg (the 4.0.0 package line), which the Viro runtime cannot use. ` +
+          "Remove those packages from the project and rerun to install the pinned 2.x versions."
+      );
+    }
+    return installed;
+  },
+
+  async sync() {
+    if (!existsSync(path.join(specs, "scripts/sync-lens-runtime.mjs"))) {
+      throw new Error(`@viro-external/specs not found at ${specs}; pass --specs.`);
+    }
+    // No --clean: it would delete the runtime's .meta files and break every
+    // scene reference to those scripts.
+    runNode("sync", [path.join(specs, "scripts/sync-lens-runtime.mjs"), "--project", project]);
+    runNode("doctor", [path.join(specs, "scripts/doctor-lens-project.mjs"), "--project", project]);
+    return "synced; doctor passed";
+  },
+
+  async compile() {
+    const out = path.join(project, "Assets/ViroSpecs/generated/ViroGeneratedSceneHost.ts");
+    const started = Date.now();
+    // --strict: a warning (for example an element without viroTag) fails the
+    // generated host, so the Lens never ships content-hash IDs.
+    runNode("compile-lens-ts", [path.join(viroRoot, "bin/viro-specs.cjs"), "compile", "--entry", entry, "--out", out, "--format", "lens-ts", "--strict"]);
+    runNode("compile-scene-json", [
+      path.join(viroRoot, "bin/viro-specs.cjs"),
+      "compile",
+      "--entry",
+      entry,
+      "--out",
+      path.join(evidence, "scene.scene-v2.json"),
+      "--format",
+      "scene-json",
+    ]);
+    runNode("compile-json", [
+      path.join(viroRoot, "bin/viro-specs.cjs"),
+      "compile",
+      "--entry",
+      entry,
+      "--out",
+      path.join(evidence, "manifest.json"),
+      "--format",
+      "json",
+    ]);
+    return { ms: Date.now() - started };
+  },
+
+  async recompile() {
+    const result = await mcp.call("RecompileTypeScriptTool", {});
+    save("recompile.json", result.data);
+    if (result.data.status !== "succeeded") {
+      throw new Error(`TypeScript recompile failed: ${JSON.stringify(result.data.errors ?? result.data).slice(0, 2000)}`);
+    }
+    return "lens-compiled";
+  },
+
+  // Registry materials for the scene controller (scene protocol 2), created
+  // from asset-graphql presets as CLAD's materials skill describes.
+  async materials() {
+    const wanted = [
+      { name: "ViroPlaceholder", preset: "UnlitMaterialPreset", baseColor: "1.0, 0.35, 0.65, 0.85" },
+      { name: "ViroDefaultMaterial", preset: "SimplePBRMaterialPreset" },
+      { name: "ViroDefaultLine", preset: "UnlitMaterialPreset", baseColor: "0.75, 0.82, 0.9, 1.0" },
+      // WS4: PanelImage textures and the experience layer's panel backings
+      // (ViroSpecsExperienceHost tints a clone per visual from the tokens).
+      { name: "ViroImageMaterial", preset: "ImageMaterialPreset" },
+      { name: "ViroExperiencePanel", preset: "UnlitMaterialPreset", baseColor: "0.1, 0.11, 0.13, 0.92" },
+    ];
+    const out = [];
+    for (const m of wanted) {
+      const found = await mcp.call("asset-graphql", {
+        query: `{ assetsByName(name: "${m.name}", exactMatch: true) { id name path } }`,
+      });
+      let asset = (found.data?.data?.assetsByName ?? []).find((a) => String(a.path ?? "").includes("ViroSpecsLab/"));
+      if (!asset) {
+        const created = await mcp.call("asset-graphql", {
+          query: `mutation { createAssetFromPreset(presetName: "${m.preset}", name: "${m.name}", destinationPath: "ViroSpecsLab/Materials") { id name } }`,
+        });
+        asset = created.data?.data?.createAssetFromPreset;
+        if (!asset?.id) throw new Error(`createAssetFromPreset ${m.preset} failed: ${JSON.stringify(created.data).slice(0, 600)}`);
+        out.push(`created ${m.name}`);
+      } else {
+        out.push(`present ${m.name}`);
+      }
+      if (m.baseColor) {
+        const set = await mcp.call("asset-graphql", {
+          query: `mutation { setProperty(id: "${asset.id}", propertyPath: "passInfos.0.baseColor", value: "${m.baseColor}", valueType: VEC4) { success } }`,
+        });
+        if (set.isError) throw new Error(`setProperty baseColor on ${m.name}: ${set.text.slice(0, 400)}`);
+      }
+    }
+    save("materials.json", out);
+    return out;
+  },
+
+  async wire() {
+    const manifest = JSON.parse(readFileSync(path.join(evidence, "manifest.json"), "utf8"));
+    const modelIds = (manifest.scene?.nodes ?? manifest.nodes).filter((node) => node.kind === "model").map((node) => node.source);
+    // WS4 gallery images (scripts/specs-lens/gen-gallery.mjs lists them).
+    const gallery = path.join(project, "Assets/ViroSpecsLab/Gallery/ViroLabGallery.ts");
+    const imageIds = existsSync(gallery)
+      ? JSON.parse(/GALLERY_IMAGE_SOURCES: readonly string\[\] = (\[.*\]);/.exec(readFileSync(gallery, "utf8"))?.[1] ?? "[]")
+      : [];
+    const result = await editorFile("scripts/specs-lens/editor/wire-generated-host.ts", {
+      imageIds,
+      imageFiles: imageIds.map((id) => path.join(repo, id)),
+      modelIds,
+      // Compiled source IDs are repo-relative paths.
+      modelGlb: modelIds.length ? path.join(repo, modelIds[0]) : undefined,
+    });
+    save("wire.json", result);
+    return result;
+  },
+
+  async chattool() {
+    const dir = path.join(repo, "scripts/specs-lens/chattool");
+    const local = path.join(project, "viro-specs.local.json");
+    if (existsSync(specs) && !existsSync(local)) {
+      writeFileSync(local, JSON.stringify({ specsPackage: specs, node: process.execPath }, null, 2) + "\n");
+    }
+    const loaded = await mcp.editor(
+      "const dir = new Editor.Path((args as any).dir);" +
+        "try { pluginSystem.loadDirectory(dir); } catch (e: any) { if (!String(e?.message ?? e).includes('already been loaded')) throw e; }" +
+        "const ChatTool = await import('LensStudio:ChatTool');" +
+        "const registry = pluginSystem.findInterface(ChatTool.IChatToolRegistry) as any;" +
+        "return registry.tools.map((d: any) => String(d.id)).filter((id: string) => id.includes('viro'));",
+      { dir }
+    );
+    const listed = (await mcp.listTools()).map((tool) => tool.name).filter((name) => /viro/i.test(name));
+    const doctor = listed.length ? await mcp.call(listed[0], { command: "doctor" }) : null;
+    save("chattool.json", { registry: loaded, mcpTools: listed, doctor: doctor?.data });
+    return { registry: loaded, mcpTools: listed, doctorOk: doctor ? !doctor.isError : null };
+  },
+
+  // SIK refuses to run unless the Preview simulates a Specs device:
+  // "To run Spectacles Interaction Kit in the Lens Studio Preview, set the
+  // Preview Panel's Device Type Override to SPECS". This follows CLAD's
+  // specs-project-init step: listSources, then setConfig with a scene from it.
+  async device() {
+    const room = options.room ?? "Sunlit Room";
+    const sources = await mcp.call("PreviewPanelTool", { action: "listSources" });
+    const scene = (sources.data.scenes ?? []).find((p) => p.endsWith("/" + room));
+    if (!scene) throw new Error(`No Interactive preview scene named ${room}`);
+    await mcp.call("PreviewPanelTool", { action: "setConfig", deviceCategory: "stereo", inputType: "Interactive", sourcePath: scene });
+    const config = await mcp.call("PreviewPanelTool", { action: "getConfig" });
+    save("preview-config.json", config.data);
+    if (config.data.inputType !== "Interactive") throw new Error(`Preview input is ${config.data.inputType}, expected Interactive`);
+    return { device: config.data.deviceName, input: config.data.inputType, room };
+  },
+
+  async preview() {
+    const logs = await mcp.call("RunAndCollectLogsTool", { mode: "refresh", settleMaxMs: 6000, settleQuietMs: 1500 });
+    save("preview-logs.json", logs.data);
+    const capture = await mcp.call("CaptureRuntimeViewTool", { center: { x: 0, y: 0, z: -150 }, distance: 120, viewAngle: "front", detail: "high" });
+    capture.images.forEach((image, index) =>
+      writeFileSync(path.join(evidence, `runtime-view${index ? "-" + index : ""}.png`), Buffer.from(image.data, "base64"))
+    );
+    const errors = logs.data.errors ?? [];
+    return { errors: errors.length, prints: (logs.data.prints ?? []).length, firstActivityAtMs: logs.data.firstActivityAtMs };
+  },
+
+  async leaf() {
+    const leafTools = (await mcp.listTools()).filter((tool) => /leaf/i.test(tool.name));
+    save("leaf-tools.json", leafTools.map((tool) => ({ name: tool.name, description: tool.description, input: tool.inputSchema })));
+    const byRole = (pattern) => leafTools.find((tool) => pattern.test(tool.name))?.name;
+    const open = byRole(/open|panel/i);
+    const list = byRole(/list/i);
+    const run = byRole(/run|start|execute/i);
+    const results = [];
+    if (list && run) {
+      // CLAD specs-leaf-run-in-preview: open the panel, list, then run each
+      // scenario serially in Preview. onDevice:false is explicit so this flow
+      // never targets hardware.
+      if (open) await mcp.call(open, {});
+      const listed = await mcp.call(list, { onDevice: false });
+      save("leaf-list.json", listed.data);
+      const registered = JSON.stringify(listed.data);
+      const only = options.scenarios ? options.scenarios.split(",") : null;
+      // The Lens Studio log on this machine; each run is read from the byte
+      // offset taken just before it, so an older run's line never counts.
+      const logFile = (await mcp.call("RunAndCollectLogsTool", { mode: "tail", tailBytes: 1024 })).data.logFile;
+      const logSince = (offset) => {
+        const buffer = readFileSync(logFile);
+        return buffer.subarray(Math.min(offset, buffer.length)).toString("utf8");
+      };
+      for (const scenario of SCENARIOS.filter((s) => !only || only.includes(s.id))) {
+        if (!registered.includes(scenario.id)) {
+          results.push({ id: scenario.id, runner: "leaf-panel", status: "not-registered" });
+          continue;
+        }
+        // Serial on purpose: each run resets the Lens and aborts a run in flight.
+        const offset = statSync(logFile).size;
+        const outcome = await mcp.call(run, {
+          scenarioId: scenario.id,
+          onDevice: false,
+          ...(scenario.parameters ? { parameters: scenario.parameters } : {}),
+        });
+        const pluginStatus = outcome.data?.status ?? (outcome.isError ? "error" : "unknown");
+        // The tool returns no reason, and it sometimes reports a timeout for a
+        // run the Lens finished. The Lens-side scenario manager's
+        // "[<id>] PASSED|FAILED" line is authoritative (CLAD
+        // specs-leaf-run-in-preview). Lens lines reach the log late, so poll.
+        let managerLine = null;
+        for (let attempt = 0; attempt < 45 && managerLine === null; attempt++) {
+          const lines = logSince(offset).split("\n").filter((line) => line.includes("[" + scenario.id + "] PASSED") || line.includes("[" + scenario.id + "] FAILED"));
+          if (lines.length) managerLine = lines.at(-1).replace(/^.*\[DefaultLeafScenarioManager\]\s*/, "");
+          else await new Promise((resolve) => setTimeout(resolve, 2000));
+        }
+        const status = managerLine === null ? pluginStatus : managerLine.includes("] PASSED") ? "succeeded" : "failed";
+        save(`leaf-${scenario.id}.log`, logSince(offset).split("\n").filter((line) => /\[Preview \d+\]|LeafPlugin|LeafChatTool/.test(line)).join("\n"));
+        results.push({
+          id: scenario.id,
+          runner: "leaf-panel",
+          status,
+          pluginStatus,
+          managerLine,
+          raw: outcome.data ?? outcome.text ?? null,
+        });
+      }
+    } else {
+      // No LEAF MCP tools (the [ChatTool] LEAF Plugin is missing or failed to
+      // load). Run the same scenarios through LEAF's DefaultScenarioManager
+      // from the ViroLabScenarioClient component and read its result lines.
+      await mcp.editor(setClientEnabled, { enabled: true });
+      try {
+        await mcp.call("RecompileTypeScriptTool", {});
+        const logs = await mcp.call("RunAndCollectLogsTool", {
+          mode: "refresh",
+          settleMinMs: 8000,
+          settleMaxMs: 90000,
+          settleQuietMs: 6000,
+          timeoutMs: 20000,
+        });
+        save("leaf-client-logs.json", logs.data);
+        const lines = [...(logs.data.prints ?? []), logs.data.tail ?? ""].join("\n");
+        for (const match of lines.matchAll(/VIRO_LAB_LEAF_RESULT (\{.*?\})(?=\s|$)/g)) {
+          const parsed = JSON.parse(match[1]);
+          if (!results.some((r) => r.id === parsed.id)) results.push({ ...parsed, runner: "scenario-client" });
+        }
+        if (!lines.includes("VIRO_LAB_LEAF_DONE")) results.push({ id: "<run>", runner: "scenario-client", status: "did-not-finish" });
+      } finally {
+        await mcp.editor(setClientEnabled, { enabled: false });
+      }
+    }
+    for (const result of results) {
+      const scenario = SCENARIOS.find((s) => s.id === result.id);
+      result.expected = scenario?.expect ?? "succeeded";
+      result.asExpected = result.status === result.expected;
+    }
+    const only = options.scenarios ? options.scenarios.split(",") : null;
+    for (const scenario of SCENARIOS.filter((s) => !only || only.includes(s.id))) {
+      if (!results.some((r) => r.id === scenario.id)) {
+        results.push({ id: scenario.id, status: "no-result", expected: scenario.expect, asExpected: false });
+      }
+    }
+    save("leaf-results.json", results);
+    const unexpected = results.filter((r) => !r.asExpected);
+    if (unexpected.length) throw new Error(`LEAF outcomes differ from expectations: ${unexpected.map((r) => `${r.id}=${r.status}`).join(", ")}`);
+    return results.map((r) => `${r.id}: ${r.status}`);
+  },
+};
+
+let failed = false;
+for (const step of steps) {
+  const handler = handlers[step];
+  if (!handler) throw new Error(`Unknown step ${step}; choose from ${ALL_STEPS.join(", ")}`);
+  const started = Date.now();
+  try {
+    const result = await handler();
+    report.steps[step] = { ok: true, ms: Date.now() - started, result };
+    console.log(`✓ ${step}`, typeof result === "string" ? result : JSON.stringify(result));
+  } catch (error) {
+    report.steps[step] = { ok: false, ms: Date.now() - started, error: redact(error.message) };
+    console.error(`✗ ${step}: ${redact(error.message)}`);
+    failed = true;
+    break;
+  }
+}
+report.finishedAt = new Date().toISOString();
+save("report.json", report);
+console.log(`Evidence: ${path.relative(repo, evidence)}`);
+process.exit(failed ? 1 : 0);

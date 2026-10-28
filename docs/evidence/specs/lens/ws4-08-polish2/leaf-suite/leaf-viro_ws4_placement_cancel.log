@@ -1,0 +1,18 @@
+16:17:19.058 [Packages/SpectaclesInteractionKit.lspkg/Utils/logger.ts:21] FrameCache: Initialized global cache flushing for FrameCache
+16:17:19.352 [Packages/SpectaclesInteractionKit.lspkg/Core/ConfigurationValidator/ConfigurationValidator.ts:16] SIK Version : 0.18.0
+16:17:19.693 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:17:19.694 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:17:19.748 [LeafPlugin][PluginViewModel] Loaded 39 scenario(s) from preview.
+16:17:19.748 [LeafPlugin][PluginViewModel] Running scenario: viro_ws4_placement_cancel
+16:17:47.847 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_ws4_placement_cancel with args: [(hold_ms: 0)]
+16:17:47.847 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.001s]Running with runner config: {"__leaf__log_level":"INFO","__leaf__timeout_secs":"600","__leaf__diagnostic_policy":"fallback","__leaf__diagnostic_report_duration_ms":"-1"}
+16:17:48.086 [Assets/ViroSpecsLab/Leaf/ViroLabExperienceSupport.ts:43] VIRO_WS4 experience started placementScene=true panelMesh=Unit Plane panelMaterial=ViroExperiencePanel
+16:17:48.088 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node placement-title: Text "placement-title" maxLines 2 is approximated.
+16:17:51.502 [Assets/ViroSpecsLab/Leaf/ViroWs4PlacementCancelScenario.ts:58] VIRO_WS4 placement_cancel after look-away ["off:Look for a flat surface\nLook away to cancel","off:Look for a flat surface\nLook away to cancel","off:Look for a flat surface\nLook away to cancel","off:Look for a flat surface\nLook away to cancel","off:Look for a flat surface\nLook away to cancel"]
+16:17:51.503 [Assets/ViroSpecsLab/Leaf/ViroLabExperienceSupport.ts:213] VIRO_WS4_HOLD placement_cancelled 0
+16:17:51.503 [Assets/ViroSpecsLab/Leaf/ViroWs4PlacementCancelScenario.ts:67] VIRO_WS4 placement_cancel PASS
+16:17:51.506 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:17:51.506 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:17:51.738 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  3.892s]PASSED: viro_ws4_placement_cancel
+16:17:51.738 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  3.892s][viro_ws4_placement_cancel] PASSED
+16:17:51.739 [LeafPlugin][PluginViewModel] ✅ Scenario viro_ws4_placement_cancel completed successfully.

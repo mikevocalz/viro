@@ -1,0 +1,26 @@
+16:14:58.026 [Packages/SpectaclesInteractionKit.lspkg/Utils/logger.ts:21] FrameCache: Initialized global cache flushing for FrameCache
+16:14:58.314 [Packages/SpectaclesInteractionKit.lspkg/Core/ConfigurationValidator/ConfigurationValidator.ts:16] SIK Version : 0.18.0
+16:14:58.649 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:14:58.650 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:14:58.703 [LeafPlugin][PluginViewModel] Loaded 39 scenario(s) from preview.
+16:14:58.703 [LeafPlugin][PluginViewModel] Running scenario: viro_ws4_hello_ready
+16:15:27.147 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_ws4_hello_ready with args: [(hold_ms: 0)]
+16:15:27.147 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.001s]Running with runner config: {"__leaf__log_level":"INFO","__leaf__timeout_secs":"600","__leaf__diagnostic_policy":"fallback","__leaf__diagnostic_report_duration_ms":"-1"}
+16:15:27.378 [Assets/ViroSpecsLab/Leaf/ViroLabExperienceSupport.ts:43] VIRO_WS4 experience started placementScene=false panelMesh=Unit Plane panelMaterial=ViroExperiencePanel
+16:15:27.382 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:15:27.382 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:15:27.683 [Assets/ViroSpecsLab/Leaf/ViroWs4HelloReadyScenario.ts:54] VIRO_WS4 hello_ready tree:
+16:15:28.193 [Assets/ViroSpecsLab/Leaf/ViroWs4HelloReadyScenario.ts:74] VIRO_WS4 hello_ready hover width 24.43687629699707 -> 25.414350509643555
+16:15:28.193 [Assets/ViroSpecsLab/Leaf/ViroLabExperienceSupport.ts:213] VIRO_WS4_HOLD hello_ready_hover 0
+16:15:28.873 [Assets/ViroSpecsLab/Leaf/ViroWs4HelloReadyScenario.ts:79] VIRO_WS4 hello_ready phases=select-start:hand-right,cancel:hand-right,hover-enter:synthetic,hover-move:synthetic,hover-move:synthetic,hover-move:synthetic,hover-move:synthetic,hover-move:synthetic,hover-move:synthetic,hover-move:synthetic,hover-move:synthetic,hover-move:synthetic,hover-exit:synthetic,hover-enter:synthetic,hover-move:synthetic,hover-move:synthetic,hover-move:synthetic,hover-move:synthetic,hover-move:synthetic,hover-exit:synthetic,hover-enter:synthetic,hover-move:synthetic,hover-move:synthetic,select-start:synthetic,hover-move:synthetic,hover-move:synthetic,select-end:synthetic,hover-move:synthetic,hover-exit:synthetic
+16:15:29.865 [Assets/ViroSpecsLab/Leaf/ViroWs4HelloReadyScenario.ts:99] VIRO_WS4 hello_ready reset offset cm=0 angle deg=0
+16:15:29.867 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:15:29.868 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:15:31.841 [Assets/ViroSpecsLab/Leaf/ViroWs4HelloReadyScenario.ts:120] VIRO_WS4 hello_ready autoRotate deg in 1 s=18.39992856736739 reduced motion deg in 0.6 s=0.03956468118525214
+16:15:31.843 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node placement-title: Text "placement-title" maxLines 2 is approximated.
+16:15:31.845 [Assets/ViroSpecsLab/Leaf/ViroWs4HelloReadyScenario.ts:129] VIRO_WS4 hello_ready PASS
+16:15:31.848 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:15:31.849 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:15:32.079 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  4.933s]PASSED: viro_ws4_hello_ready
+16:15:32.079 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  4.933s][viro_ws4_hello_ready] PASSED
+16:15:32.080 [LeafPlugin][PluginViewModel] ✅ Scenario viro_ws4_hello_ready completed successfully.

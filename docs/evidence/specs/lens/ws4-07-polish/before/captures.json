@@ -1,0 +1,18 @@
+[
+  {
+    "scenario": "viro_lab_actions_reference_flow",
+    "hold": "reference_list_top",
+    "captured": true,
+    "file": "reference_list_top-preview.png"
+  },
+  {
+    "scenario": "viro_lab_actions_reference_flow",
+    "hold": "reference_list_top",
+    "captured": true,
+    "file": "reference_list_top-front.png"
+  },
+  {
+    "scenario": "viro_lab_actions_reference_flow",
+    "verdict": "[ 11.913s][viro_lab_actions_reference_flow] PASSED"
+  }
+]

@@ -1,0 +1,18 @@
+{
+  "byteOffset": 5182386,
+  "errors": [],
+  "errorsCapped": false,
+  "firstActivityAtMs": 124,
+  "logFile": "~/Library/Preferences/Snap/Lens Studio/logs/LensStudioLog-2026-10-28-00-44-13-484-1fe92.txt",
+  "mode": "refresh",
+  "newBytes": 954,
+  "prints": [],
+  "printsCapped": false,
+  "rotated": false,
+  "settleElapsedMs": 2039,
+  "settleMaxMs": 6000,
+  "settleMaxRaised": false,
+  "status": "success",
+  "tail": "I 07:06:11.098 Lens has been reset",
+  "truncated": false
+}

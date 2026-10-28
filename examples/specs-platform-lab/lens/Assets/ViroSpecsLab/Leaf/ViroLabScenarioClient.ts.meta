@@ -1,0 +1,51 @@
+- !<AssetImportMetadata/3f4e49bf-c6f6-4d3a-98f2-bd634894b639>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> ddac0084-fcb1-4c21-a149-b6b6cae370f1
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> ddac0084-fcb1-4c21-a149-b6b6cae370f1
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> bcd89068-bc26-40cf-8806-02a27f32931e
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/bcd89068-bc26-40cf-8806-02a27f32931e>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: 54d3a602-77db-49a7-aee7-84f5014df70e
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    scenarioIds: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - scenarioIds: !<string[]>
+        - viro_lab_render
+        - viro_lab_select
+        - viro_lab_drag
+        - viro_lab_navigate
+        - viro_lab_deliberate_failure
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - '// @input string[] scenarioIds = {"viro_lab_render","viro_lab_select","viro_lab_select_ik","viro_lab_drag","viro_lab_navigate","viro_lab_missing_asset","viro_lab_state_update","viro_lab_scene_replacement","viro_lab_interaction_phases","viro_lab_scroll_window","viro_lab_deliberate_failure"}'

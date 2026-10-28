@@ -1,0 +1,26 @@
+{
+  "byteOffset": 419513,
+  "errors": [
+    "W 07:13:41.117 [CamPlat.LensCore.Scn.Rendering.SnapGraphics] Depth format Depth24UnormStencil8 is not renderable; using Depth32FloatStencil8.",
+    "E 07:13:43.640 [CamPlat.LensCore.Scn.Host] exception while processing lens with id 5499986275297572574 (×5)",
+    "E 07:13:43.640 Error: To run Spectacles Interaction Kit in the Lens Studio Preview, set the Preview Panel's Device Type Override to SPECS, or the Simulation Mode to SPECS 27!",
+    "E 07:13:43.762 [SpectaclesInteractionKit -> [REQUIRED] Core -> Configuration -> SIKLogLevelConfiguration::start()] Component is not yet awake (×4)",
+    "E 07:13:44.055 Rendering failed 5 times in a row."
+  ],
+  "errorsCapped": false,
+  "firstActivityAtMs": 124,
+  "logFile": "~/Library/Preferences/Snap/Lens Studio/logs/LensStudioLog-2026-10-28-07-08-05-361-a3223.txt",
+  "mode": "refresh",
+  "newBytes": 6212,
+  "prints": [
+    "I 07:13:42.753 [Preview 1] [Packages/SpectaclesInteractionKit.lspkg/Utils/logger.ts:21] FrameCache: Initialized global cache flushing for FrameCache"
+  ],
+  "printsCapped": false,
+  "rotated": false,
+  "settleElapsedMs": 4965,
+  "settleMaxMs": 6000,
+  "settleMaxRaised": false,
+  "status": "success",
+  "tail": "I 07:13:40.658 Lens has been reset\nI 07:13:41.620 Lens has been reset\nStack trace:\nError@To run Spectacles Interaction Kit in the Lens Studio Preview, set the Preview Panel's Device Type Override to SPECS, or the Simulation Mode to SPECS 27!\nonAwake@Packages/SpectaclesInteractionKit.lspkg/Core/ConfigurationValidator/ConfigurationValidator.ts:11:22\n<anonymous>@498101b8-a13b-499d-8d22-4536ab05cbcb/94a020f237b71dce53ef21d593db4e1e/Data/Core/ConfigurationValidator/ConfigurationValidator_c.js:21:22\nPlease fix the Lens and hit \"Reset\" button on the Preview panel.",
+  "truncated": false
+}

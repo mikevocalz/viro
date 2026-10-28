@@ -1,0 +1,4 @@
+{
+  "description": "&& on a const: true compiles the element, false compiles nothing.",
+  "parity": true
+}

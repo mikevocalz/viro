@@ -95,3 +95,7 @@ web-harness/public/
 # only produced drift — a stale dist, plus orphans tsc never cleans (a renamed component and
 # dist/shims/ both survived there for months, shipping untranspiled JSX).
 /dist/
+
+# Built from src/specs-cli and components/Specs/core by `npm run build:specs-cli`
+/bin/specs-build/
+/bin/specs-core/

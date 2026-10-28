@@ -1,0 +1,18 @@
+16:12:37.303 [Packages/SpectaclesInteractionKit.lspkg/Utils/logger.ts:21] FrameCache: Initialized global cache flushing for FrameCache
+16:12:37.666 [Packages/SpectaclesInteractionKit.lspkg/Core/ConfigurationValidator/ConfigurationValidator.ts:16] SIK Version : 0.18.0
+16:12:38.078 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:12:38.079 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:12:38.149 [LeafPlugin][PluginViewModel] Loaded 39 scenario(s) from preview.
+16:12:38.150 [LeafPlugin][PluginViewModel] Running scenario: viro_lab_actions_unknown_action
+16:13:22.334 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_lab_actions_unknown_action with args: []
+16:13:22.334 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.001s]Running with runner config: {"__leaf__log_level":"INFO","__leaf__timeout_secs":"600","__leaf__diagnostic_policy":"fallback","__leaf__diagnostic_report_duration_ms":"-1"}
+16:13:22.501 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] error VS5015 (validate) /interactions/0/triggers/0/actionId: Action "item.drop" is not declared in the scene's actions.
+16:13:22.706 [Assets/ViroSpecsLab/Leaf/ViroLabActionsUnknownActionScenario.ts:47] VIRO_LAB_LEAF actions_unknown_action present=rejected [{"code":"VS5015","severity":"error","phase":"validate","message":"Action \"item.drop\" is not declared in the scene's actions.","hint":"Declare the action ID in the scene's actions list and in the ViroSpecsActionRegistry. The trigger or dispatch was dropped.","nodeId":"pick","fieldPath":"/interactions/0/triggers/0/actionId","sceneRevision":2}]
+16:13:23.102 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] error VS5015 (action): Action exhibit.teleport is not declared; it was dropped.
+16:13:23.317 [Assets/ViroSpecsLab/Leaf/ViroLabActionsUnknownActionScenario.ts:62] VIRO_LAB_LEAF actions_unknown_action dispatch accepted=false ["VS5015:Action exhibit.teleport is not declared; it was dropped."]
+16:13:23.317 [Assets/ViroSpecsLab/Leaf/ViroLabActionsUnknownActionScenario.ts:66] VIRO_LAB_LEAF actions_unknown_action PASS
+16:13:23.320 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:13:23.320 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:13:23.538 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  1.205s]PASSED: viro_lab_actions_unknown_action
+16:13:23.538 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  1.205s][viro_lab_actions_unknown_action] PASSED
+16:13:23.539 [LeafPlugin][PluginViewModel] ✅ Scenario viro_lab_actions_unknown_action completed successfully.

@@ -1,0 +1,30 @@
+{
+  "$schema": "https://github.com/mikevocalz/viro/blob/main/schemas/viro-specs-manifest.v2.json",
+  "version": 2,
+  "generator": {
+    "name": "viro-specs-compile"
+  },
+  "source": "__test__/fixtures/specs/compiler/assets-require/scene.tsx",
+  "nodes": [
+    {
+      "id": "cube",
+      "kind": "model",
+      "source": "__test__/fixtures/specs/compiler/assets/cube.glb",
+      "format": "glb"
+    },
+    {
+      "id": "poster",
+      "kind": "image",
+      "extents": {
+        "width": 0.3,
+        "height": 0.2
+      },
+      "source": "__test__/fixtures/specs/compiler/assets/panel.png"
+    }
+  ],
+  "polylines": [],
+  "lights": [],
+  "materials": [],
+  "interactions": [],
+  "animations": []
+}

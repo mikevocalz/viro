@@ -175,9 +175,14 @@ const config: Config = {
   ],
 
   // An array of regexp pattern strings that are matched against all test paths, matched tests are skipped
-  // testPathIgnorePatterns: [
-  //   "/node_modules/"
-  // ],
+  // The Specs suites need jest.specs.config.cjs (npm run test:specs) and the
+  // web preview has its own package (web-harness/specs-preview, npm test there);
+  // specs-public-api.yml runs both.
+  testPathIgnorePatterns: [
+    "/node_modules/",
+    "<rootDir>/__test__/ViroSpecs",
+    "<rootDir>/web-harness/specs-preview/",
+  ],
 
   // The regexp pattern or array of patterns that Jest uses to detect test files
   // testRegex: [],

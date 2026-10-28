@@ -1,0 +1,186 @@
+[
+  {
+    "scenario": "viro_ws4_hello_loading",
+    "hold": "hello_loading",
+    "captured": true,
+    "file": "hello_loading-preview.png"
+  },
+  {
+    "scenario": "viro_ws4_hello_loading",
+    "hold": "hello_loading",
+    "captured": true,
+    "file": "hello_loading-front.png"
+  },
+  {
+    "scenario": "viro_ws4_hello_loading",
+    "verdict": "[  9.260s][viro_ws4_hello_loading] PASSED"
+  },
+  {
+    "scenario": "viro_ws4_hello_error",
+    "hold": "hello_error",
+    "captured": true,
+    "file": "hello_error-preview.png"
+  },
+  {
+    "scenario": "viro_ws4_hello_error",
+    "hold": "hello_error",
+    "captured": true,
+    "file": "hello_error-front.png"
+  },
+  {
+    "scenario": "viro_ws4_hello_error",
+    "verdict": "[  7.195s][viro_ws4_hello_error] PASSED"
+  },
+  {
+    "scenario": "viro_ws4_hello_degraded",
+    "hold": "hello_degraded",
+    "captured": true,
+    "file": "hello_degraded-preview.png"
+  },
+  {
+    "scenario": "viro_ws4_hello_degraded",
+    "hold": "hello_degraded",
+    "captured": true,
+    "file": "hello_degraded-front.png"
+  },
+  {
+    "scenario": "viro_ws4_hello_degraded",
+    "verdict": "[  7.682s][viro_ws4_hello_degraded] PASSED"
+  },
+  {
+    "scenario": "viro_ws4_placement_table",
+    "hold": "placement_reticle",
+    "captured": true,
+    "file": "placement_reticle-preview.png"
+  },
+  {
+    "scenario": "viro_ws4_placement_table",
+    "hold": "placement_reticle",
+    "captured": true,
+    "file": "placement_reticle-front.png"
+  },
+  {
+    "scenario": "viro_ws4_placement_table",
+    "verdict": "[  6.543s][viro_ws4_placement_table] PASSED"
+  },
+  {
+    "scenario": "viro_ws4_button_states",
+    "hold": "interaction_buttons",
+    "captured": true,
+    "file": "interaction_buttons-preview.png"
+  },
+  {
+    "scenario": "viro_ws4_button_states",
+    "hold": "interaction_buttons",
+    "captured": true,
+    "file": "interaction_buttons-front.png"
+  },
+  {
+    "scenario": "viro_ws4_button_states",
+    "verdict": "[  7.501s][viro_ws4_button_states] PASSED"
+  },
+  {
+    "scenario": "viro_ws4_scene_rejection",
+    "hold": "rejection_update",
+    "captured": true,
+    "file": "rejection_update-preview.png"
+  },
+  {
+    "scenario": "viro_ws4_scene_rejection",
+    "hold": "rejection_update",
+    "captured": true,
+    "file": "rejection_update-front.png"
+  },
+  {
+    "scenario": "viro_ws4_scene_rejection",
+    "hold": "rejection_first",
+    "captured": true,
+    "file": "rejection_first-preview.png"
+  },
+  {
+    "scenario": "viro_ws4_scene_rejection",
+    "hold": "rejection_first",
+    "captured": true,
+    "file": "rejection_first-front.png"
+  },
+  {
+    "scenario": "viro_ws4_scene_rejection",
+    "verdict": "[ 13.917s][viro_ws4_scene_rejection] PASSED"
+  },
+  {
+    "scenario": "viro_ws4_move_band",
+    "hold": "interaction_band",
+    "captured": true,
+    "file": "interaction_band-preview.png"
+  },
+  {
+    "scenario": "viro_ws4_move_band",
+    "hold": "interaction_band",
+    "captured": true,
+    "file": "interaction_band-front.png"
+  },
+  {
+    "scenario": "viro_ws4_move_band",
+    "verdict": "[  8.682s][viro_ws4_move_band] PASSED"
+  },
+  {
+    "scenario": "viro_lab_actions_reference_flow",
+    "hold": "reference_list_top",
+    "captured": true,
+    "file": "reference_list_top-preview.png"
+  },
+  {
+    "scenario": "viro_lab_actions_reference_flow",
+    "hold": "reference_list_top",
+    "captured": true,
+    "file": "reference_list_top-front.png"
+  },
+  {
+    "scenario": "viro_lab_actions_reference_flow",
+    "verdict": "[  9.955s][viro_lab_actions_reference_flow] PASSED"
+  },
+  {
+    "scenario": "viro_ws4_preferences",
+    "hold": "preferences_ready",
+    "captured": true,
+    "file": "preferences_ready-preview.png"
+  },
+  {
+    "scenario": "viro_ws4_preferences",
+    "hold": "preferences_ready",
+    "captured": true,
+    "file": "preferences_ready-front.png"
+  },
+  {
+    "scenario": "viro_ws4_preferences",
+    "hold": "preferences_loading",
+    "captured": true,
+    "file": "preferences_loading-preview.png"
+  },
+  {
+    "scenario": "viro_ws4_preferences",
+    "hold": "preferences_loading",
+    "captured": true,
+    "file": "preferences_loading-front.png"
+  },
+  {
+    "scenario": "viro_ws4_preferences",
+    "verdict": "[ 15.438s][viro_ws4_preferences] PASSED"
+  },
+  {
+    "scenario": "viro_ws4_gaze",
+    "hold": "gaze_scroll_buttons",
+    "captured": true,
+    "file": "gaze_scroll_buttons-preview.png"
+  },
+  {
+    "scenario": "viro_ws4_gaze",
+    "hold": "gaze_scroll_buttons",
+    "captured": true,
+    "file": "gaze_scroll_buttons-front.png"
+  },
+  {
+    "scenario": "viro_ws4_gaze",
+    "verdict": "[ 16.957s][viro_ws4_gaze] PASSED"
+  }
+]

@@ -4,12 +4,19 @@ on:
   push:
     branches:
       - main
+      - develop
       - "feat/specs-*"
     paths:
       - "components/Specs/**"
       - "components/Animation/ViroAnimations.ts"
       - "examples/specs-platform-lab/**"
-      - "__test__/ViroSpecsCompiler.test.tsx"
+      - "__test__/ViroSpecs*.test.ts"
+      - "__test__/ViroSpecs*.test.tsx"
+      - "__test__/fixtures/specs/**"
+      - "schemas/**"
+      - "tsconfig.specs-cli.json"
+      - "src/specs-cli/**"
+      - "scripts/jest-specs-asset-transform.cjs"
       - "docs/specs*.md"
       - "bin/viro-specs.cjs"
       - "bin/viro-specs-compile.cjs"
@@ -19,13 +26,27 @@ on:
       - "babel.specs.config.cjs"
       - "index.ts"
       - "package.json"
+      - "api/**"
+      - "scripts/specs-api-snapshot.cjs"
+      - "scripts/specs-error-reference.cjs"
+      - "scripts/check-specs-consumer.cjs"
+      - "tsconfig.specs-examples.json"
+      - "examples/specs-reference-apps/**"
+      - "package-lock.json"
       - ".github/workflows/specs-public-api.yml"
+      - "web-harness/specs-preview/**"
   pull_request:
     paths:
       - "components/Specs/**"
       - "components/Animation/ViroAnimations.ts"
       - "examples/specs-platform-lab/**"
-      - "__test__/ViroSpecsCompiler.test.tsx"
+      - "__test__/ViroSpecs*.test.ts"
+      - "__test__/ViroSpecs*.test.tsx"
+      - "__test__/fixtures/specs/**"
+      - "schemas/**"
+      - "tsconfig.specs-cli.json"
+      - "src/specs-cli/**"
+      - "scripts/jest-specs-asset-transform.cjs"
       - "docs/specs*.md"
       - "bin/viro-specs.cjs"
       - "bin/viro-specs-compile.cjs"
@@ -34,7 +55,15 @@ on:
       - "babel.specs.config.cjs"
       - "index.ts"
       - "package.json"
+      - "api/**"
+      - "scripts/specs-api-snapshot.cjs"
+      - "scripts/specs-error-reference.cjs"
+      - "scripts/check-specs-consumer.cjs"
+      - "tsconfig.specs-examples.json"
+      - "examples/specs-reference-apps/**"
+      - "package-lock.json"
       - ".github/workflows/specs-public-api.yml"
+      - "web-harness/specs-preview/**"
   workflow_dispatch:
 
 jobs:
@@ -51,11 +80,90 @@ jobs:
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Typecheck
         run: npx tsc --noEmit
-      - name: Specs compiler regression
-        run: npx jest __test__/ViroSpecsCompiler.test.tsx --runInBand --config jest.specs.config.cjs
+      - name: Typecheck (--strict)
+        run: npx tsc --noEmit --strict
+      - name: Build and type-check the Specs CLI with the shared core (strict)
+        run: npm run build:specs-cli
+      - name: Specs suites (goldens, runtime/static byte identity, Platform Lab timing, schema, scene gates)
+        run: npm run test:specs
       - name: Static Specs compiler regression
         run: npm run test:specs-compiler
       - name: CLI syntax
         run: |
           node --check bin/viro-specs.cjs
           node --check bin/viro-specs-compile.cjs
+      - name: Type-check the Specs example scenes against the package root
+        run: npm run typecheck:specs-examples
+      - name: Specs public API snapshot (api/specs.api.d.ts)
+        run: npm run test:specs-api
+      - name: Error reference matches the diagnostic catalog
+        run: node scripts/specs-error-reference.cjs --check
+
+  consumer:
+    name: Pack and install into a clean app
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+      - name: Install
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: npm pack (runs prepare -> build)
+        run: |
+          mkdir -p "$RUNNER_TEMP/viro-pack"
+          npm pack --pack-destination "$RUNNER_TEMP/viro-pack"
+          ls -l "$RUNNER_TEMP/viro-pack"
+      - name: Check out @viro-external/specs
+        uses: actions/checkout@v4
+        with:
+          repository: mikevocalz/viro-external
+          ref: main
+          path: viro-external
+          persist-credentials: false
+      - name: Pack @viro-external/xr-contract and @viro-external/specs
+        working-directory: viro-external
+        run: |
+          corepack enable
+          corepack prepare pnpm@12.8.1 --activate
+          pnpm install --frozen-lockfile
+          mkdir -p "$RUNNER_TEMP/specs-pack"
+          pnpm --filter @viro-external/xr-contract pack --pack-destination "$RUNNER_TEMP/specs-pack"
+          pnpm --filter @viro-external/specs pack --pack-destination "$RUNNER_TEMP/specs-pack"
+      - name: Install the tarballs with strict peers and check the result
+        run: |
+          node scripts/check-specs-consumer.cjs \
+            --viro-tarball "$(ls "$RUNNER_TEMP"/viro-pack/*.tgz)" \
+            --specs-tarballs "$RUNNER_TEMP/specs-pack"
+
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: web-harness/specs-preview
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: web-harness/specs-preview/package-lock.json
+      - name: Install the preview package
+        run: npm ci --no-audit --no-fund
+      - name: Vendored Lens core matches VENDOR.json
+        run: npm run vendor:check
+      - name: Typecheck (strict)
+        run: npm run typecheck
+      - name: Parity with the viro-external mock host, Lens constants, animation
+        run: npm test
+      - name: Headless screenshots (installed Chrome)
+        run: node scripts/screenshot.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: specs-preview-screenshots
+          path: web-harness/specs-preview/screenshots/

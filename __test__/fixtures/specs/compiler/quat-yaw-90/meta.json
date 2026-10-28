@@ -1,0 +1,4 @@
+{
+  "description": "rotation [0, 90, 0] is [0, sin45, 0, cos45].",
+  "parity": true
+}

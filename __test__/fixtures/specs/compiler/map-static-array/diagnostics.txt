@@ -1,0 +1,3 @@
+scene.tsx:16:11 warning VS3018 [item-a]: Text "item-a" is 0.63 degrees tall at 1.00 m (fontSize 48); the minimum is 1.2 degrees.
+scene.tsx:16:11 warning VS3018 [item-b]: Text "item-b" is 0.62 degrees tall at 1.00 m (fontSize 48); the minimum is 1.2 degrees.
+scene.tsx:16:11 warning VS3018 [item-c]: Text "item-c" is 0.61 degrees tall at 1.02 m (fontSize 48); the minimum is 1.2 degrees.

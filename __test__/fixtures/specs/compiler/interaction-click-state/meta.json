@@ -1,0 +1,4 @@
+{
+  "description": "onClickState counts as select; no drag means manipulation: false.",
+  "parity": true
+}

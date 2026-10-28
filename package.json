@@ -20,7 +20,9 @@
     "tsc": "tsc && tsc -p tsconfig.plugins.json",
     "harness": "vite",
     "prebuild": "node -p \"'export const VIRO_VERSION = ' + JSON.stringify(require('./package.json').version) + ';'\" > components/Utilities/ViroVersion.ts",
-    "build": "tsc && tsc -p tsconfig.plugins.json && npm run copy-files",
+    "build": "tsc && tsc -p tsconfig.plugins.json && npm run build:specs-cli && npm run copy-files",
+    "build:specs-cli": "tsc -p tsconfig.specs-cli.json",
+    "build:specs-core": "npm run build:specs-cli",
     "bundle": "./prepare_release.sh",
     "copy-files": "cp -r ./components/Resources/ ./dist/components/Resources/",
     "clean": "rm -rf ./dist/ *.tgz node_modules/",
@@ -30,23 +32,29 @@
     "harness:assets": "bash scripts/sync-harness-assets.sh",
     "preharness": "npm run harness:assets",
     "audit:events": "node scripts/audit-events.cjs",
-    "test:specs-compiler": "node scripts/test-viro-specs-compiler.cjs",
+    "test:specs-compiler": "npm run build:specs-cli && node scripts/test-viro-specs-compiler.cjs",
+    "test:specs": "jest --runInBand --config jest.specs.config.cjs __test__/ViroSpecs",
+    "fixtures:specs-actions": "SPECS_UPDATE_FIXTURES=1 jest --runInBand --config jest.specs.config.cjs __test__/ViroSpecsActions -t fixtures",
     "test:rive-contract": "node scripts/test-rive-local-contract.cjs",
     "perf:tracesift:init": "npx --yes @callstack/tracesift@0.3.1 init",
     "perf:tracesift": "npx --yes @callstack/tracesift@0.3.1 start",
     "test:plugin-load": "node scripts/check-plugin-loads.cjs",
-    "check:ios-bridge": "bash scripts/check-ios-bridge.sh"
+    "check:ios-bridge": "bash scripts/check-ios-bridge.sh",
+    "test:specs-consumer": "node scripts/check-specs-consumer.cjs",
+    "typecheck:specs-examples": "tsc -p tsconfig.specs-examples.json",
+    "test:specs-api": "node scripts/specs-api-snapshot.cjs",
+    "docs:specs-errors": "npm run build:specs-cli && node scripts/specs-error-reference.cjs"
   },
   "peerDependencies": {
     "@reactvision/react-native-visionos": ">=0.86.0 <0.89.0",
     "@reactvision/viro-web-renderer": "^1.0.1",
     "expo": ">=58.0.0 <59.0.0",
-    "react": ">=19.0.0",
+    "react": "^19.3.0",
     "react-native": ">=0.88.0 <0.89.0",
-    "react-native-web": ">=0.19.0",
+    "react-native-web": "^0.21.0",
     "@metavr/layout-compat": "^1.0.0",
     "@metavr/layout-window-compat": "^1.0.0",
-    "@viro-external/specs": ">=0.2.0-rc.1 <0.3.0"
+    "@viro-external/specs": "^0.3.0"
   },
   "engines": {
     "react-native": ">=0.88.0 <0.89.0"
@@ -84,7 +92,10 @@
     "patches",
     "shims",
     "scripts",
+    "!scripts/specs-lens",
+    "!scripts/specs-lens-setup.mjs",
     "examples",
+    "!examples/specs-platform-lab/lens",
     "web/renderer",
     "app.plugin.js",
     "android/react_viro",
@@ -101,6 +112,7 @@
     "ios/ViroReactUI.podspec",
     "ios/ViroReactExternalVideo.podspec",
     "bin",
+    "schemas",
     "LICENSE"
   ],
   "devDependencies": {
@@ -125,6 +137,7 @@
     "@types/react": "~19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
+    "ajv": "8.20.0",
     "babel-jest": "^30.5.2",
     "expo": "~58.0.19",
     "jest": "^30.5.2",
@@ -145,10 +158,8 @@
   "homepage": "https://reactvision.xyz/viro-react",
   "author": "ReactVision, Inc",
   "dependencies": {
-    "react": ">=19.0.0",
     "zustand": "5.0.16",
-    "@babel/parser": "^8.0.8",
-    "@babel/traverse": "^8.0.7"
+    "@babel/parser": "^8.0.8"
   },
   "bin": {
     "viro-specs": "bin/viro-specs.cjs",

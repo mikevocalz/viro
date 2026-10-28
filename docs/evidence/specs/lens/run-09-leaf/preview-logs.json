@@ -1,0 +1,29 @@
+{
+  "byteOffset": 722491,
+  "errors": [
+    "W 07:17:55.676 [CamPlat.LensCore.Scn.Rendering.SnapGraphics] Depth format Depth24UnormStencil8 is not renderable; using Depth32FloatStencil8."
+  ],
+  "errorsCapped": false,
+  "firstActivityAtMs": 121,
+  "logFile": "~/Library/Preferences/Snap/Lens Studio/logs/LensStudioLog-2026-10-28-07-08-05-361-a3223.txt",
+  "mode": "refresh",
+  "newBytes": 4692,
+  "prints": [
+    "I 07:17:54.160 [Preview 1] [Packages/SpectaclesInteractionKit.lspkg/Utils/logger.ts:21] FrameCache: Initialized global cache flushing for FrameCache",
+    "I 07:17:55.043 [Preview 1] [Packages/SpectaclesInteractionKit.lspkg/Core/ConfigurationValidator/ConfigurationValidator.ts:16] SIK Version : 0.18.0",
+    "I 07:17:55.458 [Preview 1] [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.182s]Register scenario: viro_lab_render",
+    "I 07:17:55.458 [Preview 1] [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.182s]Register scenario: viro_lab_select",
+    "I 07:17:55.458 [Preview 1] [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.182s]Register scenario: viro_lab_select_ik",
+    "I 07:17:55.458 [Preview 1] [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.182s]Register scenario: viro_lab_drag",
+    "I 07:17:55.458 [Preview 1] [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.182s]Register scenario: viro_lab_navigate",
+    "I 07:17:55.458 [Preview 1] [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.182s]Register scenario: viro_lab_deliberate_failure"
+  ],
+  "printsCapped": false,
+  "rotated": false,
+  "settleElapsedMs": 4687,
+  "settleMaxMs": 6000,
+  "settleMaxRaised": false,
+  "status": "success",
+  "tail": "I 07:17:52.568 Lens has been reset\nI 07:17:52.662 Lens has been reset\nD 07:17:53.764 Http request cancellation not implemented\nD 07:17:53.764 Http request cancellation not implemented",
+  "truncated": false
+}

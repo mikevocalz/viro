@@ -1,0 +1,4 @@
+{
+  "description": "rotation [90, 90, 0] applies X first, then Y (ViroCore VROQuaternion::set order).",
+  "parity": true
+}

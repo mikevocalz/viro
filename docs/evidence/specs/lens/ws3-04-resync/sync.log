@@ -1,0 +1,7 @@
+Synced Viro Specs Lens runtime to:
+<repo>/examples/specs-platform-lab/lens/Assets/ViroSpecs
+
+Pinned upstream: specs-devs/packages df8820c0c4970f052e545b8da1dd288c2516d912
+Target: SPECS 27 Lens Studio >=5.22.0
+Interaction Kit: SpectaclesInteractionKit.lspkg (line 2, detected)
+exit=0

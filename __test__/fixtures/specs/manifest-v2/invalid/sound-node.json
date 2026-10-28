@@ -1,0 +1,1 @@
+{"description":"audio is in the contract and has no Specs host","expectSchemaValid":true,"expectCodes":["VS4005"],"manifest":{"version":2,"nodes":[{"id":"s","kind":"sound","source":"assets/chime.wav","volume":0.5}]}}

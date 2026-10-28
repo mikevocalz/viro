@@ -1,0 +1,24 @@
+16:11:17.547 [Packages/SpectaclesInteractionKit.lspkg/Utils/logger.ts:21] FrameCache: Initialized global cache flushing for FrameCache
+16:11:17.842 [Packages/SpectaclesInteractionKit.lspkg/Core/ConfigurationValidator/ConfigurationValidator.ts:16] SIK Version : 0.18.0
+16:11:18.181 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:11:18.182 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:11:18.241 [LeafPlugin][PluginViewModel] Loaded 39 scenario(s) from preview.
+16:11:18.241 [LeafPlugin][PluginViewModel] Running scenario: viro_lab_actions_reference_flow
+16:11:46.886 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.002s]RUNS: viro_lab_actions_reference_flow with args: [(hold_ms: 0)]
+16:11:46.891 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.015s]Running with runner config: {"__leaf__log_level":"INFO","__leaf__timeout_secs":"600","__leaf__diagnostic_policy":"fallback","__leaf__diagnostic_report_duration_ms":"-1"}
+16:11:47.584 [Assets/ViroSpecsLab/Leaf/ViroLabExperienceSupport.ts:213] VIRO_WS4_HOLD reference_list_top 0
+16:11:47.902 [Assets/ViroSpecsLab/Leaf/ViroLabActionsReferenceFlowScenario.ts:67] VIRO_LAB_LEAF actions_reference_flow scroll 1 -> 0.4000000059604645
+16:11:47.907 [Assets/ViroSpecsLab/Leaf/ViroLabLeafSupport.ts:263] VIRO_LAB_LEAF visible card-planetarium dy=2.1000003814697266
+16:11:48.305 [Assets/ViroSpecsValidation/lens/ViroSpecsActionsLab.ts:60] [viro-specs-actions] exhibit.open {"exhibitId":"planetarium"}
+16:11:48.899 [Assets/ViroSpecsValidation/lens/ViroSpecsActionsLab.ts:60] [viro-specs-actions] settings.set-units {"units":"imperial"}
+16:11:49.213 [Assets/ViroSpecsLab/Leaf/ViroLabActionsReferenceFlowScenario.ts:90] VIRO_LAB_LEAF actions_reference_flow toggle tree:
+16:11:49.598 [Assets/ViroSpecsValidation/lens/ViroSpecsActionsLab.ts:60] [viro-specs-actions] nav.back {}
+16:11:50.604 [Assets/ViroSpecsLab/Leaf/ViroLabActionsReferenceFlowScenario.ts:101] VIRO_LAB_LEAF actions_reference_flow scroll restored 0.4000000059604645 (left 0.4000000059604645)
+16:11:50.604 [Assets/ViroSpecsLab/Leaf/ViroLabActionsReferenceFlowScenario.ts:107] VIRO_LAB_LEAF actions_reference_flow retired card=true toggle=false back=true
+16:11:50.604 [Assets/ViroSpecsLab/Leaf/ViroLabActionsReferenceFlowScenario.ts:117] VIRO_LAB_LEAF actions_reference_flow actions=["exhibit.open {\"exhibitId\":\"planetarium\"} card-planetarium synthetic","settings.set-units {\"units\":\"imperial\"} units-toggle synthetic","nav.back {} back-button synthetic"] problems=[]
+16:11:50.604 [Assets/ViroSpecsLab/Leaf/ViroLabActionsReferenceFlowScenario.ts:119] VIRO_LAB_LEAF actions_reference_flow PASS
+16:11:50.607 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:11:50.607 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:11:50.840 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  3.964s]PASSED: viro_lab_actions_reference_flow
+16:11:50.840 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  3.964s][viro_lab_actions_reference_flow] PASSED
+16:11:50.841 [LeafPlugin][PluginViewModel] ✅ Scenario viro_lab_actions_reference_flow completed successfully.

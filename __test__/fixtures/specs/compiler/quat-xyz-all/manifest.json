@@ -1,0 +1,25 @@
+{
+  "$schema": "https://github.com/mikevocalz/viro/blob/main/schemas/viro-specs-manifest.v2.json",
+  "version": 2,
+  "generator": {
+    "name": "viro-specs-compile"
+  },
+  "source": "__test__/fixtures/specs/compiler/quat-xyz-all/scene.tsx",
+  "nodes": [
+    {
+      "id": "all",
+      "kind": "group",
+      "rotation": [
+        0.022260026714733816,
+        0.43967973954090955,
+        0.3604234056503559,
+        0.8223631719059994
+      ]
+    }
+  ],
+  "polylines": [],
+  "lights": [],
+  "materials": [],
+  "interactions": [],
+  "animations": []
+}

@@ -1,0 +1,8 @@
+I 07:19:47.768 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.178s]Register scenario: viro_lab_select_ik
+I 07:19:48.244 ${CONFIG_DIR}/Bundle/Plugins/[ChatTool] LEAF Plugin@5.23.0@362f6c78a8b5e47e6431049afb6a7109/dist/main.js:805 log] [LeafPlugin][PluginViewModel] Running scenario: viro_lab_select_ik
+I 07:19:48.962 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_lab_select_ik with args: []
+I 07:19:48.962 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.001s]Running with runner config: {"__leaf__log_level":"INFO","__leaf__timeout_secs":"600","__leaf__diagnostic_policy":"fail-fast","__leaf__diagnostic_report_duration_ms":"-1"}
+I 07:19:52.524 [Assets/ViroSpecsLab/Leaf/ViroLabSelectIKScenario.ts:29] VIRO_LAB_LEAF select_ik PASS phases=hover-enter,select-start,drag,drag,drag,drag,drag,select-end,hover-exit
+I 07:19:52.525 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  3.564s]PASSED: viro_lab_select_ik
+I 07:19:52.526 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  3.564s][viro_lab_select_ik] PASSED
+I 07:19:52.541 ${CONFIG_DIR}/Bundle/Plugins/[ChatTool] LEAF Plugin@5.23.0@362f6c78a8b5e47e6431049afb6a7109/dist/main.js:805 log] [LeafPlugin][PluginViewModel] ✅ Scenario viro_lab_select_ik completed successfully.

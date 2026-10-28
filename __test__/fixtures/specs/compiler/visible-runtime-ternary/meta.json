@@ -1,0 +1,4 @@
+{
+  "description": "A runtime condition emits both branch roots with visible: false and warns VS2016.",
+  "parity": false
+}

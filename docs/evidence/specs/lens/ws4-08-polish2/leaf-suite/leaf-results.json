@@ -1,0 +1,275 @@
+[
+  {
+    "id": "viro_lab_render",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  2.572s][viro_lab_render] PASSED"
+  },
+  {
+    "id": "viro_lab_select",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  0.777s][viro_lab_select] PASSED"
+  },
+  {
+    "id": "viro_lab_select_ik",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  3.569s][viro_lab_select_ik] PASSED"
+  },
+  {
+    "id": "viro_lab_drag",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  1.148s][viro_lab_drag] PASSED"
+  },
+  {
+    "id": "viro_lab_navigate",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  0.131s][viro_lab_navigate] PASSED"
+  },
+  {
+    "id": "viro_lab_missing_asset",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  0.621s][viro_lab_missing_asset] PASSED"
+  },
+  {
+    "id": "viro_lab_state_update",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  0.794s][viro_lab_state_update] PASSED"
+  },
+  {
+    "id": "viro_lab_scene_replacement",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  3.671s][viro_lab_scene_replacement] PASSED"
+  },
+  {
+    "id": "viro_lab_interaction_phases",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  2.650s][viro_lab_interaction_phases] PASSED"
+  },
+  {
+    "id": "viro_lab_scroll_window",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  3.366s][viro_lab_scroll_window] PASSED"
+  },
+  {
+    "id": "viro_lab_actions_reference_flow",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  3.964s][viro_lab_actions_reference_flow] PASSED"
+  },
+  {
+    "id": "viro_lab_actions_navigation_drop",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  1.524s][viro_lab_actions_navigation_drop] PASSED"
+  },
+  {
+    "id": "viro_lab_actions_unknown_action",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  1.205s][viro_lab_actions_unknown_action] PASSED"
+  },
+  {
+    "id": "viro_lab_deliberate_failure",
+    "status": "failed",
+    "expected": "failed",
+    "asExpected": true,
+    "verdict": "[  0.141s][viro_lab_deliberate_failure] FAILED - AssertionError: Expected: \"DELIBERATE_FAILURE_EXPECTED\" - Received: \"Hello\""
+  },
+  {
+    "id": "viro_ws4_hello_loading",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  3.361s][viro_ws4_hello_loading] PASSED"
+  },
+  {
+    "id": "viro_ws4_hello_ready",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  4.933s][viro_ws4_hello_ready] PASSED"
+  },
+  {
+    "id": "viro_ws4_hello_error",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  1.525s][viro_ws4_hello_error] PASSED"
+  },
+  {
+    "id": "viro_ws4_hello_degraded",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  1.751s][viro_ws4_hello_degraded] PASSED"
+  },
+  {
+    "id": "viro_ws4_placement_table",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  0.601s][viro_ws4_placement_table] PASSED"
+  },
+  {
+    "id": "viro_ws4_placement_cancel",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  3.892s][viro_ws4_placement_cancel] PASSED"
+  },
+  {
+    "id": "viro_ws4_placement_degraded",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  1.233s][viro_ws4_placement_degraded] PASSED"
+  },
+  {
+    "id": "viro_ws4_placement_error",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  0.578s][viro_ws4_placement_error] PASSED"
+  },
+  {
+    "id": "viro_ws4_button_states",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  1.582s][viro_ws4_button_states] PASSED"
+  },
+  {
+    "id": "viro_ws4_move_band",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  2.747s][viro_ws4_move_band] PASSED"
+  },
+  {
+    "id": "viro_ws4_gaze",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  5.068s][viro_ws4_gaze] PASSED"
+  },
+  {
+    "id": "viro_ws4_navigation_scroll",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  4.687s][viro_ws4_navigation_scroll] PASSED"
+  },
+  {
+    "id": "viro_ws4_navigation_image_error",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  0.769s][viro_ws4_navigation_image_error] PASSED"
+  },
+  {
+    "id": "viro_ws4_scene_rejection",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  1.920s][viro_ws4_scene_rejection] PASSED"
+  },
+  {
+    "id": "viro_ws4_preferences",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  3.392s][viro_ws4_preferences] PASSED"
+  },
+  {
+    "id": "viro_ref_dashboard_ready",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  0.766s][viro_ref_dashboard_ready] PASSED"
+  },
+  {
+    "id": "viro_ref_dashboard_range",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  2.150s][viro_ref_dashboard_range] PASSED"
+  },
+  {
+    "id": "viro_ref_dashboard_ik",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  5.610s][viro_ref_dashboard_ik] PASSED"
+  },
+  {
+    "id": "viro_ref_model_ready",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  0.796s][viro_ref_model_ready] PASSED"
+  },
+  {
+    "id": "viro_ref_model_transform",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  3.597s][viro_ref_model_transform] PASSED"
+  },
+  {
+    "id": "viro_ref_model_missing_asset",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  2.146s][viro_ref_model_missing_asset] PASSED"
+  },
+  {
+    "id": "viro_ref_placement_ready",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  0.769s][viro_ref_placement_ready] PASSED"
+  },
+  {
+    "id": "viro_ref_placement_confirm",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  1.932s][viro_ref_placement_confirm] PASSED"
+  },
+  {
+    "id": "viro_ref_placement_cancel",
+    "status": "succeeded",
+    "expected": "succeeded",
+    "asExpected": true,
+    "verdict": "[  3.833s][viro_ref_placement_cancel] PASSED"
+  },
+  {
+    "id": "viro_ref_expected_failure",
+    "status": "failed",
+    "expected": "failed",
+    "asExpected": true,
+    "verdict": "[  0.788s][viro_ref_expected_failure] FAILED - AssertionError: Expected: \"REF_EXPECTED_FAILURE: this title does not exist\" - Received: \"Workshop sensors\""
+  }
+]

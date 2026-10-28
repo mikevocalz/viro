@@ -1,0 +1,3 @@
+scene.tsx:9:7 warning VS3016 [card]: Node "card" responds to hover, select, drag but has no label.
+scene.tsx:10:9 warning VS3016 [caption]: Node "caption" responds to select but has no label.
+scene.tsx:10:9 warning VS3017 [caption]: Node "caption" is 0.00 m from the wearer; the band is 0.6-3 m.
