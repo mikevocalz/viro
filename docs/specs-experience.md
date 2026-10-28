@@ -152,7 +152,6 @@ retrying goes through the typed actions contract (WS3b), not through new JSX.
 | PanelText or PanelImage with only one of `width`/`height` drops the extents | `VS3022` |
 | The current Lens host does not draw the ModelViewer Reset button, load ring and `autoRotate`, or PanelImage corner radius | `VS5025` |
 | SpatialScrollView content height counts direct children only; a child without extents counts as one row | none |
-| The gaze-only Scroll up/down buttons are in the view model and `scrollByRows` exists on the host, but the Lens adapter does not draw the buttons yet | none |
 
 ViroCore rendering (outside Specs, where no Specs diagnostic runs): the premium
 components use plain Viro primitives, `SpatialScrollView` does not scroll, and
