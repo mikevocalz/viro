@@ -48,3 +48,16 @@ ls-live-instance.json.tmp
 
 # Added by Lens Studio (LEAF plugin)
 leaf_plugin_settings.json
+
+# Written into the project by Lens Studio's Agents-Docs and AI tooling. Not
+# part of the lab. .gitattributes would route Assets/ and Packages/ through
+# Git LFS, which this repo does not use for the lab.
+AGENTS.md
+CLAUDE.md
+.gitattributes
+.claude/
+.codex/
+.cursor/
+.clad/
+.vscode/
+.mcp.json

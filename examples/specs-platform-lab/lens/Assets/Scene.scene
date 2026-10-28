@@ -13,7 +13,8 @@
     - !<own> afb5885b-3269-4c80-bc86-7263f61e10c0
     - !<own> 9f373517-8ce1-4e57-840f-062a98c36b5a
     - !<own> 0c6c80d8-8e1a-47b0-871c-5058ea57a89a
-    - !<own> 63614fd4-e7e0-450f-bf08-ea96c991df5f
+    - !<own> 714730d7-d7c6-4215-94db-5c4e955bb2f2
+    - !<own> bac5adc6-a233-49c0-bdb9-56f7d6770981
   layers: !<Layers/267ee9a7-aff2-4f9d-9a49-f71214747d03>
     userLayers:
       - id: 1
@@ -897,6 +898,22 @@
     - !<own> 19d5f7c4-a578-4177-a525-da52d71fa0fa
   Components:
     []
+- !<ScriptComponent/106b311b-2629-4ca7-8e25-ce1dda3a1d64>
+  PrefabRemaps:
+    []
+  Name: MessagingBridge
+  Enabled: true
+  ScriptAsset: !<reference> 9aa407db-2872-4afc-a162-cf7faf2a0f29
+  ScriptInputsDefault:
+    {}
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      {}
+  ScriptTypes:
+    "":
+      {}
 - !<SceneObject/1124869e-67f4-494b-a2b2-9c77b3814d03>
   PrefabRemaps:
     []
@@ -5264,21 +5281,6 @@
     - !<own> 01d13328-2209-4ac9-8d8c-6320c3330d39
   Components:
     []
-- !<SceneObject/63614fd4-e7e0-450f-bf08-ea96c991df5f>
-  PrefabRemaps:
-    []
-  Name: AiPreviewAgent Handler
-  Enabled: true
-  Layers: 1
-  LocalTransform: !<TransformEntity>
-    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
-    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
-    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
-    HasSegmentScaleCompensation: false
-  Children:
-    []
-  Components:
-    - !<own> bd58801c-f7c3-4bc1-a06b-3ce9fc1e3162
 - !<SceneObject/63a26a95-0eb4-419b-8c37-a2f85f1d39f6>
   PrefabRemaps:
     []
@@ -5917,6 +5919,21 @@
     []
   Components:
     []
+- !<SceneObject/714730d7-d7c6-4215-94db-5c4e955bb2f2>
+  PrefabRemaps:
+    []
+  Name: AiPreviewAgent Handler
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    []
+  Components:
+    - !<own> 8e2446e0-d96e-46c8-a391-8f030cbcdb73
 - !<SceneObject/71547ff4-4b7a-45dd-9484-c8d2d1354c82>
   PrefabRemaps:
     []
@@ -7903,6 +7920,22 @@
   Name: ViroLabLeafIndex
   Enabled: true
   ScriptAsset: !<reference> 3721bd71-25c5-406f-8ddb-4cafd2e3245e
+  ScriptInputsDefault:
+    {}
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      {}
+  ScriptTypes:
+    "":
+      {}
+- !<ScriptComponent/8e2446e0-d96e-46c8-a391-8f030cbcdb73>
+  PrefabRemaps:
+    []
+  Name: AgentInspectScript
+  Enabled: true
+  ScriptAsset: !<reference> 0b25079c-f5bf-4c6d-96c4-f43b89dfa213
   ScriptInputsDefault:
     {}
   ScriptTypesDefault:
@@ -10577,6 +10610,21 @@
     - !<own> 969e0a37-6c65-467a-9b86-6a6effbfbebe
   Components:
     []
+- !<SceneObject/bac5adc6-a233-49c0-bdb9-56f7d6770981>
+  PrefabRemaps:
+    []
+  Name: LEAF Plugin Bridge
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    []
+  Components:
+    - !<own> 106b311b-2629-4ca7-8e25-ce1dda3a1d64
 - !<SceneObject/bb9d9c85-e30f-4f41-872c-84b210719f05>
   PrefabRemaps:
     []
@@ -10667,22 +10715,6 @@
     []
   Components:
     - !<own> 904b1ee4-1f8c-478b-b434-7e89ee8bf0de
-- !<ScriptComponent/bd58801c-f7c3-4bc1-a06b-3ce9fc1e3162>
-  PrefabRemaps:
-    []
-  Name: AgentInspectScript
-  Enabled: true
-  ScriptAsset: !<reference> 0b25079c-f5bf-4c6d-96c4-f43b89dfa213
-  ScriptInputsDefault:
-    {}
-  ScriptTypesDefault:
-    {}
-  ScriptInputs:
-    "":
-      {}
-  ScriptTypes:
-    "":
-      {}
 - !<SceneObject/be4e0307-dce6-4fb9-9883-8ed678f39659>
   PrefabRemaps:
     []
@@ -14157,7 +14189,7 @@
     - fb8b33b4-04fb-40e0-9a94-7ee152925884: b6ee1ef8-3cc1-418b-600c-dfa301b30539
     - fcbcf8ae-1008-49ec-8760-5a35de47f0a5: 2b456f0e-2845-480d-50cb-fd0ee2025928
   Name: Example Surface
-  Enabled: false
+  Enabled: true
   Layers: 1
   LocalTransform: !<TransformEntity>
     Position: {x: 0.000000, y: 0.000000, z: 0.000000}
