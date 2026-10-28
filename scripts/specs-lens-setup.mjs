@@ -13,6 +13,8 @@
 //                        wire,chattool,preview,leaf (default: all, in that order)
 //   --evidence <dir>     where logs and captures go (default docs/evidence/specs/lens/run-<timestamp>)
 //   --create             save the project Lens Studio has open into --project first
+//   --replace-packages   remove existing package copies (for example the 4.0.0
+//                        line) before installing the pinned versions
 //
 // Lens Studio must be running with its MCP server enabled (AI Assistant > AI
 // Model Context Protocol > Configure Server). The URL and bearer key come from
@@ -70,6 +72,7 @@ function parseArgs(argv) {
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === "--create") options.create = true;
+    else if (arg === "--replace-packages") options.replacePackages = true;
     else if (arg.startsWith("--")) options[arg.slice(2)] = argv[++i];
   }
   return options;
@@ -152,6 +155,23 @@ const handlers = {
   async packages() {
     const installed = [];
     const renamed = [];
+    if (options.replacePackages) {
+      // Remove the 4.0.0 line (and the Icons/Motion packages UIKit 4.0.0 pulled
+      // in) through the asset manager so Lens Studio drops their metadata too.
+      const names = [...PACKAGES.map((p) => p.assetName), "Icons", "Motion"];
+      const removed = await mcp.editor(
+        "const m = pluginSystem.findInterface(Editor.Model.IModel) as any; const am = m.project.assetManager;" +
+          "const out: string[] = [];" +
+          "for (const name of args.names) {" +
+          "  const file = 'Packages/' + name + '.lspkg';" +
+          "  const asset = am.assets.find((a: any) => { try { return String(a.fileMeta?.sourcePath) === file; } catch { return false; } });" +
+          "  if (asset) { am.remove(asset); out.push(name); }" +
+          "}" +
+          "return out;",
+        { names }
+      );
+      installed.push(`removed: ${removed.join(", ") || "none"}`);
+    }
     for (const pkg of PACKAGES) {
       const file = path.join(project, "Packages", `${pkg.assetName}.lspkg`);
       if (existsSync(file)) {
