@@ -45,6 +45,10 @@ function length(v: ViroSpecsVec3): number {
 /**
  * World poses for every node, composed through `parentId`. Nodes in a parent
  * cycle or under a missing parent get no pose; validation reports those.
+ *
+ * Children of a `scroll` group are placed as the Lens host shows them with
+ * the list at its top: their `y = 0` is the window's top edge, half the
+ * window height above the group origin.
  */
 export function specsWorldPoses(nodes: readonly ViroSpecsManifestNode[]): ReadonlyMap<string, WorldPose> {
   const byId = new Map<string, ViroSpecsManifestNode>();
@@ -64,7 +68,10 @@ export function specsWorldPoses(nodes: readonly ViroSpecsManifestNode[]): Readon
     }
     visiting.delete(node.id);
     if (!parent) return undefined;
-    const local = node.position ?? [0, 0, 0];
+    const authored = node.position ?? [0, 0, 0];
+    const parentNode = node.parentId !== undefined ? byId.get(node.parentId) : undefined;
+    const contentTop = parentNode?.kind === "group" && parentNode.scroll !== undefined ? parentNode.scroll.height / 2 : 0;
+    const local: ViroSpecsVec3 = [authored[0], authored[1] + contentTop, authored[2]];
     const rotated = rotateSpecsPoint(parent.rotation, [
       local[0] * parent.scale[0],
       local[1] * parent.scale[1],

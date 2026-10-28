@@ -310,6 +310,8 @@ function checkComponent(checker: Checker, node: JsonRecord, kind: string, path: 
   const expectedKind = VIRO_SPECS_COMPONENT_NODE_KIND[type];
   if (kind !== expectedKind) {
     checker.invalid(pointer(at, "type"), "a component for node kind " + kind + " (" + type + " needs " + expectedKind + ")", type, nodeId);
+  } else if (type === "scroll-view" && !("scroll" in node)) {
+    checker.report("VS1005", "Missing required field `scroll`: a scroll-view group needs its scroll window.", pointer(path, "scroll"), nodeId);
   }
   checker.string(component, "title", at, nodeId);
   checker.oneOf(component, "role", at, ["title", "body", "label"], nodeId);

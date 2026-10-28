@@ -28,7 +28,7 @@ scale, and nobody has looked at it on a Spectacles display.
 | Error, notice and permission actions were bare text with no button surface or hover | Moderate | Draw them as PanelButtons | Fixed: same seven-state visual and press-on-release rule |
 | "{n} models didn't load" is the title when the failures are images (Navigation's eight card thumbnails) | Moderate | Add `error.image` and `error.imageMany` keys to `copy.md`, or a neutral "{n} items didn't load" | Open: copy belongs to the UX lane; the code picks the key, so it is a one-line change once the copy exists |
 | The Placement scene's control panel is at 1.0 m below eye line while the loading panel opens at 1.5 m on the head ray; the wearer looks in two places on first launch | Minor | Open the loading panel where the scene panel will appear when the scene declares one | Open |
-| SpatialScrollView does not scroll in the current Lens host, so Navigation's cards 5-8 are unreachable there | Critical for Navigation | Implement the scroll-view panel with UI Kit ScrollWindow | Open, reported as `VS5025` per node so it is not silent |
+| SpatialScrollView does not scroll in the current Lens host, so Navigation's cards 5-8 are unreachable there | Critical for Navigation | Implement the scroll-view panel with UI Kit ScrollWindow | Fixed for hand input on feat/specs-integration-3: SpatialScrollView compiles to a scroll group and the host scrolls it with ScrollWindow. Gaze Scroll up/down buttons are still not drawn |
 
 ## Visual hierarchy
 

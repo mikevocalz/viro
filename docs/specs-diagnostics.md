@@ -890,4 +890,4 @@ Emitted by the experience layer in `@viro-external/specs` (`ViroSpecsExperienceH
 
 Fix: The scene carries the feature but this host version does not render it yet; the message names the node and the features. See doc/Experience.md#not-drawn-yet.
 
-Reported once per node for SpatialScrollView native scrolling, ModelViewer `autoRotate`, the Reset model button and the load ring, and PanelImage corner radius. The manifest still carries them, so a newer host draws them without recompiling.
+Reported once per node for ModelViewer `autoRotate`, the Reset model button and the load ring, and PanelImage corner radius. SpatialScrollView is drawn as a scroll group and is not reported. The manifest still carries them, so a newer host draws them without recompiling.

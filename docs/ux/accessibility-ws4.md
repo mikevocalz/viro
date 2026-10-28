@@ -29,7 +29,7 @@ Issues found: 6. Critical: 1 (open). Major: 3 (2 fixed, 1 open). Minor: 2 (open)
 | A9 | No transition over 500 ms, no large-surface motion | Met | `VS3019`, `VS3020`, `VS3021`; token durations tested under the cap |
 | A10 | Hover visible before a pinch commits | Met in code | PanelButton hover state; gaze dwell disc (fixed in 0672ba8) |
 | A11 | Commit on release inside, cancel outside | Met | `ViroSpecsButtonTracker` tests |
-| A12 | Every function reachable by gaze | **Not met for Navigation** | Scroll buttons are in the view model, but SpatialScrollView does not scroll in the Lens host yet (`VS5025`) |
+| A12 | Every function reachable by gaze | **Not met for Navigation** | The list scrolls by hand (ScrollWindow), and the host has `scrollByRows`, but the gaze Scroll up/down buttons are not drawn yet |
 | A13 | Interactable angular size large enough | Open | No sourced value; buttons are at least 3.2 degrees tall at 1.5 m today |
 | A14 | No time limit; look-away only cancels placement | Met | Placement tests |
 | A15 | Focus order title, message, actions | Met in layout | Gallery layouts follow handoff order; no screen reader exists to confirm |
@@ -51,7 +51,7 @@ Issues found: 6. Critical: 1 (open). Major: 3 (2 fixed, 1 open). Minor: 2 (open)
 
 | # | Issue | WCAG | Severity | Recommendation |
 | --- | --- | --- | --- | --- |
-| 3 | Navigation's list does not scroll in the current Lens host; cards 5-8 unreachable by hand or gaze | 2.1.1 by analogy | Critical | Implement scroll-view panels (ScrollWindow), then wire the gaze Scroll buttons to `stepViroSpecsScroll` |
+| 3 | Navigation's list does not scroll in the current Lens host; cards 5-8 unreachable by hand or gaze | 2.1.1 by analogy | Critical | Hand scrolling fixed (scroll group + ScrollWindow). Still open: draw the gaze Scroll buttons and call `scrollByRows` |
 | 4 | Gaze-only selection showed no progress | 2.4.7, 3.2.1 | Major | Fixed: dwell disc grows over the 1000 ms dwell |
 | 5 | Panel actions had no hover state or surface | 2.4.7 | Major | Fixed: drawn as PanelButtons |
 
@@ -102,7 +102,7 @@ but any darkening of `color.border` fails it; the token sheet should say so.
 | Panel action (Retry, Close, Got it) | Same | Same | Same |
 | Model drag | Drag, clamped to 0.6-3.0 m | Move left/right/closer/away, 10 cm steps, clamped | Release |
 | Placement | Pinch on a valid surface | "Place here" by dwell | Look away 1.5 s |
-| List scroll | Not available in the Lens host yet | Scroll up/down buttons in the view model, not wired yet | n/a |
+| List scroll | Pinch-drag the list; it settles on whole rows | Scroll up/down buttons in the view model, not drawn yet | n/a |
 
 ## Announced names
 
@@ -116,8 +116,8 @@ but any darkening of `color.border` fails it; the token sheet should say so.
 
 ## Priority fixes
 
-1. **SpatialScrollView scrolling in the Lens host.** Blocks hand and gaze
-   wearers from half of Navigation.
+1. **Gaze Scroll up/down buttons in the Lens adapter.** Hand scrolling
+   works; gaze-only wearers still cannot reach Navigation cards 5-8.
 2. **On-device contrast and legibility**, bright and dark room, including the
    high-contrast black surface on the additive display.
 3. **Image-specific error copy.**

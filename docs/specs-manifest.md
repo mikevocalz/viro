@@ -75,11 +75,11 @@ Every node has `id` and `kind`, plus these optional fields:
 
 | `kind` | Viro source | Required | Optional |
 | --- | --- | --- | --- |
-| `group` | `ViroNode` | | `scroll` (from `specsScroll`: `width`, `height` in (0, 10] m, `contentHeight` ≥ 0). Scene protocol 1 does not carry it (`VS1015`). |
+| `group` | `ViroNode`, `SpatialScrollView` | | `scroll` (from `specsScroll`, or from SpatialScrollView's `width`, `height` and its children: `width`, `height` in (0, 10] m, `contentHeight` ≥ 0). Content `y = 0` is the window's top edge. Scene protocol 1 does not carry it (`VS1015`). |
 | `text` | `ViroText` | `text` | `style`, `extents` (from `width`/`height`), `maxLines` |
 | `image` | `ViroImage` | `source` | `extents` |
 | `model` | `Viro3DObject` | `source` | `format`: `glb`, `gltf`, `obj`, `fbx` |
-| `panel` | `SpatialPanel`, `PanelButton`, `SpatialScrollView` | `extents` | |
+| `panel` | `SpatialPanel`, `PanelButton` | `extents` | |
 | `video` | none | `source` | `extents`, `loop`, `muted` |
 | `sound` | none | `source` | `loop`, `volume` |
 
@@ -107,7 +107,7 @@ theme tokens. `component.type` must match the node kind (`VS1004`).
 | `PanelText` | `text` | `{ type: "panel-text", role: "title" \| "body" \| "label", tone: "default" \| "muted" }` |
 | `PanelButton` | `panel` | `{ type: "panel-button", state: "idle" \| "selected" \| "disabled" \| "loading" \| "error", errorMessage? }` |
 | `PanelImage` | `image` | `{ type: "panel-image" }` |
-| `SpatialScrollView` | `panel` | `{ type: "scroll-view", itemHeightMeters, initialIndex }` |
+| `SpatialScrollView` | `group`, which must have `scroll` (`VS1005`) | `{ type: "scroll-view", itemHeightMeters, initialIndex }` |
 | `ModelViewer` | `model` | `{ type: "model-viewer", autoRotate, resettable }` |
 
 `hover` and `pressed` are not authored states; the host adds them from

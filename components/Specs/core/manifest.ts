@@ -130,9 +130,13 @@ export interface ViroSpecsPanelImageSpec {
 }
 
 /**
- * SpatialScrollView: a `panel` node whose extents are the viewport. Children
- * scroll inside it and are clipped at its edges; the host keeps the scroll
- * position for the node ID across updates and navigation.
+ * SpatialScrollView: a `group` node with a `scroll` window, the same path as
+ * a ViroNode with `specsScroll`. The compiler sets `scroll.contentHeight`
+ * from the children and moves them so the authored layout (viewport center
+ * at the node origin) is what shows when the list is at its top. The host
+ * scrolls in steps of `itemHeightMeters`, starts at `initialIndex`, and keeps
+ * the position per node ID across patches and, per route, across back
+ * navigation.
  */
 export interface ViroSpecsScrollViewSpec {
   readonly type: "scroll-view";
@@ -172,7 +176,7 @@ export const VIRO_SPECS_COMPONENT_NODE_KIND = {
   "panel-text": "text",
   "panel-button": "panel",
   "panel-image": "image",
-  "scroll-view": "panel",
+  "scroll-view": "group",
   "model-viewer": "model",
 } as const satisfies Record<ViroSpecsComponentType, string>;
 

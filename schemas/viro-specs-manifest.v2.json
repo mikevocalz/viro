@@ -263,7 +263,15 @@
               "type": "string",
               "minLength": 1,
               "description": "Accessible name. Required on interactable nodes (VS3016)."
+            },
+            "component": {
+              "$ref": "#/$defs/componentScrollView"
             }
+          },
+          "dependentRequired": {
+            "component": [
+              "scroll"
+            ]
           }
         },
         {
@@ -511,9 +519,6 @@
                 },
                 {
                   "$ref": "#/$defs/componentPanelButton"
-                },
-                {
-                  "$ref": "#/$defs/componentScrollView"
                 }
               ]
             }
@@ -1698,7 +1703,7 @@
     "componentScrollView": {
       "type": "object",
       "additionalProperties": false,
-      "description": "SpatialScrollView on a panel node.",
+      "description": "SpatialScrollView on a group node with a scroll window.",
       "required": [
         "type",
         "itemHeightMeters",

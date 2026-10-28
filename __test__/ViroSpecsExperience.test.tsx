@@ -3,7 +3,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import Ajv2020 from "ajv/dist/2020";
 import { VIRO_SPECS_COPY, formatSpecsCopy } from "../components/Specs/core/copy";
-import { checkSpecsExperience, VIRO_SPECS_TEXT_EM_METERS_PER_POINT } from "../components/Specs/core/experience";
+import { checkSpecsExperience, specsWorldPoses, VIRO_SPECS_TEXT_EM_METERS_PER_POINT } from "../components/Specs/core/experience";
 import type { ViroSpecsManifestNode, ViroSpecsManifestV2 } from "../components/Specs/core/manifest";
 import {
   resolveSpecsTokens,
@@ -265,11 +265,12 @@ describe("premium components", () => {
       ["p", "panel", "spatial-panel"],
       ["b", "panel", "panel-button"],
       ["i", "image", "panel-image"],
-      ["s", "panel", "scroll-view"],
+      ["s", "group", "scroll-view"],
       ["m", "model", "model-viewer"],
     ]);
     expect(m.nodes[1].component).toEqual({ type: "panel-button", state: "selected" });
     expect(m.nodes[3].component).toEqual({ type: "scroll-view", itemHeightMeters: 0.1, initialIndex: 2 });
+    expect(m.nodes[3].kind === "group" ? m.nodes[3].scroll : undefined).toEqual({ width: 0.4, height: 0.3, contentHeight: 0.3 });
     expect(m.nodes[4].component).toEqual({ type: "model-viewer", autoRotate: true, resettable: true });
     expect(m.interactions.map((i) => [i.nodeId, i.events])).toEqual([["b", ["select"]], ["m", ["drag"]]]);
     expect(m.theme).toEqual(VIRO_SPECS_DEFAULT_THEME);
@@ -287,6 +288,61 @@ describe("premium components", () => {
     expect((missing.manifest as ViroSpecsManifestV2).nodes.map((n) => n.id)).toEqual(["t"]);
     const badState = compile(scene('<PanelButton viroTag="b" label="Go" state="hovered" position={[0, 0, -1.5]} />'));
     expect(badState.diagnostics.map((d) => [d.code, d.message.includes("one of idle, selected, disabled, loading, error")])).toEqual([["VS3022", true]]);
+  });
+
+  describe("SpatialScrollView", () => {
+    // Eight rows of 0.1 m from the viewport top; the viewport shows three.
+    const rows = Array.from({ length: 8 }, (_, i) =>
+      '<PanelButton viroTag="r' + i + '" label="Row ' + (i + 1) + '" position={[0, ' + (0.1 - i * 0.1).toFixed(2) + ', 0]} width={0.3} height={0.08} onPress={() => {}} />'
+    ).join("");
+    const list = (props: string) =>
+      compile(scene('<SpatialPanel viroTag="p" position={[0, 0, -1.5]} width={0.53} height={0.5}><SpatialScrollView viroTag="s" ' + props + ">" + rows + "</SpatialScrollView></SpatialPanel>"));
+
+    it("compiles to a scroll group sized from its children, in whole rows", () => {
+      const result = list("width={0.4} height={0.3} itemHeight={0.1} initialIndex={2}");
+      expect(result.diagnostics).toEqual([]);
+      const m = result.manifest as ViroSpecsManifestV2;
+      const view = m.nodes.find((n) => n.id === "s");
+      // Lowest row bottom: 0.1 - 0.7 - 0.04 = -0.64; from the top (0.15) that is
+      // 0.79 m, so five rows past the 0.3 m viewport: 0.8 m.
+      expect(view).toEqual({
+        id: "s",
+        kind: "group",
+        parentId: "p",
+        scroll: { width: 0.4, height: 0.3, contentHeight: 0.8 },
+        component: { type: "scroll-view", itemHeightMeters: 0.1, initialIndex: 2 },
+      });
+      expect(schemaValidate(m) ? [] : schemaValidate.errors).toEqual([]);
+    });
+
+    it("moves direct children half a viewport down so the host shows them where they were authored", () => {
+      const m = list("width={0.4} height={0.3} itemHeight={0.1}").manifest as ViroSpecsManifestV2;
+      const y = (id: string) => m.nodes.find((n) => n.id === id)?.position?.[1];
+      expect([y("r0"), y("r1"), y("r7")]).toEqual([-0.05, -0.15, -0.75]);
+      // The comfort checks place them back at their authored world height.
+      const poses = specsWorldPoses(m.nodes);
+      expect(poses.get("r0")?.position[1]).toBeCloseTo(0.1, 9);
+      expect(poses.get("r7")?.position[1]).toBeCloseTo(-0.6, 9);
+      expect(codes(m)).toEqual([]);
+    });
+
+    it("needs no extra rows when the children fit the viewport", () => {
+      const result = compile(scene(
+        '<SpatialScrollView viroTag="s" position={[0, 0, -1.5]} width={0.4} height={0.3} itemHeight={0.1}>' +
+          '<PanelButton viroTag="a" label="A" position={[0, 0.1, 0]} width={0.3} height={0.08} onPress={() => {}} />' +
+        "</SpatialScrollView>"
+      ));
+      const view = (result.manifest as ViroSpecsManifestV2).nodes[0];
+      expect(view.kind === "group" ? view.scroll : undefined).toEqual({ width: 0.4, height: 0.3, contentHeight: 0.3 });
+    });
+
+    it("is rejected on a panel and without a scroll window, by validation and the schema", () => {
+      const panel = manifest({ nodes: [{ id: "s", kind: "panel", extents: { width: 0.4, height: 0.3 }, component: { type: "scroll-view", itemHeightMeters: 0.1, initialIndex: 0 } }] });
+      const bare = manifest({ nodes: [{ id: "s", kind: "group", component: { type: "scroll-view", itemHeightMeters: 0.1, initialIndex: 0 } }] });
+      expect(validateSpecsManifestV2(panel).diagnostics.map((d) => d.code + "@" + d.fieldPath)).toContain("VS1004@/nodes/0/component/type");
+      expect(validateSpecsManifestV2(bare).diagnostics.map((d) => d.code + "@" + d.fieldPath)).toEqual(["VS1005@/nodes/0/scroll"]);
+      expect([schemaValidate(panel), schemaValidate(bare)]).toEqual([false, false]);
+    });
   });
 
   it("reports VS3022 for a SpatialScrollView without its viewport", () => {

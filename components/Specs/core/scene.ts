@@ -343,6 +343,8 @@ export class ViroSpecsSceneBuilder {
   private readonly locations = new Map<string, ViroSpecsDiagnosticDetails[]>();
   private scene: ViroSpecsSceneInput = {};
   private usesPremium = false;
+  /** SpatialScrollView node IDs and viewports, laid out in finish(). */
+  private readonly scrollViews = new Map<string, { readonly width: number; readonly height: number }>();
 
   constructor(options: ViroSpecsSceneBuilderOptions) {
     this.options = options;
@@ -803,10 +805,12 @@ export class ViroSpecsSceneBuilder {
           if (typeof value === "number" && Number.isInteger(value) && value >= 0) initialIndex = value;
           else invalid("initialIndex", "an integer >= 0");
         }
+        // contentHeight is a placeholder until finish() has seen the children.
+        this.scrollViews.set(id, { width, height });
         return {
           ...base,
-          kind: "panel",
-          extents: { width, height },
+          kind: "group",
+          scroll: { width, height, contentHeight: height },
           component: { type: "scroll-view", itemHeightMeters: itemHeight, initialIndex },
         };
       }
@@ -1060,12 +1064,47 @@ export class ViroSpecsSceneBuilder {
   }
 
   /**
+   * Lays out each SpatialScrollView as a scroll group. Authors place rows
+   * around the viewport center at the node origin, which is also how ViroCore
+   * shows them. The Lens host puts `y = 0` of a scroll group's content at the
+   * window's top edge, so each direct child moves down by half the viewport
+   * and shows where it was authored while the list is at its top.
+   *
+   * `contentHeight` runs from the viewport top to the lowest child's bottom
+   * edge (its extents height, or one row for a child without extents), then
+   * up to a whole number of rows past the viewport so every scroll step lands
+   * on a row.
+   */
+  private layoutScrollViews(): void {
+    for (const [id, viewport] of this.scrollViews) {
+      const index = this.nodes.findIndex((node) => node.id === id);
+      const view = this.nodes[index];
+      if (view === undefined || view.kind !== "group" || view.component?.type !== "scroll-view") continue;
+      const row = view.component.itemHeightMeters;
+      const half = viewport.height / 2;
+      let bottom = half;
+      this.nodes.forEach((node, at) => {
+        if (node.parentId !== id) return;
+        const y = node.position?.[1] ?? 0;
+        const height = ("extents" in node && node.extents !== undefined ? node.extents.height : row) * Math.abs(node.scale?.[1] ?? 1);
+        bottom = Math.min(bottom, y - height / 2);
+        const position = node.position ?? [0, 0, 0];
+        this.nodes[at] = { ...node, position: [position[0], roundMeters(y - half), position[2]] };
+      });
+      const overflow = half - bottom - viewport.height;
+      const rows = overflow > 1e-9 ? Math.ceil(overflow / row - 1e-9) : 0;
+      this.nodes[index] = { ...view, scroll: { ...viewport, contentHeight: roundMeters(viewport.height + rows * row) } };
+    }
+  }
+
+  /**
    * Assembles the manifest, validates it, and converts it to a scene protocol 2
    * document and a scene protocol 1 snapshot.
    * Validation findings about an element get that element's location;
    * a duplicate ID points at the second element and names the first.
    */
   finish(): ViroSpecsBuiltScene {
+    this.layoutScrollViews();
     const theme = this.options.theme ?? (this.usesPremium ? VIRO_SPECS_DEFAULT_THEME : undefined);
     const manifest: ViroSpecsManifestV2 = {
       $schema: VIRO_SPECS_MANIFEST_SCHEMA_ID,
@@ -1120,4 +1159,9 @@ export class ViroSpecsSceneBuilder {
       plans: this.plans,
     };
   }
+}
+
+/** Rounds to a micrometer so layout arithmetic does not leak float noise into manifests. */
+function roundMeters(value: number): number {
+  return Math.round(value * 1e6) / 1e6;
 }

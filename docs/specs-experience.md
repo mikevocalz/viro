@@ -105,7 +105,7 @@ visuals from `theme.tokens`.
 | `PanelText` | `text`, `role?` (`title`/`body`/`label`), `tone?` (`default`/`muted`), `maxLines?`, `width?`, `height?`, `animation?` | `fontSize` is computed from the role's angle at the node's distance, rounded up to 0.1 pt, so it never triggers `VS3018`. `maxLines` defaults to 4 for body, 2 otherwise. |
 | `PanelButton` | `label` (required, `VS3022`), `state?`, `errorMessage?`, `onPress?`, `onHover?`, `width?`, `height?`, children | Seven visual states: the app sets idle, selected, disabled, loading and error; the host adds hover and pressed. Press commits on release inside the target; release outside cancels. Default size fits the label at `type.label` plus `space.sm` and `space.md` padding; the host re-measures. |
 | `PanelImage` | `source`, `width?`, `height?`, `label?` | Missing asset: `color.placeholder` box at these extents, `VS5003`, accessible name `{label}, didn't load`. |
-| `SpatialScrollView` | `width`, `height`, `itemHeight` (all m, required, `VS3022`), `initialIndex?` | The host scrolls natively, clips at the viewport edge and keeps the position for the `viroTag` across updates and navigation. On ViroCore it renders children without scrolling. |
+| `SpatialScrollView` | `width`, `height`, `itemHeight` (all m, required, `VS3022`), `initialIndex?` | Compiles to a `group` with `scroll`, the path a ViroNode with `specsScroll` takes. Place children around the viewport center at the node origin; the compiler moves them into the scroll content and sizes `contentHeight` to whole rows. The host scrolls with UI Kit ScrollWindow, clips at the viewport edge, settles drags on `itemHeight` rows, starts `initialIndex` rows down and keeps the position for the `viroTag` across updates and, per route, across navigation. On ViroCore it renders children without scrolling. |
 | `ModelViewer` | `source`, `type` (`GLB`/`GLTF`/`OBJ`), `autoRotate?`, `resettable?`, `onClick?`, `onHover?`, `onDrag?`, `label?` | Load shows a progress ring at the bounds; error shows the placeholder and `error.asset`; drag is held inside the comfort band; Reset returns the authored transform in `motion.base`. `autoRotate` is off under reduced motion. |
 
 All share `viroTag`, `position`, `rotation`, `scale`, `visible`, `opacity`
@@ -150,7 +150,9 @@ retrying goes through the typed actions contract (WS3b), not through new JSX.
 | A missing PanelButton label or SpatialScrollView viewport drops the element | `VS3022` |
 | Scene protocol 1 drops `label`, `component` and `theme` | `VS1015` |
 | PanelText or PanelImage with only one of `width`/`height` drops the extents | `VS3022` |
-| The current Lens host does not draw SpatialScrollView native scrolling, the ModelViewer Reset button, load ring and `autoRotate`, or PanelImage corner radius | `VS5025` |
+| The current Lens host does not draw the ModelViewer Reset button, load ring and `autoRotate`, or PanelImage corner radius | `VS5025` |
+| SpatialScrollView content height counts direct children only; a child without extents counts as one row | none |
+| The gaze-only Scroll up/down buttons are in the view model and `scrollByRows` exists on the host, but the Lens adapter does not draw the buttons yet | none |
 
 ViroCore rendering (outside Specs, where no Specs diagnostic runs): the premium
 components use plain Viro primitives, `SpatialScrollView` does not scroll, and
