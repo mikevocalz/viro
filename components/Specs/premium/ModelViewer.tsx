@@ -20,7 +20,7 @@ export interface ModelViewerProps extends PremiumBaseProps {
 
 /**
  * A model with load, error, manipulate, animate and reset states. Loading
- * shows a progress ring at the model's bounds; a missing model shows a
+ * shows a progress ring at the model's origin; a missing model shows a
  * placeholder box with the `error.asset` copy and a Retry action.
  */
 export function ModelViewer({ source, type, autoRotate: _autoRotate, resettable: _resettable, onClick, onHover, onDrag, label, viroTag, ...transform }: ModelViewerProps): React.ReactElement {
