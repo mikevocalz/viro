@@ -52,12 +52,12 @@ export function SpecsPlatformLab({
 }: SpecsPlatformLabProps) {
   return (
     <ViroSpecsScene transport={transport} sourceResolver={sourceResolver}>
-      <SpatialPanel viroTag="platform-lab-root" position={[0, 0, -1.5]} width={0.53} height={0.42}>
+      <SpatialPanel viroTag="platform-lab-root" position={[0, 0, -1.5]} width={0.53} height={0.5}>
         <PanelText
           viroTag="platform-lab-title"
           role="title"
           text={VIRO_SPECS_COPY["gallery.hello.title"]}
-          position={[0, 0.15, 0.005]}
+          position={[0, 0.2, 0.005]}
           animation={{ name: "platformLabPulse", run: true }}
         />
         <PanelText
@@ -65,17 +65,17 @@ export function SpecsPlatformLab({
           role="body"
           tone="muted"
           text={VIRO_SPECS_COPY["gallery.hello.body"]}
-          position={[0, 0.07, 0.005]}
+          position={[0, 0.09, 0.005]}
           width={0.46}
-          height={0.1}
-          maxLines={2}
+          height={0.15}
+          maxLines={3}
         />
         <ModelViewer
           viroTag="platform-lab-model"
           label={VIRO_SPECS_COPY["gallery.hello.model"]}
           source={require("../visionos-sweep/assets/shiba.glb")}
           type="GLB"
-          position={[-0.2, -0.05, 0.005]}
+          position={[-0.2, -0.08, 0.005]}
           scale={[0.18, 0.18, 0.18]}
           onClick={() => onSelect?.()}
           onDrag={(position) => onDrag?.(position)}
@@ -92,7 +92,7 @@ export function SpecsPlatformLab({
         <PanelButton
           viroTag="hello-next"
           label={VIRO_SPECS_COPY["nav.next"]}
-          position={[0.15, -0.16, 0.005]}
+          position={[0.13, -0.19, 0.005]}
           onPress={() => onNext?.()}
         />
       </SpatialPanel>

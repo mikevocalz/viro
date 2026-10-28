@@ -65,9 +65,9 @@ export function NavigationScene({ transport, sourceResolver, onOpenCard, onBack,
                 <PanelImage
                   viroTag={card.tag + "-image"}
                   source={require("../visionos-sweep/assets/button.png")}
-                  position={[-0.06, 0, 0.003]}
-                  width={0.07}
-                  height={0.05}
+                  position={[-0.085, 0, 0.003]}
+                  width={0.04}
+                  height={0.04}
                 />
               </PanelButton>
             ))}
@@ -75,28 +75,28 @@ export function NavigationScene({ transport, sourceResolver, onOpenCard, onBack,
           <PanelButton viroTag="nav-next" label={VIRO_SPECS_COPY["nav.next"]} position={[0.14, -0.2, 0.005]} onPress={() => onNext?.()} />
         </ViroNode>
         <ViroNode viroTag="nav-detail" visible={false}>
-          <PanelButton viroTag="nav-back" label={VIRO_SPECS_COPY["nav.back"]} position={[-0.19, 0.2, 0.005]} onPress={() => onBack?.()} />
-          <PanelText viroTag="nav-detail-title" role="title" text="Card 1" position={[0.04, 0.2, 0.005]} />
+          <PanelButton viroTag="nav-back" label={VIRO_SPECS_COPY["nav.back"]} position={[-0.17, 0.2, 0.005]} width={0.14} onPress={() => onBack?.()} />
+          <PanelText viroTag="nav-detail-title" role="title" text="Card 1" position={[0.06, 0.2, 0.005]} />
           <PanelImage
             viroTag="nav-detail-image"
             source={require("../visionos-sweep/assets/button.png")}
-            position={[0, 0.08, 0.005]}
-            width={0.2}
-            height={0.12}
+            position={[0, 0.115, 0.005]}
+            width={0.16}
+            height={0.09}
           />
           <PanelText
             viroTag="nav-detail-body"
             role="body"
             text={VIRO_SPECS_COPY["gallery.navigation.cardBody"]}
-            position={[0, -0.05, 0.005]}
+            position={[0, -0.03, 0.005]}
             width={0.46}
-            height={0.1}
+            height={0.2}
           />
           <PanelButton
             viroTag="nav-setting-labels"
             label={VIRO_SPECS_COPY["gallery.navigation.showLabels"]}
             state="selected"
-            position={[0, -0.17, 0.005]}
+            position={[0, -0.19, 0.005]}
             onPress={() => onToggleLabels?.()}
           />
         </ViroNode>

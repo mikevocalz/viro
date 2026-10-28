@@ -112,3 +112,94 @@ describe("Platform Lab gallery", () => {
     expect([...states].sort()).toEqual(["disabled", "error", "idle", "selected"]);
   });
 });
+
+/**
+ * Layout check on the compiled documents. Button and image boxes are exact
+ * (compiled extents); text width is estimated at 0.55 em per character, the
+ * same estimate PanelButton sizing uses, so it is a guard, not a measurement.
+ */
+describe.each(SCENES)("gallery layout $name", ({ name, file }) => {
+  const entry = path.join(repo, "examples", "specs-platform-lab", file);
+  const manifest = () => compileSpecsEntry(fs.readFileSync(entry, "utf8"), entry, { cwd: repo }).manifest as ViroSpecsManifestV2;
+  type Box = { id: string; left: number; right: number; bottom: number; top: number; hidden: boolean; scrolled: boolean };
+  const EM_PER_POINT = 0.01 / 43.886;
+  const PAD = 0.0314; // space.md at 1.5 m
+
+  function layout() {
+    const m = manifest();
+    const byId = new Map(m.nodes.map((n) => [n.id, n]));
+    const chain = (id: string) => {
+      const out = [];
+      for (let n = byId.get(id); n; n = n.parentId !== undefined ? byId.get(n.parentId) : undefined) out.push(n);
+      return out;
+    };
+    const at = (id: string): [number, number] => {
+      let x = 0;
+      let y = 0;
+      for (const n of chain(id)) {
+        expect([n.id, n.rotation]).toEqual([n.id, undefined]);
+        x += n.position?.[0] ?? 0;
+        y += n.position?.[1] ?? 0;
+      }
+      return [x, y];
+    };
+    const boxes: Box[] = [];
+    for (const n of m.nodes) {
+      const ancestors = chain(n.id).slice(1);
+      const hidden = chain(n.id).some((a) => a.visible === false);
+      const scrolled = ancestors.some((a) => a.component?.type === "scroll-view");
+      const [x, y] = at(n.id);
+      if ((n.kind === "panel" && n.component?.type === "panel-button") || (n.kind === "image" && n.extents)) {
+        const e = n.kind === "panel" ? n.extents : n.extents!;
+        boxes.push({ id: n.id, left: x - e.width / 2, right: x + e.width / 2, bottom: y - e.height / 2, top: y + e.height / 2, hidden, scrolled });
+      }
+    }
+    return { m, byId, boxes, at, chain };
+  }
+
+  it("keeps buttons and images inside their panel, except rows clipped by a scroll view", () => {
+    const { m, boxes, at } = layout();
+    const panel = m.nodes.find((n) => n.component?.type === "spatial-panel");
+    if (!panel || panel.kind !== "panel") throw new Error("no SpatialPanel in " + name);
+    const [px, py] = at(panel.id);
+    const outside = boxes
+      .filter((b) => !b.scrolled)
+      .filter((b) => b.left < px - panel.extents.width / 2 || b.right > px + panel.extents.width / 2 || b.bottom < py - panel.extents.height / 2 || b.top > py + panel.extents.height / 2)
+      .map((b) => b.id);
+    expect(outside).toEqual([]);
+  });
+
+  it("never overlaps two buttons or images that show at the same time", () => {
+    const { boxes, byId } = layout();
+    const overlaps: string[] = [];
+    for (let i = 0; i < boxes.length; i++) {
+      for (let j = i + 1; j < boxes.length; j++) {
+        const a = boxes[i];
+        const b = boxes[j];
+        if (a.hidden !== b.hidden || a.scrolled !== b.scrolled) continue;
+        if (byId.get(b.id)?.parentId === a.id || byId.get(a.id)?.parentId === b.id) continue;
+        if (a.left < b.right && b.left < a.right && a.bottom < b.top && b.bottom < a.top) overlaps.push(a.id + " / " + b.id);
+      }
+    }
+    expect(overlaps).toEqual([]);
+  });
+
+  it("gives every PanelText room for its copy at the estimated width", () => {
+    const { m, byId } = layout();
+    const panel = m.nodes.find((n) => n.component?.type === "spatial-panel");
+    const inner = panel && panel.kind === "panel" ? panel.extents.width - 2 * PAD : 0;
+    const tooLong: string[] = [];
+    for (const n of m.nodes) {
+      if (n.kind !== "text" || n.component?.type !== "panel-text") continue;
+      const em = (n.style?.fontSize ?? 0) * EM_PER_POINT;
+      const width = n.text.length * 0.55 * em;
+      const boxWidth = n.extents?.width ?? inner;
+      const lines = Math.ceil(width / boxWidth);
+      const maxLines = n.maxLines ?? 1;
+      const fitsHeight = n.extents === undefined || lines * 1.3 * em <= n.extents.height + 1e-9;
+      if (lines > maxLines || !fitsHeight || boxWidth > inner + 1e-9) tooLong.push(n.id + " needs " + lines + " lines");
+      expect(byId.has(n.id)).toBe(true);
+    }
+    expect(tooLong).toEqual([]);
+  });
+});
