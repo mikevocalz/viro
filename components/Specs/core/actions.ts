@@ -258,3 +258,66 @@ export function specsTrigger<T extends ViroSpecsActionSpec, K extends keyof T & 
   const values = payload as Readonly<Record<string, ViroSpecsActionValue>>;
   return Object.keys(values).length > 0 ? { on, actionId, payload: values } : { on, actionId };
 }
+
+// ---------------------------------------------------------------------------
+// Compiler support
+
+/** Result of {@linkcode readSpecsActionProp}. */
+export interface ViroSpecsActionPropRead {
+  /** Triggers that are valid JSON, with `on` defaulted to `select`. */
+  readonly triggers: readonly ViroSpecsActionTrigger[];
+  /** One message per entry that is not a JSON trigger (`VS3014`). */
+  readonly invalid: readonly string[];
+}
+
+const TRIGGER_EVENTS: readonly string[] = ["select", "hover-enter", "hover-exit"];
+
+/**
+ * Reads a `specsAction` prop value: one trigger or an array of them. Both
+ * compilers use it, so they accept and reject the same values.
+ */
+export function readSpecsActionProp(value: unknown): ViroSpecsActionPropRead {
+  const entries = Array.isArray(value) ? value : [value];
+  const triggers: ViroSpecsActionTrigger[] = [];
+  const invalid: string[] = [];
+  entries.forEach((entry: unknown, index: number) => {
+    const label = Array.isArray(value) ? "specsAction[" + index + "]" : "specsAction";
+    if (!isRecord(entry)) {
+      invalid.push(label + " is " + (typeof entry === "function" ? "a function" : "not an object") + ".");
+      return;
+    }
+    const extra = Object.keys(entry).filter((key) => key !== "actionId" && key !== "on" && key !== "payload");
+    if (extra.length > 0) {
+      invalid.push(label + " has unknown field " + extra.map((k) => "`" + k + "`").join(", ") + ".");
+      return;
+    }
+    if (typeof entry.actionId !== "string" || entry.actionId.length === 0) {
+      invalid.push(label + ".actionId is not a string.");
+      return;
+    }
+    const on = entry.on === undefined ? "select" : entry.on;
+    if (typeof on !== "string" || !TRIGGER_EVENTS.includes(on)) {
+      invalid.push(label + ".on must be select, hover-enter or hover-exit.");
+      return;
+    }
+    if (entry.payload !== undefined && !isSpecsActionPayload(entry.payload)) {
+      invalid.push(label + ".payload must be a flat object of strings, finite numbers and booleans; functions and nested objects cannot reach the Lens.");
+      return;
+    }
+    const payload = entry.payload as ViroSpecsActionPayload | undefined;
+    triggers.push({
+      on: on as ViroSpecsActionTriggerEvent,
+      actionId: entry.actionId,
+      ...(payload !== undefined && Object.keys(payload).length > 0 ? { payload: { ...payload } } : {}),
+    });
+  });
+  return { triggers, invalid };
+}
+
+/** Interaction events a set of triggers needs, in manifest order. */
+export function specsTriggerEvents(triggers: readonly ViroSpecsActionTrigger[]): ("hover" | "select")[] {
+  const events: ("hover" | "select")[] = [];
+  if (triggers.some((t) => t.on !== "select")) events.push("hover");
+  if (triggers.some((t) => t.on === "select")) events.push("select");
+  return events;
+}

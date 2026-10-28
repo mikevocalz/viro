@@ -133,6 +133,7 @@ const COMMON_PROPS = [
   "onClick",
   "onClickState",
   "onDrag",
+  "specsAction",
 ];
 
 const LIGHT_PROPS = ["viroTag", "key", "ref", "color", "intensity"];

@@ -770,6 +770,40 @@ export type {
 } from "./components/Specs/ViroSpecsAR";
 export type { ViroSpecsAnimationPlan } from "./components/Specs/ViroSpecsCompiler";
 
+// Specs typed actions and state
+export {
+  VIRO_SPECS_ACTION_ID_PATTERN,
+  checkSpecsActionPayload,
+  defineSpecsActions,
+  specsTrigger,
+} from "./components/Specs/core/actions";
+export type {
+  ViroSpecsActionDeclaration,
+  ViroSpecsActionField,
+  ViroSpecsActionFieldType,
+  ViroSpecsActionPayload,
+  ViroSpecsActionPayloads,
+  ViroSpecsActionSet,
+  ViroSpecsActionSpec,
+  ViroSpecsActionTrigger,
+  ViroSpecsActionTriggerEvent,
+  ViroSpecsActionValue,
+} from "./components/Specs/core/actions";
+export {
+  bindSpecsActionsToStore,
+  createSpecsActionDispatcher,
+  resolveSpecsTriggers,
+} from "./components/Specs/ViroSpecsActions";
+export type {
+  ViroSpecsActionDispatcher,
+  ViroSpecsActionDispatcherOptions,
+  ViroSpecsActionEvent,
+  ViroSpecsActionHandlers,
+  ViroSpecsActionReducers,
+  ViroSpecsStateStore,
+} from "./components/Specs/ViroSpecsActions";
+export type { ViroSpecsCompileOptions } from "./components/Specs/ViroSpecsCompiler";
+
 // Specs manifest v2 and diagnostics
 export {
   VIRO_SPECS_DIAGNOSTICS,

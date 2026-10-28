@@ -362,5 +362,57 @@ assert.equal(run(["--entry", lab]).status, 1, "missing --out is a usage error");
 assert.equal(run(["--entry", lab, "--manifest", v1, "--out", labOut]).status, 1, "--entry and --manifest are exclusive");
 checks += 1;
 
+// Typed actions: static declarations, triggers and route reach the manifest;
+// a closure or nested payload is VS3014 and nothing is emitted for it.
+{
+  const actionSource = `
+    const ACTIONS = [
+      { id: "exhibit.open", payload: { exhibitId: { type: "string" } } },
+      { id: "nav.back" },
+    ];
+    export function Scene() {
+      return (
+        <ViroSpecsScene route="list" actions={ACTIONS}>
+          <ViroText viroTag="card-orrery" text="Orrery" specsAction={{ actionId: "exhibit.open", payload: { exhibitId: "orrery" } }} />
+          <ViroText viroTag="hint" text="Back" onClick={() => {}} specsAction={[{ actionId: "nav.back", on: "hover-enter" }]} />
+        </ViroSpecsScene>
+      );
+    }`;
+  const compiled = compile(actionSource, "/tmp/actions.tsx");
+  assertCoded(compiled, "actions");
+  assert.deepEqual(compiled.diagnostics.filter((d) => d.severity === "error"), []);
+  assert.equal(compiled.manifest.route, "list");
+  assert.deepEqual(compiled.manifest.actions.map((a) => a.id), ["exhibit.open", "nav.back"]);
+  assert.deepEqual(compiled.manifest.interactions, [
+    { nodeId: "card-orrery", interactable: true, manipulation: false, events: ["select"],
+      triggers: [{ on: "select", actionId: "exhibit.open", payload: { exhibitId: "orrery" } }] },
+    { nodeId: "hint", interactable: true, manipulation: false, events: ["hover", "select"],
+      triggers: [{ on: "hover-enter", actionId: "nav.back" }] },
+  ]);
+  assert.equal(compiled.document.route, "list");
+  assert.equal(compiled.document.actions.length, 2);
+
+  const closure = compile(
+    `export function Scene() { return <ViroSpecsScene actions={[{ id: "a.b" }]}><ViroText viroTag="t" text="x" specsAction={{ actionId: "a.b", payload: { go: { deep: 1 } } }} /></ViroSpecsScene>; }`,
+    "/tmp/closure.tsx"
+  );
+  const bad = expectCode(closure, "VS3014", "nested payload");
+  assert.equal(bad.line, 1);
+  assert.equal(closure.manifest.interactions.length, 0);
+
+  const undeclared = compile(
+    `export function Scene() { return <ViroSpecsScene><ViroText viroTag="t" text="x" specsAction={{ actionId: "a.b" }} /></ViroSpecsScene>; }`,
+    "/tmp/undeclared.tsx"
+  );
+  expectCode(undeclared, "VS1017", "undeclared action");
+
+  const dynamicPayload = compile(
+    `export function Scene({ id }) { return <ViroSpecsScene actions={[{ id: "a.b", payload: { id: { type: "string" } } }]}><ViroText viroTag="t" text="x" specsAction={{ actionId: "a.b", payload: { id } }} /></ViroSpecsScene>; }`,
+    "/tmp/dynamic-payload.tsx"
+  );
+  expectCode(dynamicPayload, "VS2014", "dynamic payload");
+  checks += 1;
+}
+
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log("viro specs static compiler: PASS (" + checks + " check groups)");

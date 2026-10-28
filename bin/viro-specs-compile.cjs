@@ -459,6 +459,8 @@ function compile(sourceText, entryPath, options = {}) {
   let ordinal = 0;
   let specsDepth = 0;
   let specsRoots = 0;
+  let sceneRoute;
+  let sceneActions;
 
   const enter = (pathRef) => {
     const opening = pathRef.node.openingElement;
@@ -471,6 +473,23 @@ function compile(sourceText, entryPath, options = {}) {
     if (name === "ViroSpecsScene") {
       specsDepth += 1;
       specsRoots += 1;
+      const scene = propsOf(opening, bindings);
+      for (const prop of ["route", "actions"]) {
+        if (scene.present.has(prop) && scene.unresolved.has(prop)) {
+          report("VS2014", "ViroSpecsScene " + prop + " cannot be resolved statically.", scene.locations.get(prop));
+        }
+      }
+      if (typeof scene.props.route === "string") sceneRoute = scene.props.route;
+      else if (scene.present.has("route") && !scene.unresolved.has("route")) {
+        report("VS1004", "ViroSpecsScene route must be a non-empty string.", scene.locations.get("route"));
+      }
+      if (scene.present.has("actions") && !scene.unresolved.has("actions")) {
+        // defineSpecsActions(...) is a call and stays unresolved; a static
+        // array of declarations is read as is.
+        const value = scene.props.actions;
+        sceneActions = Array.isArray(value) ? value : value && Array.isArray(value.declarations) ? value.declarations : undefined;
+        if (!sceneActions) report("VS1004", "ViroSpecsScene actions must be an array of action declarations.", scene.locations.get("actions"));
+      }
       elementStack.push({ name, id: null, transform: IDENTITY, dynamic: isConditionalPath(pathRef) });
       return;
     }
@@ -597,8 +616,16 @@ function compile(sourceText, entryPath, options = {}) {
       }
     }
 
-    const hasHover = present.has("onHover");
-    const hasClick = present.has("onClick") || present.has("onClickState");
+    let triggers = [];
+    const specsAction = staticValue("specsAction");
+    if (specsAction !== undefined) {
+      const read = core.readSpecsActionProp(specsAction);
+      for (const message of read.invalid) report("VS3014", name + " " + id + " " + message, locations.get("specsAction"), id);
+      triggers = read.triggers;
+    }
+    const triggerEvents = core.specsTriggerEvents(triggers);
+    const hasHover = present.has("onHover") || triggerEvents.includes("hover");
+    const hasClick = present.has("onClick") || present.has("onClickState") || triggerEvents.includes("select");
     const hasDrag = present.has("onDrag");
     if (hasHover || hasClick || hasDrag) {
       interactions.push({
@@ -606,6 +633,7 @@ function compile(sourceText, entryPath, options = {}) {
         interactable: true,
         manipulation: hasDrag,
         events: [...(hasHover ? ["hover"] : []), ...(hasClick ? ["select"] : []), ...(hasDrag ? ["drag"] : [])],
+        ...(triggers.length > 0 ? { triggers } : {}),
       });
     }
 
@@ -818,6 +846,8 @@ function compile(sourceText, entryPath, options = {}) {
     version: 2,
     generator: { name: "viro-specs-compile" },
     source: file,
+    ...(sceneRoute !== undefined ? { route: sceneRoute } : {}),
+    ...(sceneActions !== undefined && sceneActions.length > 0 ? { actions: sceneActions } : {}),
     nodes,
     polylines,
     lights,

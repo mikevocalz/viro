@@ -27,6 +27,12 @@ import {
   type ViroSpecsDiagnostic,
 } from "./core/diagnostic";
 import { toSpecsSceneDocument, toSpecsSceneSnapshot } from "./core/lower";
+import {
+  readSpecsActionProp,
+  specsTriggerEvents,
+  type ViroSpecsActionDeclaration,
+  type ViroSpecsActionTrigger,
+} from "./core/actions";
 import type {
   ViroSpecsAnimationTrack,
   ViroSpecsExtents,
@@ -357,6 +363,14 @@ function readExtents(props: Props): ViroSpecsExtents | undefined {
   return undefined;
 }
 
+/** Scene-level inputs of {@linkcode compileViroSpecsChildren}, from `ViroSpecsScene` props. */
+export type ViroSpecsCompileOptions = {
+  /** Actions the tree's `specsAction` triggers may fire. Copied to the manifest. */
+  readonly actions?: readonly ViroSpecsActionDeclaration[];
+  /** Route of the scene. A new route is navigation on the Lens host. */
+  readonly route?: string;
+};
+
 /**
  * Compiles a Viro JSX tree into the portable Specs scene.
  *
@@ -368,7 +382,8 @@ function readExtents(props: Props): ViroSpecsExtents | undefined {
  */
 export function compileViroSpecsChildren(
   children: React.ReactNode,
-  sourceResolver: ViroSpecsSourceResolver = defaultSourceResolver
+  sourceResolver: ViroSpecsSourceResolver = defaultSourceResolver,
+  options: ViroSpecsCompileOptions = {}
 ): ViroSpecsCompiledScene {
   const nodes: ViroSpecsManifestNode[] = [];
   const manifestPolylines: ViroSpecsManifestPolyline[] = [];
@@ -628,16 +643,28 @@ export function compileViroSpecsChildren(
       if (onFinish) callbackRecord.onAnimationFinish = onFinish;
     }
     if (Object.keys(callbackRecord).length) callbacks.set(id, callbackRecord);
-    if (onHover || onClick || onDrag) {
+    let triggers: readonly ViroSpecsActionTrigger[] = [];
+    if (props.specsAction !== undefined) {
+      const read = readSpecsActionProp(props.specsAction);
+      for (const message of read.invalid) {
+        diagnostics.push(createViroSpecsDiagnostic("VS3014", name + " " + id + " " + message, { nodeId: id }));
+      }
+      triggers = read.triggers;
+    }
+    const triggerEvents = specsTriggerEvents(triggers);
+    const hover = onHover !== undefined || triggerEvents.includes("hover");
+    const select = onClick !== undefined || triggerEvents.includes("select");
+    if (hover || select || onDrag) {
       interactions.push({
         nodeId: id,
         interactable: true,
         manipulation: onDrag !== undefined,
         events: [
-          ...(onHover ? (["hover"] as const) : []),
-          ...(onClick ? (["select"] as const) : []),
+          ...(hover ? (["hover"] as const) : []),
+          ...(select ? (["select"] as const) : []),
           ...(onDrag ? (["drag"] as const) : []),
         ],
+        ...(triggers.length > 0 ? { triggers } : {}),
       });
     }
 
@@ -741,6 +768,8 @@ export function compileViroSpecsChildren(
   const manifest: ViroSpecsManifestV2 = {
     version: 2,
     generator: { name: "viro-specs-runtime" },
+    ...(options.route !== undefined ? { route: options.route } : {}),
+    ...(options.actions !== undefined && options.actions.length > 0 ? { actions: options.actions } : {}),
     nodes,
     polylines: manifestPolylines,
     lights,
