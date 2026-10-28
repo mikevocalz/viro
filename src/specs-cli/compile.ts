@@ -70,6 +70,9 @@ const UNRESOLVED_PROP_CODES: Readonly<Record<string, ViroSpecsDiagnosticCode>> =
   animation: "VS2011",
 };
 
+/** Returned when a prop's problem was reported in detail, so it is not reported again. */
+const ALREADY_REPORTED: unique symbol = Symbol("already-reported");
+
 function callbackPlaceholder(): undefined {
   return undefined;
 }
@@ -575,10 +578,13 @@ class EntryCompiler {
     else if (valueNode.type === "JSXExpressionContainer") {
       if (valueNode.expression.type === "JSXEmptyExpression") return;
       expression = valueNode.expression;
-      evaluation =
+      const evaluated =
         prop === "animation" && valueNode.expression.type === "ObjectExpression"
           ? this.animationObject(valueNode.expression, evalScope, elementName, sink, attribute)
           : this.evaluator.evaluate(valueNode.expression, evalScope);
+      // animationObject has already reported the field that failed (VS2012).
+      if (evaluated === ALREADY_REPORTED) return;
+      evaluation = evaluated;
     } else {
       expression = valueNode;
       evaluation = new SpecsUnresolved(valueNode, module, "a JSX element is not a prop value Specs carries");
@@ -624,7 +630,7 @@ class EntryCompiler {
     elementName: string,
     sink: { readonly markUnresolved: (prop: string, at: AstNode, report: () => void) => void; readonly nodeId: () => string | undefined },
     attribute: AstNode
-  ): SpecsEvaluation {
+  ): SpecsEvaluation | typeof ALREADY_REPORTED {
     const whole = this.evaluator.evaluate(object, evalScope);
     if (!(whole instanceof SpecsUnresolved)) return whole;
     for (const property of object.properties) {
@@ -636,7 +642,7 @@ class EntryCompiler {
         sink.markUnresolved("animation", attribute, () =>
           this.reportUnresolved("VS2012", elementName + " animation." + field, property.value, evalScope, value, sink.nodeId())
         );
-        return new SpecsUnresolved(object, evalScope.module, "reported as VS2012");
+        return ALREADY_REPORTED;
       }
     }
     return whole;

@@ -3,7 +3,7 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
-const { compile, lensTs } = require("../bin/viro-specs-compile.cjs");
+const { compile, lensTs, main } = require("../bin/viro-specs-compile.cjs");
 const { VIRO_SPECS_DIAGNOSTICS } = require("../bin/specs-build/components/Specs/core/index.js");
 
 const repo = path.join(__dirname, "..");
@@ -361,5 +361,56 @@ assert.equal(run(["--entry", lab]).status, 1, "missing --out is a usage error");
 assert.equal(run(["--entry", lab, "--manifest", v1, "--out", labOut]).status, 1, "--entry and --manifest are exclusive");
 checks += 1;
 
+// --- WS2: cwd-independent output, --root, --strict on content-hash IDs ---
+
+function runIn(cwd, args) {
+  return spawnSync(process.execPath, [cli, ...args], { cwd, encoding: "utf8" });
+}
+const fromRepo = path.join(tmp, "from-repo.json");
+const fromTmp = path.join(tmp, "from-tmp.json");
+assert.equal(runIn(repo, ["--entry", lab, "--out", fromRepo]).status, 0);
+assert.equal(runIn(os.tmpdir(), ["--entry", lab, "--out", fromTmp]).status, 0);
+assert.equal(
+  fs.readFileSync(fromTmp, "utf8"),
+  fs.readFileSync(fromRepo, "utf8"),
+  "the manifest must not depend on the working directory"
+);
+assert.equal(fs.readFileSync(fromTmp, "utf8"), fs.readFileSync(golden, "utf8"));
+
+// --root moves the base of asset IDs and of the manifest source.
+const rooted = path.join(tmp, "rooted.json");
+assert.equal(runIn(repo, ["--entry", lab, "--out", rooted, "--root", path.join(repo, "examples")]).status, 0);
+const rootedManifest = JSON.parse(fs.readFileSync(rooted, "utf8"));
+assert.equal(rootedManifest.source, "specs-platform-lab/SpecsPlatformLab.tsx");
+assert.equal(rootedManifest.nodes[2].source, "visionos-sweep/assets/shiba.glb");
+
+// Without viroTag the build passes with VS3012 warnings; --strict refuses it.
+const untagged = path.join(repo, "__test__", "fixtures", "specs", "compiler", "ids-content-hash", "scene.tsx");
+cliResult = run(["--entry", untagged, "--out", path.join(tmp, "untagged.json")]);
+assert.equal(cliResult.status, 0, cliResult.stderr);
+assert.match(cliResult.stderr, /warning VS3012/);
+cliResult = run(["--entry", untagged, "--out", path.join(tmp, "untagged-strict.json"), "--strict"]);
+assert.equal(cliResult.status, 1);
+assert.ok(!fs.existsSync(path.join(tmp, "untagged-strict.json")));
+
+// Every error fixture exits 1 with or without --strict and writes nothing.
+// In-process (the same runSpecsCli the binary calls) to keep CI fast.
+const quiet = { stdout: () => {}, stderr: () => {} };
+const runInProcess = (args) => ({ status: main(args, quiet) });
+const compilerFixtures = path.join(repo, "__test__", "fixtures", "specs", "compiler");
+for (const name of fs.readdirSync(compilerFixtures)) {
+  const expected = path.join(compilerFixtures, name, "diagnostics.txt");
+  if (!fs.existsSync(expected)) continue;
+  const hasError = / error VS\d{4}/.test(fs.readFileSync(expected, "utf8"));
+  const hasWarning = / warning VS\d{4}/.test(fs.readFileSync(expected, "utf8"));
+  const entry = path.join(compilerFixtures, name, "scene.tsx");
+  const out = path.join(tmp, "fixture-" + name + ".json");
+  assert.equal(runInProcess(["--entry", entry, "--out", out]).status, hasError ? 1 : 0, name);
+  assert.equal(fs.existsSync(out), !hasError, name);
+  assert.equal(runInProcess(["--entry", entry, "--out", out + ".strict", "--strict"]).status, hasError || hasWarning ? 1 : 0, name + " --strict");
+}
+checks += 1;
+
 fs.rmSync(tmp, { recursive: true, force: true });
+fs.rmSync(project, { recursive: true, force: true });
 console.log("viro specs static compiler: PASS (" + checks + " check groups)");
