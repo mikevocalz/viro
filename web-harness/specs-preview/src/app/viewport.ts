@@ -155,11 +155,11 @@ export class PreviewViewport {
     el.addEventListener("pointermove", (event) => {
       if (this.dragging) {
         const { node, plane, offset } = this.dragging;
+        this.pick(event); // updates the ray for this pointer position
         const hit = this.raycaster.ray.intersectPlane(plane, new Vector3());
-        this.pick(event);
         if (hit && node.object.parent) {
           // Preview stand-in for SIK manipulation: move the node in the camera plane.
-          node.object.position.copy(node.object.parent.worldToLocal(hit.add(offset)));
+          node.object.position.copy(node.object.parent.worldToLocal(hit.clone().add(offset)));
           this.send(node, "drag", hit);
         }
         return;
