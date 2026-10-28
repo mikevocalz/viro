@@ -150,7 +150,7 @@ function renderList(exhibits: readonly SpecsActionsLabExhibit[], selectedId: str
             key={exhibit.id}
             viroTag={"card-" + exhibit.id}
             text={exhibit.title}
-            position={[0, LIST_HEIGHT / 2 - ROW_HEIGHT * (index + 0.5), 0]}
+            position={[0, -ROW_HEIGHT * (index + 0.5), 0]}
             width={0.42}
             height={0.05}
             style={{ fontSize: BODY_PT, color: exhibit.id === selectedId ? ACCENT : TEXT, textAlign: "left" }}

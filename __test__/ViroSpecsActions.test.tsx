@@ -274,4 +274,29 @@ describe("SpecsActionsLab fixtures", () => {
       expect([name, fs.readFileSync(file, "utf8")]).toEqual([name, text]);
     }
   });
+
+  // Content y = 0 is the scroll window's top edge (docs/specs-manifest.md),
+  // so a row sits between 0 and -contentHeight. A row placed from the window
+  // centre opens above the window, masked out, as Orrery and Foucault
+  // Pendulum did in Lens Studio Preview (ws4-07-polish/before).
+  it("keeps every scroll row inside its scroll content, so the list opens on its first row", async () => {
+    const lens = lensTransport({ actions: true });
+    await mount(<SpecsActionsLab transport={lens.transport} store={createSpecsActionsLabStore()} />);
+    const list = lens.latest();
+    expect(list).toBeDefined();
+    const nodes = list!.nodes;
+    const outside: string[] = [];
+    for (const group of nodes) {
+      if (group.kind !== "group" || group.scroll === undefined) continue;
+      const contentHeight = Math.max(group.scroll.height, group.scroll.contentHeight);
+      for (const row of nodes.filter((n) => n.parentId === group.id)) {
+        const y = row.position?.[1] ?? 0;
+        const half = (row.kind === "text" || row.kind === "panel" ? row.extents?.height ?? 0 : 0) / 2;
+        if (y + half > 1e-9 || y - half < -contentHeight - 1e-9) outside.push(row.id + " at y=" + y.toFixed(3));
+      }
+      const first = nodes.filter((n) => n.parentId === group.id)[0];
+      expect([group.id, first?.position?.[1]]).toEqual([group.id, -0.035]);
+    }
+    expect(outside).toEqual([]);
+  });
 });
