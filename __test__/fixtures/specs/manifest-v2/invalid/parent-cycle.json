@@ -1,0 +1,1 @@
+{"description":"a and b parent each other","expectSchemaValid":true,"expectCodes":["VS1009"],"manifest":{"version":2,"nodes":[{"id":"a","kind":"group","parentId":"b"},{"id":"b","kind":"group","parentId":"a"}]}}

@@ -1,0 +1,1 @@
+{"description":"a line needs two points","expectSchemaValid":false,"expectCodes":["VS1004"],"manifest":{"version":2,"nodes":[],"polylines":[{"id":"l","points":[[0,0,0]],"radiusMeters":0.01}]}}

@@ -1,0 +1,952 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mikevocalz/viro/blob/main/schemas/viro-specs-manifest.v2.json",
+  "title": "Viro Specs scene manifest, version 2",
+  "description": "Portable scene contract between Viro producers (runtime compiler, viro-specs-compile, hand-written JSON) and Specs consumers. Units: meters, unit quaternions [x, y, z, w], seconds. Structure only: unique IDs, parent and target references, and capability errors are checked by validateSpecsManifestV2. See docs/specs-manifest.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "nodes"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "const": 2
+    },
+    "generator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Entry file, relative to the working directory."
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/node"
+      }
+    },
+    "polylines": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/polyline"
+      },
+      "default": []
+    },
+    "lights": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/light"
+      },
+      "default": []
+    },
+    "materials": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/material"
+      },
+      "default": []
+    },
+    "interactions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/interaction"
+      },
+      "default": []
+    },
+    "animations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/animation"
+      },
+      "default": []
+    }
+  },
+  "$defs": {
+    "vec3": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "type": "number"
+      }
+    },
+    "quat": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "number"
+      },
+      "description": "Unit quaternion [x, y, z, w]."
+    },
+    "color": {
+      "type": "string",
+      "pattern": "^#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$"
+    },
+    "extents": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "width",
+        "height"
+      ],
+      "properties": {
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "description": "Meters."
+    },
+    "textStyle": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "fontFamily": {
+          "type": "string",
+          "minLength": 1
+        },
+        "fontSize": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Viro points."
+        },
+        "fontWeight": {
+          "enum": [
+            "normal",
+            "bold",
+            "100",
+            "200",
+            "300",
+            "400",
+            "500",
+            "600",
+            "700",
+            "800",
+            "900"
+          ]
+        },
+        "fontStyle": {
+          "enum": [
+            "normal",
+            "italic"
+          ]
+        },
+        "color": {
+          "$ref": "#/$defs/color"
+        },
+        "textAlign": {
+          "enum": [
+            "left",
+            "center",
+            "right"
+          ]
+        },
+        "textAlignVertical": {
+          "enum": [
+            "top",
+            "center",
+            "bottom"
+          ]
+        }
+      }
+    },
+    "node": {
+      "oneOf": [
+        {
+          "type": "object",
+          "description": "ViroNode.",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "kind"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "parentId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "position": {
+              "$ref": "#/$defs/vec3"
+            },
+            "rotation": {
+              "$ref": "#/$defs/quat"
+            },
+            "scale": {
+              "$ref": "#/$defs/vec3"
+            },
+            "visible": {
+              "type": "boolean"
+            },
+            "opacity": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "materialId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "kind": {
+              "const": "group"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "description": "ViroText.",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "kind",
+            "text"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "parentId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "position": {
+              "$ref": "#/$defs/vec3"
+            },
+            "rotation": {
+              "$ref": "#/$defs/quat"
+            },
+            "scale": {
+              "$ref": "#/$defs/vec3"
+            },
+            "visible": {
+              "type": "boolean"
+            },
+            "opacity": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "materialId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "kind": {
+              "const": "text"
+            },
+            "text": {
+              "type": "string"
+            },
+            "style": {
+              "$ref": "#/$defs/textStyle"
+            },
+            "extents": {
+              "$ref": "#/$defs/extents"
+            },
+            "maxLines": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "description": "ViroImage.",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "kind",
+            "source"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "parentId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "position": {
+              "$ref": "#/$defs/vec3"
+            },
+            "rotation": {
+              "$ref": "#/$defs/quat"
+            },
+            "scale": {
+              "$ref": "#/$defs/vec3"
+            },
+            "visible": {
+              "type": "boolean"
+            },
+            "opacity": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "materialId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "kind": {
+              "const": "image"
+            },
+            "source": {
+              "type": "string",
+              "minLength": 1
+            },
+            "extents": {
+              "$ref": "#/$defs/extents"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "description": "Viro3DObject.",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "kind",
+            "source"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "parentId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "position": {
+              "$ref": "#/$defs/vec3"
+            },
+            "rotation": {
+              "$ref": "#/$defs/quat"
+            },
+            "scale": {
+              "$ref": "#/$defs/vec3"
+            },
+            "visible": {
+              "type": "boolean"
+            },
+            "opacity": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "materialId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "kind": {
+              "const": "model"
+            },
+            "source": {
+              "type": "string",
+              "minLength": 1
+            },
+            "format": {
+              "enum": [
+                "glb",
+                "gltf",
+                "obj",
+                "fbx"
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "description": "Flat surface with layout extents. Hand-written only for now.",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "kind",
+            "extents"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "parentId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "position": {
+              "$ref": "#/$defs/vec3"
+            },
+            "rotation": {
+              "$ref": "#/$defs/quat"
+            },
+            "scale": {
+              "$ref": "#/$defs/vec3"
+            },
+            "visible": {
+              "type": "boolean"
+            },
+            "opacity": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "materialId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "kind": {
+              "const": "panel"
+            },
+            "extents": {
+              "$ref": "#/$defs/extents"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "description": "Accepted by the schema; validation reports capability error VS4004.",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "kind",
+            "source"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "parentId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "position": {
+              "$ref": "#/$defs/vec3"
+            },
+            "rotation": {
+              "$ref": "#/$defs/quat"
+            },
+            "scale": {
+              "$ref": "#/$defs/vec3"
+            },
+            "visible": {
+              "type": "boolean"
+            },
+            "opacity": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "materialId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "kind": {
+              "const": "video"
+            },
+            "source": {
+              "type": "string",
+              "minLength": 1
+            },
+            "extents": {
+              "$ref": "#/$defs/extents"
+            },
+            "loop": {
+              "type": "boolean"
+            },
+            "muted": {
+              "type": "boolean"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "description": "Accepted by the schema; validation reports capability error VS4005.",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "kind",
+            "source"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "parentId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "position": {
+              "$ref": "#/$defs/vec3"
+            },
+            "rotation": {
+              "$ref": "#/$defs/quat"
+            },
+            "scale": {
+              "$ref": "#/$defs/vec3"
+            },
+            "visible": {
+              "type": "boolean"
+            },
+            "opacity": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "materialId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "kind": {
+              "const": "sound"
+            },
+            "source": {
+              "type": "string",
+              "minLength": 1
+            },
+            "loop": {
+              "type": "boolean"
+            },
+            "volume": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        }
+      ]
+    },
+    "polyline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "points",
+        "radiusMeters"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "points": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "$ref": "#/$defs/vec3"
+          },
+          "description": "World space, meters."
+        },
+        "radiusMeters": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "materialId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "primitive": {
+          "const": "volumetric-line"
+        },
+        "backendPackage": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "light": {
+      "oneOf": [
+        {
+          "type": "object",
+          "description": "ViroAmbientLight.",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "type"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "parentId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "type": {
+              "const": "ambient"
+            },
+            "color": {
+              "$ref": "#/$defs/color"
+            },
+            "intensity": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        },
+        {
+          "type": "object",
+          "description": "ViroDirectionalLight.",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "type",
+            "direction"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "parentId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "type": {
+              "const": "directional"
+            },
+            "color": {
+              "$ref": "#/$defs/color"
+            },
+            "intensity": {
+              "type": "number",
+              "minimum": 0
+            },
+            "direction": {
+              "$ref": "#/$defs/vec3"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "description": "ViroOmniLight.",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "type",
+            "position"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "parentId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "type": {
+              "const": "omni"
+            },
+            "color": {
+              "$ref": "#/$defs/color"
+            },
+            "intensity": {
+              "type": "number",
+              "minimum": 0
+            },
+            "position": {
+              "$ref": "#/$defs/vec3"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "description": "ViroSpotLight. Angles in degrees.",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "type",
+            "position",
+            "direction"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "parentId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "type": {
+              "const": "spot"
+            },
+            "color": {
+              "$ref": "#/$defs/color"
+            },
+            "intensity": {
+              "type": "number",
+              "minimum": 0
+            },
+            "position": {
+              "$ref": "#/$defs/vec3"
+            },
+            "direction": {
+              "$ref": "#/$defs/vec3"
+            },
+            "innerAngle": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 180
+            },
+            "outerAngle": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 180
+            }
+          }
+        }
+      ]
+    },
+    "material": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "color": {
+          "$ref": "#/$defs/color"
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "texture": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Asset ID."
+        },
+        "lightingModel": {
+          "enum": [
+            "constant",
+            "lambert",
+            "blinn",
+            "phong",
+            "pbr"
+          ]
+        }
+      }
+    },
+    "interaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "nodeId",
+        "interactable",
+        "manipulation",
+        "events"
+      ],
+      "properties": {
+        "nodeId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "interactable": {
+          "const": true
+        },
+        "manipulation": {
+          "type": "boolean"
+        },
+        "events": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "hover",
+              "select",
+              "drag"
+            ]
+          }
+        }
+      }
+    },
+    "animation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "nodeId",
+        "name",
+        "plan"
+      ],
+      "properties": {
+        "nodeId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "plan": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "engine",
+            "durationSeconds",
+            "delaySeconds",
+            "easing",
+            "playbackMode",
+            "completionEvent",
+            "tracks"
+          ],
+          "properties": {
+            "engine": {
+              "const": "AnimationPlayer"
+            },
+            "backendPackage": {
+              "type": "string",
+              "minLength": 1
+            },
+            "durationSeconds": {
+              "type": "number",
+              "minimum": 0
+            },
+            "delaySeconds": {
+              "type": "number",
+              "minimum": 0
+            },
+            "easing": {
+              "enum": [
+                "linear",
+                "ease-in",
+                "ease-out",
+                "ease-in-out"
+              ]
+            },
+            "playbackMode": {
+              "enum": [
+                "single",
+                "loop"
+              ]
+            },
+            "completionEvent": {
+              "type": "string",
+              "minLength": 1
+            },
+            "tracks": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "target",
+                  "from",
+                  "to"
+                ],
+                "properties": {
+                  "target": {
+                    "enum": [
+                      "transform.position.x",
+                      "transform.position.y",
+                      "transform.position.z",
+                      "transform.scale.x",
+                      "transform.scale.y",
+                      "transform.scale.z",
+                      "transform.rotation.x",
+                      "transform.rotation.y",
+                      "transform.rotation.z",
+                      "material.opacity"
+                    ]
+                  },
+                  "from": {
+                    "const": "current"
+                  },
+                  "to": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "capabilityStatus": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Capability status reported by hosts and doctor. Not part of a manifest document; published here so every consumer shares one shape.",
+      "required": [
+        "capability",
+        "implemented",
+        "installed",
+        "permission",
+        "evidence"
+      ],
+      "properties": {
+        "capability": {
+          "type": "string",
+          "minLength": 1
+        },
+        "implemented": {
+          "type": "boolean"
+        },
+        "installed": {
+          "enum": [
+            "present",
+            "missing",
+            "unknown"
+          ]
+        },
+        "permission": {
+          "enum": [
+            "granted",
+            "denied",
+            "prompt",
+            "not-required",
+            "unknown"
+          ]
+        },
+        "evidence": {
+          "enum": [
+            "none",
+            "implemented",
+            "portable-test-passed",
+            "lens-compiled",
+            "preview-validated",
+            "hardware-validated"
+          ]
+        }
+      }
+    }
+  }
+}
