@@ -124,7 +124,7 @@ describe("createSpecsActionDispatcher", () => {
       "VS1018 /payload/itemId",
       "VS1018 /payload/count",
       "VS1018 /payload/mode",
-      "VS3017 ",
+      "VS3024 ",
     ]);
   });
 
@@ -227,7 +227,7 @@ describe("reference flow: SpecsActionsLab on a mock Lens transport", () => {
     expect(store.getState().selectedId).toBe("orrery");
   });
 
-  it("a closure in specsAction is VS3016 and the scene is not applied", async () => {
+  it("a closure in specsAction is VS3023 and the scene is not applied", async () => {
     const lens = lensTransport({ actions: true });
     const diagnostics: ViroSpecsDiagnostic[] = [];
     const closure = { actionId: "nav.back", payload: { run: () => undefined } } as unknown as React.ComponentProps<typeof ViroText>["specsAction"];
@@ -238,7 +238,7 @@ describe("reference flow: SpecsActionsLab on a mock Lens transport", () => {
         </ViroNode>
       </ViroSpecsScene>
     );
-    expect(diagnostics.map((d) => d.code)).toEqual(["VS3016"]);
+    expect(diagnostics.map((d) => d.code)).toEqual(["VS3023"]);
     expect(lens.documents).toEqual([]);
   });
 });

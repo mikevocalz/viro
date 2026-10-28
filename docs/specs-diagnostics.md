@@ -60,6 +60,15 @@ transport, `VS4xxx` capability errors, `VS5xxx` the Lens scene host
 the numbering are unassigned. Duplicate IDs are reported once, as `VS1007`,
 by validation, whichever producer built the manifest.
 
+Blocks are allocated per workstream so branches merged in different orders
+cannot collide:
+
+- The seven compiler codes after `VS3015` are reserved for the WS4
+  experience layer and land with it.
+- `VS3023` and `VS3024` belong to WS3b typed actions.
+- `VS5015` to `VS5020` belong to WS3b typed actions in the Lens host; WS4's
+  host codes take the numbers after `VS5020`.
+
 Capability errors (`VS4xxx`) cover features the Specs target does not
 implement: portals, physics, Rive, video, audio, native textures and custom
 rendering. They are always errors. The compilers never emit a group, an image
@@ -519,7 +528,7 @@ Emitted by the runtime compiler and `viro-specs-compile --entry`.
 
 Fix: Specs polylines and lights are leaves. Move the children into a ViroNode.
 
-### VS3016 · error
+### VS3023 · error
 
 specsAction is not a JSON trigger.
 
@@ -527,7 +536,7 @@ Emitted by the runtime compiler and `viro-specs-compile --entry`.
 
 Fix: `specsAction` takes `{ actionId, on?, payload? }` (or an array of them) with a flat payload of strings, finite numbers and booleans. Functions and other React closures cannot cross to the Lens; put the behavior in the store's reducer for the action.
 
-### VS3017 · warning
+### VS3024 · warning
 
 Declared action has no handler.
 

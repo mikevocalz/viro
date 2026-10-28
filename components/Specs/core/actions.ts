@@ -266,7 +266,7 @@ export function specsTrigger<T extends ViroSpecsActionSpec, K extends keyof T & 
 export interface ViroSpecsActionPropRead {
   /** Triggers that are valid JSON, with `on` defaulted to `select`. */
   readonly triggers: readonly ViroSpecsActionTrigger[];
-  /** One message per entry that is not a JSON trigger (`VS3016`). */
+  /** One message per entry that is not a JSON trigger (`VS3023`). */
   readonly invalid: readonly string[];
 }
 

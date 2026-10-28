@@ -302,12 +302,12 @@ export const VIRO_SPECS_DIAGNOSTICS = {
     title: "Element cannot have children on Specs",
     hint: "Specs polylines and lights are leaves. Move the children into a ViroNode.",
   },
-  VS3016: {
+  VS3023: {
     severity: "error",
     title: "specsAction is not a JSON trigger",
     hint: "specsAction takes { actionId, on?, payload? } with a flat payload of strings, numbers and booleans. Functions and other closures cannot cross to the Lens; handle the action in the store instead.",
   },
-  VS3017: {
+  VS3024: {
     severity: "warning",
     title: "Declared action has no handler",
     hint: "Add a reducer for the action to bindSpecsActionsToStore or a handler to createSpecsActionDispatcher. The action was dropped.",

@@ -718,7 +718,7 @@ export class ViroSpecsSceneBuilder {
     if (written("specsAction") && !unresolved.has("specsAction") && props.specsAction !== undefined) {
       const read = readSpecsActionProp(props.specsAction);
       for (const message of read.invalid) {
-        issues.push({ code: "VS3016", prop: "specsAction", message: name + " " + id + " " + message });
+        issues.push({ code: "VS3023", prop: "specsAction", message: name + " " + id + " " + message });
       }
       triggers = read.triggers;
     }

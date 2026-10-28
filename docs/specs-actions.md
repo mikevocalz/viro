@@ -86,7 +86,7 @@ function Lab({ transport }) {
 ```
 
 The reducer map must name every declared action; TypeScript reports a
-missing one, and a JavaScript caller gets `VS3017` when the action arrives.
+missing one, and a JavaScript caller gets `VS3024` when the action arrives.
 A reducer that returns the state it was given changes nothing.
 
 Without a store, `createSpecsActionDispatcher(LAB_ACTIONS, handlers)` calls
@@ -165,8 +165,8 @@ queued action still runs.
 | `VS1017` | error | A trigger names an undeclared action; or the phone received one. |
 | `VS1018` | error | A trigger payload, or a payload from a transport, does not match its declaration. |
 | `VS1019` | error | A trigger's `on` is not enabled by the interaction's `events`. |
-| `VS3016` | error | `specsAction` is not a JSON trigger (a closure, a nested payload, an unknown field). |
-| `VS3017` | warning | A declared action reached the phone with no handler. |
+| `VS3023` | error | `specsAction` is not a JSON trigger (a closure, a nested payload, an unknown field). |
+| `VS3024` | warning | A declared action reached the phone with no handler. |
 | `VS5015`–`VS5017` | error | Lens: undeclared, duplicate, ill-typed. A scene with them is rejected; a dispatch is dropped. |
 | `VS5018` | info | Lens: a queued action's scene was retired. |
 | `VS5019` | warning | Lens: declared action with no handler and no `forward`. |
@@ -177,7 +177,7 @@ Details for each are in [specs-diagnostics.md](specs-diagnostics.md).
 ## Known limitations
 
 - Payloads are flat. Nested objects and arrays are `VS1004` in a manifest and
-  `VS3016` in JSX.
+  `VS3023` in JSX.
 - Triggers fire on `select`, `hover-enter` and `hover-exit`. Drag and cancel
   do not fire actions; use `onDrag` on the phone.
 - The static compiler reads `actions`, `route` and `specsAction` only when

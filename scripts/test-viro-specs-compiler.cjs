@@ -439,7 +439,7 @@ for (const name of fs.readdirSync(compilerFixtures)) {
 checks += 1;
 
 // Typed actions: static declarations, triggers and route reach the manifest;
-// a closure or nested payload is VS3016 and nothing is emitted for it.
+// a closure or nested payload is VS3023 and nothing is emitted for it.
 {
   const actionSource = `
     const ACTIONS = [
@@ -472,7 +472,7 @@ checks += 1;
     `export function Scene() { return <ViroSpecsScene actions={[{ id: "a.b" }]}><ViroText viroTag="t" text="x" specsAction={{ actionId: "a.b", payload: { go: { deep: 1 } } }} /></ViroSpecsScene>; }`,
     "/tmp/closure.tsx"
   );
-  const bad = expectCode(closure, "VS3016", "nested payload");
+  const bad = expectCode(closure, "VS3023", "nested payload");
   assert.equal(bad.line, 1);
   assert.equal(closure.manifest.interactions.length, 0);
 

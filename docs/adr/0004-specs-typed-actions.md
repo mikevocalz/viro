@@ -50,7 +50,7 @@ ADR 0002 (incremental apply) and ADR 0003 (Lens action runtime)
 2. **One prop in JSX.** `specsAction={specsTrigger(actions, id, payload)}` on
    any mapped element. Both compilers read it through one shared function
    (`readSpecsActionProp`) and report anything that is not a JSON trigger,
-   including a closure in the payload, as `VS3016`. `defineSpecsActions`
+   including a closure in the payload, as `VS3023`. `defineSpecsActions`
    gives the TypeScript payload types; `specsTrigger` checks call sites.
 3. **The Lens resolves triggers.** The controller looks up a node's triggers
    when the interaction arrives and delivers the action one frame later,
@@ -72,7 +72,7 @@ ADR 0002 (incremental apply) and ADR 0003 (Lens action runtime)
    methods. Reducers are pure `(state, payload, event) => state`, the same
    shape as Lens handlers, so one reducer module can serve both. The
    reducer map is required per declared action, so TypeScript reports a
-   missing one; `VS3017` covers JavaScript callers.
+   missing one; `VS3024` covers JavaScript callers.
    `createSpecsActionDispatcher` covers state held elsewhere.
 
 ## Options considered

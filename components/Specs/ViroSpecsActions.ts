@@ -39,14 +39,14 @@ export interface ViroSpecsActionDispatcher {
   /**
    * Checks `event` and runs its handler. Returns false when the action was
    * dropped: undeclared (`VS1017`), ill-typed (`VS1018`) or unhandled
-   * (`VS3017`). A handler that throws is not caught.
+   * (`VS3024`). A handler that throws is not caught.
    */
   dispatch(event: ViroSpecsActionEvent): boolean;
 }
 
 /** Options shared by the dispatcher factories. */
 export type ViroSpecsActionDispatcherOptions = {
-  /** Receives VS1017, VS1018 and VS3017 when an action is dropped. */
+  /** Receives VS1017, VS1018 and VS3024 when an action is dropped. */
   readonly onDiagnostic?: (diagnostic: ViroSpecsDiagnostic) => void;
 };
 
@@ -110,7 +110,7 @@ function buildDispatcher(
       }
       const handler = table[event.actionId];
       if (!handler) {
-        return report(createViroSpecsDiagnostic("VS3017", "Action " + event.actionId + " has no handler; it was dropped.", details));
+        return report(createViroSpecsDiagnostic("VS3024", "Action " + event.actionId + " has no handler; it was dropped.", details));
       }
       handler(event.payload, event);
       return true;
