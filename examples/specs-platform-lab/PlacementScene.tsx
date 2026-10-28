@@ -37,7 +37,7 @@ export function PlacementScene({ transport, sourceResolver, onReset, onNext }: P
         position={[0, -0.3, -1.5]}
         scale={[0.18, 0.18, 0.18]}
         visible={false}
-        resettable={true}
+        resettable={false}
       />
       <SpatialPanel viroTag="placement-panel" position={[0, -0.35, -0.95]} width={0.35} height={0.2}>
         <PanelText

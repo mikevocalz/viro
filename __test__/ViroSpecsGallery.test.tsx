@@ -125,6 +125,7 @@ describe.each(SCENES)("gallery layout $name", ({ name, file }) => {
   const EM_PER_POINT = 0.01 / 43.886;
   const PAD = 0.0314; // space.md at 1.5 m
   const XS = 0.0105; // space.xs at 1.5 m
+  const SM = 0.0209; // space.sm at 1.5 m
   const LABEL_EM = 0.0314; // type.label (1.2 degrees) at 1.5 m
 
   function layout() {
@@ -170,6 +171,22 @@ describe.each(SCENES)("gallery layout $name", ({ name, file }) => {
         }
       }
     }
+    // A scroll view's window is a box, and in gaze mode the host adds Scroll
+    // up and Scroll down side by side, space.sm under the window, each one
+    // label line plus space.sm above and below, as wide as the longer label
+    // at 0.55 em per character plus space.md each side
+    // (layoutViroSpecsScrollButtons). Both are boxes like any other.
+    for (const n of m.nodes) {
+      if (n.kind !== "group" || n.scroll === undefined || n.component?.type !== "scroll-view") continue;
+      const [x, y] = at(n.id);
+      const hidden = chain(n.id).some((a) => a.visible === false);
+      const { width, height } = n.scroll;
+      boxes.push({ id: n.id + ":window", left: x - width / 2, right: x + width / 2, bottom: y - height / 2, top: y + height / 2, hidden, scrolled: false });
+      const buttonH = LABEL_EM * 1.3 + 2 * SM;
+      const buttonW = Math.max(buttonH * 2.5, "Scroll down".length * 0.55 * LABEL_EM + 2 * PAD);
+      const top = y - height / 2 - SM;
+      boxes.push({ id: n.id + ":gaze-scroll", left: x - buttonW - SM / 2, right: x + buttonW + SM / 2, bottom: top - buttonH, top, hidden, scrolled: false });
+    }
     return { m, byId, boxes, at, chain };
   }
 
@@ -195,10 +212,44 @@ describe.each(SCENES)("gallery layout $name", ({ name, file }) => {
         if (a.hidden !== b.hidden || a.scrolled !== b.scrolled) continue;
         if (byId.get(b.id)?.parentId === a.id || byId.get(a.id)?.parentId === b.id) continue;
         if (b.id === a.id + ":errorMessage" || a.id === b.id + ":errorMessage") continue;
+        // Scrolled rows sit inside their own window.
+        const window = (box: Box) => box.id.endsWith(":window");
+        if ((window(a) && b.scrolled) || (window(b) && a.scrolled)) continue;
         if (a.left < b.right && b.left < a.right && a.bottom < b.top && b.bottom < a.top) overlaps.push(a.id + " / " + b.id);
       }
     }
     expect(overlaps).toEqual([]);
+  });
+
+  // Lens Studio 5.24 SPECS 27 Preview, default pose: the camera sits at the
+  // origin pitched 12 degrees down and the frame spans about 6.7 degrees above
+  // the horizon to 30.7 below (measured on the Preview captures in
+  // docs/evidence/specs/lens/ws4-08-polish2). The top 2 degrees carry the LEAF
+  // run banner, so panels stay under 4 degrees up.
+  it("fits the SPECS Preview frame at the default pose", () => {
+    const { m, at } = layout();
+    const off: string[] = [];
+    for (const n of m.nodes) {
+      if (n.kind !== "panel" || n.component?.type !== "spatial-panel") continue;
+      const [, y] = at(n.id);
+      const z = Math.abs(n.position?.[2] ?? 0);
+      const deg = (h: number) => (Math.atan2(h, z) * 180) / Math.PI;
+      const top = deg(y + n.extents.height / 2);
+      const bottom = deg(y - n.extents.height / 2);
+      if (top > 4 || bottom < -28) off.push(n.id + " spans " + bottom.toFixed(1) + " to " + top.toFixed(1) + " degrees");
+    }
+    expect(off).toEqual([]);
+  });
+
+  // The host raises a PanelButton's backing to depth.hover (1 cm) when it is
+  // hovered, so anything drawn on the button sits further forward.
+  it("puts content inside a PanelButton in front of its hovered backing", () => {
+    const { m, byId } = layout();
+    const behind = m.nodes
+      .filter((n) => n.parentId !== undefined && byId.get(n.parentId)?.component?.type === "panel-button")
+      .filter((n) => (n.position?.[2] ?? 0) <= 0.01)
+      .map((n) => n.id);
+    expect(behind).toEqual([]);
   });
 
   it("gives every PanelText room for its copy at the estimated width", () => {

@@ -52,7 +52,7 @@ export function SpecsPlatformLab({
 }: SpecsPlatformLabProps) {
   return (
     <ViroSpecsScene transport={transport} sourceResolver={sourceResolver}>
-      <SpatialPanel viroTag="platform-lab-root" position={[0, 0, -1.5]} width={0.53} height={0.5}>
+      <SpatialPanel viroTag="platform-lab-root" position={[0, -0.22, -1.5]} width={0.53} height={0.5}>
         <PanelText
           viroTag="platform-lab-title"
           role="title"
@@ -75,7 +75,7 @@ export function SpecsPlatformLab({
           label={VIRO_SPECS_COPY["gallery.hello.model"]}
           source={require("../visionos-sweep/assets/shiba.glb")}
           type="GLB"
-          position={[-0.2, -0.08, 0.005]}
+          position={[-0.13, -0.06, 0.005]}
           scale={[0.18, 0.18, 0.18]}
           onClick={() => onSelect?.()}
           onDrag={(position) => onDrag?.(position)}
