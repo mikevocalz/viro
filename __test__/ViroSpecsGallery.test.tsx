@@ -124,6 +124,8 @@ describe.each(SCENES)("gallery layout $name", ({ name, file }) => {
   type Box = { id: string; left: number; right: number; bottom: number; top: number; hidden: boolean; scrolled: boolean };
   const EM_PER_POINT = 0.01 / 43.886;
   const PAD = 0.0314; // space.md at 1.5 m
+  const XS = 0.0105; // space.xs at 1.5 m
+  const LABEL_EM = 0.0314; // type.label (1.2 degrees) at 1.5 m
 
   function layout() {
     const m = manifest();
@@ -153,6 +155,20 @@ describe.each(SCENES)("gallery layout $name", ({ name, file }) => {
         const e = n.kind === "panel" ? n.extents : n.extents!;
         boxes.push({ id: n.id, left: x - e.width / 2, right: x + e.width / 2, bottom: y - e.height / 2, top: y + e.height / 2, hidden, scrolled });
       }
+      // The Lens host draws an error button's message as a row across its
+      // SpatialPanel, space.xs under the button, at type.label (1.2 degrees)
+      // wrapped at the panel's inner width (ViroSpecsExperience
+      // layoutViroSpecsButtonError). The row is a box like any other.
+      if (n.kind === "panel" && n.component?.type === "panel-button" && n.component.state === "error" && n.component.errorMessage) {
+        const parent = n.parentId !== undefined ? byId.get(n.parentId) : undefined;
+        if (parent?.kind === "panel" && parent.component?.type === "spatial-panel") {
+          const [px] = at(parent.id);
+          const inner = parent.extents.width - 2 * PAD;
+          const lines = Math.ceil((n.component.errorMessage.length * 0.55 * LABEL_EM) / inner);
+          const top = y - n.extents.height / 2 - XS;
+          boxes.push({ id: n.id + ":errorMessage", left: px - inner / 2, right: px + inner / 2, bottom: top - lines * 1.3 * LABEL_EM, top, hidden, scrolled });
+        }
+      }
     }
     return { m, byId, boxes, at, chain };
   }
@@ -178,6 +194,7 @@ describe.each(SCENES)("gallery layout $name", ({ name, file }) => {
         const b = boxes[j];
         if (a.hidden !== b.hidden || a.scrolled !== b.scrolled) continue;
         if (byId.get(b.id)?.parentId === a.id || byId.get(a.id)?.parentId === b.id) continue;
+        if (b.id === a.id + ":errorMessage" || a.id === b.id + ":errorMessage") continue;
         if (a.left < b.right && b.left < a.right && a.bottom < b.top && b.bottom < a.top) overlaps.push(a.id + " / " + b.id);
       }
     }
