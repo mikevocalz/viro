@@ -4,6 +4,7 @@ import { ViroLabDeliberateFailureScenario } from "./ViroLabDeliberateFailureScen
 import { ViroLabDragScenario } from "./ViroLabDragScenario";
 import { ViroLabNavigateScenario } from "./ViroLabNavigateScenario";
 import { ViroLabRenderScenario } from "./ViroLabRenderScenario";
+import { ViroLabSelectIKScenario } from "./ViroLabSelectIKScenario";
 import { ViroLabSelectScenario } from "./ViroLabSelectScenario";
 
 /** LEAF scenarios for the generated Platform Lab host. */
@@ -13,6 +14,7 @@ export class ViroLabLeafIndex extends BaseScriptComponent {
   static scenariosIndex: ScenarioMetadata[] = [
     { id: "viro_lab_render", typename: ViroLabRenderScenario.getTypeName() },
     { id: "viro_lab_select", typename: ViroLabSelectScenario.getTypeName() },
+    { id: "viro_lab_select_ik", typename: ViroLabSelectIKScenario.getTypeName() },
     { id: "viro_lab_drag", typename: ViroLabDragScenario.getTypeName() },
     { id: "viro_lab_navigate", typename: ViroLabNavigateScenario.getTypeName() },
     { id: "viro_lab_deliberate_failure", typename: ViroLabDeliberateFailureScenario.getTypeName() },

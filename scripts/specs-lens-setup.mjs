@@ -10,7 +10,7 @@
 //   --specs <dir>        @viro-external/specs package directory, for doctor/sync
 //                        (default $VIRO_SPECS_PACKAGE, then ../viro-external/packages/specs)
 //   --steps <a,b,...>    subset of: preflight,packages,sync,compile,recompile,
-//                        wire,chattool,preview,leaf (default: all, in that order)
+//                        wire,chattool,device,preview,leaf (default: all, in that order)
 //   --evidence <dir>     where logs and captures go (default docs/evidence/specs/lens/run-<timestamp>)
 //   --create             save the project Lens Studio has open into --project first
 //   --replace-packages   remove existing package copies (for example the 4.0.0
@@ -30,7 +30,7 @@ import { fileURLToPath } from "node:url";
 import { LensStudioMcp } from "./specs-lens/mcp-client.mjs";
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const ALL_STEPS = ["preflight", "packages", "sync", "compile", "recompile", "wire", "chattool", "preview", "leaf"];
+const ALL_STEPS = ["preflight", "packages", "sync", "compile", "recompile", "wire", "chattool", "device", "preview", "leaf"];
 
 // Asset Library names, pinned versions, and the directory names the Viro Lens
 // runtime imports.
@@ -66,6 +66,9 @@ function importsRenamedSik(file) {
 const SCENARIOS = [
   { id: "viro_lab_render", expect: "succeeded" },
   { id: "viro_lab_select", expect: "succeeded" },
+  // fail-fast: a reach that does not converge throws instead of silently
+  // falling back to simulated SIK input (LEAF's default "fallback" policy).
+  { id: "viro_lab_select_ik", expect: "succeeded", parameters: { __leaf__diagnostic_policy: "fail-fast" } },
   { id: "viro_lab_drag", expect: "succeeded" },
   { id: "viro_lab_navigate", expect: "succeeded" },
   // Proves the suite reports failures. It must fail.
@@ -272,6 +275,22 @@ const handlers = {
     return { registry: loaded, mcpTools: listed, doctorOk: doctor ? !doctor.isError : null };
   },
 
+  // SIK refuses to run unless the Preview simulates a Specs device:
+  // "To run Spectacles Interaction Kit in the Lens Studio Preview, set the
+  // Preview Panel's Device Type Override to SPECS". This follows CLAD's
+  // specs-project-init step: listSources, then setConfig with a scene from it.
+  async device() {
+    const room = options.room ?? "Sunlit Room";
+    const sources = await mcp.call("PreviewPanelTool", { action: "listSources" });
+    const scene = (sources.data.scenes ?? []).find((p) => p.endsWith("/" + room));
+    if (!scene) throw new Error(`No Interactive preview scene named ${room}`);
+    await mcp.call("PreviewPanelTool", { action: "setConfig", deviceCategory: "stereo", inputType: "Interactive", sourcePath: scene });
+    const config = await mcp.call("PreviewPanelTool", { action: "getConfig" });
+    save("preview-config.json", config.data);
+    if (config.data.inputType !== "Interactive") throw new Error(`Preview input is ${config.data.inputType}, expected Interactive`);
+    return { device: config.data.deviceName, input: config.data.inputType, room };
+  },
+
   async preview() {
     const logs = await mcp.call("RunAndCollectLogsTool", { mode: "refresh", settleMaxMs: 6000, settleQuietMs: 1500 });
     save("preview-logs.json", logs.data);
@@ -292,14 +311,39 @@ const handlers = {
     const run = byRole(/run|start|execute/i);
     const results = [];
     if (list && run) {
+      // CLAD specs-leaf-run-in-preview: open the panel, list, then run each
+      // scenario serially in Preview. onDevice:false is explicit so this flow
+      // never targets hardware.
       if (open) await mcp.call(open, {});
-      const listed = await mcp.call(list, {});
+      const listed = await mcp.call(list, { onDevice: false });
       save("leaf-list.json", listed.data);
-      // Serial on purpose: each run resets the Lens and aborts a run in flight.
+      const registered = JSON.stringify(listed.data);
       for (const scenario of SCENARIOS) {
-        const outcome = await mcp.call(run, { scenarioId: scenario.id });
+        if (!registered.includes(scenario.id)) {
+          results.push({ id: scenario.id, runner: "leaf-panel", status: "not-registered" });
+          continue;
+        }
+        // Serial on purpose: each run resets the Lens and aborts a run in flight.
+        const outcome = await mcp.call(run, {
+          scenarioId: scenario.id,
+          onDevice: false,
+          ...(scenario.parameters ? { parameters: scenario.parameters } : {}),
+        });
         const status = outcome.data?.status ?? (outcome.isError ? "error" : "unknown");
-        results.push({ id: scenario.id, runner: "leaf-panel", status, raw: outcome.data });
+        // The tool returns no reason; the Lens-side scenario manager's
+        // PASSED/FAILED line in the log is the authoritative detail.
+        const tail = await mcp.call("RunAndCollectLogsTool", { mode: "tail", tailBytes: 65536 });
+        const text = [...(tail.data.errors ?? []), ...(tail.data.prints ?? []), tail.data.tail ?? ""].join("\n");
+        const managerLines = text
+          .split("\n")
+          .filter((line) => line.includes("DefaultLeafScenarioManager") && line.includes(scenario.id) && /PASSED|FAILED/.test(line));
+        results.push({
+          id: scenario.id,
+          runner: "leaf-panel",
+          status,
+          managerLine: managerLines.at(-1)?.replace(/^.*\[DefaultLeafScenarioManager\]\s*/, "") ?? null,
+          raw: outcome.data,
+        });
       }
     } else {
       // No LEAF MCP tools (the [ChatTool] LEAF Plugin is missing or failed to

@@ -13,6 +13,7 @@
     - !<own> afb5885b-3269-4c80-bc86-7263f61e10c0
     - !<own> 9f373517-8ce1-4e57-840f-062a98c36b5a
     - !<own> 0c6c80d8-8e1a-47b0-871c-5058ea57a89a
+    - !<own> 63614fd4-e7e0-450f-bf08-ea96c991df5f
   layers: !<Layers/267ee9a7-aff2-4f9d-9a49-f71214747d03>
     userLayers:
       - id: 1
@@ -5263,6 +5264,21 @@
     - !<own> 01d13328-2209-4ac9-8d8c-6320c3330d39
   Components:
     []
+- !<SceneObject/63614fd4-e7e0-450f-bf08-ea96c991df5f>
+  PrefabRemaps:
+    []
+  Name: AiPreviewAgent Handler
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    []
+  Components:
+    - !<own> bd58801c-f7c3-4bc1-a06b-3ce9fc1e3162
 - !<SceneObject/63a26a95-0eb4-419b-8c37-a2f85f1d39f6>
   PrefabRemaps:
     []
@@ -10651,6 +10667,22 @@
     []
   Components:
     - !<own> 904b1ee4-1f8c-478b-b434-7e89ee8bf0de
+- !<ScriptComponent/bd58801c-f7c3-4bc1-a06b-3ce9fc1e3162>
+  PrefabRemaps:
+    []
+  Name: AgentInspectScript
+  Enabled: true
+  ScriptAsset: !<reference> 0b25079c-f5bf-4c6d-96c4-f43b89dfa213
+  ScriptInputsDefault:
+    {}
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      {}
+  ScriptTypes:
+    "":
+      {}
 - !<SceneObject/be4e0307-dce6-4fb9-9883-8ed678f39659>
   PrefabRemaps:
     []

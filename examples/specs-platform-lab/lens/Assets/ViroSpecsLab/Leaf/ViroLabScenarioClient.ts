@@ -20,6 +20,7 @@ export class ViroLabScenarioClient extends BaseScriptComponent {
   scenarioIds: string[] = [
     "viro_lab_render",
     "viro_lab_select",
+    "viro_lab_select_ik",
     "viro_lab_drag",
     "viro_lab_navigate",
     "viro_lab_deliberate_failure",
