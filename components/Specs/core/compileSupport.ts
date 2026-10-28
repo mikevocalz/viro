@@ -12,11 +12,7 @@ import {
   type ViroSpecsDiagnostic,
   type ViroSpecsDiagnosticDetails,
 } from "./diagnostic";
-import type {
-  ViroSpecsAnimationTarget,
-  ViroSpecsEasing,
-  ViroSpecsModelFormat,
-} from "./manifest";
+import type { ViroSpecsModelFormat } from "./manifest";
 
 /** How a compiler should treat one JSX component. */
 export type ViroSpecsComponentClass =
@@ -90,80 +86,6 @@ export function checkSpecsProps(
     }
   }
   return diagnostics;
-}
-
-const EASINGS: Readonly<Record<string, ViroSpecsEasing>> = {
-  linear: "linear",
-  easein: "ease-in",
-  "ease-in": "ease-in",
-  easeout: "ease-out",
-  "ease-out": "ease-out",
-  easeineaseout: "ease-in-out",
-  "ease-in-out": "ease-in-out",
-};
-
-/** Maps a Viro easing name to a Specs easing, or `undefined` when Specs has no exact match. */
-export function normalizeSpecsEasing(easing: unknown): ViroSpecsEasing | undefined {
-  const key = easing === undefined ? "linear" : String(easing).toLowerCase();
-  return EASINGS[key];
-}
-
-const TARGETS: Readonly<Record<string, ViroSpecsAnimationTarget>> = {
-  positionX: "transform.position.x",
-  positionY: "transform.position.y",
-  positionZ: "transform.position.z",
-  translateX: "transform.position.x",
-  translateY: "transform.position.y",
-  translateZ: "transform.position.z",
-  scaleX: "transform.scale.x",
-  scaleY: "transform.scale.y",
-  scaleZ: "transform.scale.z",
-  rotateX: "transform.rotation.x",
-  rotateY: "transform.rotation.y",
-  rotateZ: "transform.rotation.z",
-  opacity: "material.opacity",
-};
-
-/** Animation target for a Viro animation property, or `undefined` when unsupported. */
-export function specsAnimationTarget(property: string): ViroSpecsAnimationTarget | undefined {
-  return TARGETS[property];
-}
-
-/**
- * Resolves a Viro animation value against the element's current value.
- * Relative strings (`"+=0.5"`, `"*=2"`) apply to `base`; `translate*`
- * properties are offsets, so numbers add to `base`.
- * Returns `undefined` when the value cannot be resolved.
- */
-export function resolveSpecsAnimationValue(
-  value: unknown,
-  base: number,
-  translate: boolean
-): number | undefined {
-  if (typeof value === "number") {
-    if (!Number.isFinite(value)) return undefined;
-    return translate ? base + value : value;
-  }
-  if (typeof value !== "string") return undefined;
-  const trimmed = value.trim();
-  const relative = /^([+\-*/])=(-?\d+(?:\.\d+)?)$/.exec(trimmed);
-  if (relative) {
-    const operand = Number(relative[2]);
-    switch (relative[1]) {
-      case "+":
-        return base + operand;
-      case "-":
-        return base - operand;
-      case "*":
-        return base * operand;
-      default:
-        return operand === 0 ? undefined : base / operand;
-    }
-  }
-  if (trimmed === "") return undefined;
-  const absolute = Number(trimmed);
-  if (!Number.isFinite(absolute)) return undefined;
-  return translate ? base + absolute : absolute;
 }
 
 /** Normalizes `#RGB`, `#RRGGBB` and `#RRGGBBAA` to lower-case hex; `undefined` for anything else. */

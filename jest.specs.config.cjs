@@ -13,6 +13,6 @@ module.exports = {
       "<rootDir>/node_modules/@reactvision/viro-web-renderer/dist/sceneApi.js",
   },
   transformIgnorePatterns: [
-    "/node_modules/(?!((jest-)?react-native|@react-native|@reactvision/viro-web-renderer)/)",
+    "/node_modules/(?!((jest-)?react-native|@react-native|@reactvision/viro-web-renderer|@babel/parser)/)",
   ],
 };

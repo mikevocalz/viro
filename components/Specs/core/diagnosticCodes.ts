@@ -126,8 +126,8 @@ export const VIRO_SPECS_DIAGNOSTICS = {
   },
   VS2003: {
     severity: "error",
-    title: "Element is inside dynamic or conditional JSX",
-    hint: "Specs scenes are compiled ahead of time. Move the element out of the condition, map or call, and control it with a static visible prop.",
+    title: "Element is inside JSX the static compiler cannot expand",
+    hint: "Static conditions, ternaries, && and .map() over static arrays compile. Move the element out of other calls, loops or IIFEs, and control it with a static visible prop.",
   },
   VS2004: {
     severity: "error",
@@ -176,18 +176,38 @@ export const VIRO_SPECS_DIAGNOSTICS = {
   },
   VS2013: {
     severity: "error",
-    title: "Spread props cannot be compiled",
-    hint: "Write the props out on the element. The static compiler cannot see what a spread contains.",
+    title: "Spread props cannot be resolved statically",
+    hint: "Spread a top-level const object (in the entry file or imported from a relative module), or write the props out on the element. The spread's props were ignored.",
   },
   VS2014: {
     severity: "error",
-    title: "Prop value cannot be resolved statically",
-    hint: "Use a literal or a top-level const in the entry file.",
+    title: "Expression cannot be resolved statically",
+    hint: "Use a literal, a top-level const, a const imported from a relative module, or a .map() parameter. The message quotes the expression.",
   },
   VS2015: {
     severity: "error",
     title: "Entry file could not be parsed",
     hint: "Fix the syntax error at the reported position.",
+  },
+  VS2016: {
+    severity: "warning",
+    title: "Condition is only known at runtime; both branches were emitted hidden",
+    hint: "The static manifest emits every branch of the condition with visible: false, and the Lens shows none of them until the host sets visibility. Use a static condition, or give each branch a viroTag and drive visibility from the app.",
+  },
+  VS2017: {
+    severity: "error",
+    title: "Polyline or light inside a runtime condition",
+    hint: "Polylines and lights have no visible flag on Specs, so they cannot be emitted hidden. Move them out of the condition.",
+  },
+  VS2018: {
+    severity: "error",
+    title: "Import cannot be resolved",
+    hint: "The static compiler follows relative imports of .ts, .tsx, .js and .jsx modules and treats other relative files as assets. Package imports are not read; inline the value or move it into the project.",
+  },
+  VS2019: {
+    severity: "error",
+    title: ".map() cannot be expanded statically",
+    hint: "Call .map() on a static array with a callback whose body is, or returns, one JSX element. Callbacks with statements other than one return are not expanded.",
   },
   VS3001: {
     severity: "error",
@@ -242,12 +262,22 @@ export const VIRO_SPECS_DIAGNOSTICS = {
   VS3012: {
     severity: "warning",
     title: "Element has no viroTag",
-    hint: "Without viroTag the ID is ordinal, so reordering elements rebinds callbacks. Add a unique viroTag.",
+    hint: "Without viroTag the ID is a content hash of kind, parent, text or source, and React key, so it changes when that content changes. Add a unique viroTag; --strict requires one.",
   },
   VS3013: {
     severity: "error",
     title: "Model format is not supported on Specs",
     hint: "Lens Studio cannot import VRX. Export the model as GLB.",
+  },
+  VS3014: {
+    severity: "error",
+    title: "Animation timing is not a finite non-negative number",
+    hint: "Set duration and delay in milliseconds as numbers >= 0, both in registerAnimations and in the element's animation.delay.",
+  },
+  VS3015: {
+    severity: "error",
+    title: "Element cannot have children on Specs",
+    hint: "Specs polylines and lights are leaves. Move the children into a ViroNode.",
   },
   VS4001: {
     severity: "error",
