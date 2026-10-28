@@ -924,8 +924,10 @@ export class ViroGeneratedSceneHost extends BaseScriptComponent {
     if (GENERATED_POLYLINES.length && !navigation) throw new Error("Generated Viro polylines require ViroSpecsNavigationHost.");
 
     this.teardown = () => {
-      if (interaction && !isNull(interaction)) for (const item of GENERATED_INTERACTIONS) interaction.remove(item.nodeId);
-      if (animation && !isNull(animation)) for (const item of GENERATED_ANIMATIONS) animation.stop(item.nodeId);
+      // ViroSpecsInteractionHost retires SIK targets before nodes are destroyed.
+      // ViroSpecsAnimationHost has no stop API; runtime.clear() destroys the
+      // animated nodes and their AnimationPlayers.
+      if (interaction && !isNull(interaction) && GENERATED_INTERACTIONS.length) interaction.resetTargets();
       if (navigation && !isNull(navigation)) navigation.clearRoute();
       if (!isNull(runtime)) runtime.clear();
     };

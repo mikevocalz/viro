@@ -152,7 +152,9 @@ for (const [source, expected] of [
   assert.ok(compile(source, "/tmp/unsupported.tsx").diagnostics.some(d => expected.test(d)));
 }
 assert.match(generated, /OnDestroyEvent/);
-assert.match(generated, /interaction\.remove/);
-assert.match(generated, /animation\.stop/);
+assert.match(generated, /interaction\.resetTargets\(\)/);
+// Only call methods the @viro-external/specs Lens hosts expose.
+assert.doesNotMatch(generated, /interaction\.remove\(/);
+assert.doesNotMatch(generated, /animation\.stop\(/);
 assert.match(generated, /navigation\.clearRoute/);
 assert.match(generated, /runtime\.clear/);
