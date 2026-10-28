@@ -1,0 +1,4 @@
+{
+  "description": "A prop that depends on runtime values quotes the expression and file:line (VS2004, VS2009).",
+  "parity": false
+}

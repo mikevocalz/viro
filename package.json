@@ -20,8 +20,9 @@
     "tsc": "tsc && tsc -p tsconfig.plugins.json",
     "harness": "vite",
     "prebuild": "node -p \"'export const VIRO_VERSION = ' + JSON.stringify(require('./package.json').version) + ';'\" > components/Utilities/ViroVersion.ts",
-    "build": "tsc && tsc -p tsconfig.plugins.json && npm run build:specs-core && npm run copy-files",
-    "build:specs-core": "tsc -p tsconfig.specs-core.json",
+    "build": "tsc && tsc -p tsconfig.plugins.json && npm run build:specs-cli && npm run copy-files",
+    "build:specs-cli": "tsc -p tsconfig.specs-cli.json",
+    "build:specs-core": "npm run build:specs-cli",
     "bundle": "./prepare_release.sh",
     "copy-files": "cp -r ./components/Resources/ ./dist/components/Resources/",
     "clean": "rm -rf ./dist/ *.tgz node_modules/",
@@ -31,7 +32,7 @@
     "harness:assets": "bash scripts/sync-harness-assets.sh",
     "preharness": "npm run harness:assets",
     "audit:events": "node scripts/audit-events.cjs",
-    "test:specs-compiler": "npm run build:specs-core && node scripts/test-viro-specs-compiler.cjs",
+    "test:specs-compiler": "npm run build:specs-cli && node scripts/test-viro-specs-compiler.cjs",
     "test:specs": "jest --runInBand --config jest.specs.config.cjs __test__/ViroSpecs",
     "test:rive-contract": "node scripts/test-rive-local-contract.cjs",
     "perf:tracesift:init": "npx --yes @callstack/tracesift@0.3.1 init",
@@ -151,8 +152,7 @@
   "dependencies": {
     "react": ">=19.0.0",
     "zustand": "5.0.16",
-    "@babel/parser": "^8.0.8",
-    "@babel/traverse": "^8.0.7"
+    "@babel/parser": "^8.0.8"
   },
   "bin": {
     "viro-specs": "bin/viro-specs.cjs",

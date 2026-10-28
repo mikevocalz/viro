@@ -108,5 +108,5 @@ No scene that failed before passes now.
 1. [x] Catalog, type, factory, formatter; both compilers converted.
 2. [x] `docs/specs-diagnostics.md` with the catalog/doc agreement test.
 3. [x] `--strict` and `--diagnostics-format json` in `viro-specs-compile`.
-4. [ ] WS2: move the static compiler to TypeScript so it imports the catalog directly instead of the compiled copy.
+4. [x] WS2: the static compiler is TypeScript in `src/specs-cli/` and imports the catalog and the shared core directly; both compile together to `bin/specs-build/`.
 5. [ ] WS3: Lens-side diagnostics channel uses the same type.

@@ -1,0 +1,4 @@
+{
+  "description": "require() of a file that does not exist is VS2018 with the resolved path.",
+  "parity": false
+}

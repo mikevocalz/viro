@@ -71,5 +71,5 @@
     "forceConsistentCasingInFileNames": true /* Disallow inconsistently-cased references to the same file. */
   },
   "include": ["./**/*.ts", "./**/*.tsx"],
-  "exclude": ["node_modules", "build", "dist", "plugins", "__test__", "jest.config.ts", "./**/*.js", "./**/*.jsx", "examples", "shims", "web-harness", "vite.config.ts"]
+  "exclude": ["node_modules", "build", "dist", "plugins", "src/specs-cli", "bin", "__test__", "jest.config.ts", "./**/*.js", "./**/*.jsx", "examples", "shims", "web-harness", "vite.config.ts"]
 }

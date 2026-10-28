@@ -1,0 +1,4 @@
+{
+  "description": "\"+=45\" on rotateY resolves against the authored Euler degrees.",
+  "parity": true
+}
