@@ -92,6 +92,12 @@ function esproj() {
   return file ? path.join(project, file) : path.join(project, `${path.basename(project)}.esproj`);
 }
 
+const setClientEnabled =
+  "const m = pluginSystem.findInterface(Editor.Model.IModel) as any;" +
+  "const o = m.project.scene.rootSceneObjects.find((x: any) => x.name === 'LeafScenarioClient');" +
+  "if (!o) throw new Error('LeafScenarioClient is not in the scene; run the wire step.');" +
+  "o.enabled = args.enabled; return o.enabled;";
+
 const mcp = await new LensStudioMcp().connect();
 const tools = (await mcp.listTools()).map((tool) => tool.name);
 
@@ -237,18 +243,51 @@ const handlers = {
     const open = byRole(/open|panel/i);
     const list = byRole(/list/i);
     const run = byRole(/run|start|execute/i);
-    if (!list || !run) {
-      throw new Error(`LEAF MCP tools not found (have: ${leafTools.map((t) => t.name).join(", ") || "none"}). Update the [ChatTool] LEAF Plugin.`);
-    }
-    if (open) await mcp.call(open, {});
-    const listed = await mcp.call(list, {});
-    save("leaf-list.json", listed.data);
     const results = [];
-    // Serial on purpose: each run resets the Lens and aborts a run in flight.
+    if (list && run) {
+      if (open) await mcp.call(open, {});
+      const listed = await mcp.call(list, {});
+      save("leaf-list.json", listed.data);
+      // Serial on purpose: each run resets the Lens and aborts a run in flight.
+      for (const scenario of SCENARIOS) {
+        const outcome = await mcp.call(run, { scenarioId: scenario.id });
+        const status = outcome.data?.status ?? (outcome.isError ? "error" : "unknown");
+        results.push({ id: scenario.id, runner: "leaf-panel", status, raw: outcome.data });
+      }
+    } else {
+      // No LEAF MCP tools (the [ChatTool] LEAF Plugin is missing or failed to
+      // load). Run the same scenarios through LEAF's DefaultScenarioManager
+      // from the ViroLabScenarioClient component and read its result lines.
+      await mcp.editor(setClientEnabled, { enabled: true });
+      try {
+        await mcp.call("RecompileTypeScriptTool", {});
+        const logs = await mcp.call("RunAndCollectLogsTool", {
+          mode: "refresh",
+          settleMinMs: 8000,
+          settleMaxMs: 90000,
+          settleQuietMs: 6000,
+          timeoutMs: 20000,
+        });
+        save("leaf-client-logs.json", logs.data);
+        const lines = [...(logs.data.prints ?? []), logs.data.tail ?? ""].join("\n");
+        for (const match of lines.matchAll(/VIRO_LAB_LEAF_RESULT (\{.*?\})(?=\s|$)/g)) {
+          const parsed = JSON.parse(match[1]);
+          if (!results.some((r) => r.id === parsed.id)) results.push({ ...parsed, runner: "scenario-client" });
+        }
+        if (!lines.includes("VIRO_LAB_LEAF_DONE")) results.push({ id: "<run>", runner: "scenario-client", status: "did-not-finish" });
+      } finally {
+        await mcp.editor(setClientEnabled, { enabled: false });
+      }
+    }
+    for (const result of results) {
+      const scenario = SCENARIOS.find((s) => s.id === result.id);
+      result.expected = scenario?.expect ?? "succeeded";
+      result.asExpected = result.status === result.expected;
+    }
     for (const scenario of SCENARIOS) {
-      const outcome = await mcp.call(run, { scenarioId: scenario.id });
-      const status = outcome.data?.status ?? (outcome.isError ? "error" : "unknown");
-      results.push({ id: scenario.id, status, expected: scenario.expect, asExpected: status === scenario.expect, raw: outcome.data });
+      if (!results.some((r) => r.id === scenario.id)) {
+        results.push({ id: scenario.id, status: "no-result", expected: scenario.expect, asExpected: false });
+      }
     }
     save("leaf-results.json", results);
     const unexpected = results.filter((r) => !r.asExpected);

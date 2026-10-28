@@ -181,6 +181,14 @@ setInput(generatedHost, "GeneratedHost", "navigationHostObject", navigationObjec
 if (args.leafIndex !== false) {
   const leafObject = ensureRoot("LeafIndex");
   ensureScript(leafObject, "ViroLabLeafIndex");
+  // Fallback runner for when the LEAF ChatTool plugin is unavailable. Kept
+  // disabled; the setup script's leaf step enables it for one Preview run.
+  const clientObject = ensureRoot("LeafScenarioClient");
+  ensureScript(clientObject, "ViroLabScenarioClient");
+  if (clientObject.enabled) {
+    clientObject.enabled = false;
+    steps.push("disable LeafScenarioClient");
+  }
 }
 
 if (args.save !== false) {
