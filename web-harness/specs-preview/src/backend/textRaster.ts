@@ -1,4 +1,5 @@
 import { CanvasTexture, SRGBColorSpace, type Texture } from "three";
+import { LINE_ADVANCE_EMS } from "./lensSemantics";
 import type { MeasureTextCm, TextFont, TextLayout } from "./textLayout";
 
 /** Turns a {@linkcode TextLayout} into pixels. Tests use {@linkcode createFixedAdvanceRasterizer}. */
@@ -16,8 +17,8 @@ export interface TextBounds {
   readonly maxY: number;
 }
 
-/** Glyph em height as a fraction of the Lens line height. */
-const EM_PER_LINE = 1 / 1.2;
+/** Glyph em height as a fraction of the line advance. */
+const EM_PER_LINE = 1 / LINE_ADVANCE_EMS;
 /** Canvas pixels per centimeter. */
 const PX_PER_CM = 24;
 const MAX_CANVAS_PX = 4096;

@@ -53,14 +53,14 @@ describe("text layout follows Lens setText", () => {
     expect(l.lines).toEqual(["Viro Cross-Platform Lab"]);
     expect(l.color).toEqual([1, 1, 1, 1]);
   });
-  it("extents wrap and maxLines truncates to maxLines x size x 0.1 cm", () => {
-    const l = layoutText(
-      { text: "one two three four five six seven eight nine ten", style: { fontSize: 20 }, extents: { width: 0.1, height: 0.5 }, maxLines: 2 },
-      measure
-    );
+  it("maxLines sizes the box to maxLines x size x 0.1 cm and truncates at the box, as Lens does (VS5008)", () => {
+    const words = Array.from({ length: 120 }, (_, i) => "word" + i).join(" ");
+    const l = layoutText({ text: words, style: { fontSize: 20 }, extents: { width: 0.1, height: 0.5 }, maxLines: 2 }, measure);
     expect(l.rectWidthCm).toBe(10);
     expect(l.rectHeightCm).toBeCloseTo(4);
-    expect(l.lines.length).toBe(2);
+    // Glyphs follow the Lens type scale (43.886 per cm em), so a 4 cm box holds more than 2 lines.
+    expect(l.lineHeightCm).toBeCloseTo(20 * (1 / 43.886) * 1.2, 6);
+    expect(l.lines.length).toBe(Math.floor(4 / l.lineHeightCm));
     expect(l.truncated).toBe(true);
   });
   it("protocol 1 lensSize and rgba apply when fontSize and color are absent", () => {

@@ -8,6 +8,8 @@
  * record's commit and fails when one of these drifts.
  */
 
+import { VIRO_SPECS_LENS_TEXT_EM_METERS_PER_SIZE } from "../vendor/lens-core/ViroSpecsExperienceTokens";
+
 /** Manifest meters to Lens centimeters. */
 export const CM_PER_METER = 100;
 
@@ -17,8 +19,25 @@ export const DEFAULT_TEXT_SIZE = 48;
 /** Lens Text `size` per Viro `fontSize` point. */
 export const TEXT_SIZE_PER_POINT = 1;
 
-/** Line height in centimeters per Lens Text size unit, used for maxLines. */
+/**
+ * Layout-rect height in centimeters per Lens Text size unit per line: the
+ * Lens backend sizes a `maxLines` text box with it. It is a box size, not
+ * the glyph size; see {@linkcode TEXT_EM_CM_PER_SIZE}.
+ */
 export const LINE_HEIGHT_CM_PER_SIZE = 0.1;
+
+/**
+ * Glyph em height in centimeters per Lens Text size unit: a size of 43.886
+ * draws a 1 cm em (the type scale the experience tokens and the compiler use,
+ * `VIRO_SPECS_LENS_TEXT_EM_METERS_PER_SIZE`).
+ */
+export const TEXT_EM_CM_PER_SIZE = VIRO_SPECS_LENS_TEXT_EM_METERS_PER_SIZE * CM_PER_METER;
+
+/**
+ * Line advance in ems. Lens Text line spacing is not documented; 1.2 is the
+ * preview's assumption.
+ */
+export const LINE_ADVANCE_EMS = 1.2;
 
 /** Half extents of the Lens Text layout rect when the node has no extents, in cm. */
 export const DEFAULT_TEXT_HALF_WIDTH_CM = 36;

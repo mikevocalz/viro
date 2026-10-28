@@ -24,7 +24,7 @@ const scene = (parts: Partial<ViroSpecsManifestV2> & Pick<ViroSpecsManifestV2, "
   ...parts,
 });
 const label = (id: string, text: string, y: number, parentId = "root") =>
-  ({ id, kind: "text", parentId, text, position: [0, y, 0], style: { fontSize: 22, color: "#c9d4e2" } }) as const;
+  ({ id, kind: "text", parentId, text, position: [0, y, 0], style: { fontSize: 100, color: "#c9d4e2" } }) as const;
 
 /** Scenes for gallery.html, in reading order. */
 export const PRIMITIVE_STORIES: readonly PrimitiveStory[] = [
@@ -45,13 +45,13 @@ export const PRIMITIVE_STORIES: readonly PrimitiveStory[] = [
   {
     id: "text",
     title: "Text and text style",
-    lens: "fontSize maps 1:1 to Lens Text size, extents set the layout rect and turn on wrapping, maxLines truncates.",
+    lens: "fontSize maps 1:1 to Lens Text size, extents set the layout rect and turn on wrapping, maxLines sizes the box to maxLines x size x 0.1 cm and Lens truncates at the box, so more lines can fit (VS5008).",
     manifest: scene({
       nodes: [
         { id: "root", kind: "group", position: [0, 0, ROOT_Z] },
         { id: "default", kind: "text", parentId: "root", text: "Default text, size 48", position: [0, 0.12, 0] },
-        { id: "styled", kind: "text", parentId: "root", text: "Bold, amber, left aligned", position: [0, 0.04, 0], style: { fontSize: 30, fontWeight: "bold", color: "#f2b544", textAlign: "left" }, extents: { width: 0.36, height: 0.05 } },
-        { id: "wrapped", kind: "text", parentId: "root", text: "Extents wrap this sentence inside a 22 cm box and maxLines keeps two lines of it.", position: [0, -0.07, 0], style: { fontSize: 24, color: "#e8eef6", textAlign: "center" }, extents: { width: 0.22, height: 0.2 }, maxLines: 2 },
+        { id: "styled", kind: "text", parentId: "root", text: "Bold, amber, left aligned", position: [0, 0.04, 0], style: { fontSize: 130, fontWeight: "bold", color: "#f2b544", textAlign: "left" }, extents: { width: 0.36, height: 0.05 } },
+        { id: "wrapped", kind: "text", parentId: "root", text: "Extents wrap this sentence inside a 22 cm box and maxLines keeps two lines of it.", position: [0, -0.07, 0], style: { fontSize: 105, color: "#e8eef6", textAlign: "center" }, extents: { width: 0.22, height: 0.2 }, maxLines: 2 },
       ],
     }),
   },
@@ -87,7 +87,7 @@ export const PRIMITIVE_STORIES: readonly PrimitiveStory[] = [
       nodes: [
         { id: "root", kind: "group", position: [0, 0, ROOT_Z] },
         { id: "card", kind: "panel", parentId: "root", extents: { width: 0.32, height: 0.2 } },
-        { id: "heading", kind: "text", parentId: "card", text: "Settings", position: [0, 0.06, 0.005], style: { fontSize: 30, fontWeight: "bold" } },
+        { id: "heading", kind: "text", parentId: "card", text: "Settings", position: [0, 0.06, 0.005], style: { fontSize: 130, fontWeight: "bold" } },
         { id: "icon", kind: "image", parentId: "card", source: BUTTON, position: [0, -0.03, 0.005], extents: { width: 0.07, height: 0.07 } },
       ],
     }),

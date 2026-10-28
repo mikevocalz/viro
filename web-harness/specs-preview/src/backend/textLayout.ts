@@ -5,7 +5,9 @@ import {
   DEFAULT_TEXT_HALF_HEIGHT_CM,
   DEFAULT_TEXT_HALF_WIDTH_CM,
   DEFAULT_TEXT_SIZE,
+  LINE_ADVANCE_EMS,
   LINE_HEIGHT_CM_PER_SIZE,
+  TEXT_EM_CM_PER_SIZE,
   TEXT_SIZE_PER_POINT,
 } from "./lensSemantics";
 
@@ -83,7 +85,8 @@ export function layoutText(content: ViroSpecsBackendText, measure: MeasureTextCm
   }
   halfWidth = Math.max(0, halfWidth);
 
-  const lineHeightCm = size * LINE_HEIGHT_CM_PER_SIZE;
+  // Glyphs follow the Lens type scale; the maxLines box above keeps the Lens backend's own constant.
+  const lineHeightCm = size * TEXT_EM_CM_PER_SIZE * LINE_ADVANCE_EMS;
   const rectWidthCm = halfWidth * 2;
   const rectHeightCm = halfHeight * 2;
   const paragraphs = content.text.split("\n");
