@@ -179,7 +179,7 @@ export const PRIMITIVE_STORIES: readonly PrimitiveStory[] = [
         { id: "root", kind: "group", position: [0, 0, ROOT_Z] },
         { id: "button", kind: "image", parentId: "root", source: BUTTON, position: [-0.1, 0, 0], extents: { width: 0.1, height: 0.1 } },
         { id: "shiba", kind: "model", parentId: "root", source: SHIBA, format: "glb", position: [0.1, -0.05, 0], scale: [0.12, 0.12, 0.12] },
-        label("caption", "button: hover + select; shiba: select + drag", -0.12),
+        label("caption", "button: hover + select; shiba: select + drag", -0.17),
       ],
       interactions: [
         { nodeId: "button", interactable: true, manipulation: false, events: ["hover", "select"] },
