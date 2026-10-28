@@ -769,3 +769,86 @@ export type {
   ViroSpecsPlacementPose,
 } from "./components/Specs/ViroSpecsAR";
 export type { ViroSpecsAnimationPlan } from "./components/Specs/ViroSpecsCompiler";
+
+// Specs manifest v2 and diagnostics
+export {
+  VIRO_SPECS_DIAGNOSTICS,
+} from "./components/Specs/core/diagnosticCodes";
+export type {
+  ViroSpecsDiagnosticCode,
+  ViroSpecsDiagnosticDefinition,
+  ViroSpecsDiagnosticSeverity,
+} from "./components/Specs/core/diagnosticCodes";
+export {
+  createViroSpecsDiagnostic,
+  formatViroSpecsDiagnostic,
+  hasViroSpecsErrors,
+} from "./components/Specs/core/diagnostic";
+export type {
+  ViroSpecsDiagnostic,
+  ViroSpecsDiagnosticDetails,
+} from "./components/Specs/core/diagnostic";
+export {
+  VIRO_SPECS_MANIFEST_SCHEMA_ID,
+  VIRO_SPECS_MANIFEST_VERSION,
+  VIRO_SPECS_SCENE_PROTOCOL_VERSION,
+} from "./components/Specs/core/manifest";
+export type {
+  ViroSpecsAmbientLight,
+  ViroSpecsAnimationTarget,
+  ViroSpecsAnimationTrack,
+  ViroSpecsDirectionalLight,
+  ViroSpecsEasing,
+  ViroSpecsExtents,
+  ViroSpecsGroupNode,
+  ViroSpecsImageNode,
+  ViroSpecsLight,
+  ViroSpecsManifestAnimation,
+  ViroSpecsManifestGenerator,
+  ViroSpecsManifestInteraction,
+  ViroSpecsManifestNode,
+  ViroSpecsManifestPolyline,
+  ViroSpecsManifestV1,
+  ViroSpecsManifestV2,
+  ViroSpecsMaterial,
+  ViroSpecsModelFormat,
+  ViroSpecsModelNode,
+  ViroSpecsNodeKind,
+  ViroSpecsOmniLight,
+  ViroSpecsPanelNode,
+  ViroSpecsQuat,
+  ViroSpecsSoundNode,
+  ViroSpecsSpotLight,
+  ViroSpecsTextNode,
+  ViroSpecsTextStyle,
+  ViroSpecsVec3,
+  ViroSpecsVideoNode,
+  ViroSpecsWireNode,
+  ViroSpecsWireNodeKind,
+  ViroSpecsWireSceneSnapshot,
+} from "./components/Specs/core/manifest";
+export { migrateSpecsManifest } from "./components/Specs/core/migrate";
+export {
+  parseSpecsManifest,
+  parseSpecsManifestJson,
+} from "./components/Specs/core/parse";
+export {
+  validateSpecsManifestV2,
+  validateSpecsSceneSnapshot,
+} from "./components/Specs/core/validate";
+export type {
+  ViroSpecsValidationContext,
+  ViroSpecsValidationResult,
+} from "./components/Specs/core/validate";
+export { toSpecsSceneSnapshot } from "./components/Specs/core/lower";
+export type { ViroSpecsLoweredScene } from "./components/Specs/core/lower";
+export {
+  VIRO_SPECS_UNSUPPORTED_FEATURE_STATUS,
+} from "./components/Specs/core/capabilities";
+export type {
+  ViroSpecsCapabilityStatus,
+  ViroSpecsEvidenceLabel,
+  ViroSpecsUnsupportedFeature,
+} from "./components/Specs/core/capabilities";
+export { applySpecsManifest } from "./components/Specs/applySpecsManifest";
+export type { ViroSpecsApplyResult } from "./components/Specs/applySpecsManifest";

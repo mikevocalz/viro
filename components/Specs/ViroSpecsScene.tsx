@@ -12,6 +12,12 @@ import {
   type ViroSpecsSourceResolver,
 } from "./ViroSpecsCompiler";
 import { isViroSpecsRuntime } from "./ViroSpecsRuntime";
+import {
+  createViroSpecsDiagnostic,
+  hasViroSpecsErrors,
+  type ViroSpecsDiagnostic,
+} from "./core/diagnostic";
+import { validateSpecsSceneSnapshot } from "./core/validate";
 
 export type ViroSpecsSceneTransport = {
   applyScene(scene: ViroSpecsSceneSnapshot): Promise<void> | void;
@@ -33,12 +39,26 @@ export type ViroSpecsSceneProps = {
   children?: React.ReactNode;
   transport: ViroSpecsSceneTransport;
   sourceResolver?: ViroSpecsSourceResolver;
-  onDiagnostic?: (message: string) => void;
+  /**
+   * Receives every diagnostic from compilation, validation and the transport.
+   * When any has severity `error`, the scene is not applied and the previous
+   * scene stays on the Lens.
+   */
+  onDiagnostic?: (diagnostic: ViroSpecsDiagnostic) => void;
   renderNativeFallback?: boolean;
 };
 
 function emptyCompiled(): ViroSpecsCompiledScene {
   return {
+    manifest: {
+      version: 2,
+      nodes: [],
+      polylines: [],
+      lights: [],
+      materials: [],
+      interactions: [],
+      animations: [],
+    },
     scene: { version: 1, nodes: [] },
     polylines: [],
     animations: [],
@@ -87,8 +107,13 @@ export function ViroSpecsScene({
         for (const diagnostic of compiled.diagnostics) {
           onDiagnostic?.(diagnostic);
         }
+        if (hasViroSpecsErrors(compiled.diagnostics)) return;
 
-        await transport.applyScene(compiled.scene);
+        const gate = validateSpecsSceneSnapshot(compiled.scene);
+        for (const diagnostic of gate.diagnostics) onDiagnostic?.(diagnostic);
+        if (!gate.ok) return;
+
+        await transport.applyScene(gate.value);
         if (revisionRef.current !== revision) return;
 
         await transport.clearPolylines?.();
@@ -105,11 +130,15 @@ export function ViroSpecsScene({
           if (animation.action === "stop") {
             if (!transport.stopAnimation) {
               onDiagnostic?.(
-                "Specs transport cannot stop animation " +
-                  animation.name +
-                  " on " +
-                  animation.nodeId +
-                  "."
+                createViroSpecsDiagnostic(
+                  "VS3010",
+                  "Transport has no stopAnimation; cannot stop " +
+                    animation.name +
+                    " on " +
+                    animation.nodeId +
+                    ".",
+                  { nodeId: animation.nodeId }
+                )
               );
               continue;
             }
@@ -117,11 +146,15 @@ export function ViroSpecsScene({
           } else {
             if (!transport.playAnimation) {
               onDiagnostic?.(
-                "Specs transport cannot play animation " +
-                  animation.name +
-                  " on " +
-                  animation.nodeId +
-                  "."
+                createViroSpecsDiagnostic(
+                  "VS3010",
+                  "Transport has no playAnimation; cannot play " +
+                    animation.name +
+                    " on " +
+                    animation.nodeId +
+                    ".",
+                  { nodeId: animation.nodeId }
+                )
               );
               continue;
             }
@@ -129,10 +162,13 @@ export function ViroSpecsScene({
           }
         }
       })
-      .catch((error) => {
+      .catch((error: unknown) => {
         onDiagnostic?.(
-          "Specs scene transport failed: " +
-            (error instanceof Error ? error.message : String(error))
+          createViroSpecsDiagnostic(
+            "VS3011",
+            "Transport failed: " +
+              (error instanceof Error ? error.message : String(error))
+          )
         );
       });
 
