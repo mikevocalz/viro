@@ -26,7 +26,7 @@ import {
   createViroSpecsDiagnostic,
   type ViroSpecsDiagnostic,
 } from "./core/diagnostic";
-import { toSpecsSceneSnapshot } from "./core/lower";
+import { toSpecsSceneDocument, toSpecsSceneSnapshot } from "./core/lower";
 import type {
   ViroSpecsAnimationTrack,
   ViroSpecsExtents,
@@ -36,6 +36,7 @@ import type {
   ViroSpecsManifestNode,
   ViroSpecsManifestPolyline,
   ViroSpecsManifestV2,
+  ViroSpecsSceneDocument,
   ViroSpecsTextStyle,
   ViroSpecsVec3,
   ViroSpecsWireNode,
@@ -125,7 +126,19 @@ export type ViroSpecsAnimationPlan =
  */
 export type ViroSpecsCompiledScene = {
   manifest: ViroSpecsManifestV2;
+  /**
+   * Scene protocol 2 document with every manifest field. `ViroSpecsScene`
+   * sends it to transports that implement `applySceneDocument`.
+   */
+  document: ViroSpecsSceneDocument;
+  /** Scene protocol 1 snapshot for transports that only implement `applyScene`. */
   scene: ViroSpecsSceneSnapshot;
+  /**
+   * `VS1015` warnings for fields `scene` drops. Reported by `ViroSpecsScene`
+   * only when it has to fall back to `applyScene`; `diagnostics` does not
+   * include them.
+   */
+  loweringDiagnostics: ViroSpecsDiagnostic[];
   polylines: ViroSpecsPortablePolyline[];
   animations: ViroSpecsAnimationPlan[];
   callbacks: Map<string, ViroSpecsCallbackRecord>;
@@ -740,11 +753,12 @@ export function compileViroSpecsChildren(
   // registry, so VS1011 (info) would repeat for every materialId on every render.
   diagnostics.push(...validation.diagnostics.filter((diagnostic) => diagnostic.code !== "VS1011"));
   const lowered = toSpecsSceneSnapshot(manifest);
-  diagnostics.push(...lowered.diagnostics);
 
   return {
     manifest,
+    document: toSpecsSceneDocument(manifest),
     scene: lowered.snapshot,
+    loweringDiagnostics: [...lowered.diagnostics],
     polylines,
     animations,
     callbacks,

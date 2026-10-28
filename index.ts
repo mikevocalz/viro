@@ -792,8 +792,11 @@ export {
   VIRO_SPECS_MANIFEST_SCHEMA_ID,
   VIRO_SPECS_MANIFEST_VERSION,
   VIRO_SPECS_SCENE_PROTOCOL_VERSION,
+  VIRO_SPECS_SCENE_DOCUMENT_PROTOCOL_VERSION,
 } from "./components/Specs/core/manifest";
 export type {
+  ViroSpecsSceneDocument,
+  ViroSpecsSceneDocumentNode,
   ViroSpecsAmbientLight,
   ViroSpecsAnimationTarget,
   ViroSpecsAnimationTrack,
@@ -840,7 +843,7 @@ export type {
   ViroSpecsValidationContext,
   ViroSpecsValidationResult,
 } from "./components/Specs/core/validate";
-export { toSpecsSceneSnapshot } from "./components/Specs/core/lower";
+export { toSpecsSceneDocument, toSpecsSceneSnapshot } from "./components/Specs/core/lower";
 export type { ViroSpecsLoweredScene } from "./components/Specs/core/lower";
 export {
   VIRO_SPECS_UNSUPPORTED_FEATURE_STATUS,

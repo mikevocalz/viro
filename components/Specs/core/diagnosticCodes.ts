@@ -28,7 +28,10 @@ export interface ViroSpecsDiagnosticDefinition {
  * Ranges: `VS1xxx` manifest and protocol validation, `VS2xxx` static source
  * analysis (`viro-specs-compile`), `VS3xxx` compile semantics shared by the
  * runtime and static compilers and the runtime transport, `VS4xxx` capability
- * errors for features the Specs target does not implement.
+ * errors for features the Specs target does not implement, `VS5xxx` the
+ * Lens scene host in `@viro-external/specs` (ViroSpecsHostDiagnostics; the
+ * entries mirror its VIRO_SPECS_HOST_DIAGNOSTICS so a code reads the same in
+ * compiler output and in a Lens log).
  *
  * Codes are append-only. A retired code keeps its entry so old logs stay
  * searchable.
@@ -107,12 +110,12 @@ export const VIRO_SPECS_DIAGNOSTICS = {
   VS1014: {
     severity: "error",
     title: "Unsupported scene protocol version",
-    hint: "The Lens runtime reads scene snapshots with version 1. Lower a v2 manifest with toSpecsSceneSnapshot().",
+    hint: "Scene snapshots are protocol 1. Lower a v2 manifest with toSpecsSceneSnapshot(), or send toSpecsSceneDocument() to a transport with applySceneDocument.",
   },
   VS1015: {
     severity: "warning",
     title: "Field is not carried by scene protocol 1",
-    hint: "The Lens runtime does not render this field yet. The manifest keeps it; the wire snapshot omits it.",
+    hint: "The transport only implements applyScene (protocol 1), which drops this field. Implement applySceneDocument (protocol 2) or use the generated Lens host, which renders it.",
   },
   VS2001: {
     severity: "error",
@@ -283,6 +286,76 @@ export const VIRO_SPECS_DIAGNOSTICS = {
     severity: "error",
     title: "Custom rendering is not supported on Specs",
     hint: "GPU, three.js, custom geometry and particle surfaces do not compile to Lens content.",
+  },
+  VS5001: {
+    severity: "error",
+    title: "Unsupported scene protocol",
+    hint: "The host reads scene protocols 1 and 2. Recompile with a viro-specs-compile that matches this @viro-external/specs.",
+  },
+  VS5002: {
+    severity: "error",
+    title: "Scene failed host validation",
+    hint: "The previous scene stays on screen. Fix the field named by fieldPath; viro-specs-compile reports the same problem with a source position.",
+  },
+  VS5003: {
+    severity: "warning",
+    title: "Asset is not registered; placeholder shown",
+    hint: "Add the asset to ViroSpecsAssetRegistry under the reported source ID. The node shows a bounded tinted box until then.",
+  },
+  VS5004: {
+    severity: "warning",
+    title: "Material is not registered; default material used",
+    hint: "Register the material ID in ViroSpecsAssetRegistry or define it in the scene's materials list.",
+  },
+  VS5005: {
+    severity: "error",
+    title: "Staging failed; previous scene kept",
+    hint: "The staged scene was disposed and the committed scene is unchanged. The message names the node and the backend error.",
+  },
+  VS5006: {
+    severity: "info",
+    title: "Async work finished after its scene was retired",
+    hint: "No action needed. The result was discarded because navigation or replacement retired the scene that started it.",
+  },
+  VS5007: {
+    severity: "warning",
+    title: "Font family is not registered; default font used",
+    hint: "Register the font in ViroSpecsAssetRegistry fontIds/fonts under the fontFamily name.",
+  },
+  VS5008: {
+    severity: "warning",
+    title: "maxLines is approximated by the text box height",
+    hint: "Lens Text has no line limit. The host sizes the text box to maxLines lines and truncates overflow; give the node extents for exact layout.",
+  },
+  VS5009: {
+    severity: "error",
+    title: "Listener or action handler threw",
+    hint: "The exception was caught so the Lens keeps running. Fix the listener named in the message.",
+  },
+  VS5010: {
+    severity: "info",
+    title: "Resource cache is full; least recently used entry released",
+    hint: "Raise maxCachedMaterials if this repeats every frame.",
+  },
+  VS5011: {
+    severity: "warning",
+    title: "Placeholder visual is unavailable",
+    hint: "Set placeholderMaterial (or defaultImageMaterial) on ViroSpecsAssetRegistry so missing assets render as a tinted box instead of an empty node.",
+  },
+  VS5012: {
+    severity: "warning",
+    title: "Material lightingModel is not mapped",
+    hint: "Lens shading comes from the base material, not from lightingModel. Register a Lens material under the material ID to control shading.",
+  },
+  VS5013: {
+    severity: "warning",
+    title: "Patch op skipped",
+    hint: "The op named a node that does not exist or would create a parent cycle. The rest of the patch applied.",
+  },
+  VS5014: {
+    severity: "error",
+    title: "Backend operation failed",
+    hint: "A Lens call threw while updating a committed node. The node keeps its previous state; the message names the operation.",
   },
 } as const satisfies Record<string, ViroSpecsDiagnosticDefinition>;
 

@@ -3,7 +3,7 @@ import {
   hasViroSpecsErrors,
   type ViroSpecsDiagnostic,
 } from "./core/diagnostic";
-import { toSpecsSceneSnapshot } from "./core/lower";
+import { toSpecsSceneDocument, toSpecsSceneSnapshot } from "./core/lower";
 import type { ViroSpecsManifestV2 } from "./core/manifest";
 import { parseSpecsManifest } from "./core/parse";
 import { validateSpecsSceneSnapshot } from "./core/validate";
@@ -22,9 +22,11 @@ export interface ViroSpecsApplyResult {
  * Applies a manifest that did not come from {@linkcode compileViroSpecsChildren}:
  * hand-written JSON, a file produced by `viro-specs-compile`, or a plan built
  * by app code. The input goes through the same gates as compiled scenes:
- * version check and v1 migration, manifest validation, lowering to scene
- * protocol 1 and the protocol check. Nothing reaches the transport when any
- * gate reports an error.
+ * version check and v1 migration and manifest validation. A transport with
+ * `applySceneDocument` receives the scene protocol 2 document, which carries
+ * every field; otherwise the manifest is lowered to scene protocol 1, fields
+ * it drops are reported with `VS1015`, and the protocol check runs. Nothing
+ * reaches the transport when any gate reports an error.
  *
  * Only the scene snapshot and polylines are sent. Animations and interactions
  * in a hand-written manifest are host-side data; this function does not
@@ -43,6 +45,24 @@ export async function applySpecsManifest(
 ): Promise<ViroSpecsApplyResult> {
   const parsed = parseSpecsManifest(input, context);
   if (!parsed.ok) return { applied: false, diagnostics: parsed.diagnostics };
+
+  if (transport.applySceneDocument) {
+    const diagnostics = [...parsed.diagnostics];
+    if (hasViroSpecsErrors(diagnostics)) return { applied: false, manifest: parsed.value, diagnostics };
+    try {
+      await transport.applySceneDocument(toSpecsSceneDocument(parsed.value));
+    } catch (error) {
+      diagnostics.push(
+        createViroSpecsDiagnostic(
+          "VS3011",
+          "Transport failed: " + (error instanceof Error ? error.message : String(error)),
+          context.file !== undefined ? { file: context.file } : {}
+        )
+      );
+      return { applied: false, manifest: parsed.value, diagnostics };
+    }
+    return { applied: true, manifest: parsed.value, diagnostics };
+  }
 
   const lowered = toSpecsSceneSnapshot(parsed.value);
   const gate = validateSpecsSceneSnapshot(lowered.snapshot, context);

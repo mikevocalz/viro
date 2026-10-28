@@ -21,8 +21,8 @@ compiler, `npm run test:specs-compiler`), `R` is
 | position | meters | meters at public boundary, converted to cm | `nodes[].position` | `VS2004` non-static, `VS1004` invalid | `S` unresolved transform; `M` bad-position; `G` |
 | rotation | Euler degrees in JSX | compiled quaternion | `nodes[].rotation` (quaternion) | `VS2004`, `VS1004` | `S` and `R` first case (90° yaw → quaternion) |
 | scale | unitless | unitless | `nodes[].scale` | `VS2004`, `VS1004` | `G` |
-| text | ViroText | Lens Text | `nodes[kind=text].text`, `.style`, `.extents`, `.maxLines` | `VS2009` non-static text; `VS3002` unsupported style keys; `VS3009` non-hex color; `VS1015` style/extents/maxLines not on the wire yet (WS3) | `S` lights and text style; `R` "coded diagnostic objects and a schema-valid manifest" |
-| image | ViroImage | Lens Image/Texture | `nodes[kind=image].source`, `.extents` | `VS2010` non-static source, `VS3008` no stable ID, `VS1015` extents | `M` all-fields; WS2 golden |
+| text | ViroText | Lens Text | `nodes[kind=text].text`, `.style`, `.extents`, `.maxLines` | `VS2009` non-static text; `VS3002` unsupported style keys; `VS3009` non-hex color; `VS5007` unregistered font, `VS5008` maxLines approximated (protocol 2 renders style/extents; `VS1015` only on protocol 1 transports) | `S` lights and text style; `R` "coded diagnostic objects and a schema-valid manifest" |
+| image | ViroImage | Lens Image/Texture | `nodes[kind=image].source`, `.extents` | `VS2010` non-static source, `VS3008` no stable ID, `VS5003` missing asset placeholder | `M` all-fields; WS2 golden |
 | GLB/model | Viro3DObject | ObjectPrefab | `nodes[kind=model].source`, `.format` | `VS2010`, `VS3008`, `VS3013` VRX | `S` vrx; `G` |
 | hover | Viro event delegate | SIK hover | `interactions[].events: "hover"` | `VS1010` unknown target | `M` unknown-target; `R` "routes portable interactions" |
 | click/select | Viro click | SIK trigger/pinch | `interactions[].events: "select"` | `VS1010` | `S` first case; `G` |
@@ -32,7 +32,7 @@ compiler, `npm run test:specs-compiler`), `R` is
 | placement | native AR placement patterns | SurfacePlacement | none (runtime API) | WS3/WS4 | WS4 |
 | polyline | ViroPolyline | VolumetricLine | `polylines[]` | `VS2006` points, `VS2007` thickness, `VS2008` material | `M` polyline-one-point; `G` |
 | capabilities | runtime/native queries | SPECS capability report | `ViroSpecsCapabilityStatus` (schema `$defs/capabilityStatus`): `implemented`, `installed`, `permission`, `evidence` as separate fields | none | WS3 (hosts report it) |
-| lights | ViroAmbient/Directional/Omni/SpotLight | not rendered yet | `lights[]` | `VS1015` when lowered for the Lens (WS3 renders) | `S` lights and text style, lit.tsx `--strict` |
+| lights | ViroAmbient/Directional/Omni/SpotLight | Lens LightSource (protocol 2) | `lights[]` | `VS1015` only on protocol 1 transports | `S` lights and text style, lit.tsx `--strict` |
 | materials | ViroMaterials | Lens material registry | `materials[]`, `materialId` | `VS1011` (info) when only the Lens registry has it | `S` first case (`route`) |
 | portal | ViroPortal, ViroPortalScene | none | none | `VS4001` | `S` capability loop; `R` capability table |
 | physics | `physicsBody`, `onCollision` | none | none | `VS4002` | `S` capability loop; `R` "physics props" |

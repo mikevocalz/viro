@@ -96,8 +96,10 @@ assert.deepEqual(manifest.nodes[0].position, [0, 0, -1.5]);
 assert.ok(Math.abs(manifest.nodes[0].rotation[1] - Math.SQRT1_2) < 1e-9);
 assert.equal(manifest.nodes[2].source, "fixtures/model.glb");
 assert.equal(manifest.nodes[2].format, "glb");
-assert.deepEqual(result.scene.nodes.map((node) => node.id), ["root", "title", "model"]);
-assert.equal(result.scene.version, 1);
+assert.deepEqual(result.document.nodes.map((node) => node.id), ["root", "title", "model"]);
+assert.equal(result.document.version, 2);
+assert.deepEqual(result.document.polylines, manifest.polylines);
+assert.equal("generator" in result.document, false);
 
 assert.equal(manifest.polylines.length, 1);
 assert.equal(manifest.polylines[0].radiusMeters, 0.004);
@@ -132,21 +134,24 @@ assert.deepEqual(
 );
 
 const generated = lensTs(result);
+// The generated host is a thin orchestrator over ViroSpecsSceneControllerHost:
+// one input, a protocol 2 document, present on start, clear on destroy, and
+// no throw.
 for (const pattern of [
   /class ViroGeneratedSceneHost/,
-  /runtime\.applySceneSnapshot/,
-  /interaction\.setInteractable/,
-  /interaction\.setManipulationEnabled/,
-  /animation\.play/,
-  /navigation\.presentPolyline/,
+  /import \{ ViroSpecsSceneControllerHost \} from "\.\.\/lens\/ViroSpecsSceneControllerHost"/,
+  /const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = \{\n  "version": 2,/,
+  /@input\n  @hint\("SceneObject hosting ViroSpecsSceneControllerHost"\)\n  sceneHostObject: SceneObject;/,
+  /host\.present\(GENERATED_SCENE\)/,
+  /OnStartEvent/,
   /OnDestroyEvent/,
-  /interaction\.remove/,
-  /animation\.stop/,
-  /navigation\.clearRoute/,
-  /runtime\.clear/,
+  /this\.host\.clear\(\)/,
 ]) {
   assert.match(generated, pattern);
 }
+assert.doesNotMatch(generated, /throw /);
+assert.doesNotMatch(generated, /: any/);
+assert.equal((generated.match(/@input/g) ?? []).length, 1);
 checks += 1;
 
 // --- Static-analysis diagnostics carry codes and source positions ---------
@@ -281,17 +286,25 @@ assert.equal(cliResult.status, 0, cliResult.stderr);
 assert.equal(cliResult.stderr, "");
 assert.equal(run(["--entry", lab, "--out", path.join(tmp, "lab-strict.json"), "--strict"]).status, 0);
 
-// A light is kept in the manifest but not sent to the Lens runtime: lens-ts
-// warns (VS1015), the JSON manifest does not, and --strict refuses the host.
+// Lights, text style, extents and opacity reach the Lens through scene
+// protocol 2, so lens-ts and scene-json report no VS1015 and pass --strict.
 const lit = path.join(tmp, "lit.tsx");
-fs.writeFileSync(lit, 'export const S = () => <ViroSpecsScene>\n  <ViroAmbientLight viroTag="amb" />\n  <ViroNode viroTag="n" />\n</ViroSpecsScene>;\n');
-cliResult = run(["--entry", lit, "--out", path.join(tmp, "lit.ts"), "--format", "lens-ts"]);
+fs.writeFileSync(lit, 'export const S = () => <ViroSpecsScene>\n  <ViroAmbientLight viroTag="amb" />\n  <ViroText viroTag="t" text="Hi" width={0.5} height={0.1} opacity={0.5} style={{ fontSize: 18, color: "#fff" }} />\n</ViroSpecsScene>;\n');
+cliResult = run(["--entry", lit, "--out", path.join(tmp, "lit.ts"), "--format", "lens-ts", "--strict"]);
 assert.equal(cliResult.status, 0, cliResult.stderr);
-assert.match(cliResult.stderr, /warning VS1015 \[\/lights\/0\]/);
+assert.doesNotMatch(cliResult.stderr, /VS1015/);
+const litTs = fs.readFileSync(path.join(tmp, "lit.ts"), "utf8");
+assert.match(litTs, /"type": "ambient"/);
+assert.match(litTs, /"fontSize": 18/);
+assert.match(litTs, /"opacity": 0.5/);
+cliResult = run(["--entry", lit, "--out", path.join(tmp, "lit.scene.json"), "--format", "scene-json", "--strict"]);
+assert.equal(cliResult.status, 0, cliResult.stderr);
+const litScene = JSON.parse(fs.readFileSync(path.join(tmp, "lit.scene.json"), "utf8"));
+assert.equal(litScene.version, 2);
+assert.equal(litScene.lights[0].id, "amb");
+assert.deepEqual(litScene.nodes[0].extents, { width: 0.5, height: 0.1 });
 assert.equal(run(["--entry", lit, "--out", path.join(tmp, "lit.json"), "--strict"]).status, 0);
-cliResult = run(["--entry", lit, "--out", path.join(tmp, "strict.ts"), "--format", "lens-ts", "--strict"]);
-assert.equal(cliResult.status, 1);
-assert.ok(!fs.existsSync(path.join(tmp, "strict.ts")));
+assert.equal(run(["--entry", lit, "--out", path.join(tmp, "x.txt"), "--format", "nope"]).status, 1);
 
 // Errors block output and print file:line:col.
 const bad = path.join(tmp, "bad.tsx");
@@ -317,12 +330,16 @@ assert.equal(JSON.parse(fs.readFileSync(migratedOut, "utf8")).version, 2);
 cliResult = run(["--manifest", v1, "--out", path.join(tmp, "m2.json"), "--strict"]);
 assert.equal(cliResult.status, 1, "a deprecated v1 input fails --strict");
 
-// The lens-ts host built from the migrated v1 manifest matches the one built from source.
+// The lens-ts host built from the migrated v1 manifest matches the one built
+// from source, except for model `format`: protocol 2 carries it and v1 never
+// had the field, so the source build is the only one that knows it.
 cliResult = run(["--manifest", v1, "--out", path.join(tmp, "from-v1.ts"), "--format", "lens-ts"]);
 assert.equal(cliResult.status, 0, cliResult.stderr);
+const withoutFormat = (text) => text.replace(/,\n\s*"format": "glb"/g, "");
+assert.notEqual(fs.readFileSync(path.join(tmp, "lab.ts"), "utf8"), withoutFormat(fs.readFileSync(path.join(tmp, "lab.ts"), "utf8")));
 assert.equal(
   fs.readFileSync(path.join(tmp, "from-v1.ts"), "utf8"),
-  fs.readFileSync(path.join(tmp, "lab.ts"), "utf8")
+  withoutFormat(fs.readFileSync(path.join(tmp, "lab.ts"), "utf8"))
 );
 
 // Invalid hand-written JSON is rejected at the entry point.

@@ -55,7 +55,8 @@ set with `hasViroSpecsErrors(ds)`.
 
 Ranges: `VS1xxx` manifest and protocol validation, `VS2xxx` static source
 analysis, `VS3xxx` compile semantics shared by both compilers plus the runtime
-transport, `VS4xxx` capability errors. Codes are append-only, and gaps in
+transport, `VS4xxx` capability errors, `VS5xxx` the Lens scene host
+(`ViroSpecsSceneController` in `@viro-external/specs`). Codes are append-only, and gaps in
 the numbering are unassigned. Duplicate IDs are reported once, as `VS1007`,
 by validation, whichever producer built the manifest.
 
@@ -185,15 +186,15 @@ Unsupported scene protocol version.
 
 Emitted by validateSpecsSceneSnapshot, ViroSpecsScene, applySpecsManifest.
 
-Fix: The Lens runtime reads scene snapshots with version 1. Lower a v2 manifest with toSpecsSceneSnapshot().
+Fix: Scene snapshots are protocol 1. Lower a v2 manifest with toSpecsSceneSnapshot(), or send toSpecsSceneDocument() to a transport with applySceneDocument.
 
 ### VS1015 · warning
 
 Field is not carried by scene protocol 1.
 
-Emitted by toSpecsSceneSnapshot, `viro-specs-compile --format lens-ts`, the runtime compiler.
+Emitted by toSpecsSceneSnapshot, and by ViroSpecsScene and applySpecsManifest when the transport only implements applyScene. `viro-specs-compile --format lens-ts` and `--format scene-json` use scene protocol 2 and never emit it.
 
-Fix: The Lens runtime does not render this field yet. The manifest keeps it; the wire snapshot omits it.
+Fix: The transport only implements applyScene (protocol 1), which drops this field. Implement applySceneDocument (protocol 2) or use the generated Lens host, which renders it.
 
 ## Static source analysis (VS2xxx)
 
@@ -472,3 +473,124 @@ Custom rendering is not supported on Specs.
 Emitted by the runtime compiler and `viro-specs-compile --entry`.
 
 Fix: GPU, three.js, custom geometry and particle surfaces do not compile to Lens content.
+
+## Lens scene host (VS5xxx)
+
+`ViroSpecsSceneController` in `@viro-external/specs` reports these on its
+`ViroSpecsHostDiagnostics` channel and in the Lens log, never as a thrown
+exception. Errors leave the committed scene unchanged. The same table, with
+the host's behavior for each code, is in that package's
+`doc/LensHostDiagnostics.md`; both are generated from catalogs that the two
+repos' tests keep identical.
+
+### VS5001 · error
+
+Unsupported scene protocol.
+
+Emitted by ViroSpecsSceneController (`@viro-external/specs`).
+
+Fix: The host reads scene protocols 1 and 2. Recompile with a viro-specs-compile that matches this @viro-external/specs.
+
+### VS5002 · error
+
+Scene failed host validation.
+
+Emitted by ViroSpecsSceneController (`@viro-external/specs`).
+
+Fix: The previous scene stays on screen. Fix the field named by fieldPath; viro-specs-compile reports the same problem with a source position.
+
+### VS5003 · warning
+
+Asset is not registered; placeholder shown.
+
+Emitted by ViroSpecsSceneController (`@viro-external/specs`).
+
+Fix: Add the asset to ViroSpecsAssetRegistry under the reported source ID. The node shows a bounded tinted box until then.
+
+### VS5004 · warning
+
+Material is not registered; default material used.
+
+Emitted by ViroSpecsSceneController (`@viro-external/specs`).
+
+Fix: Register the material ID in ViroSpecsAssetRegistry or define it in the scene's materials list.
+
+### VS5005 · error
+
+Staging failed; previous scene kept.
+
+Emitted by ViroSpecsSceneController (`@viro-external/specs`).
+
+Fix: The staged scene was disposed and the committed scene is unchanged. The message names the node and the backend error.
+
+### VS5006 · info
+
+Async work finished after its scene was retired.
+
+Emitted by ViroSpecsSceneController (`@viro-external/specs`).
+
+Fix: No action needed. The result was discarded because navigation or replacement retired the scene that started it.
+
+### VS5007 · warning
+
+Font family is not registered; default font used.
+
+Emitted by ViroSpecsSceneController (`@viro-external/specs`).
+
+Fix: Register the font in ViroSpecsAssetRegistry fontIds/fonts under the fontFamily name.
+
+### VS5008 · warning
+
+maxLines is approximated by the text box height.
+
+Emitted by ViroSpecsSceneController (`@viro-external/specs`).
+
+Fix: Lens Text has no line limit. The host sizes the text box to maxLines lines and truncates overflow; give the node extents for exact layout.
+
+### VS5009 · error
+
+Listener or action handler threw.
+
+Emitted by ViroSpecsSceneController (`@viro-external/specs`).
+
+Fix: The exception was caught so the Lens keeps running. Fix the listener named in the message.
+
+### VS5010 · info
+
+Resource cache is full; least recently used entry released.
+
+Emitted by ViroSpecsSceneController (`@viro-external/specs`).
+
+Fix: Raise maxCachedMaterials if this repeats every frame.
+
+### VS5011 · warning
+
+Placeholder visual is unavailable.
+
+Emitted by ViroSpecsSceneController (`@viro-external/specs`).
+
+Fix: Set placeholderMaterial (or defaultImageMaterial) on ViroSpecsAssetRegistry so missing assets render as a tinted box instead of an empty node.
+
+### VS5012 · warning
+
+Material lightingModel is not mapped.
+
+Emitted by ViroSpecsSceneController (`@viro-external/specs`).
+
+Fix: Lens shading comes from the base material, not from lightingModel. Register a Lens material under the material ID to control shading.
+
+### VS5013 · warning
+
+Patch op skipped.
+
+Emitted by ViroSpecsSceneController (`@viro-external/specs`).
+
+Fix: The op named a node that does not exist or would create a parent cycle. The rest of the patch applied.
+
+### VS5014 · error
+
+Backend operation failed.
+
+Emitted by ViroSpecsSceneController (`@viro-external/specs`).
+
+Fix: A Lens call threw while updating a committed node. The node keeps its previous state; the message names the operation.

@@ -1,5 +1,7 @@
 import { createViroSpecsDiagnostic, type ViroSpecsDiagnostic } from "./diagnostic";
 import type {
+  ViroSpecsSceneDocument,
+  ViroSpecsSceneDocumentNode,
   ViroSpecsManifestNode,
   ViroSpecsManifestV2,
   ViroSpecsWireNode,
@@ -90,4 +92,26 @@ export function toSpecsSceneSnapshot(manifest: ViroSpecsManifestV2): ViroSpecsLo
     );
   });
   return { snapshot: { version: 1, nodes }, diagnostics };
+}
+
+/**
+ * Builds the scene protocol 2 document the generated Lens host and
+ * `ViroSpecsSceneController` read. Every manifest v2 node field, light and
+ * material is carried, so unlike {@linkcode toSpecsSceneSnapshot} this
+ * reports nothing. Video and sound nodes are left out; validation has
+ * already rejected them with `VS4004`/`VS4005`.
+ */
+export function toSpecsSceneDocument(manifest: ViroSpecsManifestV2): ViroSpecsSceneDocument {
+  const nodes = manifest.nodes.filter(
+    (node): node is ViroSpecsSceneDocumentNode => node.kind !== "video" && node.kind !== "sound"
+  );
+  return {
+    version: 2,
+    nodes,
+    polylines: manifest.polylines,
+    lights: manifest.lights,
+    materials: manifest.materials,
+    interactions: manifest.interactions,
+    animations: manifest.animations,
+  };
 }

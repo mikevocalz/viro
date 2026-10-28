@@ -193,8 +193,12 @@ describe("Viro Specs runtime compiler diagnostics", () => {
       style: { fontSize: 18, color: "#ffffff", textAlign: "center" },
       extents: { width: 0.5, height: 0.1 },
     });
-    // style and extents are in the manifest but not on the wire: reported, not dropped silently.
-    expect(compiled.diagnostics.map((d) => [d.code, d.severity, d.fieldPath])).toEqual([
+    // Scene protocol 2 carries style and extents, so compiling reports nothing.
+    expect(compiled.diagnostics).toEqual([]);
+    expect(compiled.document.nodes[1]).toEqual(compiled.manifest.nodes[1]);
+    // The protocol 1 snapshot drops them; ViroSpecsScene reports these only
+    // when a transport has no applySceneDocument.
+    expect(compiled.loweringDiagnostics.map((d) => [d.code, d.severity, d.fieldPath])).toEqual([
       ["VS1015", "warning", "/nodes/1/style"],
       ["VS1015", "warning", "/nodes/1/extents"],
     ]);

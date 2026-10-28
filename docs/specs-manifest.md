@@ -158,24 +158,26 @@ offsets from the element's position. Easing is one of `linear`, `ease-in`,
 `ease-out`, `ease-in-out`; any other Viro easing is an error (`VS3006`) rather
 than a substitute curve.
 
-## What reaches the Lens today
+## What reaches the Lens
 
-The Lens runtime reads **scene protocol 1**: `{ version: 1, nodes }` with
-`id`, `kind`, `parentId`, `position`, `rotation`, `scale`, `source`, `text`,
-`visible` per node and kinds `group`, `text`, `image`, `model`, `panel`.
-`toSpecsSceneSnapshot(manifest)` lowers a v2 manifest to that snapshot, and
-`validateSpecsSceneSnapshot` checks every snapshot before a transport sees it.
+The Lens runtime in `@viro-external/specs` reads two scene protocols, and
+`ViroSpecsSceneController` checks the version before touching the live
+scene (`VS5001` for anything else):
 
-Fields protocol 1 cannot carry stay in the manifest and are reported with
-`VS1015` (warning) when lowered: text `style`, `extents`, `maxLines`,
-`opacity`, `materialId` and all `lights`. `viro-specs-compile --format
-lens-ts --strict` therefore fails on a scene that uses them, until the Lens
-host renders them (WS3). Model `format` is asset metadata and lowers without a
-warning.
+| Protocol | Built by | Carries | Read by |
+| --- | --- | --- | --- |
+| 2 | `toSpecsSceneDocument(manifest)` | every node field of manifest v2 (style, extents, maxLines, opacity, materialId, format), plus polylines, lights, materials, interactions, animations | `ViroSpecsSceneController`, the generated Lens host, transports with `applySceneDocument` |
+| 1 | `toSpecsSceneSnapshot(manifest)` | `{ version: 1, nodes }` with transform, `source`, `text`, `visible` | transports that only implement `applyScene`, the legacy `ViroSpecsRuntimeHost` |
 
-Polylines, interactions and animations already use their v1 wire shapes and
-pass through unchanged. For the Platform Lab, the generated Lens host from a v2
-manifest is byte-identical to the one main produced from v1.
+A protocol 2 document is the manifest without `$schema`, `generator` and
+`source`, and without video and sound nodes (validation already rejected
+them). `viro-specs-compile --format scene-json` writes one, and
+`--format lens-ts` embeds one in the generated host, so neither reports
+`VS1015`.
+
+Lowering to protocol 1 still reports every field it drops with `VS1015`
+(warning). `ViroSpecsScene` and `applySpecsManifest` only lower when the
+transport has no `applySceneDocument`, and only then report it.
 
 ## Entry points
 
@@ -188,6 +190,7 @@ Every path into a host validates first:
 | Manifest JSON file | `viro-specs-compile --manifest` | version, migration, validation |
 | Manifest value in app code | `parseSpecsManifest`, `applySpecsManifest` | version, migration, validation, lowering, protocol gate |
 | Scene snapshot | `validateSpecsSceneSnapshot` | protocol version 1, wire kinds, fields, IDs, parents |
+| Anything arriving in the Lens | `ViroSpecsSceneController` (`@viro-external/specs`) | protocol 1 or 2, every field, IDs, parents, cycles, references; `VS5001`/`VS5002` and the live scene stays |
 
 ```ts
 import { applySpecsManifest, formatViroSpecsDiagnostic } from "@reactvision/react-viro";

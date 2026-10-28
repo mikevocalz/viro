@@ -171,7 +171,7 @@ schema is the next step.
 2. [x] Runtime and static compilers emit and validate v2.
 3. [x] Every viro entry point validates: `ViroSpecsScene`, `applySpecsManifest`, `viro-specs-compile --entry` and `--manifest`, `validateSpecsSceneSnapshot`.
 4. [ ] WS2: byte-identical v2 manifests from both compilers for the Platform Lab (today the runtime manifest omits `$schema`, `source`, and `backendPackage` on polylines and animations).
-5. [ ] WS3: Lens host validates on entry, renders style, extents, opacity, materials and lights, and moves the wire to protocol 2.
+5. [x] WS3: Lens host validates on entry, renders style, extents, opacity, materials and lights, and moves the wire to protocol 2 (`toSpecsSceneDocument`, `viro-specs-compile --format scene-json`, protocol 2 `lens-ts`; viro-external `feat/specs-host`, ADR 0002 there). Protocol 1 stays for `applyScene`-only transports, which still get `VS1015`.
 
 ## Baseline re-verification
 

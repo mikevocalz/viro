@@ -18,9 +18,18 @@ import {
   type ViroSpecsDiagnostic,
 } from "./core/diagnostic";
 import { validateSpecsSceneSnapshot } from "./core/validate";
+import type { ViroSpecsSceneDocument } from "./core/manifest";
 
 export type ViroSpecsSceneTransport = {
+  /** Scene protocol 1. Drops text style, extents, maxLines, opacity, materials and lights (`VS1015`). */
   applyScene(scene: ViroSpecsSceneSnapshot): Promise<void> | void;
+  /**
+   * Scene protocol 2, read by `ViroSpecsSceneController` in
+   * `@viro-external/specs`. When present it is used instead of `applyScene`,
+   * and the document carries polylines, interactions and animations, so the
+   * per-item calls below are not made.
+   */
+  applySceneDocument?(document: ViroSpecsSceneDocument): Promise<void> | void;
   presentPolyline?(polyline: ViroSpecsPortablePolyline): Promise<void> | void;
   clearPolylines?(): Promise<void> | void;
   playAnimation?(
@@ -59,7 +68,17 @@ function emptyCompiled(): ViroSpecsCompiledScene {
       interactions: [],
       animations: [],
     },
+    document: {
+      version: 2,
+      nodes: [],
+      polylines: [],
+      lights: [],
+      materials: [],
+      interactions: [],
+      animations: [],
+    },
     scene: { version: 1, nodes: [] },
+    loweringDiagnostics: [],
     polylines: [],
     animations: [],
     callbacks: new Map(),
@@ -109,6 +128,13 @@ export function ViroSpecsScene({
         }
         if (hasViroSpecsErrors(compiled.diagnostics)) return;
 
+        if (transport.applySceneDocument) {
+          await transport.applySceneDocument(compiled.document);
+          return;
+        }
+
+        // Protocol 1 fallback: report what the snapshot drops.
+        for (const diagnostic of compiled.loweringDiagnostics) onDiagnostic?.(diagnostic);
         const gate = validateSpecsSceneSnapshot(compiled.scene);
         for (const diagnostic of gate.diagnostics) onDiagnostic?.(diagnostic);
         if (!gate.ok) return;

@@ -83,6 +83,36 @@ describe("ViroSpecsScene", () => {
     expect(diagnostics.map((d) => [d.code, d.severity])).toEqual([["VS1007", "error"]]);
   });
 
+  it("sends scene protocol 2 to a transport with applySceneDocument, with no VS1015", async () => {
+    const applySceneDocument = jest.fn();
+    const { transport, applyScene, presentPolyline } = mockTransport({ applySceneDocument });
+    const diagnostics: ViroSpecsDiagnostic[] = [];
+    await render(
+      <ViroSpecsScene transport={transport} onDiagnostic={(d) => diagnostics.push(d)}>
+        <ViroText viroTag="t" text="Hi" width={0.5} height={0.1} style={{ fontSize: 18, color: "#fff" }} />
+      </ViroSpecsScene>
+    );
+    expect(diagnostics).toEqual([]);
+    expect(applyScene).not.toHaveBeenCalled();
+    expect(presentPolyline).not.toHaveBeenCalled();
+    expect(applySceneDocument).toHaveBeenCalledTimes(1);
+    const document = applySceneDocument.mock.calls[0][0];
+    expect(document.version).toBe(2);
+    expect(document.nodes[0]).toMatchObject({ id: "t", style: { fontSize: 18, color: "#ffffff" }, extents: { width: 0.5, height: 0.1 } });
+  });
+
+  it("falls back to protocol 1 and reports what it drops as VS1015", async () => {
+    const { transport, applyScene } = mockTransport();
+    const diagnostics: ViroSpecsDiagnostic[] = [];
+    await render(
+      <ViroSpecsScene transport={transport} onDiagnostic={(d) => diagnostics.push(d)}>
+        <ViroText viroTag="t" text="Hi" style={{ fontSize: 18 }} />
+      </ViroSpecsScene>
+    );
+    expect(applyScene).toHaveBeenCalledTimes(1);
+    expect(diagnostics.map((d) => [d.code, d.fieldPath])).toEqual([["VS1015", "/nodes/0/style"]]);
+  });
+
   it("reports a failing transport as VS3011", async () => {
     const { transport } = mockTransport({
       applyScene: () => Promise.reject(new Error("lens went away")),
@@ -110,6 +140,16 @@ describe("applySpecsManifest", () => {
     expect(result.diagnostics.map((d) => d.code)).toEqual(["VS1002"]);
     expect(applyScene).toHaveBeenCalledTimes(1);
     expect(presentPolyline).toHaveBeenCalledTimes(1);
+  });
+
+  it("sends a protocol 2 document to applySceneDocument without lowering", async () => {
+    const applySceneDocument = jest.fn();
+    const { transport, applyScene } = mockTransport({ applySceneDocument });
+    const result = await applySpecsManifest(transport, fixture("manifest-v2", "valid", "platform-lab.json"));
+    expect(result.applied).toBe(true);
+    expect(result.diagnostics.filter((d) => d.code === "VS1015")).toEqual([]);
+    expect(applyScene).not.toHaveBeenCalled();
+    expect(applySceneDocument.mock.calls[0][0].version).toBe(2);
   });
 
   it("rejects invalid raw JSON before it reaches the transport", async () => {

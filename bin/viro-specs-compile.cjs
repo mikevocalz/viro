@@ -834,8 +834,7 @@ function compile(sourceText, entryPath, options = {}) {
     diagnostics.push({ ...diagnostic, ...at(element) });
   }
 
-  const lowered = core.toSpecsSceneSnapshot(manifest);
-  return { manifest, scene: lowered.snapshot, loweringDiagnostics: lowered.diagnostics, diagnostics };
+  return { manifest, document: core.toSpecsSceneDocument(manifest), diagnostics };
 }
 
 function compileManifestFile(text, manifestPath, options = {}) {
@@ -843,109 +842,61 @@ function compileManifestFile(text, manifestPath, options = {}) {
   const file = path.relative(baseDir, manifestPath).split(path.sep).join("/");
   const parsed = core.parseSpecsManifestJson(text, { file });
   if (!parsed.ok) {
-    return { manifest: undefined, scene: undefined, loweringDiagnostics: [], diagnostics: [...parsed.diagnostics] };
+    return { manifest: undefined, document: undefined, diagnostics: [...parsed.diagnostics] };
   }
-  const lowered = core.toSpecsSceneSnapshot(parsed.value);
   return {
     manifest: parsed.value,
-    scene: lowered.snapshot,
-    loweringDiagnostics: lowered.diagnostics.map((diagnostic) => ({ ...diagnostic, file })),
+    document: core.toSpecsSceneDocument(parsed.value),
     diagnostics: [...parsed.diagnostics],
   };
 }
 
 /**
- * Generated Lens Studio host. The scene constant is the scene protocol 1
- * snapshot lowered from the manifest; the other constants keep their v1 wire
- * shapes, which manifest v2 did not change.
+ * Generated Lens Studio host: a thin orchestrator over
+ * ViroSpecsSceneControllerHost from @viro-external/specs. The scene constant
+ * is a scene protocol 2 document (toSpecsSceneDocument), so text style,
+ * extents, maxLines, opacity, materials and lights reach the Lens.
+ * Validation, staging, asset placeholders, interaction binding, animation
+ * start and teardown are the controller's job; this file only presents the
+ * document and forwards what the controller reports.
  */
 function lensTs(result) {
-  const manifest = result.manifest;
-  const scene = JSON.stringify(result.scene, null, 2);
-  const polylines = JSON.stringify(manifest.polylines, null, 2);
-  const interactions = JSON.stringify(manifest.interactions, null, 2);
-  const animations = JSON.stringify(manifest.animations, null, 2);
+  const scene = JSON.stringify(result.document, null, 2);
 
-  return `import { ViroSpecsAnimationHost } from "../lens/ViroSpecsAnimationHost";
-import { ViroSpecsInteractionHost } from "../lens/ViroSpecsInteractionHost";
-import { ViroSpecsNavigationHost } from "../lens/ViroSpecsNavigationHost";
-import { ViroSpecsRuntimeHost } from "../lens/ViroSpecsRuntimeHost";
+  return `import { ViroSpecsSceneControllerHost } from "../lens/ViroSpecsSceneControllerHost";
+import type { ViroSpecsSceneDocumentV2 } from "../lens/ViroSpecsProtocol";
 
-const GENERATED_SCENE: any = ${scene};
-const GENERATED_POLYLINES: any[] = ${polylines};
-const GENERATED_INTERACTIONS: any[] = ${interactions};
-const GENERATED_ANIMATIONS: any[] = ${animations};
+const GENERATED_SCENE: ViroSpecsSceneDocumentV2 = ${scene};
 
 @component
 export class ViroGeneratedSceneHost extends BaseScriptComponent {
-  @input runtimeHostObject: SceneObject;
-  @input interactionHostObject: SceneObject;
-  @input animationHostObject: SceneObject;
-  @input navigationHostObject: SceneObject;
+  @input
+  @hint("SceneObject hosting ViroSpecsSceneControllerHost")
+  sceneHostObject: SceneObject;
 
-  private teardown: (() => void) | null = null;
+  private host: ViroSpecsSceneControllerHost | null = null;
 
   onAwake(): void {
     this.createEvent("OnStartEvent").bind(() => this.restartGeneratedScene());
     this.createEvent("OnDestroyEvent").bind(() => this.stopGeneratedScene());
   }
 
-  stopGeneratedScene(): void {
-    this.teardown?.();
-    this.teardown = null;
+  /** Presents the generated scene. Problems go to the Lens log as VS5xxx diagnostics; nothing throws. */
+  restartGeneratedScene(): void {
+    const host = this.sceneHostObject
+      ? (this.sceneHostObject.getComponent(ViroSpecsSceneControllerHost.getTypeName()) as ViroSpecsSceneControllerHost | null)
+      : null;
+    if (!host) {
+      print("[viro-specs-host] error: ViroGeneratedSceneHost needs ViroSpecsSceneControllerHost on sceneHostObject.");
+      return;
+    }
+    this.host = host;
+    host.present(GENERATED_SCENE);
   }
 
-  restartGeneratedScene(): void {
-    this.stopGeneratedScene();
-    const runtime = this.runtimeHostObject.getComponent(
-      ViroSpecsRuntimeHost.getTypeName()
-    ) as ViroSpecsRuntimeHost | null;
-    const interaction = this.interactionHostObject.getComponent(
-      ViroSpecsInteractionHost.getTypeName()
-    ) as ViroSpecsInteractionHost | null;
-    const animation = this.animationHostObject.getComponent(
-      ViroSpecsAnimationHost.getTypeName()
-    ) as ViroSpecsAnimationHost | null;
-    const navigation = this.navigationHostObject.getComponent(
-      ViroSpecsNavigationHost.getTypeName()
-    ) as ViroSpecsNavigationHost | null;
-
-    if (!runtime) {
-      throw new Error("Generated Viro scene requires ViroSpecsRuntimeHost.");
-    }
-
-    if (GENERATED_INTERACTIONS.length && !interaction) throw new Error("Generated Viro interactions require ViroSpecsInteractionHost.");
-    if (GENERATED_ANIMATIONS.length && !animation) throw new Error("Generated Viro animations require ViroSpecsAnimationHost.");
-    if (GENERATED_POLYLINES.length && !navigation) throw new Error("Generated Viro polylines require ViroSpecsNavigationHost.");
-
-    this.teardown = () => {
-      if (interaction && !isNull(interaction)) for (const item of GENERATED_INTERACTIONS) interaction.remove(item.nodeId);
-      if (animation && !isNull(animation)) for (const item of GENERATED_ANIMATIONS) animation.stop(item.nodeId);
-      if (navigation && !isNull(navigation)) navigation.clearRoute();
-      if (!isNull(runtime)) runtime.clear();
-    };
-    runtime.applySceneSnapshot(GENERATED_SCENE);
-
-    if (interaction) {
-      for (const item of GENERATED_INTERACTIONS) {
-        interaction.setInteractable(item.nodeId, true);
-        if (item.manipulation) {
-          interaction.setManipulationEnabled(item.nodeId, true);
-        }
-      }
-    }
-
-    if (animation) {
-      for (const item of GENERATED_ANIMATIONS) {
-        animation.play(item.nodeId, item.plan);
-      }
-    }
-
-    if (navigation) {
-      for (const line of GENERATED_POLYLINES) {
-        navigation.presentPolyline(line);
-      }
-    }
+  stopGeneratedScene(): void {
+    if (this.host && !isNull(this.host)) this.host.clear();
+    this.host = null;
   }
 }
 `;
@@ -953,12 +904,13 @@ export class ViroGeneratedSceneHost extends BaseScriptComponent {
 
 const USAGE = [
   "Usage:",
-  "  viro-specs-compile --entry scene.tsx --out out.json [--format json|lens-ts] [--strict] [--diagnostics-format text|json]",
-  "  viro-specs-compile --manifest scene.json --out out.json [--format json|lens-ts] [--strict] [--diagnostics-format text|json]",
+  "  viro-specs-compile --entry scene.tsx --out out.json [--format json|scene-json|lens-ts] [--strict] [--diagnostics-format text|json]",
+  "  viro-specs-compile --manifest scene.json --out out.json [--format json|scene-json|lens-ts] [--strict] [--diagnostics-format text|json]",
   "",
   "--entry     compile Viro JSX",
   "--manifest  read a hand-written or older manifest (v1 or v2), validate it, and write it as v2",
   "--strict    fail on warnings as well as errors",
+  "--format    json: manifest v2; scene-json: scene protocol 2 document for ViroSpecsSceneController; lens-ts: generated Lens host",
 ].join("\n");
 
 /**
@@ -980,7 +932,7 @@ function main(argv) {
     console.error(USAGE);
     return 1;
   }
-  if (!["json", "lens-ts"].includes(args.format)) {
+  if (!["json", "scene-json", "lens-ts"].includes(args.format)) {
     console.error("Unknown --format " + args.format + "\n" + USAGE);
     return 1;
   }
@@ -993,10 +945,9 @@ function main(argv) {
   const output = path.resolve(args.out);
   const text = fs.readFileSync(inputPath, "utf8");
   const result = args.entry ? compile(text, inputPath) : compileManifestFile(text, inputPath);
-  const diagnostics = [
-    ...result.diagnostics,
-    ...(args.format === "lens-ts" ? result.loweringDiagnostics : []),
-  ];
+  // Both Lens outputs use scene protocol 2, which carries every manifest
+  // field, so nothing is lowered away and there is no VS1015 to report.
+  const diagnostics = [...result.diagnostics];
 
   if (args.diagnosticsFormat === "json") {
     if (diagnostics.length) console.error(JSON.stringify(diagnostics, null, 2));
@@ -1021,10 +972,16 @@ function main(argv) {
   fs.mkdirSync(path.dirname(output), { recursive: true });
   fs.writeFileSync(
     output,
-    args.format === "lens-ts" ? lensTs(result) : JSON.stringify(result.manifest, null, 2) + "\n"
+    args.format === "lens-ts"
+      ? lensTs(result)
+      : JSON.stringify(args.format === "scene-json" ? result.document : result.manifest, null, 2) + "\n"
   );
   console.log(
-    args.format === "lens-ts" ? "Wrote generated Lens Studio host:" : "Wrote SPECS manifest v2:",
+    args.format === "lens-ts"
+      ? "Wrote generated Lens Studio host:"
+      : args.format === "scene-json"
+        ? "Wrote SPECS scene protocol 2 document:"
+        : "Wrote SPECS manifest v2:",
     output
   );
   return 0;

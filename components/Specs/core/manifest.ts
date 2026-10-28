@@ -332,8 +332,38 @@ export interface ViroSpecsManifestV1 {
 /** The current manifest version. */
 export const VIRO_SPECS_MANIFEST_VERSION = 2;
 
-/** The scene protocol version the Lens runtime reads. */
+/**
+ * Scene protocol of {@linkcode ViroSpecsWireSceneSnapshot}. Transports that
+ * only implement `applyScene` receive this; fields it cannot carry are
+ * reported with `VS1015`.
+ */
 export const VIRO_SPECS_SCENE_PROTOCOL_VERSION = 1;
+
+/**
+ * Scene protocol of {@linkcode ViroSpecsSceneDocument}, read by
+ * `ViroSpecsSceneController` in `@viro-external/specs` (wire types
+ * `ViroSpecsSceneDocumentV2`). It carries every node field of manifest v2,
+ * plus lights and materials, so nothing is lowered away.
+ */
+export const VIRO_SPECS_SCENE_DOCUMENT_PROTOCOL_VERSION = 2;
+
+/** Node kinds scene protocol 2 carries. Video and sound fail validation first. */
+export type ViroSpecsSceneDocumentNode = Exclude<ViroSpecsManifestNode, ViroSpecsVideoNode | ViroSpecsSoundNode>;
+
+/**
+ * Scene protocol 2 document: a manifest v2 without authoring metadata
+ * (`$schema`, `generator`, `source`). Built by
+ * {@linkcode toSpecsSceneDocument}.
+ */
+export interface ViroSpecsSceneDocument {
+  readonly version: 2;
+  readonly nodes: readonly ViroSpecsSceneDocumentNode[];
+  readonly polylines: readonly ViroSpecsManifestPolyline[];
+  readonly lights: readonly ViroSpecsLight[];
+  readonly materials: readonly ViroSpecsMaterial[];
+  readonly interactions: readonly ViroSpecsManifestInteraction[];
+  readonly animations: readonly ViroSpecsManifestAnimation[];
+}
 
 /** `$id` of the published v2 schema. */
 export const VIRO_SPECS_MANIFEST_SCHEMA_ID =
