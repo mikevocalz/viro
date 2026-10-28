@@ -272,7 +272,7 @@ describe("premium components", () => {
     expect(m.nodes[3].component).toEqual({ type: "scroll-view", itemHeightMeters: 0.1, initialIndex: 2 });
     expect(m.nodes[3].kind === "group" ? m.nodes[3].scroll : undefined).toEqual({ width: 0.4, height: 0.3, contentHeight: 0.3 });
     expect(m.nodes[4].component).toEqual({ type: "model-viewer", autoRotate: true, resettable: true });
-    expect(m.interactions.map((i) => [i.nodeId, i.events])).toEqual([["b", ["select"]], ["m", ["drag"]]]);
+    expect(m.interactions.map((i) => [i.nodeId, i.events])).toEqual([["b", ["hover", "select"]], ["m", ["drag"]]]);
     expect(m.theme).toEqual(VIRO_SPECS_DEFAULT_THEME);
     expect(schemaValidate(m) ? [] : schemaValidate.errors).toEqual([]);
   });

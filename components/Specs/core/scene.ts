@@ -649,7 +649,11 @@ export class ViroSpecsSceneBuilder {
     }
 
     if (node !== undefined) {
-      this.compileInteraction(props, written, unresolved, issues, name, id);
+      // A PanelButton always declares hover: its hover visual is part of the
+      // component (seven states), and the Lens host only receives hover
+      // phases for nodes that declare them.
+      const buttonHover = node.component?.type === "panel-button";
+      this.compileInteraction(props, written, unresolved, issues, name, id, buttonHover);
       this.compileAnimation(props, written, unresolved, id, local, opacity, issues, name);
     }
     flush();
@@ -969,7 +973,8 @@ export class ViroSpecsSceneBuilder {
     unresolved: ReadonlySet<string>,
     issues: ViroSpecsIssue[],
     name: string,
-    id: string
+    id: string,
+    alwaysHover: boolean = false
   ): void {
     let triggers: readonly ViroSpecsActionTrigger[] = [];
     // An unresolved specsAction was already reported (VS2014) by the caller.
@@ -981,7 +986,7 @@ export class ViroSpecsSceneBuilder {
       triggers = read.triggers;
     }
     const triggerEvents = specsTriggerEvents(triggers);
-    const hover = typeof props.onHover === "function" || triggerEvents.includes("hover");
+    const hover = typeof props.onHover === "function" || triggerEvents.includes("hover") || alwaysHover;
     const select =
       typeof props.onClick === "function" ||
       typeof props.onClickState === "function" ||
