@@ -16,6 +16,7 @@ import {
 import { childNodes, isAstNode, jsxName, type AstNode, type Expression, type JSXAttribute, type JSXChild, type JSXElement, type JSXFragment } from "./ast";
 import {
   isSpecsStaticObject,
+  setSpecsStaticKey,
   SpecsEvaluator,
   SpecsStaticAsset,
   SpecsStaticFunction,
@@ -73,6 +74,11 @@ const UNRESOLVED_PROP_CODES: Readonly<Record<string, ViroSpecsDiagnosticCode>> =
 /** Returned when a prop's problem was reported in detail, so it is not reported again. */
 const ALREADY_REPORTED: unique symbol = Symbol("already-reported");
 
+/** React's key coercion: any key except undefined becomes `"" + key`. */
+function reactKey(value: SpecsStaticValue): string {
+  return String(toProp(value));
+}
+
 function callbackPlaceholder(): undefined {
   return undefined;
 }
@@ -119,11 +125,12 @@ function findProjectRoot(entryPath: string, fs: SpecsFileSystem): string {
   const entry = normalizeSpecsPath(entryPath);
   let directory = entry.slice(0, entry.lastIndexOf("/"));
   const start = directory;
+  // Walks up to and including the filesystem root ("" stands for "/", "c:" for "c:/").
   for (;;) {
-    if (fs.exists(directory + "/package.json")) return directory;
-    const parent = directory.slice(0, directory.lastIndexOf("/"));
-    if (parent === directory || parent === "" || parent.endsWith(":")) return start;
-    directory = parent;
+    const atRoot = directory === "" || directory.endsWith(":");
+    if (fs.exists(directory + "/package.json")) return atRoot ? directory + "/" : directory;
+    if (atRoot) return start;
+    directory = directory.slice(0, directory.lastIndexOf("/"));
   }
 }
 
@@ -132,16 +139,112 @@ function displayPath(absolutePath: string, cwd: string): string {
   return specsAssetIdFromPath(absolutePath, cwd);
 }
 
-function isBlankText(child: JSXChild): boolean {
-  return child.type === "JSXText" && child.value.trim() === "";
+/** Whether a static child value renders anything (React skips null, booleans and undefined; the runtime skips blank text). */
+function staticChildHasContent(value: SpecsStaticValue): boolean {
+  if (value === null || value === undefined || typeof value === "boolean") return false;
+  if (typeof value === "string") return value.trim() !== "";
+  if (Array.isArray(value)) return (value as readonly SpecsStaticValue[]).some(staticChildHasContent);
+  return true;
 }
 
-function hasContentChildren(children: readonly JSXChild[]): boolean {
-  return children.some(
-    (child) =>
-      !isBlankText(child) &&
-      !(child.type === "JSXExpressionContainer" && child.expression.type === "JSXEmptyExpression")
-  );
+const FUNCTION_TYPES = new Set([
+  "FunctionDeclaration",
+  "FunctionExpression",
+  "ArrowFunctionExpression",
+  "ObjectMethod",
+  "ClassMethod",
+  "ClassPrivateMethod",
+]);
+
+/**
+ * Reads one field of an AST node by name. Babel's node unions are too wide to
+ * narrow field by field here, so the walk reads fields as `unknown` and checks
+ * each value with {@linkcode isAstNode} before using it.
+ */
+function field(node: AstNode, key: string): unknown {
+  return (node as unknown as Readonly<Record<string, unknown>>)[key];
+}
+
+function nodeField(node: AstNode, key: string): AstNode | undefined {
+  const value = field(node, key);
+  return isAstNode(value) ? value : undefined;
+}
+
+function nodeList(node: AstNode, key: string): AstNode[] {
+  const value = field(node, key);
+  return Array.isArray(value) ? value.filter(isAstNode) : [];
+}
+
+/** Names a binding pattern declares (`a`, `{ b: c }` declares `c`, `[d, ...e]`). */
+function patternNames(node: AstNode | undefined, out: Set<string>): void {
+  if (!node) return;
+  switch (node.type) {
+    case "Identifier": {
+      const name = field(node, "name");
+      if (typeof name === "string") out.add(name);
+      return;
+    }
+    case "ObjectPattern":
+      for (const property of nodeList(node, "properties")) {
+        patternNames(property.type === "RestElement" ? nodeField(property, "argument") : nodeField(property, "value"), out);
+      }
+      return;
+    case "ArrayPattern":
+      for (const element of nodeList(node, "elements")) patternNames(element, out);
+      return;
+    case "RestElement":
+      patternNames(nodeField(node, "argument"), out);
+      return;
+    case "AssignmentPattern":
+      patternNames(nodeField(node, "left"), out);
+      return;
+    case "TSParameterProperty":
+      patternNames(nodeField(node, "parameter"), out);
+      return;
+  }
+}
+
+/**
+ * Parameters of a function plus every name declared in its body, not
+ * counting nested functions (whose declarations are local to them).
+ * Block scopes are over-approximated, which can only turn a would-be static
+ * value into a diagnostic, never into a wrong value.
+ */
+function functionScopeNames(fn: AstNode): Set<string> {
+  const out = new Set<string>();
+  for (const param of nodeList(fn, "params")) patternNames(param, out);
+  const visit = (node: AstNode): void => {
+    if (node.type === "VariableDeclarator") patternNames(nodeField(node, "id"), out);
+    if (node.type === "FunctionDeclaration" || node.type === "ClassDeclaration") patternNames(nodeField(node, "id"), out);
+    if (node.type === "CatchClause") patternNames(nodeField(node, "param"), out);
+    if (FUNCTION_TYPES.has(node.type)) return;
+    for (const child of childNodes(node)) visit(child);
+  };
+  const body = nodeField(fn, "body");
+  if (body) {
+    if (FUNCTION_TYPES.has(body.type)) return out;
+    for (const child of childNodes(body)) visit(child);
+    if (body.type !== "BlockStatement") visit(body);
+  }
+  return out;
+}
+
+/**
+ * Drops exact repeats. An expression inside a .map() callback is compiled
+ * once per item; when it cannot be resolved, every item reports the same
+ * code, location and message. Diagnostics without a line (validation
+ * findings about the manifest) are kept as they are.
+ */
+function dedupeDiagnostics(diagnostics: readonly ViroSpecsDiagnostic[]): ViroSpecsDiagnostic[] {
+  const seen = new Set<string>();
+  return diagnostics.filter((diagnostic) => {
+    // The node ID is left out: each .map() item is a different element, but
+    // the author has one expression to fix, at one location.
+    const id = JSON.stringify([diagnostic.code, diagnostic.file, diagnostic.line, diagnostic.col, diagnostic.message]);
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
 }
 
 /** Per-compile state. */
@@ -271,12 +374,15 @@ class EntryCompiler {
   /** Relative modules the entry imports that register animations. */
   importedAnimationModules(): SpecsModule[] {
     const out: SpecsModule[] = [];
+    const seen = new Set<SpecsModule>([this.entry]);
     for (const statement of this.entry.ast.program.body) {
       if (statement.type !== "ImportDeclaration" || statement.importKind === "type") continue;
       const request = statement.source.value;
       if (!request.startsWith(".")) continue;
       const resolved = this.loader.resolve(this.entry, request);
-      if (resolved.kind === "module" && resolved.module.text.includes("registerAnimations")) out.push(resolved.module);
+      if (resolved.kind !== "module" || seen.has(resolved.module)) continue;
+      seen.add(resolved.module);
+      if (resolved.module.text.includes("registerAnimations")) out.push(resolved.module);
     }
     return out;
   }
@@ -284,18 +390,20 @@ class EntryCompiler {
   compile(): void {
     for (const module of this.importedAnimationModules()) this.collectAnimations(module);
     this.collectAnimations(this.entry);
-    const findRoots = (node: AstNode): void => {
+    const findRoots = (node: AstNode, shadowed: ReadonlySet<string>): void => {
       if (node.type === "JSXElement") {
         const element = node as JSXElement;
         if (jsxName(element.openingElement.name) === "ViroSpecsScene") {
           this.roots += 1;
-          this.children(element.children, this.evaluator.moduleScope(this.entry), VIRO_SPECS_ROOT_SCOPE, false);
+          const scope: SpecsEvalScope = { module: this.entry, locals: new Map(), shadowed };
+          this.children(element.children, scope, VIRO_SPECS_ROOT_SCOPE, false);
           return;
         }
       }
-      for (const child of childNodes(node)) findRoots(child);
+      const inner = FUNCTION_TYPES.has(node.type) ? new Set([...shadowed, ...functionScopeNames(node)]) : shadowed;
+      for (const child of childNodes(node)) findRoots(child, inner);
     };
-    findRoots(this.entry.ast);
+    findRoots(this.entry.ast, new Set());
   }
 
   private children(children: readonly JSXChild[], evalScope: SpecsEvalScope, scope: ViroSpecsScope, conditional: boolean): void {
@@ -365,10 +473,9 @@ class EntryCompiler {
         if (!(left instanceof SpecsUnresolved)) {
           const takeRight =
             expression.operator === "&&" ? Boolean(left) : expression.operator === "||" ? !left : left === null || left === undefined;
+          // React renders the left value when it short-circuits: {0 && <A />} renders "0".
           if (takeRight) this.expressionChild(expression.right, evalScope, scope, conditional);
-          else if (isAstNode(expression.left) && (expression.left.type === "JSXElement" || expression.left.type === "JSXFragment")) {
-            this.expressionChild(expression.left, evalScope, scope, conditional);
-          }
+          else this.staticChild(left, expression.left, evalScope, scope);
           return;
         }
         if (expression.operator !== "&&") {
@@ -398,14 +505,67 @@ class EntryCompiler {
           this.reportUnresolved("VS2003", "JSX child", expression, evalScope, value, scope.nodeId);
           return;
         }
-        if (value === null || value === undefined || typeof value === "boolean" || value === "") return;
-        if (typeof value === "string" || typeof value === "number") {
-          this.report("VS3001", "Text child " + JSON.stringify(String(value)) + " has no Specs mapping. Use ViroText.", evalScope.module, expression, scope.nodeId);
-          return;
-        }
-        this.report("VS2003", "JSX child `" + specsSourceText(evalScope.module, expression) + "` is not an element.", evalScope.module, expression, scope.nodeId);
+        this.staticChild(value, expression, evalScope, scope);
       }
     }
+  }
+
+  /**
+   * Content check matching `React.Children.toArray` plus the runtime's blank
+   * text rule: null, booleans, undefined and blank strings are not children.
+   */
+  private hasContentChildren(children: readonly JSXChild[], evalScope: SpecsEvalScope): boolean {
+    return children.some((child) => {
+      switch (child.type) {
+        case "JSXText":
+          return child.value.trim() !== "";
+        case "JSXExpressionContainer":
+          return child.expression.type !== "JSXEmptyExpression" && this.expressionHasContent(child.expression, evalScope);
+        default:
+          return true;
+      }
+    });
+  }
+
+  private expressionHasContent(expression: Expression, evalScope: SpecsEvalScope): boolean {
+    switch (expression.type) {
+      case "JSXElement":
+      case "JSXFragment":
+        return true;
+      case "ConditionalExpression": {
+        const test = this.evaluator.evaluate(expression.test, evalScope);
+        if (test instanceof SpecsUnresolved) return true;
+        return this.expressionHasContent(test ? expression.consequent : expression.alternate, evalScope);
+      }
+      case "LogicalExpression": {
+        const left = this.evaluator.evaluate(expression.left, evalScope);
+        if (left instanceof SpecsUnresolved) return true;
+        const takeRight = expression.operator === "&&" ? Boolean(left) : expression.operator === "||" ? !left : left === null || left === undefined;
+        return takeRight ? this.expressionHasContent(expression.right, evalScope) : staticChildHasContent(left);
+      }
+      case "CallExpression": {
+        const callee = expression.callee;
+        if ((callee.type === "MemberExpression" || callee.type === "OptionalMemberExpression") && callee.object.type !== "Super") {
+          const array = this.evaluator.evaluate(callee.object, evalScope);
+          if (Array.isArray(array)) return array.length > 0;
+        }
+        return true;
+      }
+      default: {
+        const value = this.evaluator.evaluate(expression, evalScope);
+        return value instanceof SpecsUnresolved ? true : staticChildHasContent(value);
+      }
+    }
+  }
+
+  /** A child whose value is static: text and numbers have no mapping; null, booleans and blank strings render nothing. */
+  private staticChild(value: SpecsStaticValue, expression: AstNode, evalScope: SpecsEvalScope, scope: ViroSpecsScope): void {
+    if (!staticChildHasContent(value)) return;
+    if (typeof value === "string" || typeof value === "number") {
+      this.report("VS3001", "Text child " + JSON.stringify(String(value)) + " has no Specs mapping. Use ViroText.", evalScope.module, expression, scope.nodeId);
+      return;
+    }
+    this.report("VS2003", "JSX child `" + specsSourceText(evalScope.module, expression) + "` is not an element.", evalScope.module, expression, scope.nodeId);
   }
 
   private runtimeCondition(test: AstNode, evalScope: SpecsEvalScope, unresolved: SpecsUnresolved, scope: ViroSpecsScope): void {
@@ -475,7 +635,9 @@ class EntryCompiler {
     const unresolvedProps = new Set<string>();
     const locations = new Map<string, AstNode>();
     let key: string | undefined;
-    const pending: Array<() => void> = [];
+    // Reports wait until the element ID is known. A prop report is dropped
+    // when a later attribute or spread set the prop after all.
+    const pending: Array<{ readonly prop?: string; readonly report: () => void }> = [];
     let nodeIdForReports: string | undefined;
 
     const setProp = (prop: string, value: unknown, at: AstNode) => {
@@ -498,7 +660,7 @@ class EntryCompiler {
       if (attribute.type === "JSXSpreadAttribute") {
         const value = this.evaluator.evaluate(attribute.argument, evalScope);
         if (value instanceof SpecsUnresolved) {
-          pending.push(() => {
+          pending.push({ report: () => {
             const text = specsSourceText(module, attribute.argument);
             const inner = specsSourceText(value.module, value.node);
             this.report(
@@ -508,17 +670,17 @@ class EntryCompiler {
               attribute,
               nodeIdForReports
             );
-          });
+          } });
           continue;
         }
         if (value === null || value === undefined) continue;
         if (!isSpecsStaticObject(value)) {
-          pending.push(() => this.report("VS2013", name + " spread `{..." + specsSourceText(module, attribute.argument) + "}` is not an object; it was ignored.", module, attribute, nodeIdForReports));
+          pending.push({ report: () => this.report("VS2013", name + " spread `{..." + specsSourceText(module, attribute.argument) + "}` is not an object; it was ignored.", module, attribute, nodeIdForReports) });
           continue;
         }
         for (const [prop, entry] of Object.entries(value)) {
           if (prop === "key") {
-            if (typeof entry === "string" || typeof entry === "number") key = String(entry);
+            key = entry === undefined ? undefined : reactKey(entry);
             continue;
           }
           if (prop === "ref" || prop === "children") continue;
@@ -533,7 +695,7 @@ class EntryCompiler {
           delete props[prop];
           unresolvedProps.add(prop);
           locations.set(prop, at);
-          pending.push(report);
+          pending.push({ prop, report });
         },
         setKey: (value) => {
           key = value;
@@ -552,12 +714,14 @@ class EntryCompiler {
       writtenProps: written,
       unresolvedProps,
       ...(key !== undefined ? { key } : {}),
-      hasChildren: hasContentChildren(element.children),
+      hasChildren: this.hasContentChildren(element.children, evalScope),
       conditionalRoot: conditional && !scope.hidden,
       origin,
     });
     if (result.kind === "compiled") nodeIdForReports = result.id;
-    for (const report of pending) report();
+    for (const entry of pending) {
+      if (entry.prop === undefined || unresolvedProps.has(entry.prop)) entry.report();
+    }
     if (result.kind === "compiled" && result.childScope) {
       this.children(element.children, evalScope, result.childScope, false);
     }
@@ -609,14 +773,20 @@ class EntryCompiler {
         );
         return;
       }
-      sink.setKey(typeof evaluation === "string" || typeof evaluation === "number" ? String(evaluation) : undefined);
+      sink.setKey(evaluation === undefined ? undefined : reactKey(evaluation));
       return;
     }
 
     if (CALLBACK_PROPS.has(prop)) {
-      // Only presence crosses to Specs; the callback runs in the app.
-      const absent = evaluation === null || evaluation === undefined || evaluation === false;
-      sink.setProp(prop, absent ? undefined : callbackPlaceholder, attribute);
+      // Only presence crosses to Specs; the callback runs in the app. A value
+      // only known at runtime (a prop such as onSelect) is taken as present.
+      // A static non-function is passed through, so the builder, like the
+      // runtime compiler, ignores it.
+      if (evaluation instanceof SpecsUnresolved || evaluation instanceof SpecsStaticFunction) {
+        sink.setProp(prop, callbackPlaceholder, attribute);
+      } else {
+        sink.setProp(prop, toProp(evaluation), attribute);
+      }
       return;
     }
 
@@ -644,19 +814,27 @@ class EntryCompiler {
   ): SpecsEvaluation | typeof ALREADY_REPORTED {
     const whole = this.evaluator.evaluate(object, evalScope);
     if (!(whole instanceof SpecsUnresolved)) return whole;
+    const out: Record<string, SpecsStaticValue> = {};
     for (const property of object.properties) {
-      if (property.type !== "ObjectProperty" || property.computed || property.key.type !== "Identifier") continue;
+      if (property.type !== "ObjectProperty" || property.computed || property.key.type !== "Identifier") return whole;
       const field = property.key.name;
-      if (field !== "name" && field !== "run") continue;
       const value = this.evaluator.evaluate(property.value as Expression, evalScope);
-      if (value instanceof SpecsUnresolved) {
-        sink.markUnresolved("animation", attribute, () =>
-          this.reportUnresolved("VS2012", elementName + " animation." + field, property.value, evalScope, value, sink.nodeId())
-        );
-        return ALREADY_REPORTED;
+      if (!(value instanceof SpecsUnresolved)) {
+        setSpecsStaticKey(out, field, value);
+        continue;
       }
+      if (field === "onStart" || field === "onFinish") {
+        // Callbacks only need to be present; they run in the app.
+        setSpecsStaticKey(out, field, new SpecsStaticFunction(property));
+        continue;
+      }
+      const code = field === "name" || field === "run" ? "VS2012" : "VS2011";
+      sink.markUnresolved("animation", attribute, () =>
+        this.reportUnresolved(code, elementName + " animation." + field, property.value, evalScope, value, sink.nodeId())
+      );
+      return ALREADY_REPORTED;
     }
-    return whole;
+    return out;
   }
 
   finish(): SpecsCompileResult {
@@ -670,7 +848,7 @@ class EntryCompiler {
     return {
       manifest: built.manifest,
       scene: built.scene,
-      diagnostics: sortViroSpecsDiagnostics(built.diagnostics),
+      diagnostics: sortViroSpecsDiagnostics(dedupeDiagnostics(built.diagnostics)),
       loweringDiagnostics: built.loweringDiagnostics,
     };
   }

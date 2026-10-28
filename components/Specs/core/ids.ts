@@ -82,17 +82,25 @@ export class ViroSpecsIdAllocator {
 
 /**
  * Normalizes a file path to forward slashes with `.` and `..` segments
- * resolved and a lower-case drive letter, so `C:\\app\\a\\..\\b.glb` and
- * `c:/app/b.glb` compare equal. Leading `..` segments of a relative path are
- * kept.
+ * resolved, so `C:\\app\\a\\..\\b.glb` and `c:/app/b.glb` compare equal.
+ *
+ * - Drive letters are lower-cased (`c:/`).
+ * - UNC paths keep their `//server/share/` root, and `..` never climbs above it.
+ * - The Win32 long-path prefix (`\\\\?\\C:\\x`) is removed.
+ * - Leading `..` segments of a relative path are kept.
  */
 export function normalizeSpecsPath(filePath: string): string {
   let text = filePath.replace(/\\/g, "/");
+  if (text.startsWith("//?/") || text.startsWith("//./")) text = text.slice(4);
   let prefix = "";
   const drive = /^([A-Za-z]):(\/|$)/.exec(text);
+  const unc = /^\/\/([^/]+)\/([^/]+)(\/|$)/.exec(text);
   if (drive) {
     prefix = drive[1].toLowerCase() + ":/";
     text = text.slice(drive[0].length);
+  } else if (unc) {
+    prefix = "//" + unc[1] + "/" + unc[2] + "/";
+    text = text.slice(unc[0].length);
   } else if (text.startsWith("/")) {
     prefix = "/";
     text = text.slice(1);
@@ -110,26 +118,40 @@ export function normalizeSpecsPath(filePath: string): string {
   return prefix + out.join("/");
 }
 
+/** The root of a normalized path (`/`, `c:/`, `//server/share/`), or "" for a relative path. */
+function specsPathRoot(normalized: string): string {
+  const drive = /^[a-z]:\//.exec(normalized);
+  if (drive) return drive[0];
+  const unc = /^\/\/[^/]+\/[^/]+\//.exec(normalized);
+  if (unc) return unc[0];
+  return normalized.startsWith("/") ? "/" : "";
+}
+
 /**
  * Asset ID for a file: its path relative to the project root, with forward
  * slashes. The same asset gets the same ID whatever the working directory and
- * on any OS, because both inputs are absolute and are normalized first.
+ * on any OS, because both inputs are normalized first.
  *
- * Paths outside the root keep `../` segments.
+ * Paths outside the root keep `../` segments. On Windows paths (drive or
+ * UNC roots), segments compare case-insensitively, as the file system does.
+ * An asset on a different root (another drive or share) cannot be expressed
+ * relative to the project, so its normalized absolute path is returned.
  */
 export function specsAssetIdFromPath(absoluteAssetPath: string, projectRoot: string): string {
-  const asset = normalizeSpecsPath(absoluteAssetPath).split("/");
-  const root = normalizeSpecsPath(projectRoot).split("/").filter((segment) => segment !== "");
-  const assetSegments = asset.filter((segment) => segment !== "");
+  const asset = normalizeSpecsPath(absoluteAssetPath);
+  const root = normalizeSpecsPath(projectRoot);
+  const assetRoot = specsPathRoot(asset);
+  const rootRoot = specsPathRoot(root);
+  if (assetRoot.toLowerCase() !== rootRoot.toLowerCase()) return asset;
+  const caseInsensitive = assetRoot !== "/" && assetRoot !== "";
+  const same = (a: string, b: string) => (caseInsensitive ? a.toLowerCase() === b.toLowerCase() : a === b);
+  const assetSegments = asset.slice(assetRoot.length).split("/").filter((segment) => segment !== "");
+  const rootSegments = root.slice(rootRoot.length).split("/").filter((segment) => segment !== "");
   let shared = 0;
-  while (
-    shared < root.length &&
-    shared < assetSegments.length &&
-    root[shared] === assetSegments[shared]
-  ) {
+  while (shared < rootSegments.length && shared < assetSegments.length && same(rootSegments[shared], assetSegments[shared])) {
     shared++;
   }
-  const up = root.slice(shared).map(() => "..");
+  const up = rootSegments.slice(shared).map(() => "..");
   return [...up, ...assetSegments.slice(shared)].join("/");
 }
 

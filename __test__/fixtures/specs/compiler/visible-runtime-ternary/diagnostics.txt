@@ -1,1 +1,1 @@
-scene.tsx:10:10 warning VS2016 [panel]: Condition `expanded` is only known at runtime (expanded is not a top-level const or import (props, state and locals are only known at runtime)); every branch was emitted with visible: false.
+scene.tsx:10:10 warning VS2016 [panel]: Condition `expanded` is only known at runtime (expanded is a parameter or local of the enclosing function, so it is only known at runtime); every branch was emitted with visible: false.

@@ -262,20 +262,25 @@ export class SpecsModuleLoader {
     }
     const base = resolveSpecsRequest(from.path, request);
     const extension = extensionOf(base);
-    if (extension !== "" && !CODE_EXTENSIONS.includes(extension) && extension !== ".json") {
-      return this.fs.exists(base)
-        ? { kind: "asset", path: base }
-        : { kind: "error", reason: "\"" + request + "\" does not exist (resolved to " + this.display(base) + ")" };
+    const isCode = CODE_EXTENSIONS.includes(extension);
+    if (isCode || extension === ".json") {
+      if (this.fs.exists(base)) return this.load(base);
+    } else if (extension !== "" && this.fs.exists(base)) {
+      // Any other existing file is an asset (.glb, .png, ...).
+      return { kind: "asset", path: base };
     }
-    const candidates =
-      extension === ".json" || CODE_EXTENSIONS.includes(extension)
-        ? [base]
-        : [
-            ...CODE_EXTENSIONS.map((ext) => base + ext),
-            ...CODE_EXTENSIONS.map((ext) => base + "/index" + ext),
-          ];
-    for (const candidate of candidates) {
-      if (this.fs.exists(candidate)) return this.load(candidate);
+    // Extensionless or dotted names ("./utils.helpers" for utils.helpers.ts)
+    // are module requests resolved the way bundlers do.
+    if (!isCode && extension !== ".json") {
+      for (const candidate of [
+        ...CODE_EXTENSIONS.map((ext) => base + ext),
+        ...CODE_EXTENSIONS.map((ext) => base + "/index" + ext),
+      ]) {
+        if (this.fs.exists(candidate)) return this.load(candidate);
+      }
+    }
+    if (extension !== "" && !isCode && extension !== ".json") {
+      return { kind: "error", reason: "\"" + request + "\" does not exist (resolved to " + this.display(base) + ")" };
     }
     return {
       kind: "error",

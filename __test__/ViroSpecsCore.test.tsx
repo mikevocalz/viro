@@ -287,5 +287,84 @@ describe("static analysis edge cases", () => {
     const files = { "/p/a.ts": 'export * from "./b";', "/p/b.ts": 'export default "from b";' };
     expect(textOf('import A from "./a";', "A", files).codes).toContain("VS2018");
   });
+
+  const codesOf = (source: string, files: Record<string, string> = {}) => compile(source, files).diagnostics.map((d) => d.code);
+  const scene = (body: string, prelude = "") => prelude + "\nexport const S = (props) => <ViroSpecsScene>" + body + "</ViroSpecsScene>;";
+
+  it("counts children the way React.Children.toArray does", () => {
+    expect(codesOf(scene('<ViroPolyline viroTag="l" points={[[0,0,0],[1,0,0]]}>{null}{false}{" "}</ViroPolyline>'))).toEqual([]);
+    expect(codesOf(scene('<ViroPolyline viroTag="l" points={[[0,0,0],[1,0,0]]}>{OFF && <ViroNode viroTag="n" />}</ViroPolyline>', "const OFF = false;"))).toEqual([]);
+    expect(codesOf(scene('<ViroPolyline viroTag="l" points={[[0,0,0],[1,0,0]]}>{props.on && <ViroNode viroTag="n" />}</ViroPolyline>'))).toContain("VS3015");
+  });
+
+  it("skips blank string children and reports what && and || render", () => {
+    expect(codesOf(scene('<ViroNode viroTag="n">{" "}</ViroNode>'))).toEqual([]);
+    expect(codesOf(scene('<ViroNode viroTag="n">{0 && <ViroText viroTag="t" text="x" />}</ViroNode>'))).toEqual(["VS3001"]);
+    expect(codesOf(scene('<ViroNode viroTag="n">{"label" || <ViroText viroTag="t" text="x" />}</ViroNode>'))).toEqual(["VS3001"]);
+  });
+
+  it("coerces keys like React, so twins hash the same in both compilers", () => {
+    const fromSource = compile('export const S = () => <ViroSpecsScene><ViroText key={null} text="x" /></ViroSpecsScene>;');
+    const fromRuntime = compileViroSpecsChildren(React.createElement(ViroText, { key: null, text: "x" }));
+    expect((fromSource.manifest as ViroSpecsManifestV2).nodes[0].id).toBe(fromRuntime.manifest.nodes[0].id);
+  });
+
+  it("treats only functions and runtime values as callbacks", () => {
+    const interactions = (attr: string) =>
+      (compile('export const S = (props) => <ViroSpecsScene><ViroText viroTag="t" text="x" ' + attr + " /></ViroSpecsScene>;").manifest as ViroSpecsManifestV2).interactions.length;
+    expect(interactions("onClick={true}")).toBe(0);
+    expect(interactions('onClick="x"')).toBe(0);
+    expect(interactions("onClick={() => {}}")).toBe(1);
+    expect(interactions("onClick={props.onSelect}")).toBe(1);
+  });
+
+  it("keeps an inline animation whose callbacks are runtime values", () => {
+    const result = compile(scene(
+      '<ViroText viroTag="t" text="x" animation={{ name: "a", run: true, onStart: props.go, onFinish: props.done }} />',
+      "ViroAnimations.registerAnimations({ a: { properties: { scaleX: 2 }, duration: 10 } });"
+    ));
+    expect(result.diagnostics).toEqual([]);
+    expect((result.manifest as ViroSpecsManifestV2).animations.map((animation) => animation.name)).toEqual(["a"]);
+  });
+
+  it("drops an unresolved-prop report when a later spread sets the prop", () => {
+    expect(codesOf(scene('<ViroNode viroTag="n" position={props.p} {...{ position: [0, 0, 0] }} />'))).toEqual([]);
+  });
+
+  it("lets component parameters and locals shadow module constants", () => {
+    const source = 'const position = [9, 9, 9];\nexport function S({ position }) { const label = "local"; return <ViroSpecsScene><ViroNode viroTag="n" position={position} /></ViroSpecsScene>; }';
+    const result = compile(source);
+    expect(result.diagnostics.map((d) => d.code)).toEqual(["VS2004"]);
+    expect(result.diagnostics[0].message).toMatch(/parameter or local of the enclosing function/);
+    expect((result.manifest as ViroSpecsManifestV2).nodes[0]).toEqual({ id: "n", kind: "group" });
+  });
+
+  it("resolves dotted module names to code modules", () => {
+    expect(codesOf(scene('<ViroText viroTag="t" text={X} />', 'import { X } from "./utils.helpers";'), { "/p/utils.helpers.ts": 'export const X = "ok";' })).toEqual([]);
+  });
+
+  it("reports an expression inside .map() once, not once per item", () => {
+    expect(codesOf(scene('{[1, 2, 3].map((i) => <ViroText key={i} viroTag={"t" + i} text={props.label} />)}'))).toEqual(["VS2009", "VS2002"]);
+  });
+
+  it("reads registerAnimations from a module imported twice only once", () => {
+    const files = { "/p/anim.ts": "ViroAnimations.registerAnimations(props.x);\nexport const a = 1;\nexport const b = 2;" };
+    const codes = codesOf(scene('<ViroNode viroTag="n" />', 'import { a } from "./anim";\nimport { b } from "./anim";'), files);
+    expect(codes.filter((code) => code === "VS2014")).toHaveLength(1);
+  });
+});
+
+describe("Windows and UNC paths", () => {
+  it("keeps UNC roots and strips the long-path prefix", () => {
+    expect(normalizeSpecsPath("\\\\server\\share\\a\\..\\..\\b")).toBe("//server/share/b");
+    expect(normalizeSpecsPath("\\\\?\\C:\\x")).toBe("c:/x");
+  });
+
+  it("compares Windows segments case-insensitively and keeps other roots absolute", () => {
+    expect(specsAssetIdFromPath("C:\\App\\a.glb", "c:/app")).toBe("a.glb");
+    expect(specsAssetIdFromPath("/A/b", "/a")).toBe("../A/b");
+    expect(specsAssetIdFromPath("d:/x.glb", "c:/p")).toBe("d:/x.glb");
+    expect(specsAssetIdFromPath("\\\\srv\\sh\\p\\x.png", "//srv/sh/p")).toBe("x.png");
+  });
 });
 

@@ -1,3 +1,3 @@
-scene.tsx:9:37 error VS2009 [dyn]: ViroText text `user.name` cannot be resolved statically: `user`: user is not a top-level const or import (props, state and locals are only known at runtime).
-scene.tsx:9:58 error VS2004 [dyn]: ViroText position `[x, 0, -1]` cannot be resolved statically: `x`: x is not a top-level const or import (props, state and locals are only known at runtime).
+scene.tsx:9:37 error VS2009 [dyn]: ViroText text `user.name` cannot be resolved statically: `user`: user is a parameter or local of the enclosing function, so it is only known at runtime.
+scene.tsx:9:58 error VS2004 [dyn]: ViroText position `[x, 0, -1]` cannot be resolved statically: `x`: x is a parameter or local of the enclosing function, so it is only known at runtime.
 scene.tsx error VS2002: <ViroSpecsScene> in scene.tsx has no compiled content.
