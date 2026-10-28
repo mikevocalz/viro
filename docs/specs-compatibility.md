@@ -57,6 +57,29 @@ fails when both are. Whether UI Kit and NavigationKit 4.0.0 kept their
 2.x package names is not verified, so the runtime still imports the 2.x
 names.
 
+## Web preview (design review)
+
+`web-harness/specs-preview/` renders a manifest or scene document in the
+browser. It is a private package with its own lockfile; nothing in it ships
+in `@reactvision/react-viro`. See [specs-preview.md](specs-preview.md).
+
+| Component | Version | Checked by | Tier |
+| --- | --- | --- | --- |
+| Lens host core it runs | vendored from viro-external `feat/specs-release` @ `4aa25ab0` (the 13 files of `tsconfig.lens-core.json`) | `npm run vendor:check`: sha256 per file against `src/vendor/VENDOR.json` | portable-test-passed |
+| Scene semantics | same controller as the Lens host on a three.js backend | `npm test`: parity with the viro-external mock host on the Platform Lab, the Navigation scroll group, the three reference apps and every gallery primitive; experience-layer tests | portable-test-passed |
+| `three` | 0.186.1 | `npm run typecheck` (strict) | portable-test-passed |
+| Vite / Vitest | 8.3.5 / 5.0.5 | the scripts above | portable-test-passed |
+| Browser | installed Google Chrome through Playwright 1.64.1 (`channel: "chrome"`, SwiftShader) | `node scripts/screenshot.mjs`: each page settles, logs no error and draws a non-flat canvas | portable-test-passed |
+| Node.js | 24 in CI | `preview` job in `specs-public-api.yml` | portable-test-passed |
+
+The preview is not a Lens tier. A preview screenshot shows what the Lens
+host's controller decided, drawn by three.js; Lens rendering, text
+metrics and input differ (listed in specs-preview.md).
+
+`viro-specs watch` (rebuild on change, atomic writes, keep the last valid
+output) is covered by `__test__/ViroSpecsWatch.test.ts` in `test:specs`:
+portable-test-passed.
+
 ## What runs where
 
 React, React Native and Viro never run in the Lens. The consumer checks

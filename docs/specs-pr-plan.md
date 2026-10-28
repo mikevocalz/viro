@@ -27,7 +27,7 @@ branch until that one merges, and its diff is computed against it.
 | 4 | Starter + Lens setup | not started: no starter generator exists. Today's path is `viro-specs sync` + `doctor` + hand wiring of two components ([specs-quickstart.md](specs-quickstart.md)) | `bootstrap-platform-lab.mjs`, `go-clad.mjs` exist for the Platform Lab only | 3 |
 | 5 | Typed actions + state (WS3b) | `feat/specs-actions` (10) | `feat/specs-actions` (21) | 2 |
 | 6 | Premium component/style contract (WS4) | `feat/specs-experience` (22), `feat/specs-ux` (1) | `feat/specs-experience` (17) | 5 |
-| 7 | Watch mode, assets, upgrades (WS5) | `feat/specs-preview` (36; not merged into the integration line yet): three.js preview, `viro-specs watch`, ledger-owned atomic writes | sync ledger already in PR 3 | 2 |
+| 7 | Watch mode, assets, upgrades (WS5) | `feat/specs-preview` (20), merged into `feat/specs-release` at `70da0c87`: three.js preview, `viro-specs watch`, ledger-owned atomic writes. On the release line the preview vendors the release Lens core and draws scroll groups, the experience layer and the reference apps | sync ledger already in PR 3 | 2 |
 | 8 | Reference apps, release gates, docs | `feat/specs-release`: API snapshot, lens-ts snapshot, generated error reference, CI jobs, docs, reference apps | `feat/specs-release`: API snapshots, consumer check, release workflow, CHANGELOG, Release.md, reference-app scene documents and LEAF scenarios | 3, 6 |
 
 ## Per-PR gates
@@ -45,7 +45,7 @@ snapshot carries the regenerated snapshot and a CHANGELOG line.
 | 4 | a fresh Lens project reaching Preview with only the documented commands, no Inspector repair |
 | 5 | reference flow in Preview: select card, details, change setting, back to list with scroll kept |
 | 6 | LEAF gallery scenarios for loading, ready, degraded and error; accessibility and design critique outputs |
-| 7 | preview screenshots per primitive; watch mode keeps the last valid output on a broken edit |
+| 7 | preview screenshots per primitive and per release scene (`docs/evidence/specs/web-preview/`); preview parity and experience tests (`npm test` in `web-harness/specs-preview`); watch mode keeps the last valid output on a broken edit (`__test__/ViroSpecsWatch.test.ts`) |
 | 8 | LEAF reference-app run ([specs-examples.md](specs-examples.md)), with the expected-failure scenario failing |
 
 ## Before opening
@@ -53,8 +53,11 @@ snapshot carries the regenerated snapshot and a CHANGELOG line.
 1. Merge `feat/specs-integration-3` (viro) and `feat/specs-integration`
    (viro-external) into `feat/specs-release` again, so PR 8 carries the
    latest host fixes.
-2. Decide whether PR 7 lands before PR 8. PR 8 does not need it; the
-   compatibility matrix and docs do not claim the web preview.
+2. PR 7 lands before PR 8. `feat/specs-release` already contains it, and
+   the compatibility matrix, quickstart and CHANGELOG describe the web
+   preview and `viro-specs watch`. The preview's tier is
+   `portable-test-passed`; its screenshots are browser captures, not
+   Preview evidence.
 3. Merge the viro-external release PR first. The viro `consumer` job packs
    `@viro-external/specs` from viro-external `main` (a public repo, so no
    token), and viro's `^0.3.0` peer needs the 0.3.0 that PR ships.

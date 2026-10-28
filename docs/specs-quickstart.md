@@ -60,6 +60,21 @@ prints as `file:line:col severity CODE: message` followed by a `hint:` line; loo
 up in [specs-error-reference.md](specs-error-reference.md). Add
 `--diagnostics-format json` for machine-readable output.
 
+To look at the scene before building a Lens, open it in the web preview
+(optional). It runs the Lens host's scene controller on three.js and lives
+in a viro checkout, not in the installed package:
+
+```bash
+npx viro-specs-compile --entry src/HelloScene.tsx --strict --format scene-json --out build/hello.scene.json
+# in a clone of the viro repo
+cd web-harness/specs-preview && npm ci && npm run dev
+```
+
+Drop `build/hello.scene.json` on the page. While you edit, `npx viro-specs
+watch --entry src/HelloScene.tsx --out-dir build` rebuilds on every save
+([specs-watch.md](specs-watch.md)). What the preview does and does not
+show is in [specs-preview.md](specs-preview.md).
+
 ## 4. Set up the Lens Studio project
 
 Create a Lens Studio 5.22+ project targeting Spectacles and install, from
