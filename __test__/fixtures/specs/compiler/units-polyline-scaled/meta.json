@@ -1,0 +1,4 @@
+{
+  "description": "Polyline radius scales with the largest world scale axis; points are world-space meters.",
+  "parity": true
+}

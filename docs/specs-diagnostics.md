@@ -104,7 +104,7 @@ Fix: This SDK reads manifest versions 1 and 2. Upgrade @reactvision/react-viro t
 
 Field has an invalid value.
 
-Emitted by validateSpecsManifestV2, which every producer runs on its output.
+Emitted by validateSpecsManifestV2, which every producer runs on its output, and by the runtime compiler and `viro-specs-compile --entry` for a prop value they can read but that is invalid (for example a two-element `position` or a numeric `text`).
 
 Fix: See docs/specs-manifest.md for the field's type and range.
 
@@ -112,7 +112,7 @@ Fix: See docs/specs-manifest.md for the field's type and range.
 
 Required field is missing.
 
-Emitted by validateSpecsManifestV2, which every producer runs on its output.
+Emitted by validateSpecsManifestV2, which every producer runs on its output, and by the runtime compiler and `viro-specs-compile --entry` for a prop value they can read but that is invalid (for example a two-element `position` or a numeric `text`).
 
 Fix: See docs/specs-manifest.md for the required fields of this object.
 
@@ -198,6 +198,12 @@ Fix: The transport only implements applyScene (protocol 1), which drops this fie
 
 ## Static source analysis (VS2xxx)
 
+These codes mean the static compiler could not work out a value. When it can
+work out a value and the value is wrong (a two-element `position`, a
+numeric `text`), the shared core reports the same `VS1xxx` or `VS3xxx` code
+the runtime compiler would, so the two compilers agree on every value both
+can see.
+
 ### VS2001 · error
 
 No ViroSpecsScene root.
@@ -216,11 +222,11 @@ Fix: Add at least one ViroNode, ViroText, ViroImage, Viro3DObject or ViroPolylin
 
 ### VS2003 · error
 
-Element is inside dynamic or conditional JSX.
+Element is inside JSX the static compiler cannot expand.
 
 Emitted by `viro-specs-compile --entry`.
 
-Fix: Specs scenes are compiled ahead of time. Move the element out of the condition, map or call, and control it with a static visible prop.
+Fix: Static conditions, ternaries, && and .map() over static arrays compile. Move the element out of other calls, loops or IIFEs, and control it with a static visible prop.
 
 ### VS2004 · error
 
@@ -296,19 +302,25 @@ Fix: Set name to a string literal and run to true or false.
 
 ### VS2013 · error
 
-Spread props cannot be compiled.
+Spread props cannot be resolved statically.
 
 Emitted by `viro-specs-compile --entry`.
 
-Fix: Write the props out on the element. The static compiler cannot see what a spread contains.
+Fix: Spread a top-level const object (in the entry file or imported from a relative module), or write the props out on the element. The spread's props were ignored.
+
+A spread of a static object is merged in source order, so a later attribute
+overrides an earlier spread and the reverse.
 
 ### VS2014 · error
 
-Prop value cannot be resolved statically.
+Expression cannot be resolved statically.
 
 Emitted by `viro-specs-compile --entry`.
 
-Fix: Use a literal or a top-level const in the entry file.
+Fix: Use a literal, a top-level const, a const imported from a relative module, or a .map() parameter. The message quotes the expression.
+
+The message quotes the expression as written, for example
+`ViroText t text: `user.name` cannot be resolved statically (user is not a static binding).`
 
 ### VS2015 · error
 
@@ -317,6 +329,43 @@ Entry file could not be parsed.
 Emitted by `viro-specs-compile --entry`.
 
 Fix: Fix the syntax error at the reported position.
+
+### VS2016 · warning
+
+Condition is only known at runtime; both branches were emitted hidden.
+
+Emitted by `viro-specs-compile --entry`.
+
+Fix: The static manifest emits every branch of the condition with visible: false, and the Lens shows none of them until the host sets visibility. Use a static condition, or give each branch a viroTag and drive visibility from the app.
+
+Applies to `cond ? <A /> : <B />` and `cond && <A />` where `cond` is not
+static. The root element of each branch gets `visible: false`; its children
+inherit it through the hierarchy. A static condition compiles only the branch
+it selects, with no diagnostic.
+
+### VS2017 · error
+
+Polyline or light inside a runtime condition.
+
+Emitted by `viro-specs-compile --entry`.
+
+Fix: Polylines and lights have no visible flag on Specs, so they cannot be emitted hidden. Move them out of the condition.
+
+### VS2018 · error
+
+Import cannot be resolved.
+
+Emitted by `viro-specs-compile --entry`.
+
+Fix: The static compiler follows relative imports of .ts, .tsx, .js and .jsx modules and treats other relative files as assets. Package imports are not read; inline the value or move it into the project.
+
+### VS2019 · error
+
+.map() cannot be expanded statically.
+
+Emitted by `viro-specs-compile --entry`.
+
+Fix: Call .map() on a static array with a callback whose body is, or returns, one JSX element. Callbacks with statements other than one return are not expanded.
 
 ## Shared compile semantics and transport (VS3xxx)
 
@@ -372,9 +421,12 @@ Fix: Use Linear, EaseIn, EaseOut or EaseInEaseOut. Specs will not substitute a d
 
 Asset source has no stable ID.
 
-Emitted by the runtime compiler.
+Emitted by the runtime compiler and `viro-specs-compile --entry`.
 
 Fix: Pass sourceResolver to ViroSpecsScene to map bundled assets to Lens asset IDs.
+
+The static compiler reports it when `source` is missing; a `source` it cannot
+resolve is `VS2010`.
 
 ### VS3009 · warning
 
@@ -406,7 +458,10 @@ Element has no viroTag.
 
 Emitted by the runtime compiler and `viro-specs-compile --entry`.
 
-Fix: Without viroTag the ID is ordinal, so reordering elements rebinds callbacks. Add a unique viroTag.
+Fix: Without viroTag the ID is a content hash of kind, parent, text or source, and React key, so it changes when that content changes. Add a unique viroTag; --strict requires one.
+
+The content-hash ID is `<kind>-<12 hex>`. Reordering siblings that differ in
+content keeps their IDs. See `docs/adr/0003-specs-id-strategy.md`.
 
 ### VS3013 · error
 
@@ -415,6 +470,22 @@ Model format is not supported on Specs.
 Emitted by the runtime compiler and `viro-specs-compile --entry`.
 
 Fix: Lens Studio cannot import VRX. Export the model as GLB.
+
+### VS3014 · error
+
+Animation timing is not a finite non-negative number.
+
+Emitted by the runtime compiler and `viro-specs-compile --entry`.
+
+Fix: Set duration and delay in milliseconds as numbers >= 0, both in registerAnimations and in the element's animation.delay.
+
+### VS3015 · error
+
+Element cannot have children on Specs.
+
+Emitted by the runtime compiler and `viro-specs-compile --entry`.
+
+Fix: Specs polylines and lights are leaves. Move the children into a ViroNode.
 
 ## Capability errors (VS4xxx)
 

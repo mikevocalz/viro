@@ -1,0 +1,2 @@
+scene.tsx:10:9 warning VS3012 [text-a2f8032a5152]: ViroText has no viroTag; it was given content-hash ID text-a2f8032a5152.
+scene.tsx:13:9 warning VS3012 [text-f440e6d39695]: ViroText has no viroTag; it was given content-hash ID text-f440e6d39695.

@@ -1,0 +1,46 @@
+{
+  "$schema": "https://github.com/mikevocalz/viro/blob/main/schemas/viro-specs-manifest.v2.json",
+  "version": 2,
+  "generator": {
+    "name": "viro-specs-compile"
+  },
+  "source": "__test__/fixtures/specs/compiler/anim-rotate-relative/scene.tsx",
+  "nodes": [
+    {
+      "id": "turn",
+      "kind": "group",
+      "rotation": [
+        0,
+        0.25881904510252074,
+        0,
+        0.9659258262890683
+      ]
+    }
+  ],
+  "polylines": [],
+  "lights": [],
+  "materials": [],
+  "interactions": [],
+  "animations": [
+    {
+      "nodeId": "turn",
+      "name": "goldenTurn",
+      "plan": {
+        "engine": "AnimationPlayer",
+        "backendPackage": "AnimationExamples",
+        "durationSeconds": 1,
+        "delaySeconds": 0,
+        "easing": "ease-in-out",
+        "playbackMode": "loop",
+        "completionEvent": "viro-animation-complete:turn:goldenTurn",
+        "tracks": [
+          {
+            "target": "transform.rotation.y",
+            "from": "current",
+            "to": 75
+          }
+        ]
+      }
+    }
+  ]
+}

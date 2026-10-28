@@ -1,0 +1,1 @@
+scene.tsx:12:47 error VS3014 [bad-timing]: Animation goldenNegative duration -5 is not a finite number of milliseconds >= 0.

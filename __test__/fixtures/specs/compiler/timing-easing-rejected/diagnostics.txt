@@ -1,0 +1,1 @@
+scene.tsx:12:43 error VS3006 [bouncy]: Animation goldenBounce uses easing Bounce, which Specs does not play.

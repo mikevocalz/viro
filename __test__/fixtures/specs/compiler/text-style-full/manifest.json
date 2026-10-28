@@ -1,0 +1,29 @@
+{
+  "$schema": "https://github.com/mikevocalz/viro/blob/main/schemas/viro-specs-manifest.v2.json",
+  "version": 2,
+  "generator": {
+    "name": "viro-specs-compile"
+  },
+  "source": "__test__/fixtures/specs/compiler/text-style-full/scene.tsx",
+  "nodes": [
+    {
+      "id": "styled",
+      "kind": "text",
+      "text": "Styled",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 24,
+        "fontWeight": "600",
+        "fontStyle": "italic",
+        "color": "#ffaa00",
+        "textAlign": "center",
+        "textAlignVertical": "top"
+      }
+    }
+  ],
+  "polylines": [],
+  "lights": [],
+  "materials": [],
+  "interactions": [],
+  "animations": []
+}

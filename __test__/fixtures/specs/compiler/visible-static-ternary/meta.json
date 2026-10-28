@@ -1,0 +1,4 @@
+{
+  "description": "A ternary on a const picks one branch; the other is not compiled.",
+  "parity": true
+}
