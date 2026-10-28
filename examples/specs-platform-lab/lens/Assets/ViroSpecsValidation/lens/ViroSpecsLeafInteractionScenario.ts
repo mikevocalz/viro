@@ -1,4 +1,4 @@
-import { ViroSpecsInteractionHost } from "./ViroSpecsInteractionHost";
+import { ViroSpecsInteractionHost } from "../../ViroSpecs/lens/ViroSpecsInteractionHost";
 import { Scenario } from "Leaf.lspkg/Scenarios/scenario/Scenario";
 import { DefaultLeafInteractor } from "Leaf.lspkg/Interactors/interactor/DefaultLeafInteractor";
 import { findInteractableByName } from "Leaf.lspkg/Interactors/InteractableUtils";

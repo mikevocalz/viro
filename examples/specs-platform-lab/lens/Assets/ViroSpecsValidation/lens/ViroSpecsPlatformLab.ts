@@ -1,7 +1,7 @@
-import { setTimeout } from "./ViroSpecsInteractionKit";
-import type { ViroSpecsSceneSnapshot } from "./ViroSpecsProtocol";
-import { ViroSpecsInteractionHost } from "./ViroSpecsInteractionHost";
-import { ViroSpecsRuntimeHost } from "./ViroSpecsRuntimeHost";
+import { setTimeout } from "../../ViroSpecs/lens/ViroSpecsInteractionKit";
+import type { ViroSpecsSceneSnapshot } from "../../ViroSpecs/lens/ViroSpecsProtocol";
+import { ViroSpecsInteractionHost } from "../../ViroSpecs/lens/ViroSpecsInteractionHost";
+import { ViroSpecsRuntimeHost } from "../../ViroSpecs/lens/ViroSpecsRuntimeHost";
 
 /**
  * Canonical Lens-side Platform Lab scene.

@@ -1,13 +1,13 @@
 import { expect } from "Leaf.lspkg/Utils/common/Expect";
 import { findSceneObjectByName, sleep } from "Leaf.lspkg/Utils/common/Utils";
 import { VolumetricLine } from "VolumetricLine.lspkg/Scripts/VolumetricLine";
-import { ViroSpecsAnimationHost } from "./ViroSpecsAnimationHost";
+import { ViroSpecsAnimationHost } from "../../ViroSpecs/lens/ViroSpecsAnimationHost";
 import { NavigationDataComponent } from "SpecsNavigationKit.lspkg/NavigationDataComponent/NavigationDataComponent";
-import { ViroSpecsAssetRegistry } from "./ViroSpecsAssetRegistry";
-import { ViroSpecsNavigationRuntime } from "./ViroSpecsNavigationRuntime";
-import { ViroSpecsNavigationHost } from "./ViroSpecsNavigationHost";
-import { ViroSpecsWorldRuntime } from "./ViroSpecsWorldRuntime";
-import type { ViroSpecsNativeAnimationPlan } from "./ViroSpecsProtocol";
+import { ViroSpecsAssetRegistry } from "../../ViroSpecs/lens/ViroSpecsAssetRegistry";
+import { ViroSpecsNavigationRuntime } from "../../ViroSpecs/lens/ViroSpecsNavigationRuntime";
+import { ViroSpecsNavigationHost } from "../../ViroSpecs/lens/ViroSpecsNavigationHost";
+import { ViroSpecsWorldRuntime } from "../../ViroSpecs/lens/ViroSpecsWorldRuntime";
+import type { ViroSpecsNativeAnimationPlan } from "../../ViroSpecs/lens/ViroSpecsProtocol";
 
 /** Durable simulator conformance checks, executed by the existing smoke scenario. */
 export async function validateNativeAnimation(): Promise<void> {

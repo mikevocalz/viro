@@ -1,12 +1,12 @@
-import { ViroSpecsActionRuntime } from "./ViroSpecsActionRuntime";
-import type { ViroSpecsActionEvent } from "./ViroSpecsProtocol";
+import { ViroSpecsActionRuntime } from "../../ViroSpecs/lens/ViroSpecsActionRuntime";
+import type { ViroSpecsActionEvent } from "../../ViroSpecs/lens/ViroSpecsProtocol";
 import {
   VIRO_SPECS_REFERENCE_INITIAL_STATE,
   createViroSpecsReferenceRegistry,
   viewViroSpecsReferenceFlow,
   type ViroSpecsReferenceFlowState,
 } from "./ViroSpecsReferenceFlow";
-import { ViroSpecsSceneControllerHost } from "./ViroSpecsSceneControllerHost";
+import { ViroSpecsSceneControllerHost } from "../../ViroSpecs/lens/ViroSpecsSceneControllerHost";
 
 /**
  * Platform Lab scene for typed actions: the reference flow (select card ->

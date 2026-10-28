@@ -4,7 +4,7 @@ import { ViroSpecsSceneControllerHost } from "../../ViroSpecs/lens/ViroSpecsScen
 import { ViroGeneratedSceneHost } from "../../ViroSpecs/generated/ViroGeneratedSceneHost";
 import type { ViroSpecsSceneDocumentV2 } from "../../ViroSpecs/lens/ViroSpecsProtocol";
 import type { ViroSpecsHostDiagnostic } from "../../ViroSpecs/lens/ViroSpecsHostDiagnostics";
-import { ViroSpecsActionsLab } from "../../ViroSpecs/lens/ViroSpecsActionsLab";
+import { ViroSpecsActionsLab } from "../../ViroSpecsValidation/lens/ViroSpecsActionsLab";
 import type { Interactable } from "SpectaclesInteractionKit.lspkg/Components/Interaction/Interactable/Interactable";
 
 /**

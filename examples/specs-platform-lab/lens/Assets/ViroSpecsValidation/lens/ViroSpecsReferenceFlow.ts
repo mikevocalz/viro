@@ -14,9 +14,9 @@ import type {
   ViroSpecsDocumentInteraction,
   ViroSpecsDocumentNode,
   ViroSpecsSceneDocumentV2,
-} from "./ViroSpecsProtocol";
-import type { ViroSpecsHostDiagnostics } from "./ViroSpecsHostDiagnostics";
-import { ViroSpecsActionRegistry } from "./ViroSpecsActionRuntime";
+} from "../../ViroSpecs/lens/ViroSpecsProtocol";
+import type { ViroSpecsHostDiagnostics } from "../../ViroSpecs/lens/ViroSpecsHostDiagnostics";
+import { ViroSpecsActionRegistry } from "../../ViroSpecs/lens/ViroSpecsActionRuntime";
 
 /** One card in the list. */
 export type ViroSpecsReferenceExhibit = { readonly id: string; readonly title: string; readonly distanceMeters: number };
