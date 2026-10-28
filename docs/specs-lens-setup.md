@@ -26,13 +26,14 @@ node scripts/specs-lens-setup.mjs --create --project /abs/path/NewLab   # save t
 | Step | What it does | Evidence level it can reach |
 | --- | --- | --- |
 | `preflight` | Checks which project Lens Studio has open and that the MCP tools exist | none |
-| `packages` | Installs SpectaclesInteractionKit, SpectaclesUIKit, SurfacePlacement, VolumetricLine, SpecsNavigationKit and Leaf from the Asset Library when `Packages/` lacks them | none |
+| `packages` | Installs the pinned packages (below) from the Asset Library when `Packages/` lacks them. `--replace-packages` removes existing copies first | none |
 | `sync` | Copies the `@viro-external/specs` Lens runtime into `Assets/ViroSpecs/lens` without `--clean`, then runs the doctor | none |
 | `compile` | `viro-specs compile` to `lens-ts` (the generated host) and to JSON (kept as evidence) | implemented |
 | `recompile` | `RecompileTypeScriptTool` | lens-compiled |
 | `wire` | Runs `scripts/specs-lens/editor/wire-generated-host.ts` in the editor: camera, SIK prefab, model import, the `ViroSpecsRuntime` hierarchy, every host `@input`, the LEAF index | none |
 | `chattool` | Loads the `viro-specs` ChatTool and calls its `doctor` | none |
-| `preview` | Refreshes Preview, collects logs, captures the runtime view | preview-validated only for what the logs show |
+| `device` | Sets the Preview to a SPECS device, Interactive input, Sunlit Room (`--room` to change). SIK refuses to run without it | none |
+| `preview` | Refreshes Preview, collects logs, captures the runtime view | lens-compiled; the logs alone do not prove behavior |
 | `leaf` | Runs the LEAF scenarios; the deliberate failure must fail | preview-validated |
 
 Each run writes `report.json`, logs and captures to
@@ -43,33 +44,44 @@ replaced by `<repo>` and `~`. Nothing in this flow is hardware-validated.
 
 ```
 Camera Object            Perspective, DeviceTracking World
-InteractionKit           SIK 4.0.0 root prefab
+SpectaclesInteractionKit SIK 2.0.0 root prefab
 ViroSpecsRuntime
   AssetRegistry          ViroSpecsAssetRegistry: compiled model IDs -> imported GLB prefabs
   ViroGeneratedContent   root for generated nodes
   RuntimeHost            ViroSpecsRuntimeHost (root, assetRegistryObject)
   InteractionHost        ViroSpecsInteractionHost (runtimeHostObject)
   AnimationHost          ViroSpecsAnimationHost (runtimeHostObject)
-  Navigation             NavigationDataComponent + ViroSpecsNavigationHost
+  Navigation             NavigationDataComponent (userCamera) + ViroSpecsNavigationHost
   GeneratedHost          ViroGeneratedSceneHost: the four host @inputs
 LeafIndex                ViroLabLeafIndex
 LeafScenarioClient       ViroLabScenarioClient, disabled except during the leaf step
 ```
 
-Objects are found by name, so a rerun repairs a partly wired scene.
+Objects are found by name, so a rerun repairs a partly wired scene. The demo
+objects the Asset Library drops into the scene when it installs
+SurfacePlacement, VolumetricLine and NavigationKit are disabled, not deleted.
 
 ## LEAF scenarios
 
 The scenarios are in `examples/specs-platform-lab/lens/Assets/ViroSpecsLab/Leaf/`:
-`viro_lab_render`, `viro_lab_select`, `viro_lab_drag`, `viro_lab_navigate`, and
-`viro_lab_deliberate_failure`, which asserts a title the scene does not have.
-If that scenario passes, the harness is broken.
+| Scenario | Checks |
+| --- | --- |
+| `viro_lab_render` | Root at -150 cm, title text, model prefab instantiated |
+| `viro_lab_select` | Hover and trigger on the model reach the portable channel as `hover-enter`, `select-start`, `select-end` |
+| `viro_lab_select_ik` | The same select with LEAF's IK arm and head. Run with `__leaf__diagnostic_policy: fail-fast`, so a reach that does not converge fails instead of falling back to simulated input |
+| `viro_lab_drag` | SIK manipulation moves the model and emits `drag` |
+| `viro_lab_navigate` | The ViroPolyline is a VolumetricLine whose three points sit at the compiled centimeter positions |
+| `viro_lab_deliberate_failure` | Asserts a title the scene does not have. It must fail; if it passes, the harness is broken |
 
-The `leaf` step uses the LEAF panel's MCP tools when the `[ChatTool] LEAF
-Plugin` provides them. Otherwise it enables `ViroLabScenarioClient`, which
-calls LEAF's `DefaultScenarioManager.startScenario` for each scenario and
-prints `VIRO_LAB_LEAF_RESULT {...}` lines that the step reads from the
-Preview log.
+The `leaf` step follows CLAD's `specs-leaf-run-in-preview`: `open_leaf_panel`,
+`list_leaf_scenarios` and `run_leaf_scenario` with `onDevice: false`, one
+scenario at a time, then the Lens-side `DefaultLeafScenarioManager`
+PASSED/FAILED line from the log, because the tool returns no reason.
+
+If the `[ChatTool] LEAF Plugin` is missing or fails to load, the step falls
+back to `ViroLabScenarioClient`. That component calls LEAF's
+`DefaultScenarioManager.startScenario` for each scenario and prints
+`VIRO_LAB_LEAF_RESULT {...}` lines that the step reads from the Preview log.
 
 ## The viro-specs ChatTool
 
@@ -83,6 +95,19 @@ once for the `filesystem` and `subprocess` permissions.
 `node --test scripts/specs-lens/chattool/main.nodetest.mjs` runs its command logic
 in Node with the Lens Studio modules stubbed.
 
+## Pinned packages
+
+| Package directory | Asset Library name | Version |
+| --- | --- | --- |
+| `SpectaclesInteractionKit.lspkg` | SpectaclesInteractionKit | 2.0.0 |
+| `SpectaclesUIKit.lspkg` | SpectaclesUIKit | 2.0.0 |
+| `SurfacePlacement.lspkg` | Surface Placement | 2.0.0 |
+| `VolumetricLine.lspkg` | Volumetric Line | 2.0.0 |
+| `SpecsNavigationKit.lspkg` | Navigation Kit | 2.0.0 |
+| `Leaf.lspkg` | Leaf | 2.0.2 |
+| `AiPreviewAgentInspect.lspkg` | AI Preview Agent – Inspect | 2.0.1 |
+| `AiPreviewAgentInteract.lspkg` | AI Preview Agent – Interact | 2.0.1 |
+
 ## Known traps
 
 - Package line: the setup pins the 2.x Asset Library packages (SIK, UIKit,
@@ -93,13 +118,19 @@ in Node with the Lens Studio modules stubbed.
   satisfies both. The `packages` step refuses a project holding 4.0.0
   packages. Moving to 4.0.0 needs a runtime change in `viro-external`.
 
-- SpectaclesUIKit 4.0.0 (not used by this setup) depends on Icons 4.0.0, which ships an editor plugin
-  (Icon Atlas). Importing it opens a plugin permission dialog in Lens Studio.
-  Until someone answers it, every later import waits, the project cannot save,
+- Editor plugin permission prompts block Lens Studio. Importing a package that
+  ships an editor plugin (Icons 4.0.0, pulled in by UIKit 4.0.0) or loading the
+  `viro-specs` ChatTool opens a modal permission prompt. Until someone answers
+  it in the Lens Studio window, later imports wait, the project cannot save,
   and the scene model is read-only (`Invalid transition from Immutable to
-  Mutable`). The MCP has no tool to answer it.
-- The SIK 4.0.0 root prefab is named `InteractionKit`, not
-  `SpectaclesInteractionKit`.
+  Mutable`). The MCP has no tool to answer it. The pinned 2.x packages ship no
+  editor plugins.
+- The SIK 4.0.0 root prefab is named `InteractionKit`; in 2.0.0 it is
+  `SpectaclesInteractionKit`. The wire step accepts either.
+- `ViroSpecsAgentValidation.ts` in the synced runtime imports the
+  AiPreviewAgentInspect and AiPreviewAgentInteract packages, so the project
+  does not compile without them even though they are editor-only. The setup
+  pins both at 2.0.1.
 - `fetch` in Node gives up after 300 s waiting for response headers. Package
   imports can take longer, so `scripts/specs-lens/mcp-client.mjs` uses
   `node:http` with a 30 minute timeout.
