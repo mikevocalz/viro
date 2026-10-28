@@ -20,39 +20,127 @@ coded diagnostics with file, line and column
 ([reference](specs-diagnostics.md)):
 
 ```text
-[viro-specs] src/SpecsScene.tsx:14:9 error VS2013: ViroText title has a spread attribute; its props were not compiled.
-  hint: Write the props out on the element. The static compiler cannot see what a spread contains.
+[viro-specs] src/SpecsScene.tsx:14:31 error VS2009 [title]: ViroText text `user.name` cannot be resolved statically: `user`: user is not a top-level const or import (props, state and locals are only known at runtime).
+  hint: Use a literal, a top-level const, a const imported from a relative module, or a .map() parameter. The message quotes the expression.
 ```
 
 Errors stop the build. Warnings are printed and the file is written, unless
-`--strict` is set, which also fails on warnings (for example a missing
-`viroTag`, which `--strict` therefore requires).
+`--strict` is set, which also fails on warnings. Every element without a
+`viroTag` raises warning `VS3012`, so `--strict` requires a `viroTag` on
+every element.
 
 | Flag | Meaning |
 | --- | --- |
 | `--entry <file.tsx>` | Compile Viro JSX. |
 | `--manifest <file.json>` | Read a hand-written or version 1 manifest, validate it, and write it as version 2. |
-| `--out <file>` | Output path. Nothing is written when the build fails. |
+| `--out <file>` | Output path. Nothing is written when the build fails; a successful write is atomic (temp file, then rename). |
 | `--format json\|lens-ts` | Manifest JSON (default) or the generated Lens Studio host. |
+| `--root <dir>` | Project root for asset IDs and the manifest `source`. Default: the nearest directory above the entry with a `package.json`. |
 | `--strict` | Fail on warnings too. |
 | `--diagnostics-format text\|json` | `json` writes only a JSON array of diagnostics to stderr. |
 
-The CLI loads the shared contract code from `bin/specs-core/`, built by
-`npm run build:specs-core` (the package `build` and `prepare` scripts run it).
+## How it is built
 
-The compiler currently supports static props for:
+The CLI is TypeScript in `src/specs-cli/`:
 
-- ViroNode
-- ViroText
-- ViroImage
-- Viro3DObject
-- ViroPolyline
+| File | Job |
+| --- | --- |
+| `modules.ts` | Parses the entry and the relative modules it imports with `@babel/parser`; records top-level bindings, imports and exports. |
+| `evaluate.ts` | Works out static values, or says exactly why it cannot. |
+| `compile.ts` | Walks the JSX under `<ViroSpecsScene>` and passes each element's props to the shared core. |
+| `lensTs.ts` | The generated Lens Studio host (scene protocol 1). |
+| `main.ts` | Arguments, output, exit status. |
 
-Use `viroTag` for stable IDs.
+Everything about what an element compiles to (transforms, quaternions,
+polylines, text style, assets, interactions, animations, IDs, validation)
+lives in `components/Specs/core/`, mainly `scene.ts`
+(`ViroSpecsSceneBuilder`). The runtime compiler inside `ViroSpecsScene` calls
+the same builder, so the two compilers cannot drift.
+`npm run build:specs-cli` compiles both directories to `bin/specs-build/`;
+the package `build` and `prepare` scripts run it, and
+`bin/viro-specs-compile.cjs` loads it.
 
-Static bundled assets such as `require("./model.glb")` are converted to
-project-relative logical IDs. The Lens asset registry binds those IDs to Lens
-Studio assets.
+## What the static compiler can read
+
+Supported components: ViroNode, ViroText, ViroImage, Viro3DObject,
+ViroPolyline and the four Viro lights.
+
+A prop value compiles when it is one of:
+
+- a literal, template literal, array or object (with spreads), or
+  arithmetic, comparison, logical or conditional expressions over those;
+- a top-level `const` in the entry file, including destructuring
+  (`let` and `var` are runtime values);
+- a named, default or namespace import from a relative module, following
+  re-exports, or a value from an imported `.json` file;
+- `require("./asset.glb")` or `import model from "./asset.glb"` for assets;
+- a parameter of a `.map()` callback being expanded.
+
+Function calls other than `require()`, props, state, hooks and package
+imports are only known at runtime. The diagnostic quotes the expression
+you wrote and, when the cause is deeper, the part that failed.
+
+JSX children:
+
+| Source | Result |
+| --- | --- |
+| `{CONST ? <A /> : <B />}`, `{CONST && <A />}` | Only the branch the constant selects is compiled. |
+| `{prop ? <A /> : <B />}`, `{prop && <A />}` | Every branch is compiled with `visible: false` on its root, with warning `VS2016`. Polylines and lights cannot be hidden: `VS2017`. |
+| `{ITEMS.map((item, index) => <A ... />)}` | Expanded once per item of a static array. The callback body must be one JSX expression or one `return`. Otherwise `VS2019`. |
+| `<A {...STATIC} b={1} />` | Spread props merge in source order. An unresolved spread is `VS2013` and ignored. |
+| `<>...</>`, `<React.Fragment>` | Transparent. |
+| Any other call or expression | `VS2003`. |
+
+## IDs and assets
+
+`viroTag` is the element ID. Without it, both compilers assign a content-hash
+ID such as `text-538ff9754de1`, built from the kind, the parent ID, the text
+or asset, the React key, and an ordinal that only separates identical
+siblings. Reordering distinct siblings keeps every ID, so callbacks stay on
+their elements. Editing an untagged element's text or source changes its
+ID. See [ADR-0003](adr/0003-specs-id-strategy.md).
+
+Asset IDs are paths relative to the project root with forward slashes
+(`assets/robot.glb`), whatever the working directory or OS. The Lens asset
+registry binds those IDs to Lens Studio assets. A `require()` of a file that
+does not exist is `VS2018`.
+
+In the runtime compiler, bundled assets are numbers until a
+`sourceResolver` maps them. Map them to the same project-relative paths to
+get the same manifest from both compilers.
+
+## Both compilers produce the same manifest
+
+`serializeSpecsManifest` writes manifests with a fixed key order, so equal
+content means equal bytes. For the Platform Lab and for every golden fixture
+both compilers can run, the runtime manifest equals the CLI manifest byte for
+byte except for provenance (`generator` names the producer; `source` names
+the entry file, which the runtime compiler never sees).
+`specsManifestSharedSubset` removes those two fields.
+
+Tests: `__test__/ViroSpecsGolden.test.tsx` (48 fixtures under
+`__test__/fixtures/specs/compiler/`, 42 compared across both compilers, plus
+the Platform Lab), `__test__/ViroSpecsCore.test.tsx`, and
+`scripts/test-viro-specs-compiler.cjs` for the CLI. Regenerate goldens after an
+intended change with `UPDATE_SPECS_GOLDENS=1 npm run test:specs -- ViroSpecsGolden`
+and review the diff.
+
+## Compile time
+
+The budget is 200 ms per path for the Platform Lab. `ViroSpecsGolden.test.tsx`
+fails above it and prints the numbers on every CI run. Measured 2026-10-28 on
+an Apple M3 Pro, Node 26.12.0, inside Jest:
+
+| Path | First compile | Median of 25 |
+| --- | --- | --- |
+| Static (`compileSpecsEntry`, parse included) | 18.2-18.6 ms | 1.8 ms |
+| Runtime (`compileViroSpecsChildren`) | 10.9-11.8 ms | 0.14 ms |
+
+A cold `viro-specs-compile` process for the Platform Lab takes 0.35-0.38 s
+wall time on the same machine, of which 0.28 s is Node startup (`node -e ""`).
+Inside the process, loading `@babel/parser` takes about 21 ms and the CLI
+modules about 18 ms. The GitHub Actions runner has not been measured yet; the
+test prints its numbers in the CI log.
 
 ## What remains portable at runtime
 

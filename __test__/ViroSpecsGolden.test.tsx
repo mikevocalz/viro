@@ -113,6 +113,25 @@ describe("Specs compiler goldens", () => {
   });
 });
 
+describe("docs/specs-parity.md", () => {
+  const doc = fs.readFileSync(path.join(repo, "docs", "specs-parity.md"), "utf8");
+  const references = [...doc.matchAll(/`G:([a-z0-9-]+)(=?)`/g)].map((match) => ({ name: match[1], parity: match[2] === "=" }));
+
+  it("cites only fixtures that exist, with the right parity marker", () => {
+    expect(references.length).toBeGreaterThan(0);
+    for (const reference of references) {
+      expect([reference.name, fixtures.includes(reference.name)]).toEqual([reference.name, true]);
+      const meta = JSON.parse(fs.readFileSync(path.join(fixtureRoot, reference.name, "meta.json"), "utf8")) as FixtureMeta;
+      expect([reference.name, reference.parity]).toEqual([reference.name, meta.parity]);
+    }
+  });
+
+  it("cites every fixture at least once", () => {
+    const cited = new Set(references.map((reference) => reference.name));
+    expect(fixtures.filter((name) => !cited.has(name))).toEqual([]);
+  });
+});
+
 describe("Platform Lab in both paths", () => {
   const entry = path.join(repo, "examples", "specs-platform-lab", "SpecsPlatformLab.tsx");
   const source = fs.readFileSync(entry, "utf8");

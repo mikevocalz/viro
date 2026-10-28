@@ -103,7 +103,7 @@ Fix: This SDK reads manifest versions 1 and 2. Upgrade @reactvision/react-viro t
 
 Field has an invalid value.
 
-Emitted by validateSpecsManifestV2, which every producer runs on its output.
+Emitted by validateSpecsManifestV2, which every producer runs on its output, and by the runtime compiler and `viro-specs-compile --entry` for a prop value they can read but that is invalid (for example a two-element `position` or a numeric `text`).
 
 Fix: See docs/specs-manifest.md for the field's type and range.
 
@@ -111,7 +111,7 @@ Fix: See docs/specs-manifest.md for the field's type and range.
 
 Required field is missing.
 
-Emitted by validateSpecsManifestV2, which every producer runs on its output.
+Emitted by validateSpecsManifestV2, which every producer runs on its output, and by the runtime compiler and `viro-specs-compile --entry` for a prop value they can read but that is invalid (for example a two-element `position` or a numeric `text`).
 
 Fix: See docs/specs-manifest.md for the required fields of this object.
 
