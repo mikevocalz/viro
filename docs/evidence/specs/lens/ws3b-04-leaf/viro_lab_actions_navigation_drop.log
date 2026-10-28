@@ -1,0 +1,14 @@
+10:03:23.654 [Packages/SpectaclesInteractionKit.lspkg/Utils/logger.ts:21] FrameCache: Initialized global cache flushing for FrameCache
+10:03:24.723 [Packages/SpectaclesInteractionKit.lspkg/Core/ConfigurationValidator/ConfigurationValidator.ts:16] SIK Version : 0.18.0
+10:03:28.010 [LeafPlugin][PluginViewModel] Loaded 14 scenario(s) from preview.
+10:03:28.010 [LeafPlugin][PluginViewModel] Running scenario: viro_lab_actions_navigation_drop
+10:05:04.369 [LeafPlugin][LeafChatTool] run_leaf_scenario failed: Scenario viro_lab_actions_navigation_drop timed out after 90000ms
+10:05:04.523 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_lab_actions_navigation_drop with args: []
+10:05:04.523 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.013s]Running with runner config: {"__leaf__log_level":"INFO","__leaf__timeout_secs":"90","__leaf__diagnostic_policy":"fallback","__leaf__diagnostic_report_duration_ms":"-1"}
+10:05:05.290 [Assets/ViroSpecsLab/Leaf/ViroLabLeafSupport.ts:260] VIRO_LAB_LEAF visible card-planetarium dy=3.5
+10:05:05.962 [Assets/ViroSpecs/lens/ViroSpecsActionsLab.ts:60] [viro-specs-actions] exhibit.open {"exhibitId":"orrery"}
+10:05:05.964 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:43] [viro-specs-host] info VS5018 (action) node card-planetarium: Action exhibit.open from node "card-planetarium" was dropped: scene 2 was retired before it ran.
+10:05:06.369 [Assets/ViroSpecsLab/Leaf/ViroLabActionsNavigationDropScenario.ts:53] VIRO_LAB_LEAF actions_navigation_drop diagnostics=["VS5018:card-planetarium:Action exhibit.open from node \"card-planetarium\" was dropped: scene 2 was retired before it ran."]
+10:05:06.370 [Assets/ViroSpecsLab/Leaf/ViroLabActionsNavigationDropScenario.ts:57] VIRO_LAB_LEAF actions_navigation_drop PASS
+10:05:06.606 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  2.096s]PASSED: viro_lab_actions_navigation_drop
+10:05:06.607 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  2.097s][viro_lab_actions_navigation_drop] PASSED

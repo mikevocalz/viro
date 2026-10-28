@@ -5,6 +5,7 @@ import { ViroGeneratedSceneHost } from "../../ViroSpecs/generated/ViroGeneratedS
 import type { ViroSpecsSceneDocumentV2 } from "../../ViroSpecs/lens/ViroSpecsProtocol";
 import type { ViroSpecsHostDiagnostic } from "../../ViroSpecs/lens/ViroSpecsHostDiagnostics";
 import { ViroSpecsActionsLab } from "../../ViroSpecs/lens/ViroSpecsActionsLab";
+import type { Interactable } from "SpectaclesInteractionKit.lspkg/Components/Interaction/Interactable/Interactable";
 
 /**
  * Shared lookups for the generated Platform Lab scenarios.
@@ -199,4 +200,63 @@ export async function recordDiagnostics(body: () => Promise<void>): Promise<Viro
     subscription.remove();
   }
   return seen;
+}
+
+/**
+ * Hover then trigger, as a pinch. When the action the pinch fires navigates
+ * away, the scene that held `target` is retired and the Interactable is
+ * destroyed while LEAF's trigger is still finishing; LEAF then throws
+ * "Object is null" from its last access to the target. That error is
+ * expected only when the target is already destroyed, so it is swallowed in
+ * that case alone and returned as `retired: true`; anything else is rethrown.
+ */
+export async function pinch(
+  interactor: { hover(target: Interactable, ms: number): Promise<void>; trigger(target: Interactable): Promise<void> },
+  target: Interactable
+): Promise<{ retired: boolean }> {
+  await interactor.hover(target, 100);
+  try {
+    await interactor.trigger(target);
+    return { retired: false };
+  } catch (error) {
+    if (isNull(target)) return { retired: true };
+    throw error;
+  }
+}
+
+/** One line per object under `object`: indented names plus the Text string where there is one. */
+export function describeTree(object: SceneObject | null, depth: number = 0): string {
+  if (!object) return "(none)";
+  const text = object.getComponent("Component.Text") as Text | null;
+  let out = "  ".repeat(depth) + object.name + (text ? ' "' + text.text + '"' : "") + "\n";
+  for (let i = 0; i < object.getChildrenCount(); i++) out += describeTree(object.getChild(i), depth + 1);
+  return out;
+}
+
+/**
+ * The reference-flow card nearest the middle of the list's scroll window. A
+ * card scrolled out of the window cannot be hovered, so scenarios pinch this
+ * one. Positions come from the controller's node handles; a card's own
+ * object is renamed viro-interactable:<id> when its interaction binds.
+ */
+export function visibleCard(lab: ViroSpecsActionsLab): { id: string; title: string; distanceMeters: number } {
+  const scrollObject = findSceneObjectByName("viro-scroll:exhibit-list");
+  expect(scrollObject).toBeTruthy();
+  const windowY = scrollObject.getTransform().getWorldPosition().y;
+  const host = controllerHost();
+  const exhibits = lab.state?.exhibits ?? [];
+  let picked = exhibits[0];
+  let bestDy = Number.POSITIVE_INFINITY;
+  for (const exhibit of exhibits) {
+    const object = host.getNode("card-" + exhibit.id);
+    if (!object) continue;
+    const dy = Math.abs(object.getTransform().getWorldPosition().y - windowY);
+    if (dy < bestDy) {
+      bestDy = dy;
+      picked = exhibit;
+    }
+  }
+  expect(picked).toBeTruthy();
+  print("VIRO_LAB_LEAF visible card-" + picked.id + " dy=" + bestDy);
+  return picked;
 }
