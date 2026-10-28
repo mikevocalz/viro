@@ -1,0 +1,20 @@
+{
+  // viro-specs-compile: src/specs-cli plus the shared core it imports,
+  // compiled to CommonJS in bin/specs-build/ (npm run build:specs-cli).
+  // The core is also type-checked without Node types by the root tsconfig,
+  // which keeps node: imports out of code that runs in React Native.
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "commonjs",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": false,
+    "skipLibCheck": true,
+    "types": ["node"],
+    "rootDir": ".",
+    "outDir": "./bin/specs-build",
+    "declaration": false,
+    "sourceMap": false
+  },
+  "include": ["components/Specs/core/*.ts", "src/specs-cli/*.ts"]
+}

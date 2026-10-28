@@ -76,13 +76,22 @@ function canonical(value: unknown, kind: OrderKind | undefined): unknown {
 }
 
 /**
+ * A copy of `manifest` with every object's keys in the canonical order
+ * {@linkcode serializeSpecsManifest} writes.
+ */
+export function canonicalizeSpecsManifest(manifest: ViroSpecsManifestV2): ViroSpecsManifestV2 {
+  // canonical() only reorders keys, so the result has the manifest's shape.
+  return canonical(manifest, "top") as ViroSpecsManifestV2;
+}
+
+/**
  * Serializes a manifest with a fixed key order, two-space indentation and a
  * trailing newline. Both compilers write manifests through this, so two
  * manifests with the same content are byte-identical no matter in which order
  * a compiler set their fields.
  */
 export function serializeSpecsManifest(manifest: ViroSpecsManifestV2): string {
-  return JSON.stringify(canonical(manifest, "top"), null, 2) + "\n";
+  return JSON.stringify(canonicalizeSpecsManifest(manifest), null, 2) + "\n";
 }
 
 /**

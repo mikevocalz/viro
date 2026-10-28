@@ -4,7 +4,7 @@ const os = require("node:os");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 const { compile, lensTs } = require("../bin/viro-specs-compile.cjs");
-const { VIRO_SPECS_DIAGNOSTICS } = require("../bin/specs-core/index.js");
+const { VIRO_SPECS_DIAGNOSTICS } = require("../bin/specs-build/components/Specs/core/index.js");
 
 const repo = path.join(__dirname, "..");
 const cli = path.join(repo, "bin", "viro-specs-compile.cjs");
@@ -86,7 +86,13 @@ const source = `
   }
 `;
 
-const result = compile(source, path.join(process.cwd(), "fixtures", "scene.tsx"));
+// A real project on disk: the asset must exist, and IDs are relative to the
+// nearest package.json, not the working directory.
+const project = fs.mkdtempSync(path.join(os.tmpdir(), "viro-specs-project-"));
+fs.writeFileSync(path.join(project, "package.json"), "{}");
+fs.mkdirSync(path.join(project, "fixtures"));
+fs.writeFileSync(path.join(project, "fixtures", "model.glb"), "glTF");
+const result = compile(source, path.join(project, "fixtures", "scene.tsx"), { cwd: project });
 const manifest = result.manifest;
 
 assert.deepEqual(result.diagnostics.filter((d) => d.severity !== "info"), []);
@@ -155,12 +161,22 @@ const conditionalSource = `export function Scene({enabled}) {
      return <ViroSpecsScene>{enabled && <ViroText viroTag="bad" text="bad" />}</ViroSpecsScene>;
    }`;
 const conditional = compile(conditionalSource, "/tmp/conditional.tsx");
-const dynamic = expectCode(conditional, "VS2003", "conditional");
+// A runtime condition compiles every branch hidden and warns (VS2016) at the condition.
+const dynamic = expectCode(conditional, "VS2016", "conditional");
+assert.equal(dynamic.severity, "warning");
 assert.deepEqual(
-  [dynamic.line, dynamic.col, dynamic.nodeId],
-  [2, conditionalSource.split("\n")[1].indexOf("<ViroText") + 1, "bad"]
+  [dynamic.line, dynamic.col],
+  [2, conditionalSource.split("\n")[1].indexOf("enabled &&") + 1]
 );
-assert.equal(conditional.manifest.nodes.length, 0);
+assert.match(dynamic.message, /`enabled`/);
+assert.deepEqual(conditional.manifest.nodes, [{ id: "bad", kind: "text", visible: false, text: "bad" }]);
+
+// Calls other than .map() still cannot be expanded.
+const call = compile(
+  `export function Scene() { return <ViroSpecsScene>{renderItems()}</ViroSpecsScene>; }`,
+  "/tmp/call.tsx"
+);
+assert.match(expectCode(call, "VS2003", "call").message, /renderItems\(\)/);
 
 const unresolvedArray = compile(
   `export function Scene({x}) {

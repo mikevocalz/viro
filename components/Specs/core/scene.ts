@@ -539,8 +539,10 @@ export class ViroSpecsSceneBuilder {
       }
     }
 
-    this.compileInteraction(props, id);
-    if (node !== undefined) this.compileAnimation(props, written, unresolved, id, local, opacity, issues, name);
+    if (node !== undefined) {
+      this.compileInteraction(props, id);
+      this.compileAnimation(props, written, unresolved, id, local, opacity, issues, name);
+    }
     flush();
     if (node === undefined) return { kind: "skipped" };
     this.nodes.push(node);

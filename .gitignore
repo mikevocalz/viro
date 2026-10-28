@@ -96,5 +96,6 @@ web-harness/public/
 # dist/shims/ both survived there for months, shipping untranspiled JSX).
 /dist/
 
-# Built from components/Specs/core by `npm run build:specs-core`
+# Built from src/specs-cli and components/Specs/core by `npm run build:specs-cli`
+/bin/specs-build/
 /bin/specs-core/
