@@ -5,6 +5,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { readPreviewInput } from "../src/document";
+import { PRIMITIVE_STORIES } from "../src/primitives";
 import { codes, createParityHosts, expectParity, presentBoth } from "./support/parity";
 
 const repo = new URL("../../../", import.meta.url);
@@ -165,6 +166,19 @@ describe("preview parity with the mock host", () => {
     hosts.three.controller.update(next);
     expect(hosts.three.controller.getNodeState("list")?.scrollNormalized).toEqual([0, 0.25]);
     expectParity(hosts);
+  });
+
+  it("every gallery primitive is a valid manifest and renders with parity", () => {
+    for (const story of PRIMITIVE_STORIES) {
+      const input = readPreviewInput(story.manifest, story.id);
+      expect(input.manifestDiagnostics, story.id).toEqual([]);
+      expect(input.route, story.id).toBe("manifest");
+      const hosts = createParityHosts({ images: ["examples/visionos-sweep/assets/button.png"], models: [SHIBA] });
+      const { three } = presentBoth(hosts, input.scene);
+      expect(three.status, story.id).toBe("committed");
+      expect(codes(hosts.three.diagnostics), story.id).toEqual(codes(hosts.mock.diagnostics));
+      expectParity(hosts);
+    }
   });
 
   it("navigation to a new scene retires the old one on both hosts", () => {
