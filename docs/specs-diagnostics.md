@@ -555,7 +555,7 @@ Emitted by the runtime compiler and `viro-specs-compile --entry`.
 
 Fix: See docs/specs-experience.md for each component's props and their allowed values.
 
-Covers PanelButton without `label`, SpatialScrollView without `width`, `height` or `itemHeight`, and values outside a prop's allowed set. The element is not compiled when a required prop is missing.
+Covers PanelText or PanelImage with only one of `width` and `height`, PanelButton without `label`, SpatialScrollView without `width`, `height` or `itemHeight`, and values outside a prop's allowed set. The element is not compiled when a required prop is missing.
 
 ## Capability errors (VS4xxx)
 
@@ -775,3 +775,13 @@ Emitted by the experience layer in `@viro-external/specs` (`ViroSpecsExperienceC
 Fix: Hand tracking is not available, so selection works by gaze dwell and drag is replaced by step buttons. It switches back when hand tracking returns.
 
 Gaze dwell is 1000 ms (provisional, see `docs/specs-experience.md#gaze-dwell`).
+
+### VS5019 · warning
+
+Premium component feature not drawn by this host.
+
+Emitted by the experience layer in `@viro-external/specs` (`ViroSpecsExperienceHost`).
+
+Fix: The scene carries the feature but this host version does not render it yet; the message names the node and the features. See doc/Experience.md#not-drawn-yet.
+
+Reported once per node for SpatialScrollView native scrolling, ModelViewer `autoRotate`, the Reset model button and the load ring, and PanelImage corner radius. The manifest still carries them, so a newer host draws them without recompiling.

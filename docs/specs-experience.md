@@ -149,6 +149,8 @@ retrying goes through the typed actions contract (WS3b), not through new JSX.
 | The 10 degree surface threshold for the no-vection rule is a starting value | `VS3021` |
 | A missing PanelButton label or SpatialScrollView viewport drops the element | `VS3022` |
 | Scene protocol 1 drops `label`, `component` and `theme` | `VS1015` |
+| PanelText or PanelImage with only one of `width`/`height` drops the extents | `VS3022` |
+| The current Lens host does not draw SpatialScrollView native scrolling, the ModelViewer Reset button, load ring and `autoRotate`, or PanelImage corner radius | `VS5019` |
 
 ViroCore rendering (outside Specs, where no Specs diagnostic runs): the premium
 components use plain Viro primitives, `SpatialScrollView` does not scroll, and

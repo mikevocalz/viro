@@ -550,7 +550,7 @@ export class ViroSpecsSceneBuilder {
         name,
         id,
         source: sourceFailed ? undefined : source,
-        distance: specsComfortDistance(world.position),
+        distance: specsComfortDistance(world.position, (this.options.theme ?? VIRO_SPECS_DEFAULT_THEME).tokens),
       });
     } else switch (target.kind) {
       case "group":
@@ -664,6 +664,17 @@ export class ViroSpecsSceneBuilder {
       invalid(prop, "one of " + allowed.join(", "));
       return fallback;
     };
+    /** Both sides or neither: one side alone cannot size a text box or image (VS3022). */
+    const pairedExtents = (): ViroSpecsExtents | undefined => {
+      const width = readPositive("width");
+      const height = readPositive("height");
+      if (width !== undefined && height !== undefined) return { width, height };
+      if ((width === undefined) !== (height === undefined)) {
+        const given = width !== undefined ? "width" : "height";
+        issues.push({ code: "VS3022", prop: given, message: name + " " + id + " has " + given + " without " + (given === "width" ? "height" : "width") + "; give both in meters or neither. The extents were left out." });
+      }
+      return undefined;
+    };
     const extentsOr = (width: number, height: number): ViroSpecsExtents => ({
       width: readPositive("width") ?? width,
       height: readPositive("height") ?? height,
@@ -698,8 +709,7 @@ export class ViroSpecsSceneBuilder {
           if (typeof value === "number" && Number.isInteger(value) && value >= 1) maxLines = value;
           else invalid("maxLines", "a positive integer");
         }
-        const width = readPositive("width");
-        const height = readPositive("height");
+        const extents = pairedExtents();
         return {
           ...base,
           kind: "text",
@@ -709,7 +719,7 @@ export class ViroSpecsSceneBuilder {
             fontWeight: role === "title" ? "600" : role === "label" ? "500" : "400",
             color: tone === "muted" ? tokens.color.textMuted : tokens.color.text,
           },
-          ...(width !== undefined && height !== undefined ? { extents: { width, height } } : {}),
+          ...(extents !== undefined ? { extents } : {}),
           maxLines,
           component: { type: "panel-text", role, tone },
         };
@@ -736,13 +746,12 @@ export class ViroSpecsSceneBuilder {
       }
       case "panel-image": {
         if (context.source === undefined) return undefined;
-        const width = readPositive("width");
-        const height = readPositive("height");
+        const extents = pairedExtents();
         return {
           ...base,
           kind: "image",
           source: context.source,
-          ...(width !== undefined && height !== undefined ? { extents: { width, height } } : {}),
+          ...(extents !== undefined ? { extents } : {}),
           component: { type: "panel-image" },
         };
       }

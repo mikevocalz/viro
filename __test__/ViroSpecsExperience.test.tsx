@@ -408,3 +408,17 @@ describe("copy", () => {
     }
   });
 });
+
+describe("review fixes", () => {
+  const scene = (body: string) =>
+    'import { ViroSpecsScene, PanelText, PanelImage } from "@reactvision/react-viro";\nexport const S = () => <ViroSpecsScene>' + body + "</ViroSpecsScene>;";
+
+  it("reports VS3022 when PanelText or PanelImage has only one dimension", () => {
+    const text = compile(scene('<PanelText viroTag="t" text="Hi" width={0.4} position={[0, 0, -1.5]} />'));
+    expect(text.diagnostics.map((d) => d.code + ":" + d.nodeId)).toEqual(["VS3022:t"]);
+    const node = (text.manifest as ViroSpecsManifestV2).nodes[0];
+    expect("extents" in node).toBe(false);
+    const image = compile(scene('<PanelImage viroTag="i" source="img" height={0.1} position={[0, 0, -1.5]} />'));
+    expect(image.diagnostics.map((d) => d.code + ":" + d.nodeId)).toEqual(["VS3022:i"]);
+  });
+});
