@@ -120,6 +120,17 @@ check("installed package is a copy with publishable ranges", () => {
   return `${viroManifest.name}@${viroManifest.version}`;
 });
 
+check("every installed peer is inside the declared range", () => {
+  // npm --strict-peer-deps does not reject an optional peer that is
+  // installed at the wrong version (@viro-external/specs is optional), so
+  // ask npm ls, which reports it as "invalid".
+  const peers = [...Object.keys(viroManifest.peerDependencies ?? {}), "@viro-external/xr-contract"].filter((name) => fs.existsSync(path.join(modules, name, "package.json")));
+  const result = spawnSync("npm", ["ls", ...peers], { cwd: out, encoding: "utf8" });
+  const invalid = `${result.stdout}\n${result.stderr}`.split("\n").filter((line) => /invalid/.test(line) && !/npm error A complete log/.test(line));
+  assert(result.status === 0 && invalid.length === 0, invalid.join("\n") || `npm ls exit ${result.status}`);
+  return peers.map((name) => `${name}@${JSON.parse(fs.readFileSync(path.join(modules, name, "package.json"), "utf8")).version}`).join(", ");
+});
+
 check("the app has exactly one React", () => {
   const copies = walk(modules).filter((file) => /[\\/]node_modules[\\/]react[\\/]package\.json$/.test(file));
   assert(copies.length === 1, copies.map((file) => path.relative(out, file)).join(", "));
@@ -175,6 +186,16 @@ if (specsTarballs) {
     const result = spawnSync(viroSpecs, ["test"], { cwd: out, encoding: "utf8" });
     assert(result.status === 0, `exit ${result.status}\n${result.stdout}${result.stderr}`);
     return result.stdout.trim();
+  });
+  check("VS5xxx host codes match between the two packages", () => {
+    // The Lens host defines VS5xxx in ViroSpecsHostDiagnostics; Viro mirrors
+    // them in its catalog so a Lens log code reads the same in both docs.
+    const hostSource = fs.readFileSync(path.join(modules, "@viro-external", "specs", "lens", "ViroSpecsHostDiagnostics.ts"), "utf8");
+    const host = [...new Set(hostSource.match(/VS5\d{3}/g) ?? [])].sort();
+    const catalogFile = path.join(viroDir, "bin", "specs-build", "components", "Specs", "core", "diagnosticCodes.js");
+    const viro = Object.keys(require(catalogFile).VIRO_SPECS_DIAGNOSTICS).filter((code) => code.startsWith("VS5")).sort();
+    assert(JSON.stringify(host) === JSON.stringify(viro), `host ${host.join(" ")}\nviro ${viro.join(" ")}`);
+    return `${viro.length} codes, ${viro[0]} to ${viro[viro.length - 1]}`;
   });
   check("viro-specs sync copies the production Lens runtime, free of React", () => {
     const project = fs.mkdtempSync(path.join(os.tmpdir(), "viro-specs-app-lens-"));
