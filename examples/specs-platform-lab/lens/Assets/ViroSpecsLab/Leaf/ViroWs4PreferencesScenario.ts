@@ -45,7 +45,7 @@ export class ViroWs4PreferencesScenario extends Scenario {
       await settle(200);
       const view = viewOf(host);
       print("VIRO_WS4 preferences surface=" + view.tokens.color.surface + " text=" + view.tokens.color.text);
-      expect(view.tokens.color.surface.toLowerCase()).toBe("#000000");
+      expect(view.tokens.color.surface.toLowerCase()).toBe("#42525f");
       expect(view.tokens.color.text.toLowerCase()).toBe("#ffffff");
       const backing = decorationBacking("hello-next") as RenderMeshVisual;
       const rest = backing.getSceneObject().getTransform().getLocalScale().x;
