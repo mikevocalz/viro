@@ -26,6 +26,13 @@ on:
       - "babel.specs.config.cjs"
       - "index.ts"
       - "package.json"
+      - "api/**"
+      - "scripts/specs-api-snapshot.cjs"
+      - "scripts/specs-error-reference.cjs"
+      - "scripts/check-specs-consumer.cjs"
+      - "tsconfig.specs-examples.json"
+      - "examples/specs-reference-apps/**"
+      - "package-lock.json"
       - ".github/workflows/specs-public-api.yml"
   pull_request:
     paths:
@@ -47,6 +54,13 @@ on:
       - "babel.specs.config.cjs"
       - "index.ts"
       - "package.json"
+      - "api/**"
+      - "scripts/specs-api-snapshot.cjs"
+      - "scripts/specs-error-reference.cjs"
+      - "scripts/check-specs-consumer.cjs"
+      - "tsconfig.specs-examples.json"
+      - "examples/specs-reference-apps/**"
+      - "package-lock.json"
       - ".github/workflows/specs-public-api.yml"
   workflow_dispatch:
 
@@ -76,3 +90,61 @@ jobs:
         run: |
           node --check bin/viro-specs.cjs
           node --check bin/viro-specs-compile.cjs
+      - name: Type-check the Specs example scenes against the package root
+        run: npm run typecheck:specs-examples
+      - name: Specs public API snapshot (api/specs.api.d.ts)
+        run: npm run test:specs-api
+      - name: Error reference matches the diagnostic catalog
+        run: node scripts/specs-error-reference.cjs --check
+
+  consumer:
+    name: Pack and install into a clean app
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # Read-only token for the private mikevocalz/viro-external repo. When it
+      # is not configured the job still checks the Viro tarball on its own and
+      # says so in the summary; the cross-package sync check needs it.
+      VIRO_EXTERNAL_TOKEN: ${{ secrets.VIRO_EXTERNAL_READ_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+      - name: Install
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: npm pack (runs prepare -> build)
+        run: |
+          mkdir -p "$RUNNER_TEMP/viro-pack"
+          npm pack --pack-destination "$RUNNER_TEMP/viro-pack"
+          ls -l "$RUNNER_TEMP/viro-pack"
+      - name: Check out @viro-external/specs
+        if: env.VIRO_EXTERNAL_TOKEN != ''
+        uses: actions/checkout@v4
+        with:
+          repository: mikevocalz/viro-external
+          ref: main
+          token: ${{ env.VIRO_EXTERNAL_TOKEN }}
+          path: viro-external
+          persist-credentials: false
+      - name: Pack @viro-external/xr-contract and @viro-external/specs
+        if: env.VIRO_EXTERNAL_TOKEN != ''
+        working-directory: viro-external
+        run: |
+          corepack enable
+          corepack prepare pnpm@12.8.1 --activate
+          pnpm install --frozen-lockfile
+          mkdir -p "$RUNNER_TEMP/specs-pack"
+          pnpm --filter @viro-external/xr-contract pack --pack-destination "$RUNNER_TEMP/specs-pack"
+          pnpm --filter @viro-external/specs pack --pack-destination "$RUNNER_TEMP/specs-pack"
+      - name: Install the tarballs with strict peers and check the result
+        run: |
+          set -- --viro-tarball "$(ls "$RUNNER_TEMP"/viro-pack/*.tgz)"
+          if [ -n "$VIRO_EXTERNAL_TOKEN" ]; then
+            set -- "$@" --specs-tarballs "$RUNNER_TEMP/specs-pack"
+          else
+            echo "VIRO_EXTERNAL_READ_TOKEN is not set: the viro-specs sync/test checks against @viro-external/specs were skipped." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          node scripts/check-specs-consumer.cjs "$@"
