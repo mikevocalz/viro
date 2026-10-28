@@ -3,6 +3,7 @@
 // three.js scene graph realizes every backend call the controller makes, in
 // Lens units. Evidence label: portable-test-passed.
 import { readFileSync } from "node:fs";
+import { Mesh, Vector3 } from "three";
 import { describe, expect, it } from "vitest";
 import { readPreviewInput } from "../src/document";
 import { PRIMITIVE_STORIES } from "../src/primitives";
@@ -14,6 +15,8 @@ const preview = new URL("../", import.meta.url);
 const fixture = (name: string): unknown => JSON.parse(readFileSync(new URL("fixtures/" + name, preview), "utf8"));
 
 const SHIBA = "examples/visionos-sweep/assets/shiba.glb";
+/** Image IDs the Platform Lab navigation scene references. */
+const GALLERY_IMAGES = ["examples/visionos-sweep/assets/button.png"];
 
 /** Same document as the round-trip test in viro-external scripts/scene-controller.test.mjs. */
 const lab = () => ({
@@ -179,6 +182,61 @@ describe("preview parity with the mock host", () => {
       expect(codes(hosts.three.diagnostics), story.id).toEqual(codes(hosts.mock.diagnostics));
       expectParity(hosts);
     }
+  });
+
+  it("SpatialScrollView: rows, initial position, scrollByRows and clipping match the Lens backend", () => {
+    const hosts = createParityHosts({ images: GALLERY_IMAGES });
+    const { three } = presentBoth(hosts, json("__test__/fixtures/specs/gallery/navigation.scene.json"));
+    expect(three.status).toBe("committed");
+    expect(codes(hosts.three.diagnostics)).toEqual(codes(hosts.mock.diagnostics));
+    expectParity(hosts);
+    const list = hosts.three.backend.liveHandles().find((h) => h.id === "nav-list");
+    const mockList = hosts.mock.backend.liveNodes().find((h) => h.id === "nav-list");
+    if (!list?.scroll || !list.contentParent || !mockList) throw new Error("nav-list is not a scroll group");
+    // itemHeightMeters 0.13 is the row; initialIndex 0 opens at the content top.
+    expect(list.scroll.rows).toEqual({ stepMeters: 0.13, initialOffsetMeters: 0 });
+    expect(mockList.state.scrollRows).toEqual({ stepMeters: 0.13, initialOffsetMeters: 0 });
+    expect(list.scroll.normalized).toEqual([0, 1]);
+    // Content y = 0 is the window's top edge: 0.3 m window, so the anchor sits 15 cm up.
+    expect(list.contentParent.position.y).toBeCloseTo(15, 5);
+    const card = hosts.three.backend.liveHandles().find((h) => h.id === "nav-card-1");
+    if (!card) throw new Error("no nav-card-1");
+    const before = card.object.getWorldPosition(new Vector3()).y;
+
+    expect(hosts.three.controller.scrollByRows("nav-list", 1)).toBe(true);
+    expect(hosts.mock.controller.scrollByRows("nav-list", 1)).toBe(true);
+    expectParity(hosts);
+    expect(card.object.getWorldPosition(new Vector3()).y - before).toBeCloseTo(13, 4);
+    // Past the end clamps: 0.56 m content in a 0.3 m window leaves 26 cm.
+    hosts.three.controller.scrollByRows("nav-list", 10);
+    hosts.mock.controller.scrollByRows("nav-list", 10);
+    expectParity(hosts);
+    expect(list.scroll.normalized[1]).toBeCloseTo(-1, 6);
+    expect(list.contentParent.position.y).toBeCloseTo(15 + 26, 4);
+    expect(hosts.three.controller.scrollByRows("nav-title", 1)).toBe(false);
+
+    hosts.three.backend.update(0, 1280, 720);
+    const clipped = (id: string): number => {
+      const node = hosts.three.backend.liveHandles().find((h) => h.id === id);
+      let planes = 0;
+      node?.object.traverse((o) => {
+        if (o instanceof Mesh) for (const m of [o.material].flat()) planes = Math.max(planes, m.clippingPlanes?.length ?? 0);
+      });
+      return planes;
+    };
+    expect(clipped("nav-card-1")).toBe(4);
+    expect(clipped("nav-card-1-image")).toBe(4);
+    expect(clipped("nav-title")).toBe(0);
+    expect(clipped("nav-next")).toBe(0);
+  });
+
+  it.each(["dashboard", "model-viewer", "world-placed-info"])("reference app %s (compiled scene.json) renders with parity", (app) => {
+    const hosts = createParityHosts({ models: [SHIBA] });
+    const { mock, three } = presentBoth(hosts, json("__test__/fixtures/specs/reference-apps/" + app + "/scene.json"));
+    expect(three.status).toBe("committed");
+    expect(mock.status).toBe("committed");
+    expect(codes(hosts.three.diagnostics)).toEqual(codes(hosts.mock.diagnostics));
+    expectParity(hosts);
   });
 
   it("navigation to a new scene retires the old one on both hosts", () => {

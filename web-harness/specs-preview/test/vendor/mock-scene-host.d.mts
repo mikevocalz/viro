@@ -8,7 +8,7 @@ import type {
   ViroSpecsExtents,
   ViroSpecsScroll,
 } from "../../src/vendor/lens-core/ViroSpecsProtocol";
-import type { ViroSpecsBackendText, ViroSpecsBackendTransform } from "../../src/vendor/lens-core/ViroSpecsSceneBackend";
+import type { ViroSpecsBackendText, ViroSpecsBackendTransform, ViroSpecsScrollRows } from "../../src/vendor/lens-core/ViroSpecsSceneBackend";
 
 export interface MockMaterial {
   readonly owned?: true;
@@ -32,6 +32,7 @@ export interface MockHandle {
     extents?: ViroSpecsExtents;
     scroll?: ViroSpecsScroll;
     scrollNormalized?: [number, number];
+    scrollRows?: ViroSpecsScrollRows;
     asset?: unknown;
     placeholder?: ViroSpecsExtents;
     material?: MockMaterial | null;
@@ -70,6 +71,7 @@ export class MockBackend implements ViroSpecsSceneBackend<MockHandle, unknown, M
   setText: ViroSpecsSceneBackend<MockHandle, unknown, MockMaterial>["setText"];
   setExtents: ViroSpecsSceneBackend<MockHandle, unknown, MockMaterial>["setExtents"];
   setScroll: ViroSpecsSceneBackend<MockHandle, unknown, MockMaterial>["setScroll"];
+  scrollBy: ViroSpecsSceneBackend<MockHandle, unknown, MockMaterial>["scrollBy"];
   setAsset: ViroSpecsSceneBackend<MockHandle, unknown, MockMaterial>["setAsset"];
   showPlaceholder: ViroSpecsSceneBackend<MockHandle, unknown, MockMaterial>["showPlaceholder"];
   clearPlaceholder: ViroSpecsSceneBackend<MockHandle, unknown, MockMaterial>["clearPlaceholder"];

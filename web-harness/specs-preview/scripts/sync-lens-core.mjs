@@ -25,10 +25,17 @@ import { fileURLToPath } from "node:url";
 const CORE = [
   "ViroSpecsProtocol.ts",
   "ViroSpecsHostDiagnostics.ts",
+  "ViroSpecsActionContract.ts",
   "ViroSpecsSceneDocument.ts",
   "ViroSpecsSceneBackend.ts",
   "ViroSpecsResourceCache.ts",
   "ViroSpecsSceneController.ts",
+  "ViroSpecsActionRuntime.ts",
+  "ViroSpecsReferenceFlow.ts",
+  "ViroSpecsExperienceTokens.ts",
+  "ViroSpecsExperienceCopy.ts",
+  "ViroSpecsPlacement.ts",
+  "ViroSpecsExperience.ts",
 ];
 /**
  * Lens-only files kept as plain text for test/lensSemantics.test.ts, which

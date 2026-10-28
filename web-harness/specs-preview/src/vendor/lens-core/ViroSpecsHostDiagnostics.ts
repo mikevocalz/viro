@@ -24,7 +24,9 @@ export type ViroSpecsHostPhase =
   | "interaction"
   | "animation"
   | "dispose"
-  | "listener";
+  | "listener"
+  | "action"
+  | "experience";
 
 /** Catalog entry: severity is fixed per code. */
 export type ViroSpecsHostDiagnosticDefinition = {
@@ -108,6 +110,61 @@ export const VIRO_SPECS_HOST_DIAGNOSTICS = {
     severity: "error",
     title: "Backend operation failed",
     hint: "A Lens call threw while updating a committed node. The node keeps its previous state; the message names the operation.",
+  },
+  VS5015: {
+    severity: "error",
+    title: "Action is not declared",
+    hint: "Declare the action ID in the scene's actions list and in the ViroSpecsActionRegistry. The trigger or dispatch was dropped.",
+  },
+  VS5016: {
+    severity: "error",
+    title: "Action is declared or handled twice",
+    hint: "Action IDs are unique per scene and per registry. The first declaration or handler stays; remove the second.",
+  },
+  VS5017: {
+    severity: "error",
+    title: "Action payload does not match its declaration",
+    hint: "The fieldPath names the field: missing, unknown, wrong type or not in enum. The action was dropped and state is unchanged.",
+  },
+  VS5018: {
+    severity: "info",
+    title: "Queued action invalidated by navigation",
+    hint: "No action needed. The scene that showed the node was retired before the action ran, so it was dropped.",
+  },
+  VS5019: {
+    severity: "warning",
+    title: "Declared action has no handler",
+    hint: "Register a handler with ViroSpecsActionRegistry.on, or set forward on ViroSpecsActionRuntime to send the action to a phone app.",
+  },
+  VS5020: {
+    severity: "info",
+    title: "Route memory is full; least recently used route forgotten",
+    hint: "Scroll positions of the forgotten route reset when it is shown again. Raise maxRememberedRoutes if this repeats.",
+  },
+  VS5021: {
+    severity: "info",
+    title: "Capability degraded; dependent UI hidden",
+    hint: "No action needed for the build. The message names the capability, its state and the UI the experience layer hid; the wearer sees a one-line notice.",
+  },
+  VS5022: {
+    severity: "warning",
+    title: "Text raised to the 1.2 degree minimum",
+    hint: "The text rendered smaller than 1.2 degrees at its distance, so the host raised its size. Size it from the type tokens (PanelText) to avoid the clamp.",
+  },
+  VS5023: {
+    severity: "warning",
+    title: "Position clamped into the 0.6-3.0 m comfort band",
+    hint: "A placement or drag would have put the node nearer than 0.6 m or farther than 3.0 m; the host stopped it at the band edge.",
+  },
+  VS5024: {
+    severity: "info",
+    title: "Gaze-only input active",
+    hint: "Hand tracking is not available, so selection works by gaze dwell and drag is replaced by step buttons. It switches back when hand tracking returns.",
+  },
+  VS5025: {
+    severity: "warning",
+    title: "Premium component feature not drawn by this host",
+    hint: "The scene carries the feature but this host version does not render it yet; the message names the node and the features. See doc/Experience.md#not-drawn-yet.",
   },
 } as const satisfies Record<string, ViroSpecsHostDiagnosticDefinition>;
 

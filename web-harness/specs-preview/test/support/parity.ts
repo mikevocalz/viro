@@ -147,7 +147,7 @@ export function expectParity(hosts: ParityHosts): PreviewGraphEntry[] {
       expect(entry.polyline?.widthCm, label + " width cm").toBeCloseTo(line.radiusMeters * CM_PER_METER * 2, 4);
       if (handle.state.material) expect(entry.material?.id, label + " line material").toBe(handle.state.material.borrowed ?? handle.state.material.definition?.id);
     }
-    if (handle.state.scrollNormalized) expect(entry.scrollNormalized, label + " scroll").toEqual(handle.state.scrollNormalized);
+    if (handle.state.scrollNormalized) near(entry.scrollNormalized, handle.state.scrollNormalized, label + " scroll");
   }
 
   const mockBound = hosts.mock.backend.bindings.filter((b) => b.active && b.handle.alive).map((b) => b.handle.id).sort();

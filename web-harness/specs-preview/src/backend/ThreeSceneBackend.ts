@@ -6,6 +6,7 @@ import {
   Mesh,
   MeshBasicMaterial,
   Object3D,
+  Plane,
   PointLight,
   SpotLight,
   SRGBColorSpace,
@@ -34,6 +35,7 @@ import type {
   ViroSpecsHostScheduler,
   ViroSpecsNodeUiState,
   ViroSpecsSceneBackend,
+  ViroSpecsScrollRows,
 } from "../vendor/lens-core/ViroSpecsSceneBackend";
 import { parseViroSpecsColor, type ViroSpecsHostNode } from "../vendor/lens-core/ViroSpecsSceneDocument";
 import { PreviewAnimationPlayer } from "./animationPlayer";
@@ -98,9 +100,10 @@ export class ThreeSceneBackend implements ViroSpecsSceneBackend<PreviewNode, Pre
     binding.emit(event);
   }
 
-  /** Per-frame work: animations, line resolution. */
+  /** Per-frame work: animations, scroll clipping, line resolution. */
   update(deltaSeconds: number, viewportWidthPx: number, viewportHeightPx: number): void {
     this.animations.update(deltaSeconds);
+    this.clipScrollContent();
     for (const m of this.lineMaterials) m.resolution.set(viewportWidthPx, viewportHeightPx);
   }
 
@@ -237,40 +240,91 @@ export class ThreeSceneBackend implements ViroSpecsSceneBackend<PreviewNode, Pre
     }
   }
 
-  setScroll(node: PreviewNode, scroll: ViroSpecsScroll): void {
+  setScroll(node: PreviewNode, scroll: ViroSpecsScroll, rows?: ViroSpecsScrollRows): void {
     const width = scroll.width * CM_PER_METER;
     const height = scroll.height * CM_PER_METER;
-    const contentHeight = Math.max(height, scroll.contentHeight * CM_PER_METER);
     if (!node.contentParent || !node.scroll) {
       const anchor = new Group();
       anchor.name = "viro-scroll-content:" + node.id;
       for (const child of [...node.object.children]) anchor.add(child);
       node.object.add(anchor);
       node.contentParent = anchor;
-      node.scroll = { spec: scroll, normalized: [0, 1], outline: createScrollOutline(width, height) };
+      // Lens: a new ScrollWindow opens at the content top, or `initialOffsetMeters` down.
+      const normalizedY = normalizedFromTop((rows?.initialOffsetMeters ?? 0) * CM_PER_METER, height, Math.max(height, scroll.contentHeight * CM_PER_METER));
+      node.scroll = { spec: scroll, normalized: [0, normalizedY], outline: createScrollOutline(width, height), clipPlanes: createWindowPlanes(), rows };
       node.object.add(node.scroll.outline);
     } else {
       node.scroll.outline.removeFromParent();
       node.scroll.outline = createScrollOutline(width, height);
       node.object.add(node.scroll.outline);
       node.scroll.spec = scroll;
+      if (rows) node.scroll.rows = rows;
     }
-    this.positionScrollContent(node, contentHeight, height);
+    this.positionScrollContent(node);
   }
 
-  /** Content anchor at `contentHeight / 2` when scrolled to the top, as the Lens backend sets it. */
-  private positionScrollContent(node: PreviewNode, contentHeightCm: number, windowHeightCm: number): void {
+  /**
+   * Places the content anchor so content `y = 0` sits at the window's top edge
+   * when scrolled to the top, and `offset` cm higher when scrolled `offset` cm
+   * down: the position a Lens ScrollWindow gives the anchor the Lens backend
+   * parents at `contentHeight / 2`.
+   */
+  private positionScrollContent(node: PreviewNode): void {
     if (!node.contentParent || !node.scroll) return;
-    const travel = contentHeightCm - windowHeightCm;
-    node.contentParent.position.set(0, contentHeightCm / 2 + (1 - node.scroll.normalized[1]) * travel, 0);
+    const spec = node.scroll.spec;
+    const height = spec.height * CM_PER_METER;
+    const range = Math.max(0, spec.contentHeight * CM_PER_METER - height);
+    const offset = ((1 - node.scroll.normalized[1]) / 2) * range;
+    node.contentParent.position.set(0, height / 2 + offset, 0);
   }
 
-  /** Scrolls a scroll group, `normalizedY` 1 = top. */
+  scrollBy(node: PreviewNode, deltaMeters: number): void {
+    if (!node.scroll) throw new Error("Node " + node.id + " is not a scroll group.");
+    const spec = node.scroll.spec;
+    const height = spec.height * CM_PER_METER;
+    const contentHeight = spec.contentHeight * CM_PER_METER;
+    const range = contentHeight - height;
+    if (range <= 0) return;
+    // Same arithmetic as ViroSpecsLensSceneBackend.scrollBy on ScrollWindow's normalized y.
+    const offset = ((1 - node.scroll.normalized[1]) / 2) * range;
+    const next = Math.min(range, Math.max(0, offset + deltaMeters * CM_PER_METER));
+    node.scroll.normalized = [0, normalizedFromTop(next, height, contentHeight)];
+    this.positionScrollContent(node);
+  }
+
+  /** Sets a scroll group's position in ScrollWindow's normalized y: 1 shows the content top, -1 its bottom. */
   scrollTo(node: PreviewNode, normalizedY: number): void {
     if (!node.scroll) return;
-    node.scroll.normalized = [node.scroll.normalized[0], Math.max(0, Math.min(1, normalizedY))];
-    const spec = node.scroll.spec;
-    this.positionScrollContent(node, Math.max(spec.height, spec.contentHeight) * CM_PER_METER, spec.height * CM_PER_METER);
+    node.scroll.normalized = [node.scroll.normalized[0], Math.max(-1, Math.min(1, normalizedY))];
+    this.positionScrollContent(node);
+  }
+
+  /**
+   * Clips each scroll group's content to its window, as a Lens ScrollWindow
+   * masks it. Materials under a window get one clone per window so a shared
+   * prefab or registry material outside it stays unclipped.
+   */
+  private clipScrollContent(): void {
+    for (const node of this.handles) {
+      if (!node.alive || !node.scroll || !node.contentParent) continue;
+      const spec = node.scroll.spec;
+      const planes = node.scroll.clipPlanes;
+      updateWindowPlanes(planes, spec.width * CM_PER_METER, spec.height * CM_PER_METER, node.object);
+      const owner = node.id;
+      const clip = (material: Material): Material => {
+        if (material.clippingPlanes === planes) return material;
+        const mine = material.userData[CLIP_OWNER] === owner ? material : material.clone();
+        mine.userData[CLIP_OWNER] = owner;
+        mine.clippingPlanes = planes;
+        return mine;
+      };
+      node.contentParent.traverse((child) => {
+        if (child instanceof Mesh || child instanceof Line2) {
+          const mesh = child as Mesh;
+          mesh.material = Array.isArray(mesh.material) ? mesh.material.map(clip) : clip(mesh.material);
+        }
+      });
+    }
   }
 
   setAsset(node: PreviewNode, asset: PreviewAsset): void {
@@ -451,6 +505,45 @@ export class ThreeSceneBackend implements ViroSpecsSceneBackend<PreviewNode, Pre
   restoreUiState(node: PreviewNode, state: ViroSpecsNodeUiState): void {
     if (!node.scroll || !state.scrollNormalized) return;
     node.scroll.normalized = [state.scrollNormalized[0], state.scrollNormalized[1]];
-    this.scrollTo(node, state.scrollNormalized[1]);
+    this.positionScrollContent(node);
   }
+}
+
+/** userData key naming the scroll group whose window clips a material clone. */
+const CLIP_OWNER = "viroClipOwner";
+
+/**
+ * ScrollWindow's normalized y for a content offset from the top, in the same
+ * units as the window: 1 shows the content top, -1 its bottom. Same function
+ * as the Lens backend's `normalizedFromTop`.
+ */
+function normalizedFromTop(offset: number, windowHeight: number, contentHeight: number): number {
+  const range = contentHeight - windowHeight;
+  if (range <= 0) return 1;
+  return 1 - (2 * Math.min(range, Math.max(0, offset))) / range;
+}
+
+/** Four planes (top, bottom, left, right), normals pointing into the window. */
+function createWindowPlanes(): Plane[] {
+  return [new Plane(), new Plane(), new Plane(), new Plane()];
+}
+
+const LOCAL_EDGES: readonly (readonly [number, number, number, number])[] = [
+  // normal x, normal y, edge x as a fraction of width, edge y as a fraction of height
+  [0, -1, 0, 0.5],
+  [0, 1, 0, -0.5],
+  [-1, 0, 0.5, 0],
+  [1, 0, -0.5, 0],
+];
+const scratchNormal = new Vector3();
+const scratchPoint = new Vector3();
+
+/** Moves the window planes to the scroll node's current world transform. */
+function updateWindowPlanes(planes: Plane[], widthCm: number, heightCm: number, object: Object3D): void {
+  object.updateWorldMatrix(true, false);
+  LOCAL_EDGES.forEach(([nx, ny, fx, fy], i) => {
+    scratchNormal.set(nx, ny, 0);
+    scratchPoint.set(fx * widthCm, fy * heightCm, 0);
+    planes[i]!.setFromNormalAndCoplanarPoint(scratchNormal, scratchPoint).applyMatrix4(object.matrixWorld);
+  });
 }

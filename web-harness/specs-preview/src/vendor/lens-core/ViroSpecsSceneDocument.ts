@@ -18,11 +18,18 @@ import {
   type ViroSpecsDocumentNode,
   type ViroSpecsDocumentPolyline,
   type ViroSpecsDocumentTextStyle,
+  type ViroSpecsActionDeclaration,
   type ViroSpecsSceneProtocol,
   type ViroSpecsScroll,
   type ViroSpecsTextStyle,
 } from "./ViroSpecsProtocol";
-import { createViroSpecsHostDiagnostic, type ViroSpecsHostDiagnostic } from "./ViroSpecsHostDiagnostics";
+import {
+  createViroSpecsHostDiagnostic,
+  type ViroSpecsHostDiagnostic,
+  type ViroSpecsHostDiagnosticCode,
+} from "./ViroSpecsHostDiagnostics";
+import { checkViroSpecsActionDeclaration, checkViroSpecsActionPayload } from "./ViroSpecsActionContract";
+import { checkViroSpecsComponent, checkViroSpecsTheme, type ViroSpecsTheme } from "./ViroSpecsExperienceTokens";
 
 /** A node after validation. Protocol 1 text keeps its Lens-unit style. */
 export type ViroSpecsHostNode = ViroSpecsDocumentNode & {
@@ -33,12 +40,18 @@ export type ViroSpecsHostNode = ViroSpecsDocumentNode & {
 /** A validated scene, parents ordered before children. */
 export type ViroSpecsHostScene = {
   protocol: ViroSpecsSceneProtocol;
+  /** Route key; navigation between routes is a replacement. */
+  route?: string;
+  /** Declared actions, empty when the scene has no triggers. */
+  actions: ViroSpecsActionDeclaration[];
   nodes: ViroSpecsHostNode[];
   polylines: ViroSpecsDocumentPolyline[];
   lights: ViroSpecsDocumentLight[];
   materials: ViroSpecsDocumentMaterial[];
   interactions: ViroSpecsDocumentInteraction[];
   animations: ViroSpecsDocumentAnimation[];
+  /** Validated theme, when the document carried one. */
+  theme?: ViroSpecsTheme;
 };
 
 /** Result of {@linkcode readViroSpecsSceneInput}. */
@@ -49,7 +62,7 @@ export type ViroSpecsSceneReadResult =
 type Json = Record<string, unknown>;
 
 const NODE_KINDS = new Set(["group", "text", "image", "model", "panel"]);
-const BASE_FIELDS = ["id", "kind", "parentId", "position", "rotation", "scale", "visible", "opacity", "materialId"];
+const BASE_FIELDS = ["id", "kind", "parentId", "position", "rotation", "scale", "visible", "opacity", "materialId", "label", "component"];
 const KIND_FIELDS: Record<string, readonly string[]> = {
   group: ["scroll"],
   text: ["text", "style", "extents", "maxLines"],
@@ -75,9 +88,9 @@ class Checker {
   readonly diagnostics: ViroSpecsHostDiagnostic[] = [];
   constructor(private readonly revision: number) {}
 
-  fail(path: string, message: string, nodeId?: string): void {
+  fail(path: string, message: string, nodeId?: string, code: ViroSpecsHostDiagnosticCode = "VS5002"): void {
     this.diagnostics.push(
-      createViroSpecsHostDiagnostic("VS5002", "validate", message, {
+      createViroSpecsHostDiagnostic(code, "validate", message, {
         fieldPath: path,
         sceneRevision: this.revision,
         ...(nodeId !== undefined ? { nodeId } : {}),
@@ -212,9 +225,14 @@ function checkNodeV2(c: Checker, node: Json, path: string, id: string, kind: str
   checkBase(c, node, path, id);
   if (node.opacity !== undefined) c.number(node.opacity, path + "/opacity", { min: 0, max: 1 }, id);
   if (node.materialId !== undefined) c.string(node.materialId, path + "/materialId", id);
+  if (node.label !== undefined) c.string(node.label, path + "/label", id);
+  if (node.component !== undefined) {
+    checkViroSpecsComponent(node.component, kind, path + "/component", (at, message) => c.fail(at, message, id));
+  }
   switch (kind) {
     case "group":
       if (node.scroll !== undefined) checkScroll(c, node.scroll, path + "/scroll", id);
+      else if (isScrollView(node.component)) c.fail(path + "/scroll", "A scroll-view group needs its `scroll` window.", id);
       return;
     case "text":
       if (typeof node.text !== "string") c.fail(path + "/text", "Text nodes need a string `text`.", id);
@@ -348,10 +366,16 @@ function checkMaterial(c: Checker, value: unknown, path: string): void {
   if (value.lightingModel !== undefined) c.oneOf(value.lightingModel, LIGHTING_MODELS, path + "/lightingModel", id);
 }
 
-function checkInteraction(c: Checker, value: unknown, path: string, nodes: ReadonlySet<string>): void {
+function checkInteraction(
+  c: Checker,
+  value: unknown,
+  path: string,
+  nodes: ReadonlySet<string>,
+  actions: ReadonlyMap<string, ViroSpecsActionDeclaration>
+): void {
   if (!c.object(value, path)) return;
   const id = typeof value.nodeId === "string" ? value.nodeId : undefined;
-  c.only(value, ["nodeId", "interactable", "manipulation", "events"], path, id);
+  c.only(value, ["nodeId", "interactable", "manipulation", "events", "triggers"], path, id);
   if (c.string(value.nodeId, path + "/nodeId", id) && !nodes.has(value.nodeId)) {
     c.fail(path + "/nodeId", "Interaction names a node that is not in the scene.", id);
   }
@@ -361,6 +385,43 @@ function checkInteraction(c: Checker, value: unknown, path: string, nodes: Reado
   if (!events || events.length === 0 || !events.every((e) => e === "hover" || e === "select" || e === "drag")) {
     c.fail(path + "/events", "Expected a non-empty list of hover, select, drag.", id);
   }
+  if (value.triggers !== undefined) checkTriggers(c, value.triggers, path + "/triggers", id, events ?? [], actions);
+}
+
+const TRIGGER_EVENTS: Record<string, string> = { select: "select", "hover-enter": "hover", "hover-exit": "hover" };
+
+function checkTriggers(
+  c: Checker,
+  value: unknown,
+  path: string,
+  nodeId: string | undefined,
+  events: readonly unknown[],
+  actions: ReadonlyMap<string, ViroSpecsActionDeclaration>
+): void {
+  if (!Array.isArray(value) || value.length === 0) {
+    c.fail(path, "Expected a non-empty array of triggers.", nodeId);
+    return;
+  }
+  value.forEach((trigger, i) => {
+    const at = path + "/" + i;
+    if (!c.object(trigger, at)) return;
+    c.only(trigger, ["on", "actionId", "payload"], at, nodeId);
+    const needs = typeof trigger.on === "string" ? TRIGGER_EVENTS[trigger.on] : undefined;
+    if (needs === undefined) c.fail(at + "/on", "Expected select, hover-enter or hover-exit.", nodeId);
+    else if (!events.includes(needs)) c.fail(at + "/on", "Trigger on " + String(trigger.on) + " needs `" + needs + "` in the interaction's events.", nodeId);
+    if (typeof trigger.actionId !== "string") {
+      c.fail(at + "/actionId", "Expected an action ID.", nodeId);
+      return;
+    }
+    const declaration = actions.get(trigger.actionId);
+    if (!declaration) {
+      c.fail(at + "/actionId", "Action " + JSON.stringify(trigger.actionId) + " is not declared in the scene's actions.", nodeId, "VS5015");
+      return;
+    }
+    for (const problem of checkViroSpecsActionPayload(declaration, trigger.payload)) {
+      c.fail(at + "/payload" + problem.path, problem.message, nodeId, "VS5017");
+    }
+  });
 }
 
 function checkAnimation(c: Checker, value: unknown, path: string, nodes: ReadonlySet<string>): void {
@@ -467,7 +528,9 @@ export function readViroSpecsSceneInput(
   const protocol = version as ViroSpecsSceneProtocol;
   c.only(
     input,
-    protocol === 1 ? ["version", "nodes"] : ["version", "nodes", "polylines", "lights", "materials", "interactions", "animations"],
+    protocol === 1
+      ? ["version", "nodes"]
+      : ["version", "route", "actions", "nodes", "polylines", "lights", "materials", "interactions", "animations", "theme"],
     ""
   );
 
@@ -537,10 +600,21 @@ export function readViroSpecsSceneInput(
       materialIds.add(id);
     }
   });
+  if (input.route !== undefined) c.string(input.route, "/route");
+  const declared = new Map<string, ViroSpecsActionDeclaration>();
+  c.array(input.actions, "/actions").forEach((a, i) => {
+    const problems = checkViroSpecsActionDeclaration(a);
+    for (const problem of problems) c.fail("/actions/" + i + problem.path, problem.message);
+    if (problems.length > 0) return;
+    const declaration = a as ViroSpecsActionDeclaration;
+    if (declared.has(declaration.id)) {
+      c.fail("/actions/" + i + "/id", "Action " + JSON.stringify(declaration.id) + " is declared twice.", undefined, "VS5016");
+    } else declared.set(declaration.id, declaration);
+  });
   const interactions = c.array(input.interactions, "/interactions");
   const interactionIds = new Set<string>();
   interactions.forEach((x, i) => {
-    checkInteraction(c, x, "/interactions/" + i, nodeIds);
+    checkInteraction(c, x, "/interactions/" + i, nodeIds, declared);
     const id = (x as Json | null)?.nodeId;
     if (typeof id === "string") {
       if (interactionIds.has(id)) c.fail("/interactions/" + i + "/nodeId", "Node has two interaction entries.", id);
@@ -550,18 +624,25 @@ export function readViroSpecsSceneInput(
   const animations = c.array(input.animations, "/animations");
   animations.forEach((a, i) => checkAnimation(c, a, "/animations/" + i, nodeIds));
 
+  if (protocol === 2 && input.theme !== undefined) {
+    checkViroSpecsTheme(input.theme, "/theme", (at, message) => c.fail(at, message));
+  }
+
   const ordered = orderNodes(c, nodes);
   if (c.diagnostics.length > 0) return { ok: false, diagnostics: c.diagnostics };
   return {
     ok: true,
     scene: {
       protocol,
+      ...(typeof input.route === "string" ? { route: input.route } : {}),
+      actions: Array.from(declared.values()),
       nodes: ordered,
       polylines: polylines as ViroSpecsDocumentPolyline[],
       lights: lights as ViroSpecsDocumentLight[],
       materials: materials as ViroSpecsDocumentMaterial[],
       interactions: interactions as ViroSpecsDocumentInteraction[],
       animations: animations as ViroSpecsDocumentAnimation[],
+      ...(input.theme !== undefined ? { theme: input.theme as ViroSpecsTheme } : {}),
     },
   };
 }
@@ -580,3 +661,7 @@ export type ViroSpecsResolvedTextStyle = ViroSpecsDocumentTextStyle & {
   /** Protocol 1 RGBA, used when `color` is absent. */
   rgba?: [number, number, number, number];
 };
+
+function isScrollView(component: unknown): boolean {
+  return typeof component === "object" && component !== null && (component as Json).type === "scroll-view";
+}

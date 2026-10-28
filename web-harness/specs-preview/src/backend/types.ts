@@ -1,7 +1,7 @@
-import type { AnimationClip, Group, Material, Mesh, Object3D, Texture } from "three";
+import type { AnimationClip, Group, Material, Mesh, Object3D, Plane, Texture } from "three";
 import type { Line2 } from "three/addons/lines/Line2.js";
 import type { ViroSpecsDocumentInteraction, ViroSpecsDocumentLight, ViroSpecsDocumentMaterial, ViroSpecsScroll } from "../vendor/lens-core/ViroSpecsProtocol";
-import type { ViroSpecsBackendInteraction } from "../vendor/lens-core/ViroSpecsSceneBackend";
+import type { ViroSpecsBackendInteraction, ViroSpecsScrollRows } from "../vendor/lens-core/ViroSpecsSceneBackend";
 import type { ViroSpecsHostNode } from "../vendor/lens-core/ViroSpecsSceneDocument";
 import type { Rgba, TextLayout } from "./textLayout";
 
@@ -27,7 +27,11 @@ export interface PreviewNode {
   panelSurface?: Mesh;
   model?: { root: Object3D; source: string };
   placeholder?: { mesh: Mesh; widthCm: number; heightCm: number; depthCm: number };
-  scroll?: { spec: ViroSpecsScroll; normalized: [number, number]; outline: Object3D };
+  /**
+   * Scroll window. `normalized` is ScrollWindow's: y is 1 at the content top
+   * and -1 at the bottom. `clipPlanes` are world-space, updated each frame.
+   */
+  scroll?: { spec: ViroSpecsScroll; normalized: [number, number]; outline: Object3D; clipPlanes: Plane[]; rows: ViroSpecsScrollRows | undefined };
   /** Text fill before opacity, Lens `textColor`. */
   textColor?: Rgba;
   /** Last opacity set; re-applied after a material or asset swap. */
