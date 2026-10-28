@@ -1,0 +1,4 @@
+scene.tsx:16:9 warning VS3016 [card-orrery]: Node "card-orrery" responds to select but has no label.
+scene.tsx:16:9 warning VS3017 [card-orrery]: Node "card-orrery" is 0.00 m from the wearer; the band is 0.6-3 m.
+scene.tsx:17:9 warning VS3016 [units]: Node "units" responds to hover, select but has no label.
+scene.tsx:17:9 warning VS3017 [units]: Node "units" is 0.00 m from the wearer; the band is 0.6-3 m.

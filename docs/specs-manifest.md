@@ -42,6 +42,7 @@ previews.
 | Field | Required | Meaning |
 | --- | --- | --- |
 | `version` | yes | Always `2`. Version 1 input is still read; see [Version 1](#version-1). |
+| `theme` | no | Spatial tokens and wearer preferences for premium components; see [Theme](#theme). The compilers write it when a premium component compiled. |
 | `nodes` | yes | Scene graph nodes, parents before children by convention (not required). |
 | `polylines`, `lights`, `materials`, `interactions`, `animations` | no | Missing arrays read as empty. `parseSpecsManifest` always returns them. |
 | `generator` | no | `{ name, version? }` of the producer. |
@@ -69,6 +70,8 @@ Every node has `id` and `kind`, plus these optional fields:
 | `visible` | boolean | |
 | `opacity` | 0 to 1 | |
 | `materialId` | string | An entry in `materials`, or a material the Lens material registry provides (`VS1011`, info). |
+| `label` | string | Accessible name, from `accessibilityLabel` on Viro elements or `label` on premium components. Required on every node an interaction targets (`VS3016`). |
+| `component` | object | Premium component the node was compiled from; see [Premium components](#premium-components). |
 
 | `kind` | Viro source | Required | Optional |
 | --- | --- | --- | --- |
@@ -76,7 +79,7 @@ Every node has `id` and `kind`, plus these optional fields:
 | `text` | `ViroText` | `text` | `style`, `extents` (from `width`/`height`), `maxLines` |
 | `image` | `ViroImage` | `source` | `extents` |
 | `model` | `Viro3DObject` | `source` | `format`: `glb`, `gltf`, `obj`, `fbx` |
-| `panel` | none yet | `extents` | |
+| `panel` | `SpatialPanel`, `PanelButton`, `SpatialScrollView` | `extents` | |
 | `video` | none | `source` | `extents`, `loop`, `muted` |
 | `sound` | none | `source` | `loop`, `volume` |
 
@@ -91,6 +94,42 @@ path relative to the working directory; the runtime compiler uses the app's
 validator rejects them with capability errors `VS4004` and `VS4005`: no Specs
 host plays video or audio. A manifest that contains them never reaches the
 Lens.
+
+## Premium components
+
+The six components in `components/Specs/premium/` compile to ordinary node
+kinds plus a `component` object the Lens host reads to draw them from the
+theme tokens. `component.type` must match the node kind (`VS1004`).
+
+| Component | `kind` | `component` |
+| --- | --- | --- |
+| `SpatialPanel` | `panel` | `{ type: "spatial-panel", title? }` |
+| `PanelText` | `text` | `{ type: "panel-text", role: "title" \| "body" \| "label", tone: "default" \| "muted" }` |
+| `PanelButton` | `panel` | `{ type: "panel-button", state: "idle" \| "selected" \| "disabled" \| "loading" \| "error", errorMessage? }` |
+| `PanelImage` | `image` | `{ type: "panel-image" }` |
+| `SpatialScrollView` | `panel` | `{ type: "scroll-view", itemHeightMeters, initialIndex }` |
+| `ModelViewer` | `model` | `{ type: "model-viewer", autoRotate, resettable }` |
+
+`hover` and `pressed` are not authored states; the host adds them from
+interaction phases. Props and behavior: `docs/specs-experience.md`.
+
+## Theme
+
+```json
+"theme": {
+  "version": 1,
+  "tokens": { "distance": {}, "type": {}, "color": {}, "tint": {}, "space": {}, "shape": {}, "depth": {}, "motion": {}, "opacity": {}, "input": {} },
+  "highContrast": { "color": {}, "surfaceOpacity": 1, "borderScale": 2, "typeBoostDeg": 0.2 },
+  "preferences": { "highContrast": false, "reducedMotion": false }
+}
+```
+
+Every token group must have exactly the keys of `VIRO_SPECS_SPATIAL_TOKENS`
+in `components/Specs/core/tokens.ts` (`VS1005`, `VS1006`): numbers where the
+default is a number, `#RRGGBB` where it is a color (`VS1004`). The values come
+from `docs/ux/spatial-tokens.md`. Units are in the key names: `Deg` is an
+angle at the node's distance, `Meters` a physical offset, `Ms` milliseconds.
+Scene protocol 1 cannot carry the theme (`VS1015`); scene protocol 2 does.
 
 ## Polylines
 

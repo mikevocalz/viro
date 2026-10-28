@@ -4,7 +4,7 @@ const os = require("node:os");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 const { compile, lensTs, main } = require("../bin/viro-specs-compile.cjs");
-const { VIRO_SPECS_DIAGNOSTICS } = require("../bin/specs-build/components/Specs/core/index.js");
+const { VIRO_SPECS_DIAGNOSTICS, VIRO_SPECS_EXPERIENCE_CODES } = require("../bin/specs-build/components/Specs/core/index.js");
 
 const repo = path.join(__dirname, "..");
 const cli = path.join(repo, "bin", "viro-specs-compile.cjs");
@@ -65,12 +65,14 @@ const source = `
           <ViroText
             viroTag="title"
             text="Hello Specs"
+            style={{ fontSize: 140 }}
             animation={{ name: "pulse", run: true, loop: false }}
           />
           <Viro3DObject
             viroTag="model"
             source={MODEL}
             type="GLB"
+            accessibilityLabel="Model"
             onClick={() => {}}
             onDrag={() => {}}
           />
@@ -279,7 +281,12 @@ const styled = scene(
   '<ViroAmbientLight viroTag="amb" color="#fff" intensity={300} />' +
     '<ViroText viroTag="t" text="x" width={0.5} height={0.1} maxLines={2} style={{ fontSize: 24, color: "#ff0000", textAlign: "center", fontWeight: 600 }} />'
 );
-assert.deepEqual(styled.diagnostics.filter((d) => d.severity !== "info"), []);
+// This scene sits at the origin to test style carry; comfort findings
+// (VS3016-VS3021) are covered in __test__/ViroSpecsExperience.test.tsx.
+assert.deepEqual(
+  styled.diagnostics.filter((d) => d.severity !== "info" && !VIRO_SPECS_EXPERIENCE_CODES.includes(d.code)),
+  []
+);
 assert.deepEqual(styled.manifest.lights, [{ id: "amb", type: "ambient", color: "#ffffff", intensity: 300 }]);
 assert.deepEqual(styled.manifest.nodes[0], {
   id: "t",
@@ -315,13 +322,13 @@ assert.equal(run(["--entry", lab, "--out", path.join(tmp, "lab-strict.json"), "-
 // Lights, text style, extents and opacity reach the Lens through scene
 // protocol 2, so lens-ts and scene-json report no VS1015 and pass --strict.
 const lit = path.join(tmp, "lit.tsx");
-fs.writeFileSync(lit, 'export const S = () => <ViroSpecsScene>\n  <ViroAmbientLight viroTag="amb" />\n  <ViroText viroTag="t" text="Hi" width={0.5} height={0.1} opacity={0.5} style={{ fontSize: 18, color: "#fff" }} />\n</ViroSpecsScene>;\n');
+fs.writeFileSync(lit, 'export const S = () => <ViroSpecsScene>\n  <ViroAmbientLight viroTag="amb" />\n  <ViroText viroTag="t" text="Hi" position={[0, 0, -1.5]} width={0.5} height={0.1} opacity={0.5} style={{ fontSize: 140, color: "#fff" }} />\n</ViroSpecsScene>;\n');
 cliResult = run(["--entry", lit, "--out", path.join(tmp, "lit.ts"), "--format", "lens-ts", "--strict"]);
 assert.equal(cliResult.status, 0, cliResult.stderr);
 assert.doesNotMatch(cliResult.stderr, /VS1015/);
 const litTs = fs.readFileSync(path.join(tmp, "lit.ts"), "utf8");
 assert.match(litTs, /"type": "ambient"/);
-assert.match(litTs, /"fontSize": 18/);
+assert.match(litTs, /"fontSize": 140/);
 assert.match(litTs, /"opacity": 0.5/);
 cliResult = run(["--entry", lit, "--out", path.join(tmp, "lit.scene.json"), "--format", "scene-json", "--strict"]);
 assert.equal(cliResult.status, 0, cliResult.stderr);
@@ -361,11 +368,15 @@ assert.equal(cliResult.status, 1, "a deprecated v1 input fails --strict");
 // had the field, so the source build is the only one that knows it.
 cliResult = run(["--manifest", v1, "--out", path.join(tmp, "from-v1.ts"), "--format", "lens-ts"]);
 assert.equal(cliResult.status, 0, cliResult.stderr);
+// The v1 file describes the pre-gallery Platform Lab, kept as source next to it.
+const v1Source = path.join(repo, "__test__", "fixtures", "specs", "manifest-v1", "platform-lab.v1.source.tsx");
+cliResult = run(["--entry", v1Source, "--out", path.join(tmp, "lab-v1.ts"), "--format", "lens-ts", "--root", repo]);
+assert.equal(cliResult.status, 0, cliResult.stderr);
 const withoutFormat = (text) => text.replace(/,\n\s*"format": "glb"/g, "");
-assert.notEqual(fs.readFileSync(path.join(tmp, "lab.ts"), "utf8"), withoutFormat(fs.readFileSync(path.join(tmp, "lab.ts"), "utf8")));
+assert.notEqual(fs.readFileSync(path.join(tmp, "lab-v1.ts"), "utf8"), withoutFormat(fs.readFileSync(path.join(tmp, "lab-v1.ts"), "utf8")));
 assert.equal(
   fs.readFileSync(path.join(tmp, "from-v1.ts"), "utf8"),
-  withoutFormat(fs.readFileSync(path.join(tmp, "lab.ts"), "utf8"))
+  withoutFormat(fs.readFileSync(path.join(tmp, "lab-v1.ts"), "utf8"))
 );
 
 // Invalid hand-written JSON is rejected at the entry point.
@@ -409,7 +420,7 @@ const rooted = path.join(tmp, "rooted.json");
 assert.equal(runIn(repo, ["--entry", lab, "--out", rooted, "--root", path.join(repo, "examples")]).status, 0);
 const rootedManifest = JSON.parse(fs.readFileSync(rooted, "utf8"));
 assert.equal(rootedManifest.source, "specs-platform-lab/SpecsPlatformLab.tsx");
-assert.equal(rootedManifest.nodes[2].source, "visionos-sweep/assets/shiba.glb");
+assert.equal(rootedManifest.nodes.find((node) => node.id === "platform-lab-model").source, "visionos-sweep/assets/shiba.glb");
 
 // Without viroTag the build passes with VS3012 warnings; --strict refuses it.
 const untagged = path.join(repo, "__test__", "fixtures", "specs", "compiler", "ids-content-hash", "scene.tsx");

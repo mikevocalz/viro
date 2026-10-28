@@ -1,3 +1,4 @@
+import { checkSpecsExperience } from "../../components/Specs/core/experience";
 import * as nodeFs from "node:fs";
 import type { ViroSpecsActionDeclaration } from "../../components/Specs/core/actions";
 import { createViroSpecsDiagnostic, type ViroSpecsDiagnostic, type ViroSpecsDiagnosticDetails } from "../../components/Specs/core/diagnostic";
@@ -987,9 +988,12 @@ export function compileSpecsManifestFile(
   if (!parsed.ok) {
     return { manifest: undefined, document: undefined, diagnostics: [...parsed.diagnostics] };
   }
+  // Hand-written manifests get the same comfort and accessibility checks
+  // (VS3016-VS3021) as compiled JSX.
+  const experience = checkSpecsExperience(parsed.value).map((diagnostic) => ({ ...diagnostic, file }));
   return {
     manifest: parsed.value,
     document: toSpecsSceneDocument(parsed.value),
-    diagnostics: [...parsed.diagnostics],
+    diagnostics: [...parsed.diagnostics, ...experience],
   };
 }

@@ -302,6 +302,41 @@ export const VIRO_SPECS_DIAGNOSTICS = {
     title: "Element cannot have children on Specs",
     hint: "Specs polylines and lights are leaves. Move the children into a ViroNode.",
   },
+  VS3016: {
+    severity: "warning",
+    title: "Interactable has no label",
+    hint: "Set accessibilityLabel on every Viro element with onClick, onHover or onDrag (label on premium components). Name the action or object (\"Reset model\"), not the control type. --strict fails without one.",
+  },
+  VS3017: {
+    severity: "warning",
+    title: "Content is outside the 0.6-3.0 m comfort band",
+    hint: "Move the node so its distance from the wearer (the scene origin) is between 0.6 and 3.0 m.",
+  },
+  VS3018: {
+    severity: "warning",
+    title: "Text is smaller than 1.2 degrees",
+    hint: "Raise fontSize or move the text closer, or use PanelText, which sizes text from the type tokens at its distance.",
+  },
+  VS3019: {
+    severity: "warning",
+    title: "Animation is longer than 500 ms",
+    hint: "Keep transitions at or under 500 ms (motion.maxMs). Split a long movement into a state change instead.",
+  },
+  VS3020: {
+    severity: "warning",
+    title: "Animation easing is not EaseInEaseOut",
+    hint: "Use EaseInEaseOut for transitions. Linear is only for host-drawn continuous indicators.",
+  },
+  VS3021: {
+    severity: "warning",
+    title: "Large surface moves across the view",
+    hint: "Do not animate the position of a surface 10 degrees or wider. Fade and scale it in place, and swap content inside the panel instead of sliding the panel.",
+  },
+  VS3022: {
+    severity: "error",
+    title: "Premium component prop is invalid",
+    hint: "See docs/specs-experience.md for each component's props and their allowed values.",
+  },
   VS3023: {
     severity: "error",
     title: "specsAction is not a JSON trigger",
@@ -446,6 +481,31 @@ export const VIRO_SPECS_DIAGNOSTICS = {
     severity: "info",
     title: "Route memory is full; least recently used route forgotten",
     hint: "Scroll positions of the forgotten route reset when it is shown again. Raise maxRememberedRoutes if this repeats.",
+  },
+  VS5021: {
+    severity: "info",
+    title: "Capability degraded; dependent UI hidden",
+    hint: "No action needed for the build. The message names the capability, its state and the UI the experience layer hid; the wearer sees a one-line notice.",
+  },
+  VS5022: {
+    severity: "warning",
+    title: "Text raised to the 1.2 degree minimum",
+    hint: "The text rendered smaller than 1.2 degrees at its distance, so the host raised its size. Size it from the type tokens (PanelText) to avoid the clamp.",
+  },
+  VS5023: {
+    severity: "warning",
+    title: "Position clamped into the 0.6-3.0 m comfort band",
+    hint: "A placement or drag would have put the node nearer than 0.6 m or farther than 3.0 m; the host stopped it at the band edge.",
+  },
+  VS5024: {
+    severity: "info",
+    title: "Gaze-only input active",
+    hint: "Hand tracking is not available, so selection works by gaze dwell and drag is replaced by step buttons. It switches back when hand tracking returns.",
+  },
+  VS5025: {
+    severity: "warning",
+    title: "Premium component feature not drawn by this host",
+    hint: "The scene carries the feature but this host version does not render it yet; the message names the node and the features. See doc/Experience.md#not-drawn-yet.",
   },
 } as const satisfies Record<string, ViroSpecsDiagnosticDefinition>;
 

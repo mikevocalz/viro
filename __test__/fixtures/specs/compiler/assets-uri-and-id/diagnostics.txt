@@ -1,0 +1,2 @@
+scene.tsx:9:7 warning VS3017 [remote]: Node "remote" is 0.00 m from the wearer; the band is 0.6-3 m.
+scene.tsx:10:7 warning VS3017 [lens-asset]: Node "lens-asset" is 0.00 m from the wearer; the band is 0.6-3 m.

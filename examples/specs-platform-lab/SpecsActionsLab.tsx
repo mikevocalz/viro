@@ -84,6 +84,11 @@ export function formatSpecsActionsLabDistance(meters: number, units: SpecsAction
 
 const ROW_HEIGHT = 0.07;
 const LIST_HEIGHT = 0.28;
+// The flow sits 1.2-1.26 m away. 1.2 degrees there is 2.5-2.6 cm, and Lens
+// text is 0.0227 cm per point, so body text needs at least 117 points
+// (VS3018). Titles are one step larger.
+const BODY_PT = 120;
+const TITLE_PT = 140;
 const TEXT = "#f2f2f2";
 const ACCENT = "#7aa2ff";
 
@@ -133,7 +138,7 @@ function renderList(exhibits: readonly SpecsActionsLabExhibit[], selectedId: str
         position={[0, 0.17, 0.01]}
         width={0.44}
         height={0.05}
-        style={{ fontSize: 28, fontWeight: "bold", color: TEXT }}
+        style={{ fontSize: TITLE_PT, fontWeight: "bold", color: TEXT }}
       />
       <ViroNode
         viroTag="exhibit-list"
@@ -148,7 +153,8 @@ function renderList(exhibits: readonly SpecsActionsLabExhibit[], selectedId: str
             position={[0, LIST_HEIGHT / 2 - ROW_HEIGHT * (index + 0.5), 0]}
             width={0.42}
             height={0.05}
-            style={{ fontSize: 22, color: exhibit.id === selectedId ? ACCENT : TEXT, textAlign: "left" }}
+            style={{ fontSize: BODY_PT, color: exhibit.id === selectedId ? ACCENT : TEXT, textAlign: "left" }}
+            accessibilityLabel={"Open " + exhibit.title}
             specsAction={specsTrigger(SPECS_ACTIONS_LAB_ACTIONS, "exhibit.open", { exhibitId: exhibit.id })}
           />
         ))}
@@ -167,7 +173,7 @@ function renderDetails(exhibit: SpecsActionsLabExhibit, units: SpecsActionsLabUn
         position={[0, 0.15, 0.01]}
         width={0.44}
         height={0.05}
-        style={{ fontSize: 28, fontWeight: "bold", color: TEXT }}
+        style={{ fontSize: TITLE_PT, fontWeight: "bold", color: TEXT }}
       />
       <ViroText
         viroTag="details-distance"
@@ -175,7 +181,7 @@ function renderDetails(exhibit: SpecsActionsLabExhibit, units: SpecsActionsLabUn
         position={[0, 0.07, 0.01]}
         width={0.44}
         height={0.04}
-        style={{ fontSize: 22, color: "#d0d0d0" }}
+        style={{ fontSize: BODY_PT, color: "#d0d0d0" }}
       />
       <ViroText
         viroTag="units-toggle"
@@ -183,7 +189,8 @@ function renderDetails(exhibit: SpecsActionsLabExhibit, units: SpecsActionsLabUn
         position={[0, -0.04, 0.01]}
         width={0.3}
         height={0.06}
-        style={{ fontSize: 20, color: ACCENT, textAlign: "center" }}
+        style={{ fontSize: BODY_PT, color: ACCENT, textAlign: "center" }}
+        accessibilityLabel={nextUnits === "imperial" ? "Show distance in feet" : "Show distance in meters"}
         specsAction={specsTrigger(SPECS_ACTIONS_LAB_ACTIONS, "settings.set-units", { units: nextUnits })}
       />
       <ViroText
@@ -192,7 +199,8 @@ function renderDetails(exhibit: SpecsActionsLabExhibit, units: SpecsActionsLabUn
         position={[0, -0.14, 0.01]}
         width={0.3}
         height={0.06}
-        style={{ fontSize: 20, color: ACCENT, textAlign: "center" }}
+        style={{ fontSize: BODY_PT, color: ACCENT, textAlign: "center" }}
+        accessibilityLabel="Back to exhibits"
         specsAction={specsTrigger(SPECS_ACTIONS_LAB_ACTIONS, "nav.back", {})}
       />
     </>

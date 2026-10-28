@@ -1,1 +1,3 @@
 scene.tsx:10:10 warning VS2016 [panel]: Condition `expanded` is only known at runtime (expanded is a parameter or local of the enclosing function, so it is only known at runtime); every branch was emitted with visible: false.
+scene.tsx:12:13 warning VS3017 [body]: Node "body" is 0.00 m from the wearer; the band is 0.6-3 m.
+scene.tsx:15:11 warning VS3017 [summary]: Node "summary" is 0.00 m from the wearer; the band is 0.6-3 m.

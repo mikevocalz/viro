@@ -1,1 +1,2 @@
+scene.tsx:12:7 warning VS3017 [bad-timing]: Node "bad-timing" is 0.00 m from the wearer; the band is 0.6-3 m.
 scene.tsx:12:47 error VS3014 [bad-timing]: Animation goldenNegative duration -5 is not a finite number of milliseconds >= 0.

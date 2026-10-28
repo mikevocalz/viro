@@ -233,8 +233,8 @@ describe("reference flow: SpecsActionsLab on a mock Lens transport", () => {
     const closure = { actionId: "nav.back", payload: { run: () => undefined } } as unknown as React.ComponentProps<typeof ViroText>["specsAction"];
     await mount(
       <ViroSpecsScene transport={lens.transport} actions={SPECS_ACTIONS_LAB_ACTIONS.declarations} onDiagnostic={(d) => diagnostics.push(d)}>
-        <ViroNode viroTag="root">
-          <ViroText viroTag="t" text="x" specsAction={closure} />
+        <ViroNode viroTag="root" position={[0, 0, -1.2]}>
+          <ViroText viroTag="t" text="x" style={{ fontSize: 120 }} specsAction={closure} />
         </ViroNode>
       </ViroSpecsScene>
     );

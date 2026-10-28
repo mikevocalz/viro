@@ -1,2 +1,3 @@
+scene.tsx:9:7 warning VS3017 [lossy]: Node "lossy" is 0.00 m from the wearer; the band is 0.6-3 m.
 scene.tsx:9:46 warning VS3002 [lossy]: ViroText lossy style.letterSpacing is not carried to Specs.
 scene.tsx:9:46 warning VS3009 [lossy]: ViroText lossy style.color "white" is not hex; it was left out.
