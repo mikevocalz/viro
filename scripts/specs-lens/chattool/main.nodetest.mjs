@@ -3,7 +3,7 @@
 // resolution and exit-code handling; it does not prove Lens Studio loads the
 // plugin (that needs the editor, see scripts/specs-lens-setup.mjs).
 //
-//   node --test scripts/specs-lens/chattool/main.test.mjs
+//   node --test scripts/specs-lens/chattool/main.nodetest.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";

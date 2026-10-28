@@ -17,6 +17,7 @@ const model = pluginSystem.findInterface(Editor.Model.IModel) as any;
 const project = model.project;
 const scene = project.scene;
 const am = project.assetManager;
+const opts = args as any;
 const steps: string[] = [];
 const inputs: Record<string, Record<string, string>> = {};
 
@@ -108,15 +109,15 @@ if (!rootObject(sikPrefab.name)) {
 }
 
 // 3. Model prefab for the compiled model source.
-const modelIds: string[] = args.modelIds ?? [];
+const modelIds: string[] = opts.modelIds ?? [];
 const modelPrefabs: any[] = [];
 if (modelIds.length) {
-  if (!args.modelGlb) throw new Error("modelGlb is required when modelIds is set.");
-  const glbName = String(args.modelGlb).split("/").pop()!.replace(/\.[^.]+$/, "");
+  if (!opts.modelGlb) throw new Error("modelGlb is required when modelIds is set.");
+  const glbName = String(opts.modelGlb).split("/").pop()!.replace(/\.[^.]+$/, "");
   let prefab = am.assets.find((a: any) => String(a.type) === "ObjectPrefab" && a.name === glbName && sourcePath(a).startsWith("ViroSpecsLab/"));
   if (!prefab) {
     const imported = await am.importExternalFileAsync(
-      new Editor.Path(args.modelGlb),
+      new Editor.Path(opts.modelGlb),
       new Editor.Path("ViroSpecsLab/Models"),
       Editor.Model.ResultType.Auto
     );
@@ -124,7 +125,7 @@ if (modelIds.length) {
     steps.push(`import ${glbName} -> ${String(prefab?.type)}`);
   }
   if (!prefab || String(prefab.type) !== "ObjectPrefab") {
-    throw new Error(`Importing ${args.modelGlb} did not produce an ObjectPrefab (got ${String(prefab?.type)}).`);
+    throw new Error(`Importing ${opts.modelGlb} did not produce an ObjectPrefab (got ${String(prefab?.type)}).`);
   }
   modelPrefabs.push(prefab);
 }
@@ -178,7 +179,7 @@ setInput(generatedHost, "GeneratedHost", "animationHostObject", animationHostObj
 setInput(generatedHost, "GeneratedHost", "navigationHostObject", navigationObject, navigationObject.name);
 
 // 5. LEAF index for the generated-host scenarios.
-if (args.leafIndex !== false) {
+if (opts.leafIndex !== false) {
   const leafObject = ensureRoot("LeafIndex");
   ensureScript(leafObject, "ViroLabLeafIndex");
   // Fallback runner for when the LEAF ChatTool plugin is unavailable. Kept
@@ -191,7 +192,7 @@ if (args.leafIndex !== false) {
   }
 }
 
-if (args.save !== false) {
+if (opts.save !== false) {
   project.save();
   steps.push("save");
 }

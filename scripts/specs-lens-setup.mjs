@@ -48,6 +48,11 @@ const PACKAGES = [
   { search: "Volumetric Line", assetName: "VolumetricLine", version: "2.0.0" },
   { search: "Navigation Kit", assetName: "SpecsNavigationKit", version: "2.0.0" },
   { search: "Leaf", assetName: "Leaf", version: "2.0.2" },
+  // Editor-only validation packages. The synced runtime's
+  // ViroSpecsAgentValidation.ts imports both, so the project does not compile
+  // without them.
+  { search: "AiPreviewAgentInspect", name: "AI Preview Agent \u2013 Inspect", assetName: "AiPreviewAgentInspect", version: "2.0.1" },
+  { search: "AiPreviewAgentInteract", name: "AI Preview Agent \u2013 Interact", assetName: "AiPreviewAgentInteract", version: "2.0.1" },
 ];
 
 const versionOf = (resource) => `${resource.version.major}.${resource.version.minor}.${resource.version.patch}`;
@@ -115,7 +120,7 @@ const setClientEnabled =
   "const m = pluginSystem.findInterface(Editor.Model.IModel) as any;" +
   "const o = m.project.scene.rootSceneObjects.find((x: any) => x.name === 'LeafScenarioClient');" +
   "if (!o) throw new Error('LeafScenarioClient is not in the scene; run the wire step.');" +
-  "o.enabled = args.enabled; return o.enabled;";
+  "o.enabled = (args as any).enabled; return o.enabled;";
 
 const mcp = await new LensStudioMcp().connect();
 const tools = (await mcp.listTools()).map((tool) => tool.name);
@@ -139,7 +144,7 @@ const handlers = {
       mkdirSync(project, { recursive: true });
       await mcp.editor(
         "const m = pluginSystem.findInterface(Editor.Model.IModel) as any; " +
-          "m.project.targetPlatform = Editor.TargetPlatform.Spectacles; m.project.saveTo(new Editor.Path(args.file)); return true;",
+          "m.project.targetPlatform = Editor.TargetPlatform.Spectacles; m.project.saveTo(new Editor.Path((args as any).file)); return true;",
         { file: esproj() }
       );
     } else if (path.resolve(open.file) !== esproj()) {
@@ -156,16 +161,17 @@ const handlers = {
     const installed = [];
     const renamed = [];
     if (options.replacePackages) {
-      // Remove the 4.0.0 line (and the Icons/Motion packages UIKit 4.0.0 pulled
-      // in) through the asset manager so Lens Studio drops their metadata too.
-      const names = [...PACKAGES.map((p) => p.assetName), "Icons", "Motion"];
+      // Remove the 4.0.0 line (and X      // in) through the asset manager so Lens Studio drops their metadata too.
+      const names = [...PACKAGES.map((p) => p.assetName), "Icons", "Motion", "SnapDecorators", "Utilities"];
       const removed = await mcp.editor(
         "const m = pluginSystem.findInterface(Editor.Model.IModel) as any; const am = m.project.assetManager;" +
           "const out: string[] = [];" +
-          "for (const name of args.names) {" +
-          "  const file = 'Packages/' + name + '.lspkg';" +
-          "  const asset = am.assets.find((a: any) => { try { return String(a.fileMeta?.sourcePath) === file; } catch { return false; } });" +
-          "  if (asset) { am.remove(asset); out.push(name); }" +
+          "for (const name of (args as any).names as string[]) {" +
+          // Package paths are relative to Assets/, like ../Cache/... entries.
+          "  for (const ext of ['.lspkg', '.lsc']) {" +
+          "    const file = new Editor.Path('../Packages/' + name + ext);" +
+          "    if (am.getFileMeta(file)) { am.remove(file); out.push(name + ext); }" +
+          "  }" +
           "}" +
           "return out;",
         { names }
@@ -181,7 +187,7 @@ const handlers = {
       }
       const search = await mcp.call("SearchLensStudioAssetLibrary", { keywordFilter: [pkg.search], onlyMostRecent: false });
       const asset = (search.data.assets ?? []).find(
-        (a) => a.type === "AssetPackage" && a.name.replace(/\s/g, "") === pkg.search.replace(/\s/g, "")
+        (a) => a.type === "AssetPackage" && (pkg.name ? a.name === pkg.name : a.name.replace(/\s/g, "") === pkg.search.replace(/\s/g, ""))
       );
       const resource = asset?.resources.find((r) => versionOf(r) === pkg.version);
       if (!resource) throw new Error(`Asset Library has no ${pkg.search} ${pkg.version}`);
@@ -253,7 +259,7 @@ const handlers = {
       writeFileSync(local, JSON.stringify({ specsPackage: specs, node: process.execPath }, null, 2) + "\n");
     }
     const loaded = await mcp.editor(
-      "const dir = new Editor.Path(args.dir);" +
+      "const dir = new Editor.Path((args as any).dir);" +
         "try { pluginSystem.loadDirectory(dir); } catch (e: any) { if (!String(e?.message ?? e).includes('already been loaded')) throw e; }" +
         "const ChatTool = await import('LensStudio:ChatTool');" +
         "const registry = pluginSystem.findInterface(ChatTool.IChatToolRegistry) as any;" +

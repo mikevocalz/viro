@@ -80,7 +80,7 @@ project and machine paths from `viro-specs.local.json` (not committed). The
 `chattool` step loads it with `pluginSystem.loadDirectory`; Lens Studio asks
 once for the `filesystem` and `subprocess` permissions.
 
-`node --test scripts/specs-lens/chattool/main.test.mjs` runs its command logic
+`node --test scripts/specs-lens/chattool/main.nodetest.mjs` runs its command logic
 in Node with the Lens Studio modules stubbed.
 
 ## Known traps
