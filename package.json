@@ -39,18 +39,20 @@
     "perf:tracesift:init": "npx --yes @callstack/tracesift@0.3.1 init",
     "perf:tracesift": "npx --yes @callstack/tracesift@0.3.1 start",
     "test:plugin-load": "node scripts/check-plugin-loads.cjs",
-    "check:ios-bridge": "bash scripts/check-ios-bridge.sh"
+    "check:ios-bridge": "bash scripts/check-ios-bridge.sh",
+    "test:specs-consumer": "node scripts/check-specs-consumer.cjs",
+    "typecheck:specs-examples": "tsc -p tsconfig.specs-examples.json"
   },
   "peerDependencies": {
     "@reactvision/react-native-visionos": ">=0.86.0 <0.89.0",
     "@reactvision/viro-web-renderer": "^1.0.1",
     "expo": ">=58.0.0 <59.0.0",
-    "react": ">=19.0.0",
+    "react": "^19.3.0",
     "react-native": ">=0.88.0 <0.89.0",
-    "react-native-web": ">=0.19.0",
+    "react-native-web": "^0.21.0",
     "@metavr/layout-compat": "^1.0.0",
     "@metavr/layout-window-compat": "^1.0.0",
-    "@viro-external/specs": ">=0.2.0-rc.1 <0.3.0"
+    "@viro-external/specs": "^0.2.0"
   },
   "engines": {
     "react-native": ">=0.88.0 <0.89.0"
@@ -151,7 +153,6 @@
   "homepage": "https://reactvision.xyz/viro-react",
   "author": "ReactVision, Inc",
   "dependencies": {
-    "react": ">=19.0.0",
     "zustand": "5.0.16",
     "@babel/parser": "^8.0.8"
   },

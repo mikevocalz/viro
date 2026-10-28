@@ -1,0 +1,12 @@
+{
+  // Type-checks the Specs example scenes against the package root, the way
+  // an app imports them. The root tsconfig excludes examples/, which is how
+  // ViroSpecsScene went unexported while the Platform Lab imported it.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "strict": true
+  },
+  "include": ["examples/specs-platform-lab/**/*.tsx", "examples/specs-reference-apps/**/*.tsx", "shims/**/*.d.ts", "*.d.ts"],
+  "exclude": ["node_modules", "dist", "bin", "__test__"]
+}

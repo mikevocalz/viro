@@ -125,8 +125,13 @@ function buildDispatcher(
  */
 export interface ViroSpecsStateStore<S> {
   getState(): S;
-  /** Replaces the whole state. Zustand: `setState(next, true)`. */
-  setState(next: S, replace: true): void;
+  /**
+   * Replaces the whole state. Zustand: `setState(next, true)`. `S` is
+   * inferred from {@linkcode ViroSpecsStateStore.getState} only, so a Zustand
+   * `StoreApi<S>` (whose `setState` also accepts an updater function) binds as
+   * `S`, not as `S | ((state: S) => S)`.
+   */
+  setState(next: NoInfer<S>, replace: true): void;
 }
 
 /** Pure reducer per action ID, typed by the action set. Return the input state for no change. */

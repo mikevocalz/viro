@@ -424,6 +424,7 @@ import { AppRegistry } from "react-native";
 AppRegistry.registerComponent("VRQuestScene", () => ViroQuestEntryPoint);
 
 export {
+  ViroSpecsScene,
   ViroSpatialSceneProvider,
   ViroSpatialWindow,
   getViroSpatialLayoutSupport,
