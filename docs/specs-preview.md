@@ -26,7 +26,9 @@ Asset IDs in a manifest are paths relative to the viro checkout (the
 compiler's convention). The dev server serves `examples/` and the Specs
 fixtures read-only at `/viro-repo/`, so `examples/visionos-sweep/assets/shiba.glb`
 loads. An asset that does not load gets the Lens placeholder and a `VS5003`
-diagnostic, as in Lens.
+diagnostic, as in Lens. The `/viro-repo/` route exists only in the dev
+server; a `vite build` of the pages needs a host that serves those paths,
+or `PreviewAssetStore` options (`baseUrl`, `urls`) pointing elsewhere.
 
 `gallery.html` shows one scene per primitive: transforms, text and text
 style, image extents, GLB model, panel, polyline, materials and opacity,
