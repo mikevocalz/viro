@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { ViroARSceneNavigator } from "./AR/ViroARSceneNavigator";
 import { ViroSceneNavigator } from "./ViroSceneNavigator";
-import { isMetaHorizonXR, isPico, isVisionOS } from "./Utilities/ViroPlatform";
+import { isMetaHorizonXR, isXRHeadset, isVisionOS } from "./Utilities/ViroPlatform";
 import {
   beginSceneRootScan,
   claimImmersiveSpace,
@@ -44,13 +44,13 @@ const VRLauncher = NativeModules.VRLauncher as
   | { launchVRScene?: () => void }
   | undefined;
 
-// Quest VR requires a lifecycle-correct VRActivity that drives
+// Android OpenXR requires a lifecycle-correct VRActivity that drives
 // ReactHostImpl.onHostResume(VRActivity) on entry. The skipActivityIdentity
 // AssertionOnHostPause feature flag (used to suppress the racy MainActivity.
 // onPause assertion when currentActivity has been promoted to VR) is only
 // honored on RN >= 0.83. Without it, MainActivity.onPause hard-crashes via
 // Assertions.assertCondition, so the entire VR path requires RN 0.83+.
-// AR continues to work on RN >= 0.81 (Expo 54+) — only the Quest VR launch
+// AR continues to work on RN >= 0.81 (Expo 54+) — only the immersive launch
 // is gated.
 const MIN_RN_FOR_VR = { major: 0, minor: 83 };
 
@@ -92,9 +92,9 @@ function checkRNVersionForVR(): void {
     // fall through to throw with version="unknown"
   }
   throw new Error(
-    `[Viro] Meta Quest VR requires React Native >= ${MIN_RN_FOR_VR.major}.${MIN_RN_FOR_VR.minor} ` +
+    `[Viro] Android OpenXR requires React Native >= ${MIN_RN_FOR_VR.major}.${MIN_RN_FOR_VR.minor} ` +
       `(Expo SDK >= 55). Detected: ${version}. ` +
-      `AR features still work on this version — only ViroXRSceneNavigator's VR path on Quest is gated.`
+      `AR features still work on this version — only ViroXRSceneNavigator's Android immersive path is gated.`
   );
 }
 
@@ -137,12 +137,12 @@ type Props = ViewProps & {
    */
   initialScene?: SceneFactory;
 
-  /** Scene mounted on iOS / non-Quest Android (rendered via ViroARSceneNavigator). */
+  /** Scene mounted on iOS / non-XR Android (rendered via ViroARSceneNavigator). */
   arInitialScene?: SceneFactory;
 
   /**
-   * Scene mounted on Meta Quest (rendered via ViroVRSceneNavigator in VRActivity).
-   * On Quest, this scene is forwarded to VRActivity via VRQuestNavigatorBridge
+   * Scene mounted on Quest, PICO, and Android XR through ViroVRSceneNavigator in VRActivity.
+   * On these platforms, the scene is forwarded via VRQuestNavigatorBridge
    * rather than rendered inline, because OpenXR exclusive display requires the
    * VR intent category on the host Activity.
    *
@@ -167,7 +167,7 @@ type Props = ViewProps & {
   /** AR depth/people occlusion. Flows via ...rest to ViroARSceneNavigator. */
   occlusionMode?: "peopleOnly" | "depthBased";
 
-  // ── Forwarded to ViroVRSceneNavigator (Quest path via bridge) ──────────────
+  // ── Forwarded to ViroVRSceneNavigator (Android OpenXR via bridge) ──────────
   vrModeEnabled?: boolean;
   passthroughEnabled?: boolean;
   handTrackingEnabled?: boolean;
@@ -179,10 +179,11 @@ type Props = ViewProps & {
   trackingOrigin?: "eye" | "floor";
   onExitViro?: () => void;
 
-  // ── Meta Quest panel ───────────────────────────────────────────────────────
+  // ── Android OpenXR panel ───────────────────────────────────────────────────
   /**
-   * What the app's 2D panel shows on Meta Quest, where the scene runs in the
-   * headset view instead. Horizon OS brings the panel forward whenever the
+   * What the app's 2D panel shows on Quest, PICO, and Android XR while the
+   * scene runs in the headset view. The historical prop name is retained.
+   * Horizon OS brings the panel forward whenever the
    * headset view closes: the Back button, quitting from the system menu, going
    * Home or opening another app's panel. The headset view is not reopened on
    * its own, because none of those can be told apart here from the wearer
@@ -195,7 +196,7 @@ type Props = ViewProps & {
    * opens: "spatialData" for the room's planes and anchors, "headsetCamera" for
    * the passthrough feed ViroObjectDetector reads. Horizon OS skips a permission
    * the manifest does not declare, so ask only for what the app declares and
-   * uses; [] asks for nothing. Defaults to both.
+   * uses; [] asks for nothing. Defaults to both. Ignored on PICO and Android XR.
    */
   questPermissions?: QuestRuntimePermission[];
 
@@ -226,11 +227,11 @@ type Props = ViewProps & {
 /**
  * Cross-reality scene navigator. Picks the right underlying navigator at runtime:
  *
- *  - **iOS / non-Quest Android** → `ViroARSceneNavigator` (rendered inline)
+ *  - **iOS / non-XR Android** → `ViroARSceneNavigator` (rendered inline)
  *  - **Apple Vision Pro** → opens the visionOS ImmersiveSpace and renders the scene
  *    through `ViroSceneNavigator`. Unlike Quest, the ImmersiveSpace shares this
  *    React runtime, so the scene tree stays mounted here rather than being forwarded.
- *  - **Meta Quest** → launches VRActivity via `VRLauncher.launchVRScene()` and
+ *  - **Quest / PICO / Android XR** → launches VRActivity via `VRLauncher.launchVRScene()` and
  *    forwards all navigator operations (push/pop/etc.) to the
  *    `ViroVRSceneNavigator` running there via `VRQuestNavigatorBridge`.
  *    VRActivity owns the display; what renders here is the app's 2D panel
@@ -252,7 +253,7 @@ type Props = ViewProps & {
  * `multisamplingEnabled`) reach ViroARSceneNavigator as props and
  * ViroVRSceneNavigator on Quest via the intent bridge. visionOS gets neither:
  * ViroSceneNavigator does not take them. `passthroughEnabled`, `vrModeEnabled`
- * and `handTrackingEnabled` are Quest-only and go over the bridge alone.
+ * and `handTrackingEnabled` are Android OpenXR options and go over the bridge alone.
  */
 export const ViroXRSceneNavigator = React.forwardRef<unknown, Props>(
   function ViroXRSceneNavigator(props, ref) {
@@ -292,14 +293,12 @@ export const ViroXRSceneNavigator = React.forwardRef<unknown, Props>(
     const visionRef = React.useRef<ViroSceneNavigator>(null);
 
     // Expose navigator interface on the ref.
-    // Quest: proxy push/pop/etc. through VRQuestNavigatorBridge to VRActivity.
-    // PICO:  expose the inline ViroVRSceneNavigator instance directly
-    //        (MainActivity is itself the immersive Activity on PICO).
+    // Android OpenXR: proxy push/pop/etc. through VRQuestNavigatorBridge to VRActivity.
     // AR:    expose the underlying ViroARSceneNavigator instance directly.
     React.useImperativeHandle(ref, () => {
-      if (isMetaHorizonXR || isPico) {
-        // PICO follows Quest: navigator ops cross the activity boundary through
-        // the same bridge — VRActivity owns the ViroVRSceneNavigator instance.
+      if (isXRHeadset) {
+        // Quest, PICO, and Android XR share this activity boundary and bridge.
+        // VRActivity owns the ViroVRSceneNavigator instance.
         // project/unproject/recenterTracking can't go through dispatchOp — that
         // queue is fire-and-forget (push/pop/etc. have no return value), while
         // these three need a result back. Instead they reuse the same viewTag
@@ -313,7 +312,7 @@ export const ViroXRSceneNavigator = React.forwardRef<unknown, Props>(
           const tag = VRQuestNavigatorBridge.getViewTag();
           if (tag == null) {
             throw new Error(
-              "[Viro] Quest VR scene not mounted yet — call this after the VR scene is active."
+              "[Viro] OpenXR scene not mounted yet — call this after the immersive scene is active."
             );
           }
           return tag;
@@ -458,14 +457,16 @@ export const ViroXRSceneNavigator = React.forwardRef<unknown, Props>(
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // On Quest AND PICO: register the intent (scene + renderer config)
+    // On Android OpenXR: register the intent (scene + renderer config)
     // then launch VRActivity. Only on mount; renderQuestPanel says why it
     // is not relaunched.
     React.useEffect(() => {
-      if (!isMetaHorizonXR && !isPico) return;
+      if (!isXRHeadset) return;
       checkRNVersionForVR();
+      let cancelled = false;
 
       const registerIntentAndLaunch = () => {
+        if (cancelled) return;
         const scene = vrInitialScene ?? initialScene;
         if (scene) {
           VRQuestNavigatorBridge.setIntent(scene, {
@@ -485,27 +486,34 @@ export const ViroXRSceneNavigator = React.forwardRef<unknown, Props>(
         launchVR();
       };
 
-      // Request the runtime grants once before the first launch. Caught and
-      // ignored on failure — a denied/unavailable permission should degrade
+      // Meta grants belong only to Horizon OS. Android XR basic hand actions
+      // need none of these permissions; raw hand, eye, and scene data remain
+      // separate opt-in capabilities. Request Meta grants once before launch,
+      // ignoring failure — a denied/unavailable permission should degrade
       // (no planes, no passthrough camera), not block VR from opening at all.
-      const permissions = questPermissions.flatMap(
-        (permission) => QUEST_RUNTIME_PERMISSIONS[permission]
-      );
+      const permissions = isMetaHorizonXR
+        ? questPermissions.flatMap(
+            (permission) => QUEST_RUNTIME_PERMISSIONS[permission]
+          )
+        : [];
       (permissions.length > 0
         ? PermissionsAndroid.requestMultiple(permissions as any)
         : Promise.resolve()
       )
         .catch(() => undefined)
         .then(registerIntentAndLaunch);
+      return () => {
+        cancelled = true;
+      };
       // Launch only on mount; renderQuestPanel handles re-entry.
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // The panel is only seen while the headset view is closed. Re-entry keeps the
-    // intent registered on mount. PICO takes the same explicit re-entry model —
+    // intent registered on mount. PICO and Android XR use explicit re-entry too —
     // the XR scene runs in a dedicated immersive activity, so nothing a 2D
     // panel renders here can bleed into the XR scene.
-    if (isMetaHorizonXR || isPico) {
+    if (isXRHeadset) {
       return renderQuestPanel ? (
         renderQuestPanel(launchVR)
       ) : (

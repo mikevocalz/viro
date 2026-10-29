@@ -13,6 +13,7 @@ android {
         mobile { dimension "device" }
         pico   { dimension "device" }
         quest  { dimension "device" }
+        androidxr { dimension "device" }
     }
 }
 
