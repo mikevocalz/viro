@@ -2,7 +2,7 @@
 // sceneVisible gate, the error panel and VS5025, driven by the vendored
 // ViroSpecsExperienceController. Evidence label: portable-test-passed.
 import { readFileSync } from "node:fs";
-import { MeshBasicMaterial, PerspectiveCamera, Vector3, type Mesh } from "three";
+import { MeshBasicMaterial, PerspectiveCamera, Vector3, type Mesh, type Object3D } from "three";
 import { describe, expect, it } from "vitest";
 import type { TextFont } from "../src/backend/textLayout";
 import { createFixedAdvanceRasterizer } from "../src/backend/textRaster";
@@ -218,5 +218,136 @@ describe("preview experience text wrapping", () => {
     const body = stage.controller.getNodeHandle("sp-body")?.text?.layout;
     expect(body?.lines.length).toBe(2);
     for (const line of body?.lines ?? []) expect(measure(line, body!.font, body!.lineHeightCm)).toBeLessThanOrEqual(46 + 1e-6);
+  });
+});
+
+// Overlay order and the loading ring, as ViroSpecsExperienceLensView draws
+// them: state panels after scene content with depth test off (render order
+// 100 backing, 101 controls, 102 text), and the ring from viroSpecsLoadingRing
+// in a reserved row above the title. Evidence label: portable-test-passed.
+describe("preview experience overlay and loading ring", () => {
+  const ORDER = { backing: 100, control: 101, text: 102 };
+  const RING_SEGMENTS = 24;
+
+  function loadingSetup(): { stage: PreviewStage; experience: PreviewExperience; clock: { now: number } } {
+    const clock = { now: 0 };
+    const rasterizer = createFixedAdvanceRasterizer();
+    const stage = new PreviewStage({ rasterizer });
+    const camera = new PerspectiveCamera(70, 1, 1, 5000);
+    camera.position.set(0, 0, 0.01);
+    camera.lookAt(0, 0, -120);
+    const experience = new PreviewExperience({ stage, rasterizer, camera, nowMs: () => clock.now });
+    return { stage, experience, clock };
+  }
+
+  /** Opens the loading panel with `pending` of `total` assets left (total 0: unknown progress). */
+  function openLoading(experience: PreviewExperience, clock: { now: number }, pending: number, total: number): void {
+    experience.controller.onSceneLifecycle("loading", { pending, total });
+    clock.now += tokens.motion.fastMs + 1;
+    experience.controller.onSceneLifecycle("loading", { pending, total });
+  }
+
+  const ring = (experience: PreviewExperience): Object3D | undefined =>
+    experience.overlay.getObjectByName("ViroSpecsExperience-loading")?.getObjectByName("ring");
+  const segments = (experience: PreviewExperience): Mesh[] => (ring(experience)?.children ?? []) as Mesh[];
+  const litCount = (experience: PreviewExperience): number => segments(experience).filter((s) => hex(s) === tokens.color.focus).length;
+
+  it("draws every state-panel part after scene content with depth test off, at the Lens render orders", () => {
+    const { stage, experience } = setup();
+    const invalid = json("__test__/fixtures/specs/manifest-v2/invalid/missing-parent.json") as unknown as { manifest: unknown };
+    stage.controller.present(invalid.manifest);
+    const root = experience.overlay.getObjectByName("ViroSpecsExperience-error");
+    if (!root) throw new Error("no error panel");
+    const want: Record<string, number> = {
+      backing: ORDER.backing,
+      "action-backing": ORDER.control,
+      title: ORDER.text,
+      body: ORDER.text,
+      detail: ORDER.text,
+      "action-label": ORDER.text,
+    };
+    for (const [name, order] of Object.entries(want)) {
+      const mesh = root.getObjectByName(name) as Mesh | undefined;
+      const material = mesh?.material as MeshBasicMaterial | undefined;
+      expect({ name, order: mesh?.renderOrder, depthTest: material?.depthTest, depthWrite: material?.depthWrite, transparent: material?.transparent }).toEqual({
+        name,
+        order,
+        depthTest: false,
+        depthWrite: false,
+        // In three.js's transparent pass, which draws after every opaque and
+        // transparent scene object with a lower render order.
+        transparent: true,
+      });
+    }
+    // Opaque fill, as on Lens.
+    expect((root.getObjectByName("backing") as Mesh).material).toMatchObject({ opacity: 1 });
+  });
+
+  it("known progress fills the arc from the top and never turns; the ring row sits above the title", () => {
+    const { experience, clock } = loadingSetup();
+    openLoading(experience, clock, 1, 2);
+    expect(experience.view.loading.visible && experience.view.loading.indicator).toBe("ring-arc");
+    expect(segments(experience).length).toBe(RING_SEGMENTS);
+    expect(ring(experience)?.visible).toBe(true);
+    const lit = segments(experience).map((s) => hex(s) === tokens.color.focus);
+    expect(lit).toEqual(Array.from({ length: RING_SEGMENTS }, (_, i) => i < RING_SEGMENTS / 2));
+    for (const s of segments(experience)) {
+      expect(s.renderOrder).toBe(ORDER.control);
+      expect((s.material as MeshBasicMaterial).depthTest).toBe(false);
+      if (hex(s) !== tokens.color.focus) expect(hex(s)).toBe(tokens.color.border);
+    }
+    // Segment 0 at the top of the ring.
+    const first = segments(experience)[0];
+    expect(first?.position.x).toBeCloseTo(0, 6);
+    expect(first?.position.y).toBeGreaterThan(0);
+    clock.now += 700;
+    experience.controller.onSceneLifecycle("loading", { pending: 1, total: 2 });
+    expect(ring(experience)?.rotation.z).toBe(0);
+
+    // Layout: ring row 3 body ems tall at the top, then space.sm, then the title.
+    const root = experience.overlay.getObjectByName("ViroSpecsExperience-loading");
+    const backing = root?.getObjectByName("backing") as Mesh;
+    const title = root?.getObjectByName("title") as Mesh;
+    const D = tokens.distance.defaultMeters;
+    const m = (deg: number): number => viroSpecsAngleToMeters(deg, D) * 100;
+    const diameter = 3 * m(tokens.type.bodyDeg);
+    expect((ring(experience)?.position.y ?? 0) + diameter / 2).toBeCloseTo(backing.scale.y / 2 - m(tokens.space.mdDeg), 6);
+    const titleTop = title.position.y + (tokens.type.lineHeight * m(tokens.type.bodyDeg)) / 2;
+    expect((ring(experience)?.position.y ?? 0) - diameter / 2 - titleTop).toBeCloseTo(m(tokens.space.smDeg), 6);
+    // The ring shows the fraction; the body keeps the counts, as on Lens.
+    expect((root?.getObjectByName("body") as Mesh).userData.lines).toEqual([experience.view.loading.visible ? experience.view.loading.line : ""]);
+  });
+
+  it("unknown progress spins a quarter ring, one turn per motion.progressLoopMs", () => {
+    const { experience, clock } = loadingSetup();
+    openLoading(experience, clock, 0, 0);
+    expect(experience.view.loading.visible && experience.view.loading.indicator).toBe("ring-spin");
+    expect(litCount(experience)).toBe(RING_SEGMENTS / 4);
+    const start = ring(experience)?.rotation.z ?? 0;
+    clock.now += tokens.motion.progressLoopMs / 4;
+    experience.update();
+    const turned = (ring(experience)?.rotation.z ?? 0) - start;
+    // A quarter turn clockwise as the wearer sees it.
+    expect(turned).toBeCloseTo(-Math.PI / 2, 6);
+  });
+
+  it("reduced motion with unknown progress lights every third segment and stays still", () => {
+    const { experience, clock } = loadingSetup();
+    experience.controller.setPreferences({ highContrast: false, reducedMotion: true });
+    openLoading(experience, clock, 0, 0);
+    expect(experience.view.loading.visible && experience.view.loading.indicator).toBe("dots");
+    expect(segments(experience).map((s) => hex(s) === tokens.color.focus)).toEqual(Array.from({ length: RING_SEGMENTS }, (_, i) => i % 3 === 0));
+    clock.now += tokens.motion.progressLoopMs / 3;
+    experience.update();
+    expect(ring(experience)?.rotation.z).toBe(0);
+  });
+
+  it("reduced motion with known progress keeps a static arc", () => {
+    const { experience, clock } = loadingSetup();
+    experience.controller.setPreferences({ highContrast: false, reducedMotion: true });
+    openLoading(experience, clock, 3, 4);
+    expect(experience.view.loading.visible && experience.view.loading.indicator).toBe("arc-static");
+    expect(litCount(experience)).toBe(RING_SEGMENTS / 4);
+    expect(ring(experience)?.rotation.z).toBe(0);
   });
 });
