@@ -6,12 +6,16 @@ import type { PreviewNode } from "./backend/types";
 import { createRoundedSurface, createTextMesh } from "./backend/visuals";
 import type { PreviewStage } from "./stage";
 import {
+  layoutViroSpecsButtonError,
+  layoutViroSpecsStatePanel,
   resolveViroSpecsButtonVisual,
   unrenderedViroSpecsComponentFeatures,
   ViroSpecsButtonTracker,
   ViroSpecsExperienceController,
   type ViroSpecsExperienceView,
+  type ViroSpecsLineMeasure,
   type ViroSpecsSceneRequirements,
+  type ViroSpecsTextBlock,
 } from "./vendor/lens-core/ViroSpecsExperience";
 import {
   viroSpecsAngleToMeters,
@@ -88,6 +92,7 @@ export class PreviewExperience {
   private readonly decorations = new Map<string, Decoration>();
   private readonly panels = new Map<PanelKey, Panel>();
   private readonly reportedUnrendered = new Set<string>();
+  private readonly measuredLines = new Map<string, number>();
   private decoratedScene: unknown = null;
   private lastView: ViroSpecsExperienceView;
   private readonly stage: PreviewStage;
@@ -239,7 +244,15 @@ export class PreviewExperience {
       if (component.type === "spatial-panel") {
         if (decoration.backing) setFill(decoration.backing, tokens.color.surface, tokens.opacity.surface);
         if (decoration.extra && component.title !== undefined) {
-          this.drawText(decoration.extra, component.title, sizeFor(tokens.type.titleDeg, distance), tokens.color.text);
+          // One title line tall, wrapped at the panel less space.md each side (Lens `wrapText`).
+          const box =
+            node.kind === "panel" && node.extents
+              ? {
+                  widthCm: (node.extents.width - 2 * viroSpecsAngleToMeters(tokens.space.mdDeg, distance)) * CM_PER_METER,
+                  heightCm: viroSpecsAngleToMeters(tokens.type.titleDeg, distance) * tokens.type.lineHeight * CM_PER_METER,
+                }
+              : undefined;
+          this.drawText(decoration.extra, component.title, sizeFor(tokens.type.titleDeg, distance), tokens.color.text, box);
         }
       } else if (component.type === "panel-button") {
         const visual = resolveViroSpecsButtonVisual(node.label ?? "", component.state, this.tracker.interactionOf(node.id), tokens);
@@ -251,7 +264,23 @@ export class PreviewExperience {
         }
         if (decoration.extra) {
           decoration.extra.visible = component.state === "error";
-          if (component.errorMessage !== undefined) this.drawText(decoration.extra, component.errorMessage, sizeFor(tokens.type.labelDeg, distance), tokens.color.error);
+          const message = component.errorMessage;
+          if (message !== undefined && node.kind === "panel" && node.extents) {
+            // A row under the button, across the SpatialPanel it sits on (Lens `styleDecorations`).
+            const parent = node.parentId !== undefined ? scene.nodes.find((n) => n.id === node.parentId) : undefined;
+            const panel =
+              parent && parent.kind === "panel" && parent.extents && parent.component?.type === "spatial-panel"
+                ? { width: parent.extents.width, buttonX: node.position?.[0] ?? 0 }
+                : undefined;
+            const block = layoutViroSpecsButtonError(tokens, node.extents, message, distance, panel, this.measureLines);
+            this.drawText(decoration.extra, message, sizeFor(tokens.type.labelDeg, distance), tokens.color.error, {
+              widthCm: block.wrapWidthMeters * CM_PER_METER,
+              heightCm: block.heightMeters * CM_PER_METER,
+            });
+            decoration.extra.position.set(block.x * CM_PER_METER, block.y * CM_PER_METER, 0.6);
+          } else if (message !== undefined) {
+            this.drawText(decoration.extra, message, sizeFor(tokens.type.labelDeg, distance), tokens.color.error);
+          }
         }
         if (decoration.label) {
           const glyph = visual.glyph === "check" ? "✓ " : visual.glyph === "error" ? "! " : "";
@@ -264,25 +293,54 @@ export class PreviewExperience {
     }
   }
 
-  /** Redraws `mesh` only when its text, size or color changed. */
-  private drawText(mesh: Mesh, text: string, size: number, color: string): void {
-    const key = text + "|" + size + "|" + color;
+  /**
+   * Redraws `mesh` only when its text, size, color or box changed. With a
+   * `box` the text wraps inside it, centred, the way the Lens adapter's
+   * `wrapText` sets a Text's layout rect; without one it stays on the lines
+   * it has (a PanelButton label). Lines and layout go on `userData` for tests.
+   */
+  private drawText(mesh: Mesh, text: string, size: number, color: string, box?: { readonly widthCm: number; readonly heightCm: number }): void {
+    const key = text + "|" + size + "|" + color + "|" + (box ? box.widthCm.toFixed(4) + "x" + box.heightCm.toFixed(4) : "");
     if (mesh.userData.drawn === key) return;
     mesh.userData.drawn = key;
-    const layout = layoutText({ text, style: { fontSize: size, color } }, this.options.rasterizer.measure);
-    const bounds = textBounds(layout, this.options.rasterizer.measure);
-    // Fit the quad to the drawn line, not the default 72 x 8 cm Lens rect.
-    const w = this.options.rasterizer.measure(layout.lines[0] ?? "", layout.font, layout.lineHeightCm);
-    const tight = { minX: -w / 2, maxX: w / 2, minY: -layout.lineHeightCm / 2, maxY: layout.lineHeightCm / 2 };
+    const measure = this.options.rasterizer.measure;
+    const extents = box ? { width: box.widthCm / CM_PER_METER, height: box.heightCm / CM_PER_METER } : undefined;
+    const layout = layoutText({ text, style: { fontSize: size, color }, ...(extents ? { extents } : {}) }, measure);
+    let bounds = textBounds(layout, measure);
+    if (!box && layout.lines.length === 1) {
+      // Fit the quad to the drawn line, not the default 72 x 8 cm Lens rect.
+      const w = measure(layout.lines[0] ?? "", layout.font, layout.lineHeightCm);
+      bounds = { minX: -w / 2, maxX: w / 2, minY: -layout.lineHeightCm / 2, maxY: layout.lineHeightCm / 2 };
+    }
     const material = mesh.material as MeshBasicMaterial;
     material.map?.dispose();
-    material.map = this.options.rasterizer.draw(layout, layout.lines.length === 1 ? tight : bounds);
+    material.map = this.options.rasterizer.draw(layout, bounds);
     material.color.setRGB(...rgb(color), SRGBColorSpace);
     material.needsUpdate = true;
-    const b = layout.lines.length === 1 ? tight : bounds;
-    mesh.scale.set(Math.max(1e-3, b.maxX - b.minX), Math.max(1e-3, b.maxY - b.minY), 1);
-    mesh.position.x = (b.minX + b.maxX) / 2;
+    mesh.scale.set(Math.max(1e-3, bounds.maxX - bounds.minX), Math.max(1e-3, bounds.maxY - bounds.minY), 1);
+    mesh.position.x = (bounds.minX + bounds.maxX) / 2;
+    mesh.userData.lines = layout.lines;
+    mesh.userData.layout = layout;
   }
+
+  /**
+   * Lines `text` wraps to at `emMeters` in a box `wrapWidthMeters` wide: the
+   * same {@linkcode layoutText} pass, Lens Text size and rasterizer measure
+   * {@linkcode drawText} draws with, so a row the layout reserves holds
+   * exactly the lines drawn into it. The Lens adapter's `measureLines` does
+   * the same with a laid-out Lens Text. Cached per string, size and width.
+   */
+  private readonly measureLines: ViroSpecsLineMeasure = (text, emMeters, wrapWidthMeters) => {
+    if (text === "") return 0;
+    const size = sizeForEm(emMeters);
+    const key = size + "|" + wrapWidthMeters.toFixed(6) + "|" + text;
+    const cached = this.measuredLines.get(key);
+    if (cached !== undefined) return cached;
+    const layout = layoutText({ text, style: { fontSize: size }, extents: { width: wrapWidthMeters, height: 0 } }, this.options.rasterizer.measure);
+    const lines = layout.lines.length;
+    this.measuredLines.set(key, lines);
+    return lines;
+  };
 
   private distanceToWearer(object: Object3D): number {
     const eye = this.options.camera.getWorldPosition(new Vector3());
@@ -349,28 +407,33 @@ export class PreviewExperience {
       this.placeInView(panel.root, tokens.distance.defaultMeters + (key === "loading" ? 0 : -tokens.depth.overlayMeters));
     }
     const d = tokens.distance.defaultMeters;
-    const step = viroSpecsAngleToMeters(tokens.type.bodyDeg * tokens.type.lineHeight, d) * CM_PER_METER;
-    const line = (mesh: Mesh, value: string, deg: number, color: string, y: number): void => {
-      mesh.visible = value !== "";
-      if (value !== "") this.drawText(mesh, value, sizeFor(deg, d), color);
-      mesh.position.y = y;
+    // The vendored Lens layout: 20 degrees wide, rows wrapped at the width less
+    // space.md, stacked with space.sm between them and the backing sized to fit.
+    // No ring row: the preview shows loading progress as a percentage in the body.
+    const layout = layoutViroSpecsStatePanel(tokens, { ...content, ring: false }, d, this.measureLines);
+    const wrapCm = layout.wrapWidthMeters * CM_PER_METER;
+    const line = (mesh: Mesh, value: string, block: ViroSpecsTextBlock | undefined, color: string): void => {
+      mesh.visible = block !== undefined;
+      if (!block) return;
+      this.drawText(mesh, value, sizeForEm(block.emMeters), color, { widthCm: wrapCm, heightCm: block.heightMeters * CM_PER_METER });
+      mesh.position.y = block.y * CM_PER_METER;
     };
-    line(panel.title, content.title, tokens.type.bodyDeg, content.accent, step * 1.5);
-    line(panel.body, content.body, tokens.type.bodyDeg, tokens.color.text, 0);
-    line(panel.detail, content.detail, tokens.type.labelDeg, tokens.color.textMuted, -step * 1.5);
-    // 20 degrees wide (the handoff panel width) and tall enough for title, body, detail and action.
-    panel.backing.scale.set(viroSpecsAngleToMeters(20, d) * CM_PER_METER, step * 8, 1);
-    panel.backing.position.set(0, -step * 0.5, 0);
-    setFill(panel.backing, content.surface, tokens.opacity.surface);
-    panel.action.visible = content.action !== null;
-    if (content.action !== null) {
+    line(panel.title, content.title, layout.title, content.accent);
+    line(panel.body, content.body, layout.body, tokens.color.text);
+    line(panel.detail, content.detail, layout.detail, tokens.color.textMuted);
+    // Opaque, as on Lens, so the scene behind never shows through the copy.
+    panel.backing.scale.set(layout.widthMeters * CM_PER_METER, layout.heightMeters * CM_PER_METER, 1);
+    panel.backing.position.set(0, 0, 0);
+    setFill(panel.backing, content.surface, 1);
+    panel.action.visible = layout.action !== undefined && content.action !== null;
+    if (layout.action && content.action !== null) {
       const visual = resolveViroSpecsButtonVisual(content.action, "idle", { hovered: panel.hovered, pressed: panel.pressed }, tokens);
-      this.drawText(panel.actionText, visual.labelText, sizeFor(tokens.type.labelDeg, d), visual.labelColor);
-      panel.action.position.set(0, -step * 3, 0.6);
-      const labelM = viroSpecsAngleToMeters(tokens.type.labelDeg, d);
-      const h = labelM * tokens.type.lineHeight + 2 * viroSpecsAngleToMeters(tokens.space.smDeg, d);
-      const w = Math.max(h * 2.5, content.action.length * 0.55 * labelM + 2 * viroSpecsAngleToMeters(tokens.space.mdDeg, d));
-      panel.actionBacking.scale.set(w * CM_PER_METER * visual.scale, h * CM_PER_METER * visual.scale, 1);
+      this.drawText(panel.actionText, visual.labelText, sizeFor(tokens.type.labelDeg, d), visual.labelColor, {
+        widthCm: layout.action.widthMeters * CM_PER_METER,
+        heightCm: layout.action.heightMeters * CM_PER_METER,
+      });
+      panel.action.position.set(0, layout.action.y * CM_PER_METER, 0.6);
+      panel.actionBacking.scale.set(layout.action.widthMeters * CM_PER_METER * visual.scale, layout.action.heightMeters * CM_PER_METER * visual.scale, 1);
       panel.actionBacking.position.z = visual.depthMeters * CM_PER_METER;
       setFill(panel.actionBacking, visual.ring ? visual.border : visual.fill, 1);
     }
@@ -442,7 +505,12 @@ export class PreviewExperience {
 
 /** Lens Text size whose em is `angleDeg` tall at `distanceMeters` (Lens adapter `sizeFor`). */
 function sizeFor(angleDeg: number, distanceMeters: number): number {
-  return Math.ceil((viroSpecsAngleToMeters(angleDeg, distanceMeters) / VIRO_SPECS_LENS_TEXT_EM_METERS_PER_SIZE) * 10) / 10;
+  return sizeForEm(viroSpecsAngleToMeters(angleDeg, distanceMeters));
+}
+
+/** Lens Text size whose em is `emMeters` tall, rounded up to a tenth as the Lens adapter does. */
+function sizeForEm(emMeters: number): number {
+  return Math.ceil((emMeters / VIRO_SPECS_LENS_TEXT_EM_METERS_PER_SIZE) * 10) / 10;
 }
 
 function rgb(hex: string): [number, number, number] {
