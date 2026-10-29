@@ -1,10 +1,10 @@
 # Specs production pass: final report
 
-The release state of the SPECS 27 path as of 2026-10-28, in the shape the
-engineering pack's §6 asks for. Two branches carry it: viro-external
-`feat/specs-release` and viro `feat/specs-release`. The merge order and the
-mapping to the pack's eight workstream PRs are in
-[specs-pr-plan.md](specs-pr-plan.md).
+The release state of the SPECS 27 path as of 2026-10-29, in the shape the
+engineering pack's §6 asks for. The release PRs are merged into `main` in
+both repos; viro `feat/specs-starter` adds the starter generator, the
+quickstart run and Storybook on top. The merge order and the mapping to
+the pack's eight workstream PRs are in [specs-pr-plan.md](specs-pr-plan.md).
 
 Evidence tiers, lowest to highest: `implemented`, `portable-test-passed`,
 `lens-compiled`, `preview-validated`. Lens Studio Preview is the top tier
@@ -13,46 +13,28 @@ for this release. SPECS hardware is not released, so nothing here is
 
 ## 1. Implemented
 
-No PR is open yet. Branch heads are in §11.
+The release is merged. PR links, merge commits and CI are in
+[specs-pr-plan.md](specs-pr-plan.md).
 
-| Repo | Branch | Commits ahead of `main` | Diff against `main` |
-| --- | --- | --- | --- |
-| viro-external | `feat/specs-release` | 67 | 105 files, +23682 / -469 |
-| viro | `feat/specs-release` | 124 | 1099 files, +108995 / -2285 (includes the Platform Lab Lens Studio project and the Preview evidence) |
+| Repo | PR | Merge commit |
+| --- | --- | --- |
+| viro-external | #74 `feat/specs-release` | `3c3de8a` |
+| viro | #72 `feat/specs-release` | `f93d67e5` |
+| viro | #73 `feat/specs-release` (lab scenarios expect the Hello root at y -0.22) | `26d7a1a2` |
+| viro | #74 `feat/specs-lens-experience` (reference-app LEAF scenarios from the setup script) | `6ec9873d` |
+| viro | #75 `sync/upstream-3.1.0-v2` (ReactVision 3.1.0) | `017d5f83` |
 
-`main` is an ancestor of both heads (`git merge-base --is-ancestor`, exit 0
-in both repos, 2026-10-28): viro-external `main` at `c819554`, viro `main`
-at `e4e9808d`.
-
-Commits in the final release pass, oldest first:
-
-viro-external
+This pass, on viro `feat/specs-starter` from `017d5f83`:
 
 | Commit | Change |
 | --- | --- |
-| `e6cac8d` | Merge `feat/specs-integration` (694f212): experience overlay layout, gaze scroll, drag clamp, portable ModelViewer, rounded images, ray blocking behind open panels, narrowed `VS5025`, per-frame text measure budget. No conflicts |
-| `29df0c3` | Lens-core API snapshot: 18 new exports, none removed (see §3) |
-| `9a934c3` | Reference-app LEAF fixes: Retry found under the error panel's `action` child; PlacementCancel waits on the placement session's label and a hidden reticle; `startRefApp` waits for the GeneratedHost scene first. README: `VS5025`, the cancel row, the Preview run |
-| `4157934` | Dashboard scene document from viro (panel at y -0.22); `ViroRefAppScenes.ts` regenerated |
-| `e1cece1` | High-contrast surface `#42525f` (see §3), with a test that fails on a black or near-black surface |
-| `bc030ae` | `spatial-validation.yml`: SC2129 fixed, so `actionlint` exits 0 (the finding is also on `main`) |
-| `b98375b` | Reference-app README names the two changes made after the Preview run |
+| `9519f665` | `viro-specs init <dir>`: starter app, Lens runtime sync, generated host; init in the consumer check (13 checks); quickstart starts from init |
+| `0dfcde13` | `specs-error-reference.cjs` reads the catalog from source, with a stale-build test |
+| `c06e22be` | CHANGELOG |
+| `9ffb111f` | Storybook for the web preview: 32 stories rendered through the preview's stage and experience layer, CI build and captures |
+| see §11 | This report and the PR plan |
 
-viro
-
-| Commit | Change |
-| --- | --- |
-| `5d754f71` | Merge `feat/specs-integration-3` (7d690e90): narrowed `VS5025`, gallery scenes refit to the Preview frame. No conflicts |
-| `dbd01931` | Web preview re-vendors the Lens core from viro-external `e6cac8d`; three stale assertions updated (Navigation panel 0.53 x 0.60 m, list anchor 13 cm, no `VS5025` from the model viewer) |
-| `ec427507` | API snapshot and error reference for the `VS5025` hint |
-| `79d85935` | Platform Lab lens-ts goldens regenerated; they were stale after the integration-3 merge and `test:specs` failed on all four |
-| `b15eb6e2` | Reference dashboard panel from y 0 to y -0.22; frame check added to the reference-app layout test |
-| `aabd1b5c` | High-contrast surface `#42525f`, its test, goldens, docs, preview re-vendor |
-| `a0733ff6` | Merge `feat/specs-lens-experience` (36e74226): Platform Lab Lens Studio project, LEAF suites, MCP setup scripts, Preview evidence. Two conflicts, resolved to the release side (see [specs-pr-plan.md](specs-pr-plan.md)) |
-| `2243fe9e` | Lab synced to the release line: runtime token file, ledgers, generated host, gallery and reference-app scene modules |
-| `e9a03671`, `e09230f3` | `viro_ws4_preferences` expects `#42525f` |
-| `3eab4c15` | Root `tsconfig.json` excludes `docs/evidence` and `scripts/specs-lens`; `package.json` keeps the lab out of the tarball (2218 to 1994 files) |
-| `49f332de` | Docs record the reference-app Preview run |
+Commits of the earlier release pass are listed in the merged PRs.
 
 ## 2. Baseline findings (pack §9)
 
@@ -76,7 +58,13 @@ them.
 
 ## 3. API and migration changes
 
-viro `api/specs.api.d.ts`, against the snapshot before this pass:
+`feat/specs-starter` changes no exported declaration: `test:specs-api`
+matches `api/specs.api.d.ts`. CLI changes: `viro-specs init <dir>` is new;
+`viro-specs init --project <path>` still runs the Platform Lab bootstrap
+and the same bootstrap is also `viro-specs lab`; `npm run docs:specs-errors`
+no longer builds the CLI first. Nothing to migrate.
+
+The release PRs changed viro `api/specs.api.d.ts` as follows:
 
 - `VIRO_SPECS_HIGH_CONTRAST_TOKENS.color.surface` is `"#42525f"` (was
   `"#000000"`), with a doc comment saying why.
@@ -118,119 +106,161 @@ and its doubled white border marks the edge. Reasoning:
 
 ## 4. Consumer artifacts
 
-Packed 2026-10-28 from the heads in §11:
+Packed 2026-10-29: the viro tarball from `feat/specs-starter` at
+`c06e22be`, the specs tarballs from a fresh worktree of viro-external
+`origin/main` at `3c3de8a` (`packages/specs` and `packages/xr-platform-contract`
+are unchanged at the current `main`, `963244f`).
 
 | Tarball | SHA-256 |
 | --- | --- |
 | `viro-external-xr-contract-0.3.0.tgz` | `ed18283a2019bda2698d4db5b5b9f7ba9b4609fe3ea68def340730d12f39c892` |
-| `viro-external-specs-0.3.0.tgz` | `221b2b6a886804ba074604315a6e8db45c4b806d8ee432d2bb5f0641dcf6d741` |
-| `reactvision-react-viro-3.0.3-moyo.1.tgz` | `cd7a9027a44678317b1f59caa6c4a91f7f4690cb725061afc0172c4cdef605ef` |
+| `viro-external-specs-0.3.0.tgz` | `c74744a2178864ff7db69c94d16914b50ae7d8f376f792e2d4c71e2f0dce4a5b` |
+| `reactvision-react-viro-3.1.0-moyo.0.tgz` | `f889879976a34976737ffb8e30aa86e66c4870fc245df048d609197d1b984c1b` |
 
 Build them:
 
 ```bash
 # viro-external checkout
+npx -y pnpm@12.8.1 install --frozen-lockfile --filter "@viro-external/specs..."
 npx -y pnpm@12.8.1 --filter @viro-external/xr-contract pack --pack-destination <dir>/specs
 npx -y pnpm@12.8.1 --filter @viro-external/specs pack --pack-destination <dir>/specs
 node packages/specs/scripts/check-packed-consumer.mjs --tarballs <dir>/specs
 
 # viro checkout
 npm pack --pack-destination <dir>/viro
-node scripts/check-specs-consumer.cjs --viro-tarball <dir>/viro/reactvision-react-viro-3.0.3-moyo.1.tgz --specs-tarballs <dir>/specs
+node scripts/check-specs-consumer.cjs --viro-tarball <dir>/viro/reactvision-react-viro-3.1.0-moyo.0.tgz --specs-tarballs <dir>/specs
 ```
 
-Install into an app the way the consumer checks do:
+Start an app from them the way [specs-quickstart.md](specs-quickstart.md)
+says:
 
 ```bash
-npm install --strict-peer-deps \
-  <dir>/viro/reactvision-react-viro-3.0.3-moyo.1.tgz \
-  <dir>/specs/viro-external-specs-0.3.0.tgz \
-  <dir>/specs/viro-external-xr-contract-0.3.0.tgz \
-  react@19.3.1 react-native@~0.88.0 @types/react@~19.3.0
+npx --package <dir>/viro/reactvision-react-viro-3.1.0-moyo.0.tgz viro-specs init my-specs-app --no-install
+cd my-specs-app
+npm install <dir>/viro/reactvision-react-viro-3.1.0-moyo.0.tgz \
+  <dir>/specs/viro-external-specs-0.3.0.tgz <dir>/specs/viro-external-xr-contract-0.3.0.tgz
 ```
 
-The viro check resolved `react-native` to 0.88.1.
-
 Results: viro-external packed consumer check 9/9, viro consumer check
-12/12 (both exit 0). The viro tarball carries none of the Lens lab files.
+13/13 (both exit 0). The 13th check runs the installed `viro-specs init`,
+finds the synced runtime next to the generated host with no React import
+in either, type-checks the starter scene against the packed declarations,
+and compiles it with `--strict` in all three formats to the same host init
+wrote.
 
 ## 5. Gates, environment, results
 
-Run on 2026-10-28 on macOS (Darwin 27), Node 26.12.0, from clean commits at the
-heads in §11. Each line is its own command and exit code.
+Run on 2026-10-29 on macOS (Darwin 27), Node 26.12.0, on
+`feat/specs-starter`. Each line is its own command and exit code.
 
 viro
 
 | Gate | Exit | Result |
 | --- | --- | --- |
-| `npx tsc --noEmit` | 0 | |
-| `npx tsc --noEmit --strict` | 0 | |
+| `npm ci --ignore-scripts --legacy-peer-deps=false` | 0 | |
+| `npx tsc --noEmit`, `--strict` | 0, 0 | |
+| `tsc --noEmit -p` `tsconfig.plugins.json`, `tsconfig.specs-cli.json`, `tsconfig.specs-examples.json`, each also `--strict` | 0 each | |
 | `npm run build:specs-cli` | 0 | |
-| `npm run test:specs` | 0 | 345 passed, 6 skipped |
+| `npm test` | 0 | 1160 passed |
+| `npm run test:specs` | 0 | 356 passed, 6 skipped (adds `ViroSpecsInit`, 9 tests, and 2 stale-build tests in `ViroSpecsReleaseDocs`) |
 | `npm run test:specs-compiler` | 0 | 36 check groups |
 | `npm run typecheck:specs-examples` | 0 | |
-| `npm run test:specs-api` | 0 | snapshot matches |
-| `node scripts/specs-error-reference.cjs --check` | 0 | 94 codes |
+| `npm run test:specs-api` | 0 | snapshot matches, no change |
+| `node scripts/specs-error-reference.cjs --check` | 0 | 94 codes, read from source |
+| web preview `npm ci --dry-run --legacy-peer-deps=false` | 0 | |
 | web preview `npm run typecheck` | 0 | |
 | web preview `npm test` | 0 | 30 passed |
-| web preview vendor check `--from ../ve-release` | 0 | matches viro-external `e1cece1` |
-| `actionlint` | 0 | |
-| VS5xxx catalog, both repos, field by field | 0 | 25 codes, 0 differences in severity, title or hint |
+| web preview `npm run vendor:check` | 0 | |
+| web preview `npm run build-storybook` (Storybook 10.6.5, html-vite) | 0 | 32 stories |
+| web preview `node scripts/storybook-screenshots.mjs` | 0 | 25 captures, each at its expected lifecycle |
+| `npm run test:specs-consumer` (packed tarballs) | 0 | 13/13 |
+| `actionlint .github/workflows/*.yml` | 0 | |
 
-viro-external (pnpm 12.8.1)
+viro-external, fresh worktree at `3c3de8a` (pnpm 12.8.1)
 
 | Gate | Exit | Result |
 | --- | --- | --- |
-| `pnpm install --frozen-lockfile` | 0 | |
-| typecheck, `@viro-external/xr-contract` and `@viro-external/specs` | 0, 0 | |
-| build, both packages | 0, 0 | |
-| `specs:validate-lens` | 0 | |
-| `specs:test-lens`, `specs:test-runner`, `specs:test-presentation` | 0, 0, 0 | |
-| `specs:test-host` | 0 | 104 passed |
-| `specs:test-reference-apps` | 0 | 16 passed; scene module current |
-| `node --test scripts/viro-bundle.test.mjs` | 0 | |
-| `node --test scripts/*.test.mjs` (packages/specs) | 0 | |
-| `node --test test/ci-boundary.test.mjs` | 0 | 14 passed |
-| `node scripts/ci/api-snapshot.mjs` | 0 | three snapshots match |
-| `node scripts/ci/check-manifests.mjs` | 0 | |
-| `node scripts/check-docs.mjs` | 0 | |
-| `actionlint` | 0 | |
-
-Scene documents are byte-identical across the repos (`cmp`): the three
-reference apps and the four gallery scenes.
+| `pnpm install --frozen-lockfile --filter "@viro-external/specs..."` | 0 | |
+| `pnpm --filter @viro-external/xr-contract pack` | 0 | |
+| `pnpm --filter @viro-external/specs pack` (prepack: build, `specs:validate-lens`, `specs:test-lens`, `specs:test-runner`, `specs:test-presentation`, `specs:test-host`, bundle test) | 0 | |
+| `check-packed-consumer.mjs` | 0 | 9/9 |
 
 ## 6. Preview evidence
 
 `preview-validated`, Lens Studio 5.24 SPECS 27 Interactive Preview, Sunlit
-Room, default camera pose:
+Room, default camera pose, `docs/evidence/specs/lens/ws4-09-release/`:
 
-- `docs/evidence/specs/lens/ws4-08-polish2/leaf-suite/`: 39 LEAF
-  scenarios, all as expected. 37 passed; `viro_lab_deliberate_failure`
-  and `viro_ref_expected_failure` failed as required. All ten reference-app
-  scenarios are in this run.
-- `docs/evidence/specs/lens/ws4-08-polish2/*.png` and `captures.json`:
-  each gallery scene and lifecycle state, Preview and front captures, read
-  by eye (titles in frame, rounded card images, the model load ring, the
-  error panel over the content).
-- Earlier runs (`run-09-leaf`, `ws3-*`, `ws3b-*`, `ws4-01` to `ws4-07`)
-  trace the host, actions and experience work.
+- `leaf-suite/`: the Platform Lab and WS4 gallery, 29 scenarios after a
+  `lens-compiled` recompile (`recompile.json`). 28 passed;
+  `viro_lab_deliberate_failure` failed as required.
+- `leaf-suite-ref/`: the reference apps, 10 scenarios. 9 passed;
+  `viro_ref_expected_failure` failed as required.
+- `captures.json` and the PNGs: `viro_ws4_preferences` (loading and ready,
+  the `#42525f` high-contrast panel) and `viro_ref_dashboard_ready` (the
+  dashboard at y -0.22), Preview and front captures.
 
-The browser screenshots in `docs/evidence/specs/web-preview/` are
-`portable-test-passed`, not Preview evidence.
+This closes the earlier gap: the dashboard move and the high-contrast
+surface are now in a Preview run. Earlier runs (`run-09-leaf`, `ws3-*`,
+`ws3b-*`, `ws4-01` to `ws4-08-polish2`) trace the host, actions and
+experience work.
+
+The browser screenshots in `docs/evidence/specs/web-preview/` and the
+Storybook captures are `portable-test-passed`, not Preview evidence.
 
 ## 7. Device evidence
 
-None. SPECS hardware is not released.
+None. SPECS hardware is not released, and Preview is the final tier for
+this release.
 
-## 8. Not yet verified, and the steps that close it
+## 8. Fresh-project quickstart run (pack PR 4)
 
-| Item | Tier now | Steps |
+[specs-quickstart.md](specs-quickstart.md) followed literally in an empty
+folder with the tarballs in §4, without Lens Studio:
+
+| Step | Command | Exit |
 | --- | --- | --- |
-| The dashboard at y -0.22 and the `#42525f` high-contrast surface in Preview | `portable-test-passed` | Open `examples/specs-platform-lab/lens` in Lens Studio 5.24, then `node scripts/specs-lens-setup.mjs --steps recompile,device,preview,leaf`. Expect 37 passed and the two deliberate failures; capture `viro_ws4_preferences` and `viro_ref_dashboard_ready` |
-| Interaction Kit 4.0.0 line | `portable-test-passed` | Install `InteractionKit.lspkg` 4.0.0 in a copy of the lab, `specs:sync --interaction-kit 4`, run the LEAF suite |
-| A fresh Lens project reaching Preview with only the documented commands (pack PR 4) | not run | Create an empty SPECS project, follow [specs-quickstart.md](specs-quickstart.md) exactly, record each manual step that was needed |
-| CI on the two release PRs | not run | Open the PRs in the order in [specs-pr-plan.md](specs-pr-plan.md) |
-| Outside-developer beta (WS7) | not run | Three developers following the docs; no participants yet |
+| 1 | `npx --package <viro.tgz> viro-specs init my-specs-app --no-install` | 0 |
+| 1 | `npm install <viro.tgz> <specs.tgz> <xr-contract.tgz>` | 0 |
+| 1 | `npm run lens:sync` | 0 |
+| 2 | `npm run specs:check` | 0, no diagnostics |
+| 2 | `npm run typecheck` | 0 |
+| 2 | `npm run specs:preview` | 0 |
+| 3 | `npm run lens:host` | 0 (host unchanged from init) |
+| 3 | `npm run lens:doctor` | 1, as documented: `lens/` is not a saved Lens Studio project yet |
+
+Manual repairs found and fixed:
+
+- The old quickstart started from "an existing React Native app". In an
+  empty folder that meant writing a package.json with `react` and
+  `react-native` and copying the scene out of the doc before step 1. `init`
+  now writes both, and the quickstart starts from it.
+- `viro-specs doctor` on the `lens/` folder failed with "Expected exactly
+  one .esproj file". `npm run lens:doctor` now says the folder is not a
+  Lens Studio project yet and what to do.
+- The Lens host had to be compiled by hand with a long `--out` path into the
+  Lens project. `init` writes it, and `npm run lens:host` / `lens:watch`
+  take the path from `package.json`.
+
+Open: the Lens Studio half. Steps for the Preview run, in Lens Studio 5.24:
+
+1. Create a new Spectacles project and save it, for example as
+   `my-specs-app/LensProject`.
+2. Install from the Asset Library: Spectacles Interaction Kit 2.0.0,
+   Spectacles UI Kit 2.0.0, SurfacePlacement 2.0.0, VolumetricLine 2.0.0,
+   SpecsNavigationKit 2.0.0.
+3. In `my-specs-app/package.json` set `viroSpecs.lensProject` to
+   `LensProject`, then run `npm run lens:doctor` (expect exit 0),
+   `npm run lens:sync` and `npm run lens:host`.
+4. Wire the host as in quickstart step 4: `ViroSpecsAssetRegistry` and
+   `ViroSpecsSceneControllerHost` on one SceneObject, the controller's
+   `assetRegistryObject` set to the registry; `ViroGeneratedSceneHost` on
+   another, `sceneHostObject` set to the first.
+5. Press Preview (SPECS 27 Interactive Preview). Expect the "Hello, Specs"
+   panel with the body text and a Next button, no `VS5xxx` errors in the
+   Lens log, and record any step beyond these that was needed.
+
+Step 4 is Inspector work; `scripts/specs-lens-setup.mjs` does it through
+the Lens Studio MCP server for the Platform Lab only.
 
 ## 9. Known limitations
 
@@ -238,47 +268,63 @@ None. SPECS hardware is not released.
   host; it is append-only, so it cannot be removed.
 - In high contrast, `surfaceRaised`, `surfacePressed` and the state
   surfaces keep their default values, darker than the `#42525f` panel.
-- `viro-specs-compile` has no starter generator; a new app wires two
-  components by hand ([specs-quickstart.md](specs-quickstart.md)).
-- `scripts/specs-lens-setup.mjs` targets the Platform Lab and needs a
-  running Lens Studio with MCP enabled.
+- The starter's Lens host is wired by hand in the Inspector (§8 step 4).
+  `scripts/specs-lens-setup.mjs` automates it for the Platform Lab and is
+  not in the npm package.
+- `init` does not create a Lens Studio project; `lens/` holds only
+  `Assets/ViroSpecs/` until `viroSpecs.lensProject` points at a saved one.
+- Installing the react-viro tarball prints npm's `install-scripts` notice
+  naming its `prepare` script. The quickstart run in §8 left it unapproved
+  and every command after the install exited as listed.
+- `specs-error-reference.cjs` needs Node 22.18 or newer (type stripping).
+- The web preview draws the loading, error and rejected-scene panel body
+  text on one unwrapped line, so a long message runs past the panel
+  (visible in the ModelViewer Load Error story). The Storybook stories
+  show it as the preview draws it; fixing it is a change to the preview's
+  Lens-parity drawing in `experience.ts`, checked against the Lens host.
+- Storybook does not show PanelButton borders or focus rings, the placement
+  reticle, gaze controls, or the ModelViewer load ring, Reset button and
+  autoRotate, because the preview does not draw them
+  ([specs-preview.md](specs-preview.md)).
 - The reference-app scenario `ViroRefPlacementCancelScenario`'s doc comment
   still says the reticle reads "Placement cancelled"; the check itself
   reads the placement session. It is left as is so the file stays
   byte-identical to the lab copy.
-- `specs-error-reference.cjs --check` reads `bin/specs-build`, so it
-  passes against a stale build. Run `build:specs-cli` first, as CI does.
 - The lab's committed tree has no `Packages/`; `specs:doctor` on a fresh
   checkout reports the Lens packages missing until the setup script's
   `packages` step installs them.
+- `@viro-external/specs` and `@viro-external/xr-contract` are not on npm,
+  and the 3.1.0-moyo line of react-viro is not either (npm has upstream
+  3.0.3); consumers install the tarballs.
 
 ## 10. Skills and subagents used in this pass
 
-Skills loaded and applied: `api-design` (snapshot review, the classification
-of each API change), `no-ai-slop` (commits, docs, this report),
-`verification-before-completion` (every gate run fresh with its own exit
-code), `systematic-debugging` (the three preview test failures, the
-`tsc` failure after the lab merge), `threejs-fundamentals` (before
-touching the three.js preview), `ls-clad:specs-build-ui` (additive display
-rule: black renders as transparent; the high-contrast decision),
-`ls-clad:specs-leaf-write-scenarios` and `ls-clad:lens-api` (the
-reference-app scenario fixes).
+Skills loaded and applied: `api-design` (the `init` command shape and its
+options), `systematic-debugging` (the stale error-reference root cause),
+`verification-before-completion` (every gate run fresh with its exit code;
+red-green on the stale-build test), `engineering:testing-strategy` (init
+tests and the consumer step), `no-ai-slop` (docs, commits, this report),
+`frontend-design:frontend-design` and `ux-heuristics-review` (Storybook),
+`threejs-fundamentals` (the preview Storybook mounts), `expo-app-design`
+(the starter's Expo entry), `ls-clad:lens-api` (the Lens host the starter
+writes).
 
-No subagents ran in this pass. Lens Studio was not opened; nothing here
-was run in Preview.
+Subagents: one general-purpose agent built the Storybook in
+`web-harness/specs-preview` and its CI step; its report was checked
+against the build and the screenshots before it went in. Lens Studio was
+not opened in this pass.
 
 ## 11. Branch heads
 
-Both branches are pushed. The viro head is the commit that last edits
-this file; the gates in §5 ran on its parent tree plus this document and
-the PR plan, which no gate reads except the docs test.
-
-- viro-external `feat/specs-release` at `b98375b`
-- viro `feat/specs-release`: `git log -1 fork/feat/specs-release`
+- viro-external `main` at `963244f` (release merged at `3c3de8a`)
+- viro `main` at `017d5f83`
+- viro `feat/specs-starter`: `git log -1 fork/feat/specs-starter`; its
+  PR is linked from [specs-pr-plan.md](specs-pr-plan.md)
 
 ## 12. Next milestone
 
-Close the first row of §8 (re-run the 39 scenarios after the dashboard and
-token changes), open and merge the viro-external PR, then the viro PR,
+Run §8's Lens Studio steps on a fresh project and record the result,
 publish `@viro-external/xr-contract` and `@viro-external/specs` 0.3.0 per
-`packages/specs/doc/Release.md`, and start the outside-developer beta.
+`packages/specs/doc/Release.md` and react-viro 3.1.0-moyo, then start the
+outside-developer beta (three developers following the docs; no
+participants yet).

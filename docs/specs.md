@@ -59,6 +59,10 @@ Install the validated backend alongside Viro:
 npm install @reactvision/react-viro @viro-external/specs@^0.3.0 @viro-external/xr-contract@^0.3.0
 ```
 
+To start a new app instead, `viro-specs init <dir>` writes an Expo app with
+one scene, syncs the Lens runtime and writes the generated Lens host
+([specs-quickstart.md](specs-quickstart.md)).
+
 Then use the Viro-facing CLI:
 
 ```bash

@@ -32,8 +32,55 @@ or `PreviewAssetStore` options (`baseUrl`, `urls`) pointing elsewhere.
 
 `gallery.html` shows one scene per primitive: transforms, text and text
 style, image extents, GLB model, panel, polyline, materials and opacity,
-lights, missing-asset placeholder, animation, interaction. viro has no
-Storybook, so the gallery takes its place. Each card links into the preview.
+lights, missing-asset placeholder, animation, interaction. Each card links
+into the preview. Storybook covers the same primitives plus the premium
+components and their states.
+
+## Storybook
+
+```sh
+npm run storybook        # http://localhost:6006
+npm run build-storybook  # static build in storybook-static/
+npm run storybook:screenshots  # after a build: PNGs in screenshots/storybook/
+```
+
+Each story builds a small manifest v2 document and renders it through
+`PreviewStage` and `PreviewExperience`, the same code the preview page
+runs, from the wearer's eye at the origin. The canvas is the preview's
+rendering; only the caption under it (lifecycle and host diagnostic codes)
+is Storybook chrome. Every story has four controls: high contrast, reduced
+motion, the capability report sent to the experience controller, and
+builder mode.
+
+| Group | Stories |
+| --- | --- |
+| Scene primitives | Transforms, Text, Image, Model, Panel, Polyline, Materials, Lights, Animation, Interaction, Missing Assets. The documents come from `src/primitives.ts`, shared with `gallery.html`. |
+| Premium components | SpatialPanel, PanelText, PanelImage (one loaded, one placeholder) |
+| PanelButton | Default, Hover, Pressed, Disabled, Selected, Loading, Error State, All States |
+| SpatialScrollView | Top, Scrolled (two rows down through `scrollByRows`) |
+| ModelViewer | Ready, Loading, Load Error |
+| Experience states | Error / Scene rejected, Degraded / Hand tracking unavailable, Degraded / World query unsupported, High contrast, High contrast / Off |
+
+How the states are produced:
+
+- Hover and Pressed replay `hover-enter` and `select-start` on the button
+  through `ThreeSceneBackend.deliverInteraction`, as the pointer does.
+- ModelViewer Loading holds the GLB request open. The controller stays in
+  `loading` and the Lens loading panel shows; after 2 seconds its line
+  changes to the slow-loading copy.
+- Load Error and Missing Assets name sources that do not exist: the
+  placeholder, `VS5003` and the error panel with Retry.
+- Scene rejected names a parent that does not exist (`VS5002`).
+- The degraded stories send a capability report with hand tracking
+  temporarily unavailable, or world query unsupported on a scene that
+  requires placement. Each opens the notice panel.
+
+Storybook serves `examples/visionos-sweep/assets` at
+`/viro-repo/examples/visionos-sweep/assets`, the path the asset store
+requests, so the static build loads the shiba and the button image
+without the dev server middleware. The CI `preview` job builds Storybook,
+uploads `storybook-static/` as the `specs-preview-storybook` artifact and
+runs the story screenshots.
 
 ## How it matches the Lens host
 
@@ -87,6 +134,7 @@ npm run typecheck    # strict
 npm test             # Vitest, Node, no browser
 npm run screenshot   # headless Chrome, writes screenshots/
 npm run vendor:check # vendored files match VENDOR.json
+npm run build-storybook && npm run storybook:screenshots
 ```
 
 `test/parity.test.ts` presents each input twice, on the viro-external mock
@@ -138,7 +186,12 @@ file. Do not edit vendored files; change them in viro-external and sync.
 - Hand and gaze input, WorldQuery and placement. Pointer input stands in
   for SIK with `source: "synthetic"`, and the experience controller sees
   no capability report, so it stays in hands mode: no gaze dwell ring,
-  gaze Move or Scroll buttons, or placement reticle.
+  gaze Move or Scroll buttons, or placement reticle. The Storybook
+  degraded stories do send a report, which opens the notice panel, but
+  the gaze controls and reticle are still not drawn.
+- Borders and focus rings on scene PanelButtons. The backing takes the
+  fill color only, so the high-contrast border width and the hover and
+  pressed rings do not show; hover shows as a 4 % scale and 1 cm of depth.
 - PanelText's minimum-size clamp by distance. Text keeps its compiled size.
 - Lens Text line spacing. The preview assumes 1.2 em.
 

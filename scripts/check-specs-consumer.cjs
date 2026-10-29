@@ -14,7 +14,9 @@
 //     and the Lens output imports nothing from React or React Native
 //   - with --specs-tarballs, the @viro-external/specs and xr-contract
 //     tarballs install next to it and `viro-specs sync` / `viro-specs test`
-//     run from the installed packages
+//     run from the installed packages, and the installed `viro-specs init`
+//     writes a starter whose Lens runtime is synced, whose scene type-checks,
+//     and which compiles with --strict to the same host init wrote
 //
 // Usage:
 //   node scripts/check-specs-consumer.cjs --viro-tarball <tgz>
@@ -197,6 +199,31 @@ if (specsTarballs) {
     const viro = Object.keys(require(catalogFile).VIRO_SPECS_DIAGNOSTICS).filter((code) => code.startsWith("VS5")).sort();
     assert(JSON.stringify(host) === JSON.stringify(viro), `host ${host.join(" ")}\nviro ${viro.join(" ")}`);
     return `${viro.length} codes, ${viro[0]} to ${viro[viro.length - 1]}`;
+  });
+  check("viro-specs init writes a starter that syncs, type-checks and compiles --strict with no host repair", () => {
+    // The starter lives inside the consumer so it resolves the installed
+    // packages from ../node_modules; --no-install keeps the test offline.
+    const result = spawnSync(viroSpecs, ["init", "starter", "--no-install"], { cwd: out, encoding: "utf8" });
+    assert(result.status === 0, `init exit ${result.status}\n${result.stdout}${result.stderr}`);
+    assert(result.stderr === "", `init wrote to stderr:\n${result.stderr}`);
+    const starter = path.join(out, "starter");
+    const lensFiles = walk(path.join(starter, "lens", "Assets")).filter((file) => file.endsWith(".ts"));
+    const host = path.join(starter, "lens", "Assets", "ViroSpecs", "generated", "ViroGeneratedSceneHost.ts");
+    assert(fs.existsSync(host), "init wrote no generated host");
+    assert(fs.existsSync(path.join(starter, "lens", "Assets", "ViroSpecs", "lens", "ViroSpecsSceneControllerHost.ts")), "init did not sync the Lens runtime the host imports");
+    const offenders = lensFiles.filter((file) => FORBIDDEN.test(fs.readFileSync(file, "utf8")));
+    assert(offenders.length === 0, `Lens files import React: ${offenders.join(", ")}`);
+    // App.tsx and index.ts need expo, which this consumer does not install; the scene files are what SPECS compiles.
+    fs.writeFileSync(path.join(starter, "tsconfig.scene.json"), JSON.stringify({ extends: "./tsconfig.json", include: [], files: ["src/HelloScene.tsx", "src/phoneTransport.ts"] }));
+    const tsc = spawnSync(path.join(repo, "node_modules", ".bin", "tsc"), ["-p", "tsconfig.scene.json"], { cwd: starter, encoding: "utf8" });
+    assert(tsc.status === 0, `tsc exit ${tsc.status}\n${tsc.stdout}${tsc.stderr}`);
+    for (const format of ["json", "scene-json", "lens-ts"]) {
+      const file = path.join(starter, "build", `hello.${format}`);
+      const compiled = spawnSync(compiler, ["--entry", "src/HelloScene.tsx", "--out", file, "--format", format, "--strict", "--diagnostics-format", "json"], { cwd: starter, encoding: "utf8" });
+      assert(compiled.status === 0 && compiled.stderr === "", `${format}: exit ${compiled.status}\n${compiled.stderr}`);
+    }
+    assert(fs.readFileSync(path.join(starter, "build", "hello.lens-ts"), "utf8") === fs.readFileSync(host, "utf8"), "the host init wrote differs from viro-specs-compile --format lens-ts");
+    return `${lensFiles.length} Lens files (runtime + host), none import React; tsc exit 0; json, scene-json, lens-ts exit 0 with no diagnostics`;
   });
   check("viro-specs sync copies the production Lens runtime, free of React", () => {
     const project = fs.mkdtempSync(path.join(os.tmpdir(), "viro-specs-app-lens-"));

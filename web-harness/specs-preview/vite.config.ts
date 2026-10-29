@@ -49,7 +49,7 @@ function viroRepo(): Plugin {
 
 /**
  * Two pages: index.html is the manifest preview, gallery.html shows one
- * scene per primitive (the viro repo has no Storybook). Both import viro's
+ * scene per primitive (Storybook, in .storybook/, covers the same scenes). Both import viro's
  * Specs core from ../../components/Specs/core.
  */
 export default defineConfig({
