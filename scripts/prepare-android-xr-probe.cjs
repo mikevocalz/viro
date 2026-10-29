@@ -60,6 +60,10 @@ async function checkManifest(file) {
 }
 
 async function main() {
+  // Snapshot this before npm pack. Later commits must not relabel the source
+  // that produced the tarball while installation or Gradle is still running.
+  const sourceCommit = execFileSync("git", ["rev-parse", "HEAD"], { cwd: repo, encoding: "utf8" }).trim();
+  const sourceDirty = Boolean(execFileSync("git", ["status", "--porcelain"], { cwd: repo, encoding: "utf8" }).trim());
   const packed = JSON.parse(execFileSync("npm", ["pack", "--ignore-scripts", "--json", "--pack-destination", path.join(out, "vendor")], {
     cwd: repo, encoding: "utf8",
   }));
@@ -105,20 +109,52 @@ async function main() {
   run(process.execPath, [expo, "prebuild", "--platform", "android", "--no-install"]);
   await checkManifest(manifest);
 
+  let apkSha256 = null;
   if (build) {
-    run(path.join(out, "android", "gradlew"), [":app:assembleRelease", "--no-daemon", "-PreactNativeArchitectures=arm64-v8a"], path.join(out, "android"));
+    // Keep this diagnostic APK unminified. The inherited GVR 1.180 telemetry
+    // classes reference private types unavailable to R8; production shrinking
+    // requires isolating that legacy dependency and is a separate limitation.
+    run(path.join(out, "android", "gradlew"), [
+      ":app:assembleRelease", "--no-daemon", "-PreactNativeArchitectures=arm64-v8a",
+      "-Pandroid.enableMinifyInReleaseBuilds=false",
+    ], path.join(out, "android"));
     const apkDir = path.join(out, "android", "app", "build", "outputs", "apk", "release");
-    assert(fs.readdirSync(apkDir).some((file) => file.endsWith(".apk")), "Gradle did not produce an APK");
+    const apks = fs.readdirSync(apkDir).filter((file) => file.endsWith(".apk"));
+    assert.equal(apks.length, 1, "Expected one arm64 probe APK");
+    const apk = path.join(apkDir, apks[0]);
+    apkSha256 = crypto.createHash("sha256").update(fs.readFileSync(apk)).digest("hex");
+
+    // Read the manifest from the actual APK. Checking only app/src/main would
+    // miss permissions/features merged in from the packaged native libraries.
+    const sdk = process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT;
+    assert(sdk, "Set ANDROID_HOME or ANDROID_SDK_ROOT to inspect the built APK.");
+    const cmdlineRoot = path.join(sdk, "cmdline-tools");
+    const analyzer = fs.readdirSync(cmdlineRoot)
+      .map((version) => path.join(cmdlineRoot, version, "bin", "apkanalyzer"))
+      .find((file) => fs.existsSync(file));
+    assert(analyzer, "Install Android SDK command-line tools (apkanalyzer). ");
+    const apkManifest = path.join(out, "apk-AndroidManifest.xml");
+    fs.writeFileSync(apkManifest, execFileSync(analyzer, ["manifest", "print", apk], { encoding: "utf8" }));
+    await checkManifest(apkManifest);
+    const parsed = await AndroidConfig.Manifest.readAndroidManifestAsync(apkManifest);
+    const permissions = parsed.manifest["uses-permission"] ?? [];
+    for (const permission of ["CAMERA", "RECORD_AUDIO", "EYE_TRACKING_FINE"]) {
+      assert(!permissions.some((entry) => entry.$["android:name"] === `android.permission.${permission}`),
+        `Probe APK unexpectedly declares ${permission}`);
+    }
   }
 
   const report = {
-    sourceCommit: execFileSync("git", ["rev-parse", "HEAD"], { cwd: repo, encoding: "utf8" }).trim(),
-    sourceDirty: Boolean(execFileSync("git", ["status", "--porcelain"], { cwd: repo, encoding: "utf8" }).trim()),
+    sourceCommit,
+    sourceDirty,
     packageSha256: crypto.createHash("sha256").update(fs.readFileSync(path.join(out, "vendor", tarball))).digest("hex"),
     consumerTypecheck: "passed",
     cleanPrebuild: "passed",
     repeatedPrebuild: "passed",
     apkBuild: build ? "passed" : "not-run",
+    minification: "disabled-for-diagnostic-probe",
+    apkManifest: build ? "passed" : "not-run",
+    apkSha256,
     androidXrDeviceValidation: "not-run",
   };
   fs.writeFileSync(path.join(out, "validation.json"), JSON.stringify(report, null, 2) + "\n");

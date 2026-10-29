@@ -5,8 +5,8 @@ on:
     branches: [main, decax9-three-panel]
     paths:
       - "plugins/**"
-      - "components/ViroXRSceneNavigator.tsx"
-      - "components/Utilities/ViroPlatform.ts"
+      - "components/**"
+      - "index.ts"
       - "android/**"
       - "examples/android-xr/**"
       - "scripts/prepare-android-xr-probe.cjs"
@@ -55,6 +55,7 @@ jobs:
             build/android-xr-probe/android/app/build/outputs/apk/release/*.apk
             build/android-xr-probe/validation.json
             build/android-xr-probe/android/app/src/main/AndroidManifest.xml
+            build/android-xr-probe/apk-AndroidManifest.xml
       - name: State the hardware validation boundary
         run: |
           echo "### Android XR validation" >> "$GITHUB_STEP_SUMMARY"

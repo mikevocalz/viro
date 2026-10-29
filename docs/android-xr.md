@@ -21,9 +21,9 @@ plugins: [
 ```
 
 Run a clean Expo prebuild after changing platform modes. Android XR uses its
-own `androidxr` dependency flavor. It cannot be combined with `QUEST` or `PICO`
-in the same Viro mode configuration; those platforms have different host
-manifest requirements. Existing mobile, Quest, and PICO build modes remain
+own `androidxr` dependency flavor. It must be the only mode in its Viro
+configuration, because this integration targets a dedicated Android XR APK.
+Existing mobile, Quest, and PICO build modes remain
 available independently.
 
 Use the existing `ViroXRSceneNavigator` with a `ViroScene` for the first test.
@@ -83,6 +83,12 @@ background/resume, and passthrough before the target is advertised as verified.
 Record device/runtime versions, the exact APK and source commit, logs, video,
 and observed results. Evaluate sustained frame timing separately after the
 minimal scene works.
+
+The diagnostic APK is a bundled, development-signed release build with
+minification disabled. A minified build currently fails R8 on missing private
+telemetry/protobuf types referenced by the inherited GVR 1.180 library. This
+sample-specific setting preserves a usable test APK; it does not resolve that
+production dependency issue or change other apps' shrinking settings.
 
 Google's emulator explicitly does not support OpenXR apps. A successful
 Android/Jetpack XR emulator test therefore cannot validate this rendering path.

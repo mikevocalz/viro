@@ -38,8 +38,15 @@ npm run android-xr:prepare -- --out ./build/android-xr-apk --build
 Gradle creates an arm64 release APK under
 `build/android-xr-apk/android/app/build/outputs/apk/release/`. The Expo template
 uses its development signing key for this probe. This is a tester build, not a
-store release. `validation.json` records source provenance and which checks ran.
-It always records physical-device validation as `not-run`.
+store release. Minification is explicitly disabled for this probe because the
+inherited GVR 1.180 library references missing telemetry/protobuf types during
+R8 shrinking. A minified production build needs that legacy dependency issue
+resolved separately; the general Viro plugin does not disable shrinking.
+The script reads the final manifest back from the APK with the
+SDK's `apkanalyzer` and verifies the launch contract and excluded permissions.
+`apk-AndroidManifest.xml` preserves that merged result. `validation.json`
+records source provenance, package/APK hashes, and which checks ran. It always
+records physical-device validation as `not-run`.
 
 ## What to do on the device
 
@@ -58,8 +65,10 @@ It always records physical-device validation as `not-run`.
 6. This scene starts opaque. For a separate passthrough test, change
    `passthroughEnabled` to `true`, rebuild, and record the observed background.
 
-The probe does not request raw hand-joint, eye-tracking, room-sensing, or camera
-access. Basic hand-action input should be checked first. Add permission-gated
+The probe does not request runtime grants for raw hand-joint, eye-tracking,
+room-sensing, camera, or microphone access. Its Expo configuration also blocks
+camera, microphone, and fine eye-tracking declarations inherited from shared
+libraries. Basic hand-action input should be checked first. Add permission-gated
 features only when the app actually uses them and their native integration has
 been verified.
 
