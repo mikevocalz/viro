@@ -13,8 +13,10 @@ package = JSON.parse(File.read(File.join(__dir__, '../package.json')))
 #
 # When the archive is absent (an iOS build from source), ViroReact compiles
 # these two files itself, so this pod compiles nothing and only forwards the
-# dependency. Once a rebuilt archive carries VRTExternalVideo, delete this pod
-# and its line in plugins/withViroIos.ts.
+# dependency. It also compiles nothing when the archive already carries
+# VRTExternalVideo (the fork's rebuilt archives do): compiling the class a
+# second time fails the app's link with a duplicate _OBJC_CLASS_$_VRTExternalVideo.
+# The pod stays in place for that case so Podfiles that name it keep resolving.
 #
 # visionOS does not use this pod: ViroReact compiles every source there.
 
@@ -29,7 +31,12 @@ Pod::Spec.new do |s|
   s.requires_arc        = true
   s.platform            = :ios, '15.1'
 
-  if File.exist?(File.join(__dir__, 'dist/lib/libViroReact.a'))
+  archive = File.join(__dir__, 'dist/lib/libViroReact.a')
+  # The symbol name is NUL-terminated in the archive's string table, which keeps
+  # _OBJC_CLASS_$_VRTExternalVideoManager from matching.
+  archive_has_class = File.exist?(archive) &&
+    File.binread(archive).include?("_OBJC_CLASS_$_VRTExternalVideo\0")
+  if File.exist?(archive) && !archive_has_class
     s.source_files = [
       'ViroReact/Views/VRTExternalVideo.mm',
       'ViroReact/VRTExternalVideoManager.mm',

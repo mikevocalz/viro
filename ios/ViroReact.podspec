@@ -99,8 +99,9 @@ Pod::Spec.new do |s|
   # view: the manager references the view's class directly and links only with it.
   # scripts/check-ios-bridge.sh reads this list, so keep it one quoted path per line.
   archive_fallback_sources = [
-    # Built by the ViroReactExternalVideo pod (ViroReactExternalVideo.podspec). No archive in the
-    # history contains VRTExternalVideo.
+    # Built by the ViroReactExternalVideo pod (ViroReactExternalVideo.podspec) when the archive
+    # lacks VRTExternalVideo. Upstream's archives lack it; the fork's rebuilt archive carries it,
+    # and that pod then compiles nothing.
     'ViroReact/Views/VRTExternalVideo.mm',
     'ViroReact/VRTExternalVideoManager.mm',
     # Added 2026-08 but never added to the Xcode target, so the rebuilds since skipped it and
