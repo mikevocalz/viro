@@ -1,0 +1,46 @@
+[
+  {
+    "scenario": "viro_ws4_preferences",
+    "hold": "preferences_ready",
+    "captured": true,
+    "file": "preferences_ready-preview.png"
+  },
+  {
+    "scenario": "viro_ws4_preferences",
+    "hold": "preferences_ready",
+    "captured": true,
+    "file": "preferences_ready-front.png"
+  },
+  {
+    "scenario": "viro_ws4_preferences",
+    "hold": "preferences_loading",
+    "captured": true,
+    "file": "preferences_loading-preview.png"
+  },
+  {
+    "scenario": "viro_ws4_preferences",
+    "hold": "preferences_loading",
+    "captured": true,
+    "file": "preferences_loading-front.png"
+  },
+  {
+    "scenario": "viro_ws4_preferences",
+    "verdict": "[ 22.270s][viro_ws4_preferences] PASSED"
+  },
+  {
+    "scenario": "viro_ref_dashboard_ready",
+    "hold": "dashboard_ready",
+    "captured": true,
+    "file": "ref_dashboard_ready-preview.png"
+  },
+  {
+    "scenario": "viro_ref_dashboard_ready",
+    "hold": "dashboard_ready",
+    "captured": true,
+    "file": "ref_dashboard_ready-front.png"
+  },
+  {
+    "scenario": "viro_ref_dashboard_ready",
+    "verdict": "[  8.821s][viro_ref_dashboard_ready] PASSED"
+  }
+]
