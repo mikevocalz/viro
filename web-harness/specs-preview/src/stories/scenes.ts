@@ -185,7 +185,7 @@ export function scrollViewScene(): ViroSpecsManifestV2 {
 }
 
 /** ModelViewer on a GLB, with a status line, as in reference-apps/model-viewer. */
-export function modelViewerScene(source = SHIBA): ViroSpecsManifestV2 {
+export function modelViewerScene(source = SHIBA, options: { readonly autoRotate: boolean; readonly resettable: boolean } = { autoRotate: false, resettable: false }): ViroSpecsManifestV2 {
   return scene(
     [
       {
@@ -197,10 +197,13 @@ export function modelViewerScene(source = SHIBA): ViroSpecsManifestV2 {
         rotation: [0, Math.sin((-25 * Math.PI) / 360), 0, Math.cos((-25 * Math.PI) / 360)],
         source,
         format: "glb",
-        component: { type: "model-viewer", autoRotate: false, resettable: false },
+        component: { type: "model-viewer", autoRotate: options.autoRotate, resettable: options.resettable },
       },
-      panel("mv-panel", 0.5, 0.12, -0.3),
-      panelText("mv-status", "mv-panel", "Facing front, size 100 %", "body", "default", 0, 0.44),
+      // The status line describes a still model; the turntable variant leaves
+      // it out, and its Reset model button takes the space under the model.
+      ...(options.autoRotate || options.resettable
+        ? []
+        : [panel("mv-panel", 0.5, 0.12, -0.3), panelText("mv-status", "mv-panel", "Facing front, size 100 %", "body", "default", 0, 0.44)]),
     ],
     [{ nodeId: "mv-model", interactable: true, manipulation: true, events: ["drag"] }]
   );

@@ -58,7 +58,7 @@ builder mode.
 | Premium components | SpatialPanel, PanelText, PanelImage (one loaded, one placeholder) |
 | PanelButton | Default, Hover, Pressed, Disabled, Selected, Loading, Error State, All States |
 | SpatialScrollView | Top, Scrolled (two rows down through `scrollByRows`) |
-| ModelViewer | Ready, Loading, Load Error |
+| ModelViewer | Ready, Turntable, Loading, Load Error |
 | Experience states | Error / Scene rejected, Degraded / Hand tracking unavailable, Degraded / World query unsupported, High contrast, High contrast / Off |
 
 How the states are produced:
@@ -134,6 +134,18 @@ and reduced motion never turns. Panel backings, controls and text draw at
 render orders 100, 101 and 102 with depth test and depth write off, as the
 Lens adapter's `OVERLAY_ORDER` does, so scene content never covers a panel.
 
+A ModelViewer gets the parts the Lens adapter's `drawModels` draws. While
+its asset loads, a ring of three body ems spins at the model's origin,
+facing the wearer (lit every third segment and still under reduced
+motion). With `resettable`, a Reset model button sits `space.sm` under the
+loaded model's bounds (`layoutViroSpecsModelReset`); pressing it eases the
+model back to its authored transform over `motion.base`
+(`viroSpecsResetProgress`, at once under reduced motion). With
+`autoRotate`, the loaded model turns about its own up axis at
+`VIRO_SPECS_AUTO_ROTATE_DEG_PER_SECOND` (18 degrees a second) through
+`viroSpecsAutoRotateDegrees`, and stops under reduced motion and while the
+wearer holds or drags it.
+
 `src/backend/lensSemantics.ts` holds the copied constants.
 `test/lensSemantics.test.ts` reads the vendored Lens backend source and
 fails when one of them drifts.
@@ -201,8 +213,6 @@ file. Do not edit vendored files; change them in viro-external and sync.
   degraded stories do send a report, which opens the notice panel, but
   the gaze controls and reticle are still not drawn. When they are, they
   belong in the overlay at render order 101 like the loading ring.
-- The model viewer's pending-model ring and reset button. The Lens adapter
-  draws them on scene models; the preview does not.
 - Borders and focus rings on scene PanelButtons. The backing takes the
   fill color only, so the high-contrast border width and the hover and
   pressed rings do not show; hover shows as a 4 % scale and 1 cm of depth.
@@ -217,5 +227,9 @@ Lens Studio Preview:
 - A PanelButton's backing sits 0.5 cm in front of the button
   (`depth.raisedMeters`), and the compiler puts a card's PanelImage 0.3 cm
   in front. In the Navigation scene the backing covers the card images.
+- A ModelViewer's load ring and the loading panel's ring both show while
+  the model loads, and both draw at overlay order 101. In the ModelViewer
+  Loading story, where the model sits in front of the panel, the two rings
+  overlap the panel title.
 - The Specs display window over the viewport assumes a 46 degree diagonal
   (Spectacles 2024) and a 1:1 aspect. It is a framing aid.

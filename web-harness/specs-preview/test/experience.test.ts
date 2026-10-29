@@ -2,7 +2,7 @@
 // sceneVisible gate, the error panel and VS5025, driven by the vendored
 // ViroSpecsExperienceController. Evidence label: portable-test-passed.
 import { readFileSync } from "node:fs";
-import { MeshBasicMaterial, PerspectiveCamera, Vector3, type Mesh, type Object3D } from "three";
+import { BoxGeometry, Euler, Group, Mesh, MeshBasicMaterial, PerspectiveCamera, Quaternion, Vector3, type Object3D } from "three";
 import { describe, expect, it } from "vitest";
 import type { TextFont } from "../src/backend/textLayout";
 import { createFixedAdvanceRasterizer } from "../src/backend/textRaster";
@@ -10,7 +10,14 @@ import { readPreviewInput } from "../src/document";
 import { PreviewExperience } from "../src/experience";
 import { PreviewStage } from "../src/stage";
 import { parseViroSpecsColor } from "../src/vendor/lens-core/ViroSpecsSceneDocument";
-import { panelButtonScene, spatialPanelScene } from "../src/stories/scenes";
+import type { PreviewAsset } from "../src/backend/types";
+import { modelViewerScene, panelButtonScene, spatialPanelScene } from "../src/stories/scenes";
+import {
+  layoutViroSpecsModelReset,
+  VIRO_SPECS_AUTO_ROTATE_DEG_PER_SECOND,
+  viroSpecsResetProgress,
+} from "../src/vendor/lens-core/ViroSpecsExperience";
+import { formatViroSpecsCopy } from "../src/vendor/lens-core/ViroSpecsExperienceCopy";
 import { VIRO_SPECS_LENS_SPATIAL_TOKENS, viroSpecsAngleToMeters } from "../src/vendor/lens-core/ViroSpecsExperienceTokens";
 
 const repo = new URL("../../../", import.meta.url);
@@ -349,5 +356,212 @@ describe("preview experience overlay and loading ring", () => {
     expect(experience.view.loading.visible && experience.view.loading.indicator).toBe("arc-static");
     expect(litCount(experience)).toBe(RING_SEGMENTS / 4);
     expect(ring(experience)?.rotation.z).toBe(0);
+  });
+});
+
+// ModelViewer parts the Lens adapter draws (ViroSpecsExperienceLensView
+// drawModels): the pending-model ring, the Reset model button with its
+// ease-back, and the autoRotate turntable. Evidence label: portable-test-passed.
+describe("preview ModelViewer: load ring, Reset model, autoRotate", () => {
+  const RING_SEGMENTS = 24;
+  const MODEL = "test/model.glb";
+
+  function modelScene(component: { autoRotate: boolean; resettable: boolean }): unknown {
+    const base = modelViewerScene(MODEL);
+    const nodes = base.nodes
+      .filter((n) => n.id === "mv-model")
+      .map((n) => ({ ...n, component: { type: "model-viewer" as const, ...component } }));
+    return readPreviewInput({ ...base, nodes }).scene;
+  }
+
+  /** A stage whose model request stays open until `resolve` runs. The model is a 10 cm cube centred on its origin. */
+  function heldSetup(): { stage: PreviewStage; experience: PreviewExperience; clock: { now: number }; resolve: () => Promise<void> } {
+    const clock = { now: 0 };
+    const rasterizer = createFixedAdvanceRasterizer();
+    const stage = new PreviewStage({ rasterizer });
+    let release: ((asset: PreviewAsset | null) => void) | undefined;
+    const held = new Promise<PreviewAsset | null>((resolve) => (release = resolve));
+    stage.assets.loadAsset = () => held;
+    const camera = new PerspectiveCamera(70, 1, 1, 5000);
+    camera.position.set(0, 0, 0.01);
+    camera.lookAt(0, 0, -120);
+    const experience = new PreviewExperience({ stage, rasterizer, camera, nowMs: () => clock.now });
+    const resolve = async (): Promise<void> => {
+      const cube = new Group();
+      cube.add(new Mesh(new BoxGeometry(0.1, 0.1, 0.1), new MeshBasicMaterial()));
+      release?.({ kind: "model", source: MODEL, scene: cube, animations: [] });
+      await held;
+      await new Promise((r) => setTimeout(r, 0));
+    };
+    return { stage, experience, clock, resolve };
+  }
+
+  const ring = (experience: PreviewExperience): Object3D | undefined => experience.overlay.getObjectByName("ViroSpecsModelRing:mv-model");
+  const reset = (experience: PreviewExperience): Object3D | undefined => experience.overlay.getObjectByName("ViroSpecsModelReset:mv-model");
+  const lit = (o: Object3D | undefined): boolean[] => ((o?.children ?? []) as Mesh[]).map((s) => hex(s) === tokens.color.focus);
+  const model = (stage: PreviewStage): Object3D => {
+    const handle = stage.controller.getNodeHandle("mv-model");
+    if (!handle) throw new Error("no mv-model");
+    return handle.object;
+  };
+  const yawDeg = (o: Object3D): number => (new Euler().setFromQuaternion(o.quaternion, "YXZ").y * 180) / Math.PI;
+
+  it("spins a quarter ring at the model's origin, facing the wearer, while its asset loads; hides it once loaded", async () => {
+    const { stage, experience, clock, resolve } = heldSetup();
+    stage.controller.present(modelScene({ autoRotate: false, resettable: false }));
+    expect(stage.controller.isAssetPending("mv-model")).toBe(true);
+    experience.update();
+    const r = ring(experience);
+    expect(r?.visible).toBe(true);
+    expect(r?.children.length).toBe(RING_SEGMENTS);
+    expect(lit(r).filter(Boolean).length).toBe(RING_SEGMENTS / 4);
+    const at = model(stage).getWorldPosition(new Vector3());
+    expect(r?.position.distanceTo(at)).toBeCloseTo(0, 6);
+    // Local +Z toward the wearer.
+    const facing = new Vector3(0, 0, 1).applyQuaternion(r?.quaternion ?? new Quaternion());
+    const toward = new Vector3(0, 0, 0.01).sub(at).normalize();
+    expect(facing.dot(toward)).toBeGreaterThan(0.999);
+    // Three body ems across at the model's distance.
+    const distance = at.distanceTo(new Vector3(0, 0, 0.01)) / 100;
+    const diameter = 3 * viroSpecsAngleToMeters(tokens.type.bodyDeg, distance) * 100;
+    const thickness = viroSpecsAngleToMeters(tokens.shape.borderWidthFocusDeg, distance) * 2 * 100;
+    const first = r?.children[0] as Mesh;
+    expect(first.position.length()).toBeCloseTo((diameter - thickness) / 2, 6);
+    expect(first.renderOrder).toBe(101);
+    expect((first.material as MeshBasicMaterial).depthTest).toBe(false);
+    // One quarter turn after a quarter of progressLoopMs.
+    const before = r?.quaternion.clone() ?? new Quaternion();
+    clock.now += tokens.motion.progressLoopMs / 4;
+    experience.update();
+    expect(((before.angleTo(r?.quaternion ?? new Quaternion())) * 180) / Math.PI).toBeCloseTo(90, 4);
+
+    await resolve();
+    expect(stage.controller.isAssetPending("mv-model")).toBe(false);
+    experience.update();
+    expect(r?.visible).toBe(false);
+  });
+
+  it("under reduced motion the load ring lights every third segment and never turns", () => {
+    const { stage, experience, clock } = heldSetup();
+    experience.controller.setPreferences({ highContrast: false, reducedMotion: true });
+    stage.controller.present(modelScene({ autoRotate: false, resettable: false }));
+    experience.update();
+    const r = ring(experience);
+    expect(lit(r)).toEqual(Array.from({ length: RING_SEGMENTS }, (_, i) => i % 3 === 0));
+    const before = r?.quaternion.clone() ?? new Quaternion();
+    clock.now += tokens.motion.progressLoopMs / 3;
+    experience.update();
+    expect(before.angleTo(r?.quaternion ?? new Quaternion())).toBeCloseTo(0, 6);
+  });
+
+  it("puts Reset model under the loaded model's bounds and eases it back to the authored transform", async () => {
+    const { stage, experience, clock, resolve } = heldSetup();
+    stage.controller.present(modelScene({ autoRotate: false, resettable: true }));
+    experience.update();
+    expect(reset(experience)?.visible ?? false).toBe(false);
+    await resolve();
+    experience.update();
+    const button = reset(experience);
+    expect(button?.visible).toBe(true);
+    const object = model(stage);
+    const world = object.getWorldPosition(new Vector3());
+    const distance = world.distanceTo(new Vector3(0, 0, 0.01)) / 100;
+    // The 10 cm cube at scale 0.2 is 2 cm tall: its bottom is 1 cm below the origin.
+    const layout = layoutViroSpecsModelReset(tokens, { bottomMeters: -0.01 }, distance);
+    expect(button?.position.x).toBeCloseTo(world.x, 4);
+    expect(button?.position.y).toBeCloseTo(world.y + layout.y * 100, 4);
+    const backing = button?.getObjectByName("backing") as Mesh;
+    expect(backing.scale.x).toBeCloseTo(layout.widthMeters * 100, 4);
+    expect(backing.scale.y).toBeCloseTo(layout.heightMeters * 100, 4);
+    expect(hex(backing)).toBe(tokens.color.surfaceRaised);
+    expect((button?.getObjectByName("label") as Mesh).userData.lines).toEqual([formatViroSpecsCopy("modelViewer.reset")]);
+
+    // Move the model, then Reset through the overlay target the viewport presses.
+    const authored = object.position.clone();
+    const authoredQ = object.quaternion.clone();
+    object.position.add(new Vector3(30, 10, 0));
+    object.quaternion.multiply(new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), Math.PI / 2));
+    const moved = object.position.clone();
+    const target = experience.targets().find((t) => t.label === "mv-model reset");
+    expect(target).toBeDefined();
+    target?.handle("select-start");
+    target?.handle("select-end");
+    clock.now += tokens.motion.baseMs / 2;
+    experience.update();
+    // viroSpecsResetProgress is 0.5 at half of motion.base.
+    expect(viroSpecsResetProgress(tokens.motion.baseMs / 2, tokens, false)).toBeCloseTo(0.5, 6);
+    expect(object.position.distanceTo(new Vector3().lerpVectors(moved, authored, 0.5))).toBeCloseTo(0, 4);
+    clock.now += tokens.motion.baseMs / 2;
+    experience.update();
+    expect(object.position.distanceTo(authored)).toBeCloseTo(0, 6);
+    expect(object.quaternion.angleTo(authoredQ)).toBeCloseTo(0, 6);
+  });
+
+  it("Reset under reduced motion returns at once; a model that is not resettable has no button", async () => {
+    const { stage, experience, resolve } = heldSetup();
+    experience.controller.setPreferences({ highContrast: false, reducedMotion: true });
+    stage.controller.present(modelScene({ autoRotate: false, resettable: true }));
+    await resolve();
+    experience.update();
+    const object = model(stage);
+    const authored = object.position.clone();
+    object.position.x += 25;
+    const target = experience.targets().find((t) => t.label === "mv-model reset");
+    target?.handle("select-end");
+    experience.update();
+    expect(object.position.distanceTo(authored)).toBeCloseTo(0, 6);
+
+    const other = heldSetup();
+    other.stage.controller.present(modelScene({ autoRotate: false, resettable: false }));
+    await other.resolve();
+    other.experience.update();
+    expect(reset(other.experience)?.visible ?? false).toBe(false);
+    expect(other.experience.targets().some((t) => t.label === "mv-model reset")).toBe(false);
+  });
+
+  it("autoRotate turns the loaded model about its own up axis at 18 degrees a second", async () => {
+    const { stage, experience, clock, resolve } = heldSetup();
+    stage.controller.present(modelScene({ autoRotate: true, resettable: false }));
+    experience.update();
+    const object = model(stage);
+    const start = yawDeg(object);
+    clock.now += 500;
+    experience.update();
+    // Not while the asset loads.
+    expect(yawDeg(object)).toBeCloseTo(start, 6);
+    await resolve();
+    experience.update();
+    const loaded = yawDeg(object);
+    clock.now += 1000;
+    experience.update();
+    expect(yawDeg(object) - loaded).toBeCloseTo(VIRO_SPECS_AUTO_ROTATE_DEG_PER_SECOND, 4);
+  });
+
+  it("autoRotate stops while the wearer holds the model and under reduced motion", async () => {
+    const { stage, experience, clock, resolve } = heldSetup();
+    stage.controller.present(modelScene({ autoRotate: true, resettable: false }));
+    await resolve();
+    experience.update();
+    const object = model(stage);
+    const handle = stage.controller.getNodeHandle("mv-model");
+    if (!handle) throw new Error("no handle");
+    // Interactions bind on the frame after commit.
+    stage.step(0.016, 1280, 720);
+    expect(handle.interaction).toBeDefined();
+    stage.backend.deliverInteraction(handle, { phase: "select-start", source: "synthetic" });
+    const held = yawDeg(object);
+    clock.now += 1000;
+    experience.update();
+    expect(yawDeg(object)).toBeCloseTo(held, 6);
+    stage.backend.deliverInteraction(handle, { phase: "select-end", source: "synthetic" });
+    clock.now += 1000;
+    experience.update();
+    expect(yawDeg(object) - held).toBeCloseTo(VIRO_SPECS_AUTO_ROTATE_DEG_PER_SECOND, 4);
+
+    experience.controller.setPreferences({ highContrast: false, reducedMotion: true });
+    const still = yawDeg(object);
+    clock.now += 1000;
+    experience.update();
+    expect(yawDeg(object)).toBeCloseTo(still, 6);
   });
 });
