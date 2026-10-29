@@ -12,6 +12,7 @@ import { ViroLabActionsUnknownActionScenario } from "./ViroLabActionsUnknownActi
 import { ViroLabDragScenario } from "./ViroLabDragScenario";
 import { ViroLabNavigateScenario } from "./ViroLabNavigateScenario";
 import { ViroLabRenderScenario } from "./ViroLabRenderScenario";
+import { ViroLabPresentationScenario } from "./ViroLabPresentationScenario";
 import { ViroLabSelectIKScenario } from "./ViroLabSelectIKScenario";
 import { ViroLabSelectScenario } from "./ViroLabSelectScenario";
 import { ViroWs4HelloLoadingScenario } from "./ViroWs4HelloLoadingScenario";
@@ -49,6 +50,7 @@ export class ViroLabLeafIndex extends BaseScriptComponent {
     { id: "viro_lab_actions_reference_flow", typename: ViroLabActionsReferenceFlowScenario.getTypeName(), parameters: WS4_PARAMETERS },
     { id: "viro_lab_actions_navigation_drop", typename: ViroLabActionsNavigationDropScenario.getTypeName() },
     { id: "viro_lab_actions_unknown_action", typename: ViroLabActionsUnknownActionScenario.getTypeName() },
+    { id: "viro_lab_presentation", typename: ViroLabPresentationScenario.getTypeName(), parameters: WS4_PARAMETERS },
     { id: "viro_lab_deliberate_failure", typename: ViroLabDeliberateFailureScenario.getTypeName() },
     // WS4 experience layer on the gallery scenes (ExperienceHost).
     { id: "viro_ws4_hello_loading", typename: ViroWs4HelloLoadingScenario.getTypeName(), parameters: WS4_PARAMETERS },

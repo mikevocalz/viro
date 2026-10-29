@@ -4,7 +4,7 @@ import { DefaultLeafInteractor } from "Leaf.lspkg/Interactors/interactor/Default
 import { findInteractables } from "Leaf.lspkg/Interactors/InteractableUtils";
 import { findSceneObjectByName } from "Leaf.lspkg/Utils/common/Utils";
 import { expect } from "Leaf.lspkg/Utils/common/Expect";
-import { Interactable } from "SpectaclesInteractionKit.lspkg/Components/Interaction/Interactable/Interactable";
+import { Interactable } from "../../ViroSpecs/lens/ViroSpecsInteractionKit";
 import { VIRO_REF_NODE_IDS, type ViroRefModelState } from "./ViroRefAppsLogic";
 import {
   diagnosticsDuring,

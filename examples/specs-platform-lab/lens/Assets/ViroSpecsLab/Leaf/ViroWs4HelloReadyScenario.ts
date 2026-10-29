@@ -3,7 +3,7 @@ import type { ScenarioConfig } from "Leaf.lspkg/Scenarios/scenario/ScenarioConfi
 import { DefaultLeafInteractor } from "Leaf.lspkg/Interactors/interactor/DefaultLeafInteractor";
 import { findSceneObjectByName } from "Leaf.lspkg/Utils/common/Utils";
 import { expect } from "Leaf.lspkg/Utils/common/Expect";
-import { Interactable } from "SpectaclesInteractionKit.lspkg/Components/Interaction/Interactable/Interactable";
+import { Interactable } from "../../ViroSpecs/lens/ViroSpecsInteractionKit";
 import { controllerHost, describeTree, pinch, settle, textOf } from "./ViroLabLeafSupport";
 import {
   cameraPose,

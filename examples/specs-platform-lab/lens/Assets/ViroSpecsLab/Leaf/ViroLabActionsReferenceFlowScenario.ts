@@ -3,7 +3,7 @@ import { DefaultLeafInteractor } from "Leaf.lspkg/Interactors/interactor/Default
 import { findInteractableByName } from "Leaf.lspkg/Interactors/InteractableUtils";
 import { findSceneObjectByName, sleep } from "Leaf.lspkg/Utils/common/Utils";
 import { expect } from "Leaf.lspkg/Utils/common/Expect";
-import { ScrollWindow } from "SpectaclesUIKit.lspkg/Scripts/Components/ScrollWindow/ScrollWindow";
+import { ScrollWindow } from "../../ViroSpecs/lens/ViroSpecsUIKit";
 import type { ScenarioConfig } from "Leaf.lspkg/Scenarios/scenario/ScenarioConfig";
 import { hold } from "./ViroLabExperienceSupport";
 import {

@@ -2,8 +2,8 @@ import { Scenario } from "Leaf.lspkg/Scenarios/scenario/Scenario";
 import { DefaultLeafInteractor } from "Leaf.lspkg/Interactors/interactor/DefaultLeafInteractor";
 import { findSceneObjectByName, sleep } from "Leaf.lspkg/Utils/common/Utils";
 import { expect } from "Leaf.lspkg/Utils/common/Expect";
-import { Interactable } from "SpectaclesInteractionKit.lspkg/Components/Interaction/Interactable/Interactable";
-import { ScrollWindow } from "SpectaclesUIKit.lspkg/Scripts/Components/ScrollWindow/ScrollWindow";
+import { Interactable } from "../../ViroSpecs/lens/ViroSpecsInteractionKit";
+import { ScrollWindow } from "../../ViroSpecs/lens/ViroSpecsUIKit";
 import type { ViroSpecsDocumentNode } from "../../ViroSpecs/lens/ViroSpecsProtocol";
 import { controllerHost, document, dragFrames, restoreGeneratedScene, settle, waitForGeneratedScene } from "./ViroLabLeafSupport";
 

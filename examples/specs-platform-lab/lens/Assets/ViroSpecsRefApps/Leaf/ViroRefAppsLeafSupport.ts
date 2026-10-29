@@ -1,7 +1,7 @@
 import { findSceneObjectByName, sleep } from "Leaf.lspkg/Utils/common/Utils";
 import { expect } from "Leaf.lspkg/Utils/common/Expect";
 import { findInteractableByName } from "Leaf.lspkg/Interactors/InteractableUtils";
-import type { Interactable } from "SpectaclesInteractionKit.lspkg/Components/Interaction/Interactable/Interactable";
+import type { Interactable } from "../../ViroSpecs/lens/ViroSpecsInteractionKit";
 import { ViroSpecsSceneControllerHost } from "../../ViroSpecs/lens/ViroSpecsSceneControllerHost";
 import { ViroSpecsExperienceHost } from "../../ViroSpecs/lens/ViroSpecsExperienceLensView";
 import { ViroSpecsActionRegistry, ViroSpecsActionRuntime } from "../../ViroSpecs/lens/ViroSpecsActionRuntime";
