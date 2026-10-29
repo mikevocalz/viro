@@ -391,6 +391,8 @@ export const ViroXRSceneNavigator = React.forwardRef<unknown, Props>(
         hand_tracking_enabled: handTrackingEnabled,
         immersion_style: isVisionOS ? visionOSImmersionStyle : undefined,
       });
+      // One usage ping per mount, with the configuration it mounted with.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // On visionOS: open the ImmersiveSpace on mount and close it on unmount.
@@ -451,6 +453,9 @@ export const ViroXRSceneNavigator = React.forwardRef<unknown, Props>(
           });
         }
       };
+      // The space opens once per mount with the immersion style it mounted with;
+      // reopening on a prop change would fight the AppState reopen above.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // On Quest AND PICO: register the intent (scene + renderer config)
@@ -492,6 +497,8 @@ export const ViroXRSceneNavigator = React.forwardRef<unknown, Props>(
       )
         .catch(() => undefined)
         .then(registerIntentAndLaunch);
+      // Launch only on mount; renderQuestPanel handles re-entry.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // The panel is only seen while the headset view is closed. Re-entry keeps the

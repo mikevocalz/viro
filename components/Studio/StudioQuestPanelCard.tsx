@@ -81,7 +81,15 @@ export function StudioQuestPanelCard({
   hoveredKeys,
   onHoverItem,
 }: Props) {
+  // Each row's centre, walking down from the top edge. Computed before the JSX
+  // so the map below reads values instead of reassigning a render-scope local.
+  const rowCentres: number[] = [];
   let rowTop = layout.height / 2 - PADDING_M;
+  layout.rowHeights.forEach((rowHeight, index) => {
+    rowTop -= layout.gapsBefore[index];
+    rowCentres.push(rowTop - rowHeight / 2);
+    rowTop -= rowHeight;
+  });
   return (
     <>
       <ViroPolygon
@@ -98,9 +106,7 @@ export function StudioQuestPanelCard({
       />
       {layout.lines.map((line, index) => {
         const rowHeight = layout.rowHeights[index];
-        rowTop -= layout.gapsBefore[index];
-        const y = rowTop - rowHeight / 2;
-        rowTop -= rowHeight;
+        const y = rowCentres[index];
         const item = line.onClick !== undefined;
         return (
           <React.Fragment key={line.key}>

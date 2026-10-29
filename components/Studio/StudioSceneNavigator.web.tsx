@@ -323,6 +323,7 @@ export const StudioSceneNavigator = forwardRef<
   );
 
   const onVpsStateChangeRef = useRef(onVpsStateChange);
+  // eslint-disable-next-line react-hooks/refs -- latest-value ref: read only in effects and callbacks, never for output
   onVpsStateChangeRef.current = onVpsStateChange;
   const vpsBinding = sceneData ? studioVpsBinding(sceneData) : null;
   const vpsSceneId = vpsBinding?.sceneId;

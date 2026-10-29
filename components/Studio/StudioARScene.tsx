@@ -523,6 +523,7 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
   useEffect(() => {
     if (!vpsBinding) return;
     if (!vpsActive) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reports idle once when the VPS binding goes inactive
       setVpsState("idle");
     } else if (isQuest || isVisionOS) {
       reportVps("unsupported", STUDIO_VPS_UNSUPPORTED);
@@ -581,6 +582,11 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
     [reportVps]
   );
 
+  // Sound manager: one instance for the component's life (see "Per-scene"
+  // below for its reset). Declared here because the unmount cleanup below
+  // lists it as a dependency.
+  const [soundManager] = useState(() => new StudioSoundManager());
+
   // ─── Sequence scheduler ───────────────────────────────────────────────────
   // One per scene. Drives WAIT steps; cancelled on unmount and on navigation so
   // a pending WAIT never fires into a torn-down or replaced scene.
@@ -595,7 +601,7 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
       // dispose() bumps the scheduler generation first; reset() then clears any
       // pending sound backstop timers and fires their callbacks, which now
       // no-op via the generation guard so unmount can't advance a waited step.
-      soundManagerRef.current?.reset();
+      soundManager.reset();
       // Clear a dangling video-recording flag so leaving the experience mid-
       // recording can't block the next session's RECORD_VIDEO toggle.
       resetVideoRecordingState();
@@ -603,7 +609,7 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
       // stuck on screen for the next scene.
       questAlertStore.reset();
     };
-  }, []);
+  }, [soundManager]);
 
   // ─── Variable store ───────────────────────────────────────────────────────
   // Normally passed down by the navigator (session-scoped); hosts mounting this
@@ -676,12 +682,8 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
   // Per-scene. PLAY/STOP scene-function actions drive it; <StudioSounds> renders
   // the active list. Reset on scene change so sounds don't leak across a
   // navigation (sounds, unlike variables, are not session-scoped).
-  const soundManagerRef = useRef<StudioSoundManager | null>(null);
-  if (soundManagerRef.current === null) {
-    soundManagerRef.current = new StudioSoundManager();
-  }
   useEffect(() => {
-    soundManagerRef.current?.reset();
+    soundManager.reset();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scene.id]);
 
@@ -702,14 +704,14 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
       apiRequestExecutor: defaultApiRequestExecutor,
       visibilityStore: visibilityStoreRef.current!,
       placementStore: placementStoreRef.current!,
-      soundManager: soundManagerRef.current!,
+      soundManager,
       dragStore: dragStoreRef.current!,
       getAssetPosition,
       unrenderedAssetIds,
       colocation,
       vps,
     }),
-    [getAssetPosition, unrenderedAssetIds, colocation, vps]
+    [getAssetPosition, unrenderedAssetIds, colocation, vps, soundManager]
   );
   const deviceRuntimeCtx = useMemo(
     () => ({ ...runtimeCtx, effectOrigin: "device" as const }),
@@ -1021,7 +1023,7 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
       visibility: visibilityStoreRef.current!,
       placement: placementStoreRef.current!,
       drags: dragStoreRef.current!,
-      sounds: soundManagerRef.current!,
+      sounds: soundManager,
     };
     colocation.attachScene(
       sceneData,
@@ -1060,6 +1062,9 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
         runtimeCtx
       );
     }
+    // Runs once per scene, guarded by onLoadExecutedRef, with the values current
+    // when the scene becomes ready; the callbacks and context are not triggers.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scene.id, onLoadReady]);
 
   // ─── Collision bindings ───────────────────────────────────────────────────
@@ -1285,6 +1290,7 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
   const questRoomLockedRef = useRef(false);
   const [roomMoves, setRoomMoves] = useState<Mat4>(IDENTITY);
   const roomMovesRef = useRef(roomMoves);
+  // eslint-disable-next-line react-hooks/refs -- latest-value ref: read only in effects and callbacks, never for output
   roomMovesRef.current = roomMoves;
   useEffect(() => {
     if (!isQuest) return;
@@ -1884,6 +1890,7 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
   // to the room too (see roomMoves).
   const questRoomLocked =
     isQuest && rootsInAR && !questPlaneFallback && colocationPhase === "off";
+  // eslint-disable-next-line react-hooks/refs -- latest-value ref: read only in effects and callbacks, never for output
   questRoomLockedRef.current = questRoomLocked;
   const roomNode = useMemo(
     () => toNodeTransform(questRoomLocked ? roomMoves : IDENTITY),
@@ -2292,7 +2299,7 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
         <ViroVPSAnchor visible={vpsState === "tracking"}>
           {renderedPlaneAssets}
           <StudioSounds
-            manager={soundManagerRef.current!}
+            manager={soundManager}
             filter={soundInVpsMap}
           />
         </ViroVPSAnchor>
@@ -2347,7 +2354,7 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
         />
       )}
       <StudioSounds
-        manager={soundManagerRef.current!}
+        manager={soundManager}
         filter={vpsTracks ? soundOutsideVpsMap : undefined}
       />
       {questNoticeTransform && questNotice && (

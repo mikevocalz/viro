@@ -97,15 +97,18 @@ export function useViroReplicatedState(
 
   // Kept in a ref so changing the handler does not tear down the connection.
   const rejectRef = useRef(onReject);
+  // eslint-disable-next-line react-hooks/refs -- latest-value ref: read only in effects and callbacks, never for output
   rejectRef.current = onReject;
   // Same for the header provider, which the client calls again on every
   // reconnect anyway.
   const headersRef = useRef(headers);
+  // eslint-disable-next-line react-hooks/refs -- latest-value ref: read only in effects and callbacks, never for output
   headersRef.current = headers;
   const hasHeaders = headers !== undefined;
   // Same for credentials, read through the ref so a reconnect uses the latest;
   // useCredentialsKey says when to connect again.
   const credentialsRef = useRef(credentials);
+  // eslint-disable-next-line react-hooks/refs -- latest-value ref: read only in effects and callbacks, never for output
   credentialsRef.current = credentials;
   const [credentialsKey, credentialsCleared] = useCredentialsKey(credentials);
 

@@ -108,11 +108,13 @@ export function useViroColocationRoom(
   // restart the effect and drop an in-flight create's result, which the guard
   // above then never requests again. Headers first arriving do restart it.
   const headersRef = useRef(headers);
+  // eslint-disable-next-line react-hooks/refs -- latest-value ref: read only in effects and callbacks, never for output
   headersRef.current = headers;
   const hasHeaders = headers !== undefined;
   // Same for credentials, which a function gives anew for every request anyway.
   // Their changes only retry a failed request, below.
   const credentialsRef = useRef(credentials);
+  // eslint-disable-next-line react-hooks/refs -- latest-value ref: read only in effects and callbacks, never for output
   credentialsRef.current = credentials;
   const [credentialsKey, credentialsCleared] = useCredentialsKey(credentials);
 
@@ -182,6 +184,7 @@ export function useViroColocationRoom(
   // A room already found or created is kept when the credentials change: it is
   // the project's, not the user's, and the relay checks whoever joins it.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- a credentials change retries a failed request; it runs once per change, not per render
     if (status === "failed") retry();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [credentialsKey, credentialsCleared]);

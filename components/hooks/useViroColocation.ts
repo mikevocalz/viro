@@ -123,6 +123,7 @@ export function useViroColocation(
   const activeRoom = useRef<string | null>(null);
   // Read at join; useCredentialsKey says when to join again.
   const credentialsRef = useRef(credentials);
+  // eslint-disable-next-line react-hooks/refs -- latest-value ref: read only in effects and callbacks, never for output
   credentialsRef.current = credentials;
   const [credentialsKey, credentialsCleared] = useCredentialsKey(credentials);
 

@@ -138,5 +138,7 @@ export function useViroUsagePing(
   const suppressed = React.useContext(ViroUsagePingSuppressed);
   React.useEffect(() => {
     if (!suppressed) sendViroUsagePing(navigator, features);
+    // One ping per mounted navigator: prop changes after mount are not new usage.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 }

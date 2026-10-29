@@ -591,6 +591,7 @@ export const StudioSceneNavigator = forwardRef<
   }, [colocation, colocationStoreOwner]);
 
   const onVpsStateChangeRef = useRef(onVpsStateChange);
+  // eslint-disable-next-line react-hooks/refs -- latest-value ref: read only in effects and callbacks, never for output
   onVpsStateChangeRef.current = onVpsStateChange;
   // Handed to every scene like the colocation controller: the navigator holds
   // one VPS map, which only the scene on screen tracks.
@@ -703,6 +704,7 @@ export const StudioSceneNavigator = forwardRef<
     passProps?: any;
   } | null>(null);
   // VRActivity reads it once, at launch.
+  // eslint-disable-next-line react-hooks/refs -- VRActivity reads the opening entry once at launch; a later render must not rebuild it
   const [questOpeningEntry] = useState(() =>
     isQuest ? sceneEntry(null, true) : null
   );
