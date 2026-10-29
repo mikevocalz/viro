@@ -113,7 +113,13 @@ export function panelTextScene(): ViroSpecsManifestV2 {
 /** One PanelButton in an authored state, inside a SpatialPanel. */
 export function panelButtonScene(state: ViroSpecsButtonAuthoredState, label = "Save changes"): ViroSpecsManifestV2 {
   const errorMessage = state === "error" ? "Not saved. Pinch Save changes to try again." : undefined;
-  return scene([panel("pb-panel", 0.36, 0.2), button("pb-button", "pb-panel", label, state, 0, 0.02, errorMessage)], [pressable("pb-button")]);
+  // The error state leaves room under the button for the message, which the
+  // host wraps at the panel's inner width (three label lines here).
+  const nodes =
+    errorMessage === undefined
+      ? [panel("pb-panel", 0.36, 0.2), button("pb-button", "pb-panel", label, state, 0, 0.02)]
+      : [panel("pb-panel", 0.36, 0.3), button("pb-button", "pb-panel", label, state, 0, 0.07, errorMessage)];
+  return scene(nodes, [pressable("pb-button")]);
 }
 
 /**
