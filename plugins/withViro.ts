@@ -9,7 +9,7 @@ const READ_PHOTOS_USAGE = "Allow $(PRODUCT_NAME) to access your photos";
 const WRITE_PHOTOS_USAGE = "Allow $(PRODUCT_NAME) to save photos";
 const LOCATION_USAGE = "Allow $(PRODUCT_NAME) to use your location for AR experiences";
 
-export type XrMode = "GVR" | "AR" | "OVR_MOBILE" | "QUEST" | "PICO";
+export type XrMode = "GVR" | "AR" | "OVR_MOBILE" | "QUEST" | "PICO" | "ANDROID_XR";
 
 /**
  * Anchor provider type.
@@ -171,7 +171,8 @@ export interface ViroConfigurationOptions {
     includeSemantics?: boolean;
   };
   android?: {
-    xRMode?: XrMode[];
+    /** Android XR uses a dedicated APK; select ANDROID_XR without other modes. */
+    xRMode?: XrMode | XrMode[];
     /**
      * Meta Developer Portal App ID (numeric string).
      * Written to AndroidManifest as com.oculus.app_id meta-data.
@@ -309,7 +310,7 @@ export interface ViroConfigurationOptions {
      * Startup render quality for the OpenXR renderer: the eye-buffer scale,
      * the foveation the session starts with, and an optional display refresh
      * rate request. Requires xRMode to include
-     * "QUEST" or "PICO". Written to AndroidManifest as com.viro.openxr.*
+     * "QUEST", "PICO", or "ANDROID_XR". Written to AndroidManifest as com.viro.openxr.*
      * meta-data and validated at prebuild.
      *
      * DEFAULTS TO: eyeBufferScale 1.3, foveation { level: "low", dynamic: true },

@@ -1,0 +1,62 @@
+name: Android XR build
+
+on:
+  pull_request:
+    branches: [main, decax9-three-panel]
+    paths:
+      - "plugins/**"
+      - "components/ViroXRSceneNavigator.tsx"
+      - "components/Utilities/ViroPlatform.ts"
+      - "android/**"
+      - "examples/android-xr/**"
+      - "scripts/prepare-android-xr-probe.cjs"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/android-xr.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-xr-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  consumer-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v4
+        with:
+          log-accepted-android-sdk-licenses: false
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+      - name: Build package
+        run: npm run build
+      - name: Build Android XR consumer APK
+        run: npm run android-xr:prepare -- --build
+      - name: Upload APK and build evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: viro-android-xr-probe
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            build/android-xr-probe/android/app/build/outputs/apk/release/*.apk
+            build/android-xr-probe/validation.json
+            build/android-xr-probe/android/app/src/main/AndroidManifest.xml
+      - name: State the hardware validation boundary
+        run: |
+          echo "### Android XR validation" >> "$GITHUB_STEP_SUMMARY"
+          echo "Consumer typecheck, Expo prebuild and APK compilation completed." >> "$GITHUB_STEP_SUMMARY"
+          echo "Android XR device rendering, input, passthrough and performance: **not run**." >> "$GITHUB_STEP_SUMMARY"

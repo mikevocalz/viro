@@ -50,6 +50,7 @@ jest.mock("react", () => ({
 jest.mock("../components/Utilities/ViroPlatform", () => ({
   isQuest: true,
   isMetaHorizonXR: true,
+  isXRHeadset: true,
   isPico: false,
   isVisionOS: false,
   isWeb: false,

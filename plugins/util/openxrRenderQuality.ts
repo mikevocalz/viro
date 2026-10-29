@@ -1,6 +1,6 @@
 /**
- * android.openxr: startup render quality for the OpenXR renderer (Quest and
- * PICO), written to AndroidManifest meta-data that ViroViewOpenXR reads when it
+ * android.openxr: startup render quality for the OpenXR renderer (Quest,
+ * PICO, and Android XR), written to AndroidManifest meta-data that ViroViewOpenXR reads when it
  * creates its session. See virocore docs/API_RENDER_QUALITY.md.
  */
 
@@ -39,7 +39,7 @@ export type OpenXRDisplayRefreshRate = "highest" | number;
 /**
  * Startup render quality for the OpenXR renderer, set as `android.openxr` in
  * the Viro config plugin options. Requires `android.xRMode` to include
- * `"QUEST"` or `"PICO"`. Every field is read when the OpenXR session starts;
+ * `"QUEST"`, `"PICO"`, or `"ANDROID_XR"`. Every field is read when the OpenXR session starts;
  * there is no JS API to change them at runtime.
  */
 export interface OpenXRRenderQualityOptions {
@@ -100,7 +100,7 @@ export const OPENXR_EYE_BUFFER_SCALE_MIN = 1;
 export const OPENXR_EYE_BUFFER_SCALE_MAX = 3;
 
 const FOVEATION_LEVELS: readonly OpenXRFoveationLevel[] = ["off", "low", "medium", "high"];
-const OPENXR_XR_MODES = ["QUEST", "PICO"];
+const OPENXR_XR_MODES = ["QUEST", "PICO", "ANDROID_XR"];
 
 /** One `<meta-data>` entry to write under `<application>`. */
 export interface OpenXRMetaDataEntry {
@@ -121,7 +121,7 @@ function fail(message: string): never {
  * a fixed order. Returns `[]` when no field is set.
  *
  * @throws Error naming the field when a value is out of range or has the wrong
- *   type, or when `xrModes` has no OpenXR mode (`"QUEST"` or `"PICO"`).
+ *   type, or when `xrModes` has no OpenXR mode (`"QUEST"`, `"PICO"`, or `"ANDROID_XR"`).
  */
 export function resolveOpenXRRenderQualityMetaData(
   options: OpenXRRenderQualityOptions | undefined,
@@ -188,7 +188,7 @@ export function resolveOpenXRRenderQualityMetaData(
 
   if (entries.length > 0 && !xrModes.some((mode) => OPENXR_XR_MODES.includes(mode))) {
     fail(
-      'android.openxr requires android.xRMode to include "QUEST" or "PICO"; ' +
+      'android.openxr requires android.xRMode to include "QUEST", "PICO", or "ANDROID_XR"; ' +
         "no other mode uses the OpenXR renderer."
     );
   }
