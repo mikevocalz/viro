@@ -3,7 +3,7 @@
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
-  "version": "3.0.3-moyo.1",
+  "version": "3.1.0-moyo.0",
   "license": "MIT",
   "publishConfig": {
     "access": "public",
@@ -109,6 +109,7 @@
     "ios/*.m",
     "ios/*.mm",
     "ios/ViroReact.podspec",
+    "ios/PrivacyInfo.xcprivacy",
     "ios/ViroReactUI.podspec",
     "ios/ViroReactExternalVideo.podspec",
     "bin",

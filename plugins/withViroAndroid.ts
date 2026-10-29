@@ -473,6 +473,23 @@ const withViroManifest = (config: ExpoConfig) =>
         }
       }
 
+      // Removed before it is written, or a later `telemetry: true` would leave "false" behind.
+      const telemetry = Array.isArray(viroPlugin)
+        ? (viroPlugin[1] as ViroConfigurationOptions | undefined)?.telemetry
+        : undefined;
+      const application = contents.manifest.application[0];
+      application["meta-data"] = (application["meta-data"] as any[]).filter(
+        (meta) => meta.$?.["android:name"] !== "com.reactvision.ViroTelemetryEnabled"
+      );
+      if (telemetry === false) {
+        application["meta-data"].push({
+          $: {
+            "android:name": "com.reactvision.ViroTelemetryEnabled",
+            "android:value": "false",
+          },
+        });
+      }
+
       if (
         activeXrModes.includes("GVR") ||
         activeXrModes.includes("OVR_MOBILE")
@@ -502,27 +519,21 @@ const withViroManifest = (config: ExpoConfig) =>
       }
 
       if (usesArcore) {
-        // Preserve query entries contributed by other platform plugins (notably
-        // @expo-pico/core's OpenXR broker query). Replacing the whole array made
-        // Quest/AR + PICO multi-platform prebuilds depend on plugin ordering.
-        const queries = contents.manifest.queries ?? [];
-        const hasArCoreQuery = queries.some((query: any) =>
+        // Added to the app's <queries>, not replacing it: the template's https
+        // intent there is what lets Linking.canOpenURL see a browser, and other
+        // platform plugins (notably @expo-pico/core's OpenXR broker query) add
+        // entries of their own, so the result must not depend on plugin order.
+        if (!contents.manifest.queries) contents.manifest.queries = [{}];
+        const hasArCoreQuery = contents.manifest.queries.some((query: any) =>
           query.package?.some(
             (pkg: any) => pkg.$?.["android:name"] === "com.google.ar.core"
           )
         );
         if (!hasArCoreQuery) {
-          queries.push({
-            package: [
-              {
-                $: {
-                  "android:name": "com.google.ar.core",
-                },
-              },
-            ],
-          });
+          const queries = contents.manifest.queries[0];
+          if (!queries.package) queries.package = [];
+          queries.package.push({ $: { "android:name": "com.google.ar.core" } });
         }
-        contents.manifest.queries = queries;
       }
 
       contents.manifest["uses-feature"] = [];
@@ -630,7 +641,9 @@ const withViroManifest = (config: ExpoConfig) =>
         const existingPermissions: string[] = (contents.manifest["uses-permission"] || [])
           .map((p: any) => p.$?.["android:name"]);
         // Horizon OS logs com.oculus.permission.HAND_TRACKING as deprecated and
-        // asks for this name instead.
+        // asks for this name instead. Its runtime logs that warning even when
+        // only this name is declared: its permission check treats the two names
+        // as one and tests the old name first.
         if (!existingPermissions.includes("horizonos.permission.HAND_TRACKING")) {
           contents.manifest["uses-permission"].push({
             $: { "android:name": "horizonos.permission.HAND_TRACKING" },
@@ -641,6 +654,12 @@ const withViroManifest = (config: ExpoConfig) =>
             $: eyeTracking
               ? { "android:name": "com.oculus.permission.EYE_TRACKING" }
               : { "android:name": "com.oculus.permission.EYE_TRACKING", "tools:node": "remove" },
+          });
+        }
+        // The viro_renderer AAR declares NFC to detect a Cardboard viewer.
+        if (!existingPermissions.includes("android.permission.NFC")) {
+          contents.manifest["uses-permission"].push({
+            $: { "android:name": "android.permission.NFC", "tools:node": "remove" },
           });
         }
         // Spatial Data / Scene permissions — required for the Meta OpenXR runtime
@@ -935,20 +954,33 @@ class VRActivity : ReactActivity() {
   // rootProject.ext from gradle.properties (`android.targetSdkVersion`), so a
   // rewrite of app/build.gradle never matched anything. Only ever lower it.
   // Quest hardware is arm64-only; the other ABIs roughly double the APK and the
-  // store warns on 32-bit libraries.
+  // store warns on 32-bit libraries. The store's upload check rejects a
+  // minSdkVersion outside 29-34, and React Native's default is 24; only ever
+  // raise it.
   const questTargetSdk = props?.android?.questTargetSdkVersion ?? 34;
+  const questMinSdk = props?.android?.questMinSdkVersion ?? 32;
   const questArm64Only = props?.android?.questArm64Only ?? true;
   config = withGradleProperties(config, (config) => {
-    const current = config.modResults.find(
-      (item) => item.type === "property" && item.key === "android.targetSdkVersion"
-    );
-    const currentSdk =
-      current?.type === "property" ? parseInt(current.value, 10) : NaN;
+    const readSdk = (key: string) => {
+      const item = config.modResults.find(
+        (item) => item.type === "property" && item.key === key
+      );
+      return item?.type === "property" ? parseInt(item.value, 10) : NaN;
+    };
+    const currentSdk = readSdk("android.targetSdkVersion");
     if (Number.isNaN(currentSdk) || currentSdk > questTargetSdk) {
       AndroidConfig.BuildProperties.updateAndroidBuildProperty(
         config.modResults,
         "android.targetSdkVersion",
         String(questTargetSdk)
+      );
+    }
+    const currentMinSdk = readSdk("android.minSdkVersion");
+    if (Number.isNaN(currentMinSdk) || currentMinSdk < questMinSdk) {
+      AndroidConfig.BuildProperties.updateAndroidBuildProperty(
+        config.modResults,
+        "android.minSdkVersion",
+        String(questMinSdk)
       );
     }
     if (questArm64Only) {
@@ -978,8 +1010,10 @@ class VRActivity : ReactActivity() {
           "android:name": VR_ACTIVITY_NAME,
           "android:screenOrientation": "landscape",
           "android:exported": "false",
+          // Meta's recommended set: a change missing from it recreates the
+          // activity, which tears down the running scene.
           "android:configChanges":
-            "keyboard|keyboardHidden|orientation|screenSize|uiMode",
+            "density|keyboard|keyboardHidden|navigation|orientation|screenLayout|screenSize|uiMode",
           "android:launchMode": "singleTask",
         },
         // Never android.intent.action.MAIN: Horizon OS and PICO OS list every
@@ -1015,6 +1049,26 @@ class VRActivity : ReactActivity() {
     const mainActivity = app.activity?.[0];
     if (questAppId && mainActivity?.$ && mainActivity.$["android:name"] !== ".VRActivity") {
       mainActivity.$["android:screenOrientation"] = "landscape";
+    }
+
+    // The store's manifest rules require excludeFromRecents on the activity
+    // that launches the app, and Horizon OS reads from each activity's intent
+    // filter whether it renders in a panel (2D) or an immersive view (VR).
+    const hasName = (items: any[] | undefined, name: string) =>
+      items?.some((item: any) => item.$?.["android:name"] === name) ?? false;
+    for (const activity of app.activity as any[]) {
+      const launcherFilter = activity["intent-filter"]?.find(
+        (filter: any) =>
+          hasName(filter.action, "android.intent.action.MAIN") &&
+          hasName(filter.category, "android.intent.category.LAUNCHER")
+      );
+      if (!launcherFilter) continue;
+      activity.$["android:excludeFromRecents"] = "true";
+      if (!hasName(launcherFilter.category, "com.oculus.intent.category.2D")) {
+        launcherFilter.category.push({
+          $: { "android:name": "com.oculus.intent.category.2D" },
+        });
+      }
     }
 
     // Inject com.oculus.app_id into <application> for Meta Quest App Name
@@ -1069,12 +1123,19 @@ class VRActivity : ReactActivity() {
       }
     }
 
+    const manifest = config.modResults.manifest as any;
+    // Required by the store's manifest check, to allow installs to an SD card.
+    if (!manifest.$["android:installLocation"]) {
+      manifest.$["android:installLocation"] = "auto";
+    }
+
     // Horizon OS logs that an app without this "must fix this to continue to
     // access this SDK" when it first reads a Horizon SDK manager. Meta now
     // documents <metavr:uses-metavr-sdk> and still accepts this older element,
-    // which headsets on an OS from before the rename also read. 69 is the
-    // first version with hybrid (panel + immersive) apps.
-    const manifest = config.modResults.manifest as any;
+    // which headsets on an OS from before the rename also read, so the fork keeps
+    // it (upstream 3.1.0 switched to the metavr element). syncQuestFlavorManifest
+    // moves this element into the quest flavor. 69 is the first version with
+    // hybrid (panel + immersive) apps.
     manifest.$["xmlns:horizonos"] = "http://schemas.horizonos/sdk";
     if (!manifest["horizonos:uses-horizonos-sdk"]) {
       const minSdkVersion = props?.android?.questHorizonOsSdk?.minSdkVersion ?? 69;
@@ -1092,6 +1153,55 @@ class VRActivity : ReactActivity() {
 
     return config;
   });
+
+  // 4. The store requires a network security config (VRC.Quest.Packaging.4).
+  // On API 24+ one overrides android:usesCleartextTraffic, so each source set
+  // gets a copy holding its own manifest's value: plain http stays allowed in
+  // the debug builds, which load the JS bundle over it, and blocked wherever it
+  // was. A finalized mod, so it sees that value whichever plugin set it.
+  config = withFinalizedMod(config, [
+    "android",
+    async (config) => {
+      const srcDir = path.join(config.modRequest.platformProjectRoot, "app", "src");
+      const mainManifestPath = path.join(srcDir, "main", "AndroidManifest.xml");
+      const mainManifest = await AndroidConfig.Manifest.readAndroidManifestAsync(mainManifestPath);
+      const mainApp = mainManifest.manifest.application?.[0] as any;
+      const resource = "@xml/viro_network_security_config";
+      const existing = mainApp?.$?.["android:networkSecurityConfig"];
+      // The app's own config is left alone.
+      if (!mainApp || (existing && existing !== resource)) return config;
+
+      for (const sourceSet of fs.readdirSync(srcDir)) {
+        const manifestPath = path.join(srcDir, sourceSet, "AndroidManifest.xml");
+        if (!fs.existsSync(manifestPath)) continue;
+        const manifest =
+          sourceSet === "main"
+            ? mainManifest
+            : await AndroidConfig.Manifest.readAndroidManifestAsync(manifestPath);
+        const cleartext = (manifest.manifest.application?.[0] as any)?.$?.[
+          "android:usesCleartextTraffic"
+        ];
+        if (sourceSet !== "main" && cleartext === undefined) continue;
+        const xmlDir = path.join(srcDir, sourceSet, "res", "xml");
+        fs.mkdirSync(xmlDir, { recursive: true });
+        fs.writeFileSync(
+          path.join(xmlDir, "viro_network_security_config.xml"),
+          `<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+  <base-config cleartextTrafficPermitted="${cleartext === "true"}" />
+</network-security-config>
+`,
+          "utf-8"
+        );
+      }
+
+      if (!existing) {
+        mainApp.$["android:networkSecurityConfig"] = resource;
+        await AndroidConfig.Manifest.writeAndroidManifestAsync(mainManifestPath, mainManifest);
+      }
+      return config;
+    },
+  ]);
 
   return config;
 };

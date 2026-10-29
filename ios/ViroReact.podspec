@@ -20,6 +20,8 @@ Pod::Spec.new do |s|
   # behind an availability check, so this is the version the code actually requires today.
   s.visionos.deployment_target = '26.0'
 
+  s.resource_bundles = { 'ViroReact_privacy' => ['PrivacyInfo.xcprivacy'] }
+
   # visionOS: CompositorServices drives the immersive render loop.
   s.visionos.frameworks = [
     'Metal', 'MetalKit', 'CompositorServices', 'ARKit',
@@ -34,6 +36,9 @@ Pod::Spec.new do |s|
     'AVFoundation', 'Accelerate', 'CoreVideo', 'ARKit',
     'CoreImage', 'ImageIO'
   ]
+
+  # zlib: VRTARSceneNavigatorModule computes the CRC-32 of the VPS scan zip with crc32().
+  s.libraries = 'z'
 
   # Base source files (always included)
   source_files_array = ['ViroReact/**/*.{h,m,mm,swift}']
@@ -94,8 +99,9 @@ Pod::Spec.new do |s|
   # view: the manager references the view's class directly and links only with it.
   # scripts/check-ios-bridge.sh reads this list, so keep it one quoted path per line.
   archive_fallback_sources = [
-    # Built by the ViroReactExternalVideo pod (ViroReactExternalVideo.podspec). No archive in the
-    # history contains VRTExternalVideo.
+    # Built by the ViroReactExternalVideo pod (ViroReactExternalVideo.podspec) when the archive
+    # lacks VRTExternalVideo. Upstream's archives lack it; the fork's rebuilt archive carries it,
+    # and that pod then compiles nothing.
     'ViroReact/Views/VRTExternalVideo.mm',
     'ViroReact/VRTExternalVideoManager.mm',
     # Added 2026-08 but never added to the Xcode target, so the rebuilds since skipped it and

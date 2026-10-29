@@ -149,6 +149,14 @@ public:
      */
     void onControllerStatus(int source, VROEventDelegate::ControllerStatus status);
     void onButtonEvent(int source, VROEventDelegate::ClickState clickAction);
+    // Tracking loss releases capture without synthesizing a Clicked activation.
+    void cancelSource(int source);
+    std::map<int, VROVector3f> _canvasHoverPositions;
+    // Last wall-clock dispatch per source, paired with _canvasHoverPositions:
+    // the same-node hover path fires at most kCanvasHoverMinIntervalMillis, so
+    // a resting or slowly-drifting ray cannot flood the JS bridge at refresh
+    // rate (90 Hz on OpenXR).
+    std::map<int, double> _canvasHoverDispatchMillis;
     void onTouchpadEvent(int source, VROEventDelegate::TouchState touchAction, float lastKnownX, float lastKnownY);
     
     /*
@@ -171,6 +179,14 @@ public:
      Function that attempts to notify a delegate on the Scene of the current camera transform.
      */
     void notifyCameraTransform(const VROCamera &camera);
+
+    /*
+     Where the ray that carries this source (see rayForSource) last pointed, in world
+     coordinates, as onMove reported it. False when that ray has never moved. A click
+     that hits nothing reports no position, so this is how a caller learns where it
+     was aimed. Render thread only.
+     */
+    bool getSourceRay(int source, VROVector3f *origin, VROVector3f *forward) const;
 
 protected:
     
@@ -226,6 +242,9 @@ protected:
      */
     struct VRODraggedObject{
         std::shared_ptr<VRONode> _draggedNode;
+        std::shared_ptr<VRONode> _transformNode;
+        VROVector3f _transformOffset;
+        VROQuaternion _transformRotation;
         VROVector3f _originalHitLocation;
         VROVector3f _originalDraggedNodePosition;
         VROQuaternion _originalDraggedNodeRotation;
@@ -295,6 +314,7 @@ protected:
      It moves only the drag owned by the given source (see getDraggedObject).
      */
     virtual void processDragging(int source);
+    void applyDragTransform(const std::shared_ptr<VRODraggedObject> &drag, VROVector3f position, bool animated = false);
 
     /*
      This function returns the next drag position for drag type FixedDistance
@@ -376,7 +396,9 @@ protected:
     std::shared_ptr<VROScene> _scene;
 
     /*
-     Returns the hit test result for the closest node that was hit.
+     Returns the hit test result for the node drawn on top, which with renderingOrder is not
+     always the nearest (see the definition), or a hit on the scene background when nothing
+     takes it.
      */
     VROHitTestResult hitTest(const VROCamera &camera, VROVector3f origin, VROVector3f ray, bool boundsOnly);
 
@@ -411,6 +433,12 @@ private:
      multiple pointers are active simultaneously.
      */
     std::map<int, std::shared_ptr<VRONode>> _lastClickedNodesBySource;
+
+    /*
+     Sources whose ClickDown has not been released yet, including a press where
+     no node takes clicks, which the last clicked node cannot record.
+     */
+    std::set<int> _pressedSources;
 
     /*
      Last known that was successfully hovered upon.
@@ -451,6 +479,14 @@ private:
      to click" symptom even though the underlying ray-cast still oscillates.
      */
     static constexpr double kHoverHysteresisMillis = 75.0;
+    /*
+     Same-node canvas hover: the ray must move at least 2 mm across the hit
+     plane (a resting handheld ray jitters well under 1 mm) AND at least 33 ms
+     must have passed since the last dispatch — pointer-move fidelity the
+     panels need without a per-frame JNI/JS event flood.
+     */
+    static constexpr float kCanvasHoverMinDistance = 0.002f;
+    static constexpr double kCanvasHoverMinIntervalMillis = 33.0;
     struct HoverPending {
         std::shared_ptr<VRONode> candidateNode;   // node the hit currently resolves to
         VROVector3f candidatePos;                 // hit location at the moment of pending start

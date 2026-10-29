@@ -36,6 +36,7 @@ import {
 } from "../Web/ViroWebContext";
 import type { ArPlaneAnchor } from "@reactvision/viro-web-renderer";
 import { useViroWebRenderer } from "../Web/viroRendererHost";
+import { useViroUsagePing } from "../Utilities/ViroUsagePing";
 import {
   useViroRendererEffects,
   type ViroRendererEffectProps,
@@ -61,7 +62,15 @@ type ArOptions = Partial<
     | "renderWhileLimited"
     | "playback"
   >
->;
+> & {
+  /**
+   * Hide the scene's content while tracking is lost. Read by
+   * viro-web-renderer 1.1.0 and later, which is not on npm yet; the 1.0.x
+   * renderer this package resolves ignores it. Declared here rather than
+   * picked from ViroArSessionOptions so the package type-checks against 1.0.x.
+   */
+  hideContentWhenLost?: boolean;
+};
 
 type Props = {
   initialScene: { scene: React.ComponentType<any> };
@@ -199,6 +208,10 @@ function trackingLabel(state: ViroTrackingState): string {
 }
 
 export function ViroARSceneNavigator(props: Props) {
+  useViroUsagePing("ar", {
+    detect_planes: props.arOptions?.detectPlanes,
+    facing_mode: props.arOptions?.facingMode,
+  });
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sessionRef = useRef<ViroArSession | null>(null);
 

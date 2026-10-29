@@ -26,6 +26,7 @@ import {
 } from "./Web/ViroWebContext";
 import { useViroWebRenderer } from "./Web/viroRendererHost";
 import { useViroReticle, type ViroReticleProps } from "./Web/useViroReticle";
+import { useViroUsagePing } from "./Utilities/ViroUsagePing";
 
 type SceneDescriptor = { scene: React.ComponentType<any>; passProps?: any };
 
@@ -81,6 +82,7 @@ function resolveArgs(
 }
 
 export function ViroSceneNavigator(props: Props) {
+  useViroUsagePing("scene");
   const canvasRef = useRef<HTMLCanvasElement>(null);
   // One renderer per canvas, kept across StrictMode's unmount/remount and torn
   // down (render loop included) on a real unmount. See viroRendererHost.
