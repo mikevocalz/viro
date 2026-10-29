@@ -106,7 +106,10 @@ registry runs standalone, or that a transport delivers to the app, where
 | `@viro-external/specs` | `lens/` Lens TypeScript (production and validation files listed in `lens-runtime.json`), `sync`/`doctor`/`validate` scripts, portable `dist/` | Lens Studio and Node |
 | `@viro-external/xr-contract` | renderer-neutral types | Node and the app |
 
-`viro-specs sync|doctor|test|go` in this package delegate to the scripts in
-the installed `@viro-external/specs`. `specs:validate-lens` fails if any
+`viro-specs sync|doctor|test|lab|go` in this package delegate to the scripts in
+the installed `@viro-external/specs`. `viro-specs init <dir>` and
+`viro-specs watch` run in react-viro (`src/specs-cli/`); `init` calls the
+installed `sync` for the Lens runtime. `init --project <path>`, the old
+Platform Lab bootstrap, still delegates and is now also `lab`. `specs:validate-lens` fails if any
 Lens file imports `react`, `react-native` or a workspace package.
 Architecture decisions are recorded in [adr/](adr/).
