@@ -1,7 +1,7 @@
 import { Scenario } from "Leaf.lspkg/Scenarios/scenario/Scenario";
 import { DefaultLeafInteractor } from "Leaf.lspkg/Interactors/interactor/DefaultLeafInteractor";
 import { findInteractableByName } from "Leaf.lspkg/Interactors/InteractableUtils";
-import { Interactable } from "SpectaclesInteractionKit.lspkg/Components/Interaction/Interactable/Interactable";
+import { Interactable } from "../../ViroSpecs/lens/ViroSpecsInteractionKit";
 import { nextFrame, sleep } from "Leaf.lspkg/Utils/common/Utils";
 import { expect } from "Leaf.lspkg/Utils/common/Expect";
 import { controllerHost, document, phases, recordInteractions, restoreGeneratedScene, settle, waitForGeneratedScene } from "./ViroLabLeafSupport";

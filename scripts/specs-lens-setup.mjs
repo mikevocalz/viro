@@ -83,6 +83,8 @@ const SCENARIOS = [
   { id: "viro_lab_actions_reference_flow", expect: "succeeded" },
   { id: "viro_lab_actions_navigation_drop", expect: "succeeded" },
   { id: "viro_lab_actions_unknown_action", expect: "succeeded" },
+  // ViroSpecsPresentationHost's core on the scene controller (transactional replacement).
+  { id: "viro_lab_presentation", expect: "succeeded" },
   // Proves the suite reports failures. It must fail.
   { id: "viro_lab_deliberate_failure", expect: "failed" },
   // WS4 experience layer on the four gallery scenes (ExperienceHost).

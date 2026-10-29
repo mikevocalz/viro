@@ -1,5 +1,5 @@
 import { awaitEventOnce, findSceneObjectByName, nextFrame, sleep } from "Leaf.lspkg/Utils/common/Utils";
-import { InteractorTriggerType } from "SpectaclesInteractionKit.lspkg/Core/Interactor/Interactor";
+import { InteractorTriggerType } from "../../ViroSpecs/lens/ViroSpecsInteractionKit";
 import type { DefaultLeafInteractor } from "Leaf.lspkg/Interactors/interactor/DefaultLeafInteractor";
 import { expect } from "Leaf.lspkg/Utils/common/Expect";
 import { ViroSpecsSceneControllerHost } from "../../ViroSpecs/lens/ViroSpecsSceneControllerHost";
@@ -7,7 +7,7 @@ import { ViroGeneratedSceneHost } from "../../ViroSpecs/generated/ViroGeneratedS
 import type { ViroSpecsSceneDocumentV2 } from "../../ViroSpecs/lens/ViroSpecsProtocol";
 import type { ViroSpecsHostDiagnostic } from "../../ViroSpecs/lens/ViroSpecsHostDiagnostics";
 import { ViroSpecsActionsLab } from "../../ViroSpecsValidation/lens/ViroSpecsActionsLab";
-import type { Interactable } from "SpectaclesInteractionKit.lspkg/Components/Interaction/Interactable/Interactable";
+import type { Interactable } from "../../ViroSpecs/lens/ViroSpecsInteractionKit";
 
 /**
  * Shared lookups for the generated Platform Lab scenarios.

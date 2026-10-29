@@ -1,0 +1,53 @@
+{
+  "startedAt": "2026-10-29T02:42:10.145Z",
+  "project": "examples/specs-platform-lab/lens",
+  "steps": {
+    "leaf": {
+      "ok": true,
+      "ms": 959525,
+      "result": [
+        "viro_lab_render: succeeded",
+        "viro_lab_select: succeeded",
+        "viro_lab_select_ik: succeeded",
+        "viro_lab_drag: succeeded",
+        "viro_lab_navigate: succeeded",
+        "viro_lab_missing_asset: succeeded",
+        "viro_lab_state_update: succeeded",
+        "viro_lab_scene_replacement: succeeded",
+        "viro_lab_interaction_phases: succeeded",
+        "viro_lab_scroll_window: succeeded",
+        "viro_lab_actions_reference_flow: succeeded",
+        "viro_lab_actions_navigation_drop: succeeded",
+        "viro_lab_actions_unknown_action: succeeded",
+        "viro_lab_presentation: succeeded",
+        "viro_lab_deliberate_failure: failed",
+        "viro_ws4_hello_loading: succeeded",
+        "viro_ws4_hello_ready: succeeded",
+        "viro_ws4_hello_error: succeeded",
+        "viro_ws4_hello_degraded: succeeded",
+        "viro_ws4_placement_table: succeeded",
+        "viro_ws4_placement_cancel: succeeded",
+        "viro_ws4_placement_degraded: succeeded",
+        "viro_ws4_placement_error: succeeded",
+        "viro_ws4_button_states: succeeded",
+        "viro_ws4_move_band: succeeded",
+        "viro_ws4_gaze: succeeded",
+        "viro_ws4_navigation_scroll: succeeded",
+        "viro_ws4_navigation_image_error: succeeded",
+        "viro_ws4_scene_rejection: succeeded",
+        "viro_ws4_preferences: succeeded",
+        "viro_ref_dashboard_ready: succeeded",
+        "viro_ref_dashboard_range: succeeded",
+        "viro_ref_dashboard_ik: succeeded",
+        "viro_ref_model_ready: succeeded",
+        "viro_ref_model_transform: succeeded",
+        "viro_ref_model_missing_asset: succeeded",
+        "viro_ref_placement_ready: succeeded",
+        "viro_ref_placement_confirm: succeeded",
+        "viro_ref_placement_cancel: succeeded",
+        "viro_ref_expected_failure: failed"
+      ]
+    }
+  },
+  "finishedAt": "2026-10-29T02:58:09.705Z"
+}
