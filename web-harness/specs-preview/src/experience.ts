@@ -10,10 +10,12 @@ import {
   layoutViroSpecsStatePanel,
   resolveViroSpecsButtonVisual,
   unrenderedViroSpecsComponentFeatures,
+  viroSpecsLoadingRing,
   ViroSpecsButtonTracker,
   ViroSpecsExperienceController,
   type ViroSpecsExperienceView,
   type ViroSpecsLineMeasure,
+  type ViroSpecsStatePanelLayout,
   type ViroSpecsSceneRequirements,
   type ViroSpecsTextBlock,
 } from "./vendor/lens-core/ViroSpecsExperience";
@@ -66,12 +68,30 @@ interface Panel {
   readonly action: Group;
   readonly actionBacking: Mesh;
   readonly actionText: Mesh;
+  /** Loading ring: {@linkcode RING_SEGMENTS} quads, turned as one group. */
+  readonly ring: Group;
+  readonly segments: readonly Mesh[];
   hovered: boolean;
   pressed: boolean;
   open: boolean;
+  /** `nowMs` when the panel last opened; the spinning ring's clock. */
+  shownAtMs: number;
+  /** The ring row from the last layout, for the per-frame spin. */
+  ringLayout: ViroSpecsStatePanelLayout["ring"];
 }
 
 const PANEL_KEYS: readonly PanelKey[] = ["loading", "notice", "error", "permission"];
+
+/**
+ * Render order of the experience overlay, the Lens adapter's `OVERLAY_ORDER`:
+ * backings, then controls (action backing, ring), then text. Overlay meshes
+ * also turn depth test and depth write off, so scene content never covers a
+ * state panel.
+ */
+const OVERLAY_ORDER = { backing: 100, control: 101, text: 102 } as const;
+
+/** Segments in the loading ring, as in the Lens adapter. */
+const RING_SEGMENTS = 24;
 
 /**
  * The Lens experience layer (`ViroSpecsExperienceHost`) on three.js. It runs
@@ -145,6 +165,11 @@ export class PreviewExperience {
     const scene = this.stage.controller.committedScene;
     if (scene !== this.decoratedScene) this.decorate();
     this.styleDecorations(this.lastView.tokens);
+    // A spinning ring (unknown progress) moves without a view change.
+    const loading = this.panels.get("loading");
+    if (loading?.open && this.lastView.loading.visible === true && this.lastView.loading.indicator === "ring-spin") {
+      this.drawRing(loading, this.lastView.tokens);
+    }
   }
 
   private authoredState(id: string): ViroSpecsButtonAuthoredState | undefined {
@@ -355,7 +380,8 @@ export class PreviewExperience {
     const loading = view.loading;
     this.showPanel("loading", loading.visible === false ? null : {
       title: loading.title,
-      body: loading.line + (loading.progress !== undefined ? "  " + Math.round(loading.progress * 100) + "%" : ""),
+      // The ring shows the fraction; the line keeps the counts (Lens `render`).
+      body: loading.line,
       detail: "",
       action: null,
       surface: t.color.surface,
@@ -404,13 +430,14 @@ export class PreviewExperience {
     if (!panel.open) {
       panel.open = true;
       panel.root.visible = true;
+      panel.shownAtMs = this.nowMs();
       this.placeInView(panel.root, tokens.distance.defaultMeters + (key === "loading" ? 0 : -tokens.depth.overlayMeters));
     }
     const d = tokens.distance.defaultMeters;
     // The vendored Lens layout: 20 degrees wide, rows wrapped at the width less
     // space.md, stacked with space.sm between them and the backing sized to fit.
-    // No ring row: the preview shows loading progress as a percentage in the body.
-    const layout = layoutViroSpecsStatePanel(tokens, { ...content, ring: false }, d, this.measureLines);
+    // The loading panel reserves a ring row above the title.
+    const layout = layoutViroSpecsStatePanel(tokens, { ...content, ring: key === "loading" }, d, this.measureLines);
     const wrapCm = layout.wrapWidthMeters * CM_PER_METER;
     const line = (mesh: Mesh, value: string, block: ViroSpecsTextBlock | undefined, color: string): void => {
       mesh.visible = block !== undefined;
@@ -425,6 +452,8 @@ export class PreviewExperience {
     panel.backing.scale.set(layout.widthMeters * CM_PER_METER, layout.heightMeters * CM_PER_METER, 1);
     panel.backing.position.set(0, 0, 0);
     setFill(panel.backing, content.surface, 1);
+    panel.ringLayout = layout.ring;
+    this.drawRing(panel, tokens);
     panel.action.visible = layout.action !== undefined && content.action !== null;
     if (layout.action && content.action !== null) {
       const visual = resolveViroSpecsButtonVisual(content.action, "idle", { hovered: panel.hovered, pressed: panel.pressed }, tokens);
@@ -443,30 +472,75 @@ export class PreviewExperience {
     const root = new Group();
     root.name = "ViroSpecsExperience-" + key;
     this.overlay.add(root);
-    const backing = createRoundedSurface(1, 1, 0.06, "backing");
+    const backing = overlayMesh(createRoundedSurface(1, 1, 0.06, "backing"), OVERLAY_ORDER.backing);
     root.add(backing);
     const text = (name: string): Mesh => {
-      const mesh = createTextMesh();
+      const mesh = overlayMesh(createTextMesh(), OVERLAY_ORDER.text);
       mesh.name = name;
       mesh.position.z = 0.6;
       root.add(mesh);
       return mesh;
     };
+    const ring = new Group();
+    ring.name = "ring";
+    ring.visible = false;
+    root.add(ring);
+    const segments: Mesh[] = [];
+    for (let i = 0; i < RING_SEGMENTS; i++) {
+      const segment = overlayMesh(createRoundedSurface(1, 1, 0.5, "ring-segment-" + i), OVERLAY_ORDER.control);
+      ring.add(segment);
+      segments.push(segment);
+    }
     const title = text("title");
     const body = text("body");
     const detail = text("detail");
     const action = new Group();
     action.name = "action";
     root.add(action);
-    const actionBacking = createRoundedSurface(1, 1, 0.25, "action-backing");
+    const actionBacking = overlayMesh(createRoundedSurface(1, 1, 0.25, "action-backing"), OVERLAY_ORDER.control);
     action.add(actionBacking);
-    const actionText = createTextMesh();
+    const actionText = overlayMesh(createTextMesh(), OVERLAY_ORDER.text);
     actionText.name = "action-label";
     actionText.position.z = 0.6;
     action.add(actionText);
-    const panel: Panel = { root, backing, title, body, detail, action, actionBacking, actionText, hovered: false, pressed: false, open: false };
+    const panel: Panel = {
+      root, backing, title, body, detail, action, actionBacking, actionText, ring, segments,
+      hovered: false, pressed: false, open: false, shownAtMs: 0, ringLayout: undefined,
+    };
     this.panels.set(key, panel);
     return panel;
+  }
+
+  /**
+   * The loading ring (Lens `drawRing`): {@linkcode RING_SEGMENTS} quads on a
+   * circle, lit in `color.focus` by the vendored
+   * {@linkcode viroSpecsLoadingRing} over a `color.border` track. A known
+   * fraction fills from the top clockwise and never turns; reduced motion
+   * never turns; only unknown progress without reduced motion spins.
+   */
+  private drawRing(panel: Panel, tokens: ViroSpecsSpatialTokens): void {
+    const ring = panel.ringLayout;
+    const view = this.lastView.loading;
+    panel.ring.visible = ring !== undefined && view.visible === true;
+    if (!ring || view.visible === false) return;
+    const state = viroSpecsLoadingRing(view.indicator, view.progress, RING_SEGMENTS, this.nowMs() - panel.shownAtMs, tokens);
+    panel.ring.position.set(0, ring.y * CM_PER_METER, 0.6);
+    // Clockwise as seen by the wearer, who looks at the panel's +Z face.
+    panel.ring.rotation.z = state.turns === 0 ? 0 : -state.turns * 2 * Math.PI;
+    const radiusCm = ((ring.diameterMeters - ring.thicknessMeters) / 2) * CM_PER_METER;
+    const lengthCm = ((Math.PI * ring.diameterMeters) / RING_SEGMENTS) * CM_PER_METER * 0.8;
+    panel.segments.forEach((segment, i) => {
+      // Segment 0 at the top, then clockwise.
+      const angle = Math.PI / 2 - (i / RING_SEGMENTS) * 2 * Math.PI;
+      segment.position.set(Math.cos(angle) * radiusCm, Math.sin(angle) * radiusCm, 0);
+      segment.rotation.z = angle + Math.PI / 2;
+      segment.scale.set(lengthCm, ring.thicknessMeters * CM_PER_METER, 1);
+      setFill(segment, state.lit[i] ? tokens.color.focus : tokens.color.border, 1);
+    });
+  }
+
+  private nowMs(): number {
+    return this.options.nowMs ? this.options.nowMs() : performance.now();
   }
 
   /** Panel action input: same press-commits-on-release rule as scene buttons. */
@@ -522,5 +596,21 @@ function setFill(mesh: Mesh, hex: string, opacity: number): void {
   const material = mesh.material as MeshBasicMaterial;
   material.color.setRGB(...rgb(hex), SRGBColorSpace);
   material.opacity = opacity;
-  material.transparent = opacity < 1;
+  // Overlay meshes stay in the transparent pass, which three.js draws after
+  // the opaque one, so their render order also puts them after scene content.
+  material.transparent = opacity < 1 || mesh.userData.overlay === true;
+}
+
+/**
+ * Marks `mesh` as experience overlay (Lens `makeBacking` with an overlay
+ * order): drawn at `order` after scene content, depth test and write off.
+ */
+function overlayMesh(mesh: Mesh, order: number): Mesh {
+  const material = mesh.material as MeshBasicMaterial;
+  material.depthTest = false;
+  material.depthWrite = false;
+  material.transparent = true;
+  mesh.renderOrder = order;
+  mesh.userData.overlay = true;
+  return mesh;
 }

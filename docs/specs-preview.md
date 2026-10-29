@@ -123,6 +123,17 @@ on the content root, and `VS5025` for premium features the host does not
 draw (the vendored core draws all of them, so it reports none). The error panel's Retry fetches failed assets again and re-presents
 the scene.
 
+The state panels use the vendored layout functions: `layoutViroSpecsStatePanel`
+wraps each row at the 20 degree width less `space.md` and sizes the opaque
+backing to the rows, and `layoutViroSpecsButtonError` places a PanelButton's
+`errorMessage` under the button. Line counts come from the same canvas
+measure the text is drawn with. The loading panel's ring is 24 segments lit
+by `viroSpecsLoadingRing`: a known fraction fills from the top clockwise, a
+spin (one turn per `motion.progressLoopMs`) runs only for unknown progress,
+and reduced motion never turns. Panel backings, controls and text draw at
+render orders 100, 101 and 102 with depth test and depth write off, as the
+Lens adapter's `OVERLAY_ORDER` does, so scene content never covers a panel.
+
 `src/backend/lensSemantics.ts` holds the copied constants.
 `test/lensSemantics.test.ts` reads the vendored Lens backend source and
 fails when one of them drifts.
@@ -188,7 +199,10 @@ file. Do not edit vendored files; change them in viro-external and sync.
   no capability report, so it stays in hands mode: no gaze dwell ring,
   gaze Move or Scroll buttons, or placement reticle. The Storybook
   degraded stories do send a report, which opens the notice panel, but
-  the gaze controls and reticle are still not drawn.
+  the gaze controls and reticle are still not drawn. When they are, they
+  belong in the overlay at render order 101 like the loading ring.
+- The model viewer's pending-model ring and reset button. The Lens adapter
+  draws them on scene models; the preview does not.
 - Borders and focus rings on scene PanelButtons. The backing takes the
   fill color only, so the high-contrast border width and the hover and
   pressed rings do not show; hover shows as a 4 % scale and 1 cm of depth.
@@ -203,8 +217,5 @@ Lens Studio Preview:
 - A PanelButton's backing sits 0.5 cm in front of the button
   (`depth.raisedMeters`), and the compiler puts a card's PanelImage 0.3 cm
   in front. In the Navigation scene the backing covers the card images.
-- Experience panels set no text layout rect, so a long body line (the
-  asset error panel's "The rest of the scene works. Retry to load it
-  again.") runs past the 20 degree backing.
 - The Specs display window over the viewport assumes a 46 degree diagonal
   (Spectacles 2024) and a 1:1 aspect. It is a framing aid.
