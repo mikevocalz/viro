@@ -160,8 +160,16 @@ jobs:
         run: npm run typecheck
       - name: Parity with the viro-external mock host, Lens constants, animation
         run: npm test
+      - name: Build Storybook
+        run: npm run build-storybook
+      - uses: actions/upload-artifact@v4
+        with:
+          name: specs-preview-storybook
+          path: web-harness/specs-preview/storybook-static/
       - name: Headless screenshots (installed Chrome)
         run: node scripts/screenshot.mjs
+      - name: Storybook story screenshots (installed Chrome)
+        run: node scripts/storybook-screenshots.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
