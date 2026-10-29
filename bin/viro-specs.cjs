@@ -56,18 +56,20 @@ const scriptByCommand = {
   doctor: "doctor-lens-project.mjs",
   test: "validate-lens-runtime.mjs",
   go: "go-clad.mjs",
+  setup: "setup-lens-project.mjs",
 };
 
 if (!command || !scriptByCommand[command]) {
   console.error(
     [
-      "Usage: viro-specs <init|compile|watch|sync|doctor|test|lab|go> [args]",
+      "Usage: viro-specs <init|compile|watch|sync|doctor|setup|test|lab|go> [args]",
       "",
       "Examples:",
       "  viro-specs init my-specs-app",
       '  viro-specs watch --entry App.tsx --out-dir "/path/to/LensProject/Assets/ViroSpecs/generated"',
       '  viro-specs doctor --project "/path/to/LensProject"',
       '  viro-specs sync --project "/path/to/LensProject" --clean',
+      '  viro-specs setup --project "/path/to/LensProject" --create',
       '  viro-specs go --project "/path/to/LensProject" --exec',
     ].join("\n")
   );

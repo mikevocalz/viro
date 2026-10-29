@@ -241,26 +241,28 @@ Manual repairs found and fixed:
   Lens project. `init` writes it, and `npm run lens:host` / `lens:watch`
   take the path from `package.json`.
 
-Open: the Lens Studio half. Steps for the Preview run, in Lens Studio 5.24:
+The Lens Studio half, run 2026-10-29 in Lens Studio 5.24.1 with tarballs
+packed from viro `feat/specs-lens-setup` and viro-external
+`feat/specs-lens-setup` (`specs:setup`), in a new app, using only the
+commands in [specs-quickstart.md](specs-quickstart.md):
 
-1. Create a new Spectacles project and save it, for example as
-   `my-specs-app/LensProject`.
-2. Install from the Asset Library: Spectacles Interaction Kit 2.0.0,
-   Spectacles UI Kit 2.0.0, SurfacePlacement 2.0.0, VolumetricLine 2.0.0,
-   SpecsNavigationKit 2.0.0.
-3. In `my-specs-app/package.json` set `viroSpecs.lensProject` to
-   `LensProject`, then run `npm run lens:doctor` (expect exit 0),
-   `npm run lens:sync` and `npm run lens:host`.
-4. Wire the host as in quickstart step 4: `ViroSpecsAssetRegistry` and
-   `ViroSpecsSceneControllerHost` on one SceneObject, the controller's
-   `assetRegistryObject` set to the registry; `ViroGeneratedSceneHost` on
-   another, `sceneHostObject` set to the first.
-5. Press Preview (SPECS 27 Interactive Preview). Expect the "Hello, Specs"
-   panel with the body text and a Next button, no `VS5xxx` errors in the
-   Lens log, and record any step beyond these that was needed.
+| Step | Command | Exit |
+| --- | --- | --- |
+| 1 | `npx --package <viro.tgz> viro-specs init specs-proof --no-install`, `npm install <tarballs>` | 0, 0 |
+| 1 | `npm run lens:sync` | 0 |
+| 2 | `npm run specs:check`, `npm run typecheck` | 0, 0 |
+| 3 | `npm run lens:setup` (MCP server from `LENS_STUDIO_MCP_CONFIG`) | 0 |
+| 3 | `npm run lens:doctor` | 0 (warnings: Leaf and AI Preview Agent Interact, validation only) |
 
-Step 4 is Inspector work; `scripts/specs-lens-setup.mjs` does it through
-the Lens Studio MCP server for the Platform Lab only.
+`lens:setup` saved a new Spectacles project into the empty Lens folder,
+installed the six packages, synced, compiled the host, wired it and ran
+Preview: the "Hello, Specs" panel with the body text and a Next button, and
+only `VS5008` warnings (approximated `maxLines`) in the log. No Inspector
+step. Two problems found on the way are fixed in `specs:setup`: the capture
+made Lens Studio install AI Preview Agent Inspect 4.0.0, which needs the
+4.0.0 UI Kit (setup now installs 2.0.1 first), and the first Preview
+refresh after wiring could run the scene from before the wire step (setup
+now waits for the wired scene before judging a refresh).
 
 ## 9. Known limitations
 
@@ -268,11 +270,9 @@ the Lens Studio MCP server for the Platform Lab only.
   host; it is append-only, so it cannot be removed.
 - In high contrast, `surfaceRaised`, `surfacePressed` and the state
   surfaces keep their default values, darker than the `#42525f` panel.
-- The starter's Lens host is wired by hand in the Inspector (§8 step 4).
-  `scripts/specs-lens-setup.mjs` automates it for the Platform Lab and is
-  not in the npm package.
-- `init` does not create a Lens Studio project; `lens/` holds only
-  `Assets/ViroSpecs/` until `viroSpecs.lensProject` points at a saved one.
+- `npm run lens:setup` needs Lens Studio running with its MCP server on;
+  without it the starter's Lens side is set up by hand (see
+  [specs-generated-host.md](specs-generated-host.md)).
 - Installing the react-viro tarball prints npm's `install-scripts` notice
   naming its `prepare` script. The quickstart run in §8 left it unapproved
   and every command after the install exited as listed.
