@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/html-vite";
 import { DEFAULT_ARGS, SCENE_ARG_TYPES, sceneStory, type SceneArgs } from "./mount";
 import { MISSING_MODEL, modelViewerScene, SHIBA } from "./scenes";
 
-/** ModelViewer: a model node with the model-viewer component. Ready, loading (request held open) and error (unresolved source). */
+/** ModelViewer: a model node with the model-viewer component. Ready, turntable with Reset model, loading (request held open) and error (unresolved source). */
 const meta = {
   title: "Premium components/ModelViewer",
   args: DEFAULT_ARGS,
@@ -14,6 +14,12 @@ type Story = StoryObj<SceneArgs>;
 export const Ready: Story = sceneStory("A `model` node with the model-viewer component and a status panel.", {
   scene: modelViewerScene(),
   id: "model-viewer-ready",
+  fov: 36,
+});
+
+export const Turntable: Story = sceneStory("`autoRotate` and `resettable`: the model turns at 18 degrees a second (not under reduced motion or while held), and Reset model sits under its bounds. Drag the model, then Reset to ease it back.", {
+  scene: modelViewerScene(SHIBA, { autoRotate: true, resettable: true }),
+  id: "model-viewer-turntable",
   fov: 36,
 });
 

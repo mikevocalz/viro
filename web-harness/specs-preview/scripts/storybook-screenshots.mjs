@@ -43,6 +43,7 @@ const SHOTS = [
   { id: "premium-components-spatialscrollview--top", lifecycle: "ready" },
   { id: "premium-components-spatialscrollview--scrolled", lifecycle: "ready" },
   { id: "premium-components-modelviewer--ready", lifecycle: "ready" },
+  { id: "premium-components-modelviewer--turntable", lifecycle: "ready", wait: 1500 },
   { id: "premium-components-modelviewer--loading", lifecycle: "loading", panels: ["loading"] },
   { id: "premium-components-modelviewer--loading", name: "premium-components-modelviewer--loading-slow", lifecycle: "loading", panels: ["loading"], wait: 2600 },
   { id: "premium-components-modelviewer--load-error", lifecycle: "degraded", panels: ["error"] },

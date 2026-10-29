@@ -1,4 +1,4 @@
-import { Group, Mesh, MeshBasicMaterial, SRGBColorSpace, Vector3, type Camera, type Object3D } from "three";
+import { Box3, Group, Mesh, MeshBasicMaterial, Quaternion, SRGBColorSpace, Vector3, type Camera, type Object3D } from "three";
 import { CM_PER_METER } from "./backend/lensSemantics";
 import { layoutText, type Rgba } from "./backend/textLayout";
 import { textBounds, type TextRasterizer } from "./backend/textRaster";
@@ -7,10 +7,13 @@ import { createRoundedSurface, createTextMesh } from "./backend/visuals";
 import type { PreviewStage } from "./stage";
 import {
   layoutViroSpecsButtonError,
+  layoutViroSpecsModelReset,
   layoutViroSpecsStatePanel,
   resolveViroSpecsButtonVisual,
   unrenderedViroSpecsComponentFeatures,
+  viroSpecsAutoRotateDegrees,
   viroSpecsLoadingRing,
+  viroSpecsResetProgress,
   ViroSpecsButtonTracker,
   ViroSpecsExperienceController,
   type ViroSpecsExperienceView,
@@ -25,6 +28,7 @@ import {
   type ViroSpecsButtonAuthoredState,
   type ViroSpecsSpatialTokens,
 } from "./vendor/lens-core/ViroSpecsExperienceTokens";
+import { formatViroSpecsCopy } from "./vendor/lens-core/ViroSpecsExperienceCopy";
 import { createViroSpecsHostDiagnostic } from "./vendor/lens-core/ViroSpecsHostDiagnostics";
 import type { ViroSpecsCapabilityState, ViroSpecsInteractionPhase } from "./vendor/lens-core/ViroSpecsProtocol";
 import { parseViroSpecsColor } from "./vendor/lens-core/ViroSpecsSceneDocument";
@@ -80,6 +84,24 @@ interface Panel {
   ringLayout: ViroSpecsStatePanelLayout["ring"];
 }
 
+/** A ModelViewer's host-drawn parts (Lens `ModelDecoration`): load ring, Reset model button, turntable state. */
+interface ModelDecoration {
+  readonly object: Object3D;
+  readonly ring: Group;
+  readonly segments: readonly Mesh[];
+  readonly reset: { readonly root: Group; readonly backing: Mesh; readonly label: Mesh } | null;
+  /** Authored local transform, preview units (cm), from the committed node. */
+  readonly authored: { readonly position: Vector3; readonly quaternion: Quaternion; readonly scale: Vector3 };
+  /** Bottom of the model's bounds below its origin, meters (negative is below), once measured. */
+  bottomMeters: number | undefined;
+  /** A Reset in progress: when it started and the transform it started from. */
+  resetting: { readonly startMs: number; readonly position: Vector3; readonly quaternion: Quaternion; readonly scale: Vector3 } | null;
+  readonly pendingSinceMs: number;
+}
+
+/** Ring geometry: diameter and stroke, meters. */
+type RingSize = { readonly diameterMeters: number; readonly thicknessMeters: number };
+
 const PANEL_KEYS: readonly PanelKey[] = ["loading", "notice", "error", "permission"];
 
 /**
@@ -110,6 +132,11 @@ export class PreviewExperience {
   readonly tracker: ViroSpecsButtonTracker;
   readonly overlay = new Group();
   private readonly decorations = new Map<string, Decoration>();
+  private readonly models = new Map<string, ModelDecoration>();
+  /** ModelViewers the wearer is holding or dragging; autoRotate pauses for them. */
+  private readonly heldModels = new Set<string>();
+  /** `nowMs` at the previous {@linkcode update}, for the turntable's frame time. */
+  private lastUpdateMs: number | undefined;
   private readonly panels = new Map<PanelKey, Panel>();
   private readonly reportedUnrendered = new Set<string>();
   private readonly measuredLines = new Map<string, number>();
@@ -130,7 +157,11 @@ export class PreviewExperience {
     });
     this.controller.attach(controller);
     this.tracker = new ViroSpecsButtonTracker((id) => this.authoredState(id));
-    controller.addOnInteractionListener((event) => this.tracker.handle(event));
+    controller.addOnInteractionListener((event) => {
+      this.tracker.handle(event);
+      if (event.phase === "select-start" || event.phase === "drag") this.heldModels.add(event.nodeId);
+      else if (event.phase === "select-end" || event.phase === "cancel") this.heldModels.delete(event.nodeId);
+    });
     controller.addOnLifecycleListener(() => this.decorate());
     this.lastView = this.controller.view();
     this.controller.addOnViewListener((view) => this.render(view));
@@ -156,6 +187,11 @@ export class PreviewExperience {
       if (!panel?.open || !panel.action.visible) continue;
       out.push({ object: panel.actionBacking, label: key + " action", handle: (phase) => this.panelInput(key, panel, phase) });
     }
+    for (const [id, model] of this.models) {
+      if (!model.reset?.root.visible) continue;
+      // Lens `makeSceneButton`: a select-end resets.
+      out.push({ object: model.reset.backing, label: id + " reset", handle: (phase) => phase === "select-end" && this.resetModel(id) });
+    }
     return out;
   }
 
@@ -170,6 +206,18 @@ export class PreviewExperience {
     if (loading?.open && this.lastView.loading.visible === true && this.lastView.loading.indicator === "ring-spin") {
       this.drawRing(loading, this.lastView.tokens);
     }
+    const now = this.nowMs();
+    const deltaSeconds = this.lastUpdateMs === undefined ? 0 : (now - this.lastUpdateMs) / 1000;
+    this.lastUpdateMs = now;
+    this.drawModels(this.lastView, now, deltaSeconds);
+  }
+
+  /** Starts returning a ModelViewer to its authored transform over `motion.base` (Lens `resetModel`). */
+  resetModel(nodeId: string): void {
+    const model = this.models.get(nodeId);
+    if (!model) return;
+    const o = model.object;
+    model.resetting = { startMs: this.nowMs(), position: o.position.clone(), quaternion: o.quaternion.clone(), scale: o.scale.clone() };
   }
 
   private authoredState(id: string): ViroSpecsButtonAuthoredState | undefined {
@@ -198,6 +246,16 @@ export class PreviewExperience {
           this.stage.controller.diagnostics.report(
             createViroSpecsHostDiagnostic("VS5025", "experience", node.id + " (" + component.type + "): not drawn yet: " + missing.join(", ") + ".", { nodeId: node.id })
           );
+        }
+        if (component.type === "model-viewer") {
+          const handle = this.handle(node.id);
+          if (!handle) continue;
+          live.add(node.id);
+          if (this.models.get(node.id)?.object !== handle.object) {
+            this.removeModel(node.id);
+            this.models.set(node.id, this.createModel(node.id, handle.object, node.position, node.rotation, node.scale, component.resettable));
+          }
+          continue;
         }
         if (component.type !== "spatial-panel" && component.type !== "panel-button" && component.type !== "panel-text") continue;
         const handle = this.handle(node.id);
@@ -232,6 +290,9 @@ export class PreviewExperience {
         this.removeDecoration(decoration);
         this.decorations.delete(id);
       }
+    }
+    for (const id of Array.from(this.models.keys())) {
+      if (!live.has(id)) this.removeModel(id);
     }
     this.tracker.retain(new Set(this.stage.controller.nodeIds));
   }
@@ -485,12 +546,7 @@ export class PreviewExperience {
     ring.name = "ring";
     ring.visible = false;
     root.add(ring);
-    const segments: Mesh[] = [];
-    for (let i = 0; i < RING_SEGMENTS; i++) {
-      const segment = overlayMesh(createRoundedSurface(1, 1, 0.5, "ring-segment-" + i), OVERLAY_ORDER.control);
-      ring.add(segment);
-      segments.push(segment);
-    }
+    const segments = createRingSegments(ring);
     const title = text("title");
     const body = text("body");
     const detail = text("detail");
@@ -527,16 +583,154 @@ export class PreviewExperience {
     panel.ring.position.set(0, ring.y * CM_PER_METER, 0.6);
     // Clockwise as seen by the wearer, who looks at the panel's +Z face.
     panel.ring.rotation.z = state.turns === 0 ? 0 : -state.turns * 2 * Math.PI;
-    const radiusCm = ((ring.diameterMeters - ring.thicknessMeters) / 2) * CM_PER_METER;
-    const lengthCm = ((Math.PI * ring.diameterMeters) / RING_SEGMENTS) * CM_PER_METER * 0.8;
-    panel.segments.forEach((segment, i) => {
-      // Segment 0 at the top, then clockwise.
-      const angle = Math.PI / 2 - (i / RING_SEGMENTS) * 2 * Math.PI;
-      segment.position.set(Math.cos(angle) * radiusCm, Math.sin(angle) * radiusCm, 0);
-      segment.rotation.z = angle + Math.PI / 2;
-      segment.scale.set(lengthCm, ring.thicknessMeters * CM_PER_METER, 1);
-      setFill(segment, state.lit[i] ? tokens.color.focus : tokens.color.border, 1);
-    });
+    drawRingSegments(panel.segments, ring, state.lit, tokens);
+  }
+
+  private createModel(
+    id: string,
+    object: Object3D,
+    position: readonly number[] | undefined,
+    rotation: readonly number[] | undefined,
+    scale: readonly number[] | undefined,
+    resettable: boolean
+  ): ModelDecoration {
+    const ring = new Group();
+    ring.name = "ViroSpecsModelRing:" + id;
+    ring.visible = false;
+    this.overlay.add(ring);
+    const segments = createRingSegments(ring);
+    let reset: ModelDecoration["reset"] = null;
+    if (resettable) {
+      // A scene button (Lens `makeSceneButton`): depth-tested with the scene, not overlay.
+      const root = new Group();
+      root.name = "ViroSpecsModelReset:" + id;
+      root.visible = false;
+      this.overlay.add(root);
+      const backing = createRoundedSurface(1, 1, 0.25, "backing");
+      root.add(backing);
+      const label = createTextMesh();
+      label.name = "label";
+      label.position.z = 0.6;
+      root.add(label);
+      reset = { root, backing, label };
+    }
+    const [px, py, pz] = position ?? [0, 0, 0];
+    const [rx, ry, rz, rw] = rotation ?? [0, 0, 0, 1];
+    const [sx, sy, sz] = scale ?? [1, 1, 1];
+    return {
+      object,
+      ring,
+      segments,
+      reset,
+      authored: {
+        position: new Vector3(px, py, pz).multiplyScalar(CM_PER_METER),
+        quaternion: new Quaternion(rx, ry, rz, rw),
+        scale: new Vector3(sx, sy, sz),
+      },
+      bottomMeters: undefined,
+      resetting: null,
+      pendingSinceMs: this.nowMs(),
+    };
+  }
+
+  private removeModel(id: string): void {
+    const model = this.models.get(id);
+    if (!model) return;
+    this.models.delete(id);
+    this.heldModels.delete(id);
+    for (const root of [model.ring, model.reset?.root]) {
+      if (!root) continue;
+      root.removeFromParent();
+      root.traverse((o) => {
+        if (!(o instanceof Mesh)) return;
+        o.geometry.dispose();
+        const material = o.material as MeshBasicMaterial;
+        material.map?.dispose();
+        material.dispose();
+      });
+    }
+  }
+
+  /**
+   * ModelViewer parts, every frame (Lens `drawModels`): the load ring at the
+   * model's origin while its asset loads, a Reset in progress, the
+   * `autoRotate` turntable, and the Reset model button under the model's
+   * bounds.
+   */
+  private drawModels(view: ViroSpecsExperienceView, now: number, deltaSeconds: number): void {
+    const host = this.stage.controller;
+    const scene = host.committedScene;
+    const drawn = new Set<string>();
+    const head = this.options.camera.getWorldPosition(new Vector3());
+    const tokens = view.tokens;
+    const reduced = view.preferences.reducedMotion;
+    for (const node of scene ? scene.nodes : []) {
+      const component = node.component;
+      if (component?.type !== "model-viewer") continue;
+      const model = this.models.get(node.id);
+      if (!model) continue;
+      drawn.add(node.id);
+      const o = model.object;
+      o.updateWorldMatrix(true, false);
+      const world = o.getWorldPosition(new Vector3());
+      const distance = Math.max(world.distanceTo(head) / CM_PER_METER, 0.01);
+      const pending = host.isAssetPending(node.id);
+      model.ring.visible = pending;
+      if (pending) {
+        const ring: RingSize = {
+          diameterMeters: 3 * viroSpecsAngleToMeters(tokens.type.bodyDeg, distance),
+          thicknessMeters: viroSpecsAngleToMeters(tokens.shape.borderWidthFocusDeg, distance) * 2,
+        };
+        const state = viroSpecsLoadingRing(reduced ? "dots" : "ring-spin", undefined, RING_SEGMENTS, now - model.pendingSinceMs, tokens);
+        // Faces the wearer (local +Z toward the head), spinning about its own axis.
+        model.ring.position.copy(world);
+        model.ring.lookAt(head);
+        if (state.turns !== 0) model.ring.rotateZ(-state.turns * 2 * Math.PI);
+        drawRingSegments(model.segments, ring, state.lit, tokens);
+      }
+      if (!pending && model.bottomMeters === undefined && view.sceneVisible) {
+        const box = new Box3().setFromObject(o);
+        if (!box.isEmpty()) model.bottomMeters = (box.min.y - world.y) / CM_PER_METER;
+      }
+      if (model.resetting) {
+        const k = viroSpecsResetProgress(now - model.resetting.startMs, tokens, reduced);
+        o.position.lerpVectors(model.resetting.position, model.authored.position, k);
+        o.quaternion.slerpQuaternions(model.resetting.quaternion, model.authored.quaternion, k);
+        o.scale.lerpVectors(model.resetting.scale, model.authored.scale, k);
+        if (k >= 1) model.resetting = null;
+      } else if (component.autoRotate && !pending && view.sceneVisible) {
+        const degrees = viroSpecsAutoRotateDegrees(deltaSeconds, { reducedMotion: reduced, held: this.heldModels.has(node.id) });
+        // About the model's own up axis, as the Lens adapter multiplies its local rotation.
+        if (degrees !== 0) o.quaternion.multiply(new Quaternion().setFromAxisAngle(UP, (degrees * Math.PI) / 180));
+      }
+      if (model.reset) {
+        const show = view.sceneVisible && visibleInHierarchy(o) && model.bottomMeters !== undefined;
+        model.reset.root.visible = show;
+        if (show && model.bottomMeters !== undefined) {
+          const layout = layoutViroSpecsModelReset(tokens, { bottomMeters: model.bottomMeters }, distance);
+          // Under the authored origin, turned like the model's parent (the
+          // panel it sits on, or the content root).
+          const parent = o.parent;
+          parent?.updateWorldMatrix(true, false);
+          const rotation = parent ? parent.getWorldQuaternion(new Quaternion()) : new Quaternion();
+          const origin = parent ? parent.localToWorld(model.authored.position.clone()) : model.authored.position.clone();
+          const at = origin.add(UP.clone().applyQuaternion(rotation).multiplyScalar(layout.y * CM_PER_METER));
+          model.reset.root.position.copy(at);
+          model.reset.root.quaternion.copy(rotation);
+          const widthCm = layout.widthMeters * CM_PER_METER;
+          const heightCm = layout.heightMeters * CM_PER_METER;
+          model.reset.backing.scale.set(widthCm, heightCm, 1);
+          setFill(model.reset.backing, tokens.color.surfaceRaised, 1);
+          this.drawText(model.reset.label, formatViroSpecsCopy("modelViewer.reset"), sizeFor(tokens.type.labelDeg, distance), tokens.color.text, { widthCm, heightCm });
+        }
+      }
+    }
+    // Models of a scene that is gone, or not committed yet: nothing shows.
+    for (const [id, model] of this.models) {
+      if (drawn.has(id)) continue;
+      model.ring.visible = false;
+      if (model.reset) model.reset.root.visible = false;
+    }
   }
 
   private nowMs(): number {
@@ -599,6 +793,42 @@ function setFill(mesh: Mesh, hex: string, opacity: number): void {
   // Overlay meshes stay in the transparent pass, which three.js draws after
   // the opaque one, so their render order also puts them after scene content.
   material.transparent = opacity < 1 || mesh.userData.overlay === true;
+}
+
+const UP = new Vector3(0, 1, 0);
+
+/** {@linkcode RING_SEGMENTS} overlay quads under `ring` (Lens `makeBacking` at `OVERLAY_ORDER.control`). */
+function createRingSegments(ring: Group): Mesh[] {
+  const segments: Mesh[] = [];
+  for (let i = 0; i < RING_SEGMENTS; i++) {
+    const segment = overlayMesh(createRoundedSurface(1, 1, 0.5, "ring-segment-" + i), OVERLAY_ORDER.control);
+    ring.add(segment);
+    segments.push(segment);
+  }
+  return segments;
+}
+
+/**
+ * Lays the ring's quads on a circle, lit in `color.focus` per `lit` over a
+ * `color.border` track (Lens `drawRingSegments`). The caller turns the ring.
+ */
+function drawRingSegments(segments: readonly Mesh[], ring: RingSize, lit: readonly boolean[], tokens: ViroSpecsSpatialTokens): void {
+  const radiusCm = ((ring.diameterMeters - ring.thicknessMeters) / 2) * CM_PER_METER;
+  const lengthCm = ((Math.PI * ring.diameterMeters) / RING_SEGMENTS) * CM_PER_METER * 0.8;
+  segments.forEach((segment, i) => {
+    // Segment 0 at the top, then clockwise as seen by the wearer.
+    const angle = Math.PI / 2 - (i / RING_SEGMENTS) * 2 * Math.PI;
+    segment.position.set(Math.cos(angle) * radiusCm, Math.sin(angle) * radiusCm, 0);
+    segment.rotation.z = angle + Math.PI / 2;
+    segment.scale.set(lengthCm, ring.thicknessMeters * CM_PER_METER, 1);
+    setFill(segment, lit[i] ? tokens.color.focus : tokens.color.border, 1);
+  });
+}
+
+/** True when `object` and every ancestor are visible (Lens `isEnabledInHierarchy`). */
+function visibleInHierarchy(object: Object3D): boolean {
+  for (let o: Object3D | null = object; o; o = o.parent) if (!o.visible) return false;
+  return true;
 }
 
 /**
