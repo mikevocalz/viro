@@ -12,6 +12,7 @@ import {
   resolveViroSpecsButtonVisual,
   unrenderedViroSpecsComponentFeatures,
   viroSpecsAutoRotateDegrees,
+  viroSpecsShowModelRing,
   viroSpecsLoadingRing,
   viroSpecsResetProgress,
   ViroSpecsButtonTracker,
@@ -675,8 +676,10 @@ export class PreviewExperience {
       const world = o.getWorldPosition(new Vector3());
       const distance = Math.max(world.distanceTo(head) / CM_PER_METER, 0.01);
       const pending = host.isAssetPending(node.id);
-      model.ring.visible = pending;
-      if (pending) {
+      // Off while the loading panel reports the asset (Lens drawModels).
+      const showRing = viroSpecsShowModelRing(view.loading, pending);
+      model.ring.visible = showRing;
+      if (showRing) {
         const ring: RingSize = {
           diameterMeters: 3 * viroSpecsAngleToMeters(tokens.type.bodyDeg, distance),
           thicknessMeters: viroSpecsAngleToMeters(tokens.shape.borderWidthFocusDeg, distance) * 2,
