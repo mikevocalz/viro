@@ -4,7 +4,11 @@
 // hand: __test__/ViroSpecsReleaseDocs.test.ts renders it from the catalog
 // and fails when the committed copy differs.
 //
-//   npm run build:specs-cli && node scripts/specs-error-reference.cjs [--check]
+// The catalog is read from the TypeScript source with Node's type stripping
+// (Node 22.18+), never from bin/specs-build: a build left over from an older
+// checkout let --check pass against codes the source no longer had.
+//
+//   node scripts/specs-error-reference.cjs [--check]
 const fs = require("node:fs");
 const path = require("node:path");
 
@@ -53,25 +57,38 @@ function renderErrorReference(catalog) {
 
 module.exports = { renderErrorReference };
 
+/**
+ * Loads VIRO_SPECS_DIAGNOSTICS from the TypeScript source under `repo`.
+ * @param {string} repo
+ */
+function loadCatalogFromSource(repo) {
+  const source = path.join(repo, "components", "Specs", "core", "diagnosticCodes.ts");
+  try {
+    return require(source).VIRO_SPECS_DIAGNOSTICS;
+  } catch (error) {
+    if (error && error.code === "ERR_UNKNOWN_FILE_EXTENSION") {
+      throw new Error(`Node ${process.version} cannot load ${source}. Use Node 22.18 or newer (TypeScript type stripping).`);
+    }
+    throw error;
+  }
+}
+
+module.exports.loadCatalogFromSource = loadCatalogFromSource;
+
 if (require.main === module) {
   const repo = path.resolve(__dirname, "..");
-  const built = path.join(repo, "bin", "specs-build", "components", "Specs", "core", "diagnosticCodes.js");
-  if (!fs.existsSync(built)) {
-    console.error("bin/specs-build is missing. Run `npm run build:specs-cli` first.");
-    process.exit(1);
-  }
-  const { VIRO_SPECS_DIAGNOSTICS } = require(built);
+  const catalog = loadCatalogFromSource(repo);
   const target = path.join(repo, "docs", "specs-error-reference.md");
-  const rendered = renderErrorReference(VIRO_SPECS_DIAGNOSTICS);
+  const rendered = renderErrorReference(catalog);
   if (process.argv.includes("--check")) {
     const current = fs.existsSync(target) ? fs.readFileSync(target, "utf8") : "";
     if (current !== rendered) {
       console.error("docs/specs-error-reference.md is out of date. Run `node scripts/specs-error-reference.cjs`.");
       process.exit(1);
     }
-    console.log("docs/specs-error-reference.md matches the catalog");
+    console.log(`docs/specs-error-reference.md matches the catalog in components/Specs/core/diagnosticCodes.ts (${Object.keys(catalog).length} codes)`);
   } else {
     fs.writeFileSync(target, rendered);
-    console.log(`wrote docs/specs-error-reference.md (${Object.keys(VIRO_SPECS_DIAGNOSTICS).length} codes)`);
+    console.log(`wrote docs/specs-error-reference.md (${Object.keys(catalog).length} codes)`);
   }
 }
