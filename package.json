@@ -39,6 +39,7 @@
     "perf:tracesift:init": "npx --yes @callstack/tracesift@0.3.1 init",
     "perf:tracesift": "npx --yes @callstack/tracesift@0.3.1 start",
     "test:plugin-load": "node scripts/check-plugin-loads.cjs",
+    "android-xr:prepare": "node scripts/prepare-android-xr-probe.cjs",
     "check:ios-bridge": "bash scripts/check-ios-bridge.sh",
     "test:specs-consumer": "node scripts/check-specs-consumer.cjs",
     "typecheck:specs-examples": "tsc -p tsconfig.specs-examples.json",

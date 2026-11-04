@@ -183,6 +183,7 @@ To turn it off, use either of these:
 Guides that ship in this repository:
 
 - [`CHANGELOG.md`](./CHANGELOG.md) — what changed, by release
+- [Android XR](./docs/android-xr.md) — experimental OpenXR build mode, diagnostic APK, and device validation requirements
 
 Feature guides for VPS, visionOS, Quest, the web renderer, platform extensions, shaders, object
 detection, camera texture and session recording are on the documentation site above.

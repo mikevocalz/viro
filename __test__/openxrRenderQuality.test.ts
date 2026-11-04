@@ -173,7 +173,7 @@ describe("resolveOpenXRRenderQualityMetaData", () => {
   test("requires an OpenXR xRMode", () => {
     expect(() =>
       resolveOpenXRRenderQualityMetaData({ eyeBufferScale: 1.3 }, ["AR", "GVR"])
-    ).toThrow(/android\.openxr requires android\.xRMode to include "QUEST" or "PICO"/);
+    ).toThrow(/android\.openxr requires android\.xRMode to include "QUEST", "PICO", or "ANDROID_XR"/);
   });
 });
 

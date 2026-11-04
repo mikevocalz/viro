@@ -311,6 +311,7 @@ import {
   isMetaHorizonXR,
   metaHorizonFormFactor,
   isPico,
+  isAndroidXR,
   isWeb,
   isXRHeadset,
 } from "./components/Utilities/ViroPlatform";
@@ -647,6 +648,7 @@ export {
   isMetaHorizonXR,
   metaHorizonFormFactor,
   isPico,
+  isAndroidXR,
   isWeb,
   isXRHeadset,
   useAnySourceHover,

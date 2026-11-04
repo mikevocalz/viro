@@ -25,7 +25,7 @@ android {
         // Add build config for New Architecture detection
         buildConfigField("boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString())
 
-        // viro_renderer declares flavor dimension 'device' (mobile/pico/quest).
+        // viro_renderer declares device flavors (mobile/pico/quest/androidxr).
         // viro_bridge is flavor-agnostic — pick pico as the default resolution.
         missingDimensionStrategy 'device', 'pico'
     }

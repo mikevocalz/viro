@@ -1,0 +1,65 @@
+{
+  "sourceRepository": "mikevocalz/viro",
+  "sourceCommit": "0e00df4b9a1b2a482b5e6f433326c20f315547c8",
+  "sourceFileSha256": {
+    "android/viro_bridge/src/main/java/com/viromedia/bridge/module/VRLauncherModule.java": "3f7eec8d097cfb47547f49a52ec66d1ae122ae9c094b30a056a12950628ac504"
+  },
+  "artifact": "android/react_viro/react_viro-release.aar",
+  "sha256": "a4449557b3e67a5606b6338ad0b647bf645820b91bedd8b27a28be1550c2cab1",
+  "previousSha256": "85d33b34bea97365646b23ced9e507033a37f0f0b68a4b204fd504613746b6c5",
+  "build": {
+    "command": "./gradlew :viro_bridge:assembleRelease :viro_bridge:testDebugUnitTest --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx3072m",
+    "workingDirectory": "android",
+    "jdk": "Eclipse Temurin 17.0.21+9",
+    "gradle": "9.4.1",
+    "androidGradlePlugin": "9.2.1",
+    "compileSdk": 36,
+    "reactNative": "0.88.0",
+    "packaging": "Unmodified Gradle release AAR copied from android/viro_bridge/build/outputs/aar/viro_bridge-release.aar; renderer AAR unchanged.",
+    "localSourceCommit": "8a86d2503d974c051415c466a6539b106d64552a",
+    "sourceEquivalence": "Published source tree is identical to the local source tree used for the build."
+  },
+  "validation": {
+    "build": "passed",
+    "unitTests": {
+      "tests": 24,
+      "failures": 0,
+      "errors": 0,
+      "suites": [
+        {
+          "name": "com.viromedia.bridge.canvas.CanvasSurfacesTest",
+          "tests": "12",
+          "failures": "0",
+          "errors": "0",
+          "skipped": "0"
+        },
+        {
+          "name": "com.viromedia.bridge.module.CanvasSourceStyleTest",
+          "tests": "5",
+          "failures": "0",
+          "errors": "0",
+          "skipped": "0"
+        },
+        {
+          "name": "com.viromedia.bridge.module.StudioSessionRulesTest",
+          "tests": "7",
+          "failures": "0",
+          "errors": "0",
+          "skipped": "0"
+        }
+      ]
+    },
+    "classCountBefore": 418,
+    "classCountAfter": 418,
+    "removedClasses": [],
+    "addedClasses": [],
+    "changedClasses": [
+      "com/viromedia/bridge/module/VRLauncherModule$1.class",
+      "com/viromedia/bridge/module/VRLauncherModule.class"
+    ],
+    "publicApi": "identical (javap -public across all 418 bridge classes)",
+    "launcherBytecode": "Android XR feature detection, IMMERSIVE_HMD launch category, and Android XR exit without the Oculus Home handoff are present.",
+    "device": "Not run. Android XR runtime rendering, input, lifecycle, passthrough and performance remain unverified."
+  },
+  "sourceTree": "0efe4a885ebf68c845de9dd3f664c96aeb899d09"
+}
