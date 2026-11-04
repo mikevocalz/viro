@@ -1,0 +1,562 @@
+[
+  {
+    "id": "viro_lab_render",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  0.159s][viro_lab_render] PASSED",
+    "raw": {
+      "scenarioId": "viro_lab_render",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_lab_select",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  0.933s][viro_lab_select] PASSED",
+    "raw": {
+      "scenarioId": "viro_lab_select",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_lab_select_ik",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  3.981s][viro_lab_select_ik] PASSED",
+    "raw": {
+      "scenarioId": "viro_lab_select_ik",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_lab_drag",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  1.882s][viro_lab_drag] PASSED",
+    "raw": {
+      "scenarioId": "viro_lab_drag",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_lab_navigate",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  0.348s][viro_lab_navigate] PASSED",
+    "raw": {
+      "scenarioId": "viro_lab_navigate",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_lab_missing_asset",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  0.567s][viro_lab_missing_asset] PASSED",
+    "raw": {
+      "scenarioId": "viro_lab_missing_asset",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_lab_state_update",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  0.926s][viro_lab_state_update] PASSED",
+    "raw": {
+      "scenarioId": "viro_lab_state_update",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_lab_scene_replacement",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  4.192s][viro_lab_scene_replacement] PASSED",
+    "raw": {
+      "scenarioId": "viro_lab_scene_replacement",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_lab_interaction_phases",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  3.472s][viro_lab_interaction_phases] PASSED",
+    "raw": {
+      "scenarioId": "viro_lab_interaction_phases",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_lab_scroll_window",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  4.808s][viro_lab_scroll_window] PASSED",
+    "raw": {
+      "scenarioId": "viro_lab_scroll_window",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_lab_actions_reference_flow",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  4.826s][viro_lab_actions_reference_flow] PASSED",
+    "raw": {
+      "scenarioId": "viro_lab_actions_reference_flow",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_lab_actions_navigation_drop",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  1.919s][viro_lab_actions_navigation_drop] PASSED",
+    "raw": {
+      "scenarioId": "viro_lab_actions_navigation_drop",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_lab_actions_unknown_action",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  1.225s][viro_lab_actions_unknown_action] PASSED",
+    "raw": {
+      "scenarioId": "viro_lab_actions_unknown_action",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_lab_presentation",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  3.223s][viro_lab_presentation] PASSED",
+    "raw": {
+      "scenarioId": "viro_lab_presentation",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_lab_deliberate_failure",
+    "runner": "leaf-panel",
+    "status": "failed",
+    "pluginStatus": "failed",
+    "managerLine": "[  0.119s][viro_lab_deliberate_failure] FAILED - AssertionError: Expected: \"DELIBERATE_FAILURE_EXPECTED\" - Received: \"Hello\"",
+    "raw": {
+      "scenarioId": "viro_lab_deliberate_failure",
+      "status": "failed",
+      "target": "preview"
+    },
+    "expected": "failed",
+    "asExpected": true
+  },
+  {
+    "id": "viro_ws4_hello_loading",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  3.285s][viro_ws4_hello_loading] PASSED",
+    "raw": {
+      "scenarioId": "viro_ws4_hello_loading",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_ws4_hello_ready",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  5.771s][viro_ws4_hello_ready] PASSED",
+    "raw": {
+      "scenarioId": "viro_ws4_hello_ready",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_ws4_hello_error",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  1.831s][viro_ws4_hello_error] PASSED",
+    "raw": {
+      "scenarioId": "viro_ws4_hello_error",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_ws4_hello_degraded",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  1.838s][viro_ws4_hello_degraded] PASSED",
+    "raw": {
+      "scenarioId": "viro_ws4_hello_degraded",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_ws4_placement_table",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  0.641s][viro_ws4_placement_table] PASSED",
+    "raw": {
+      "scenarioId": "viro_ws4_placement_table",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_ws4_placement_cancel",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  3.980s][viro_ws4_placement_cancel] PASSED",
+    "raw": {
+      "scenarioId": "viro_ws4_placement_cancel",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_ws4_placement_degraded",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  1.218s][viro_ws4_placement_degraded] PASSED",
+    "raw": {
+      "scenarioId": "viro_ws4_placement_degraded",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_ws4_placement_error",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  0.670s][viro_ws4_placement_error] PASSED",
+    "raw": {
+      "scenarioId": "viro_ws4_placement_error",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_ws4_button_states",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  1.995s][viro_ws4_button_states] PASSED",
+    "raw": {
+      "scenarioId": "viro_ws4_button_states",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_ws4_move_band",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  3.922s][viro_ws4_move_band] PASSED",
+    "raw": {
+      "scenarioId": "viro_ws4_move_band",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_ws4_gaze",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  6.213s][viro_ws4_gaze] PASSED",
+    "raw": {
+      "scenarioId": "viro_ws4_gaze",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_ws4_navigation_scroll",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  5.576s][viro_ws4_navigation_scroll] PASSED",
+    "raw": {
+      "scenarioId": "viro_ws4_navigation_scroll",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_ws4_navigation_image_error",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  1.965s][viro_ws4_navigation_image_error] PASSED",
+    "raw": {
+      "scenarioId": "viro_ws4_navigation_image_error",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_ws4_scene_rejection",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  2.558s][viro_ws4_scene_rejection] PASSED",
+    "raw": {
+      "scenarioId": "viro_ws4_scene_rejection",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_ws4_preferences",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  3.557s][viro_ws4_preferences] PASSED",
+    "raw": {
+      "scenarioId": "viro_ws4_preferences",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_ref_dashboard_ready",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  0.804s][viro_ref_dashboard_ready] PASSED",
+    "raw": {
+      "scenarioId": "viro_ref_dashboard_ready",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_ref_dashboard_range",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  2.693s][viro_ref_dashboard_range] PASSED",
+    "raw": {
+      "scenarioId": "viro_ref_dashboard_range",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_ref_dashboard_ik",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  5.897s][viro_ref_dashboard_ik] PASSED",
+    "raw": {
+      "scenarioId": "viro_ref_dashboard_ik",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_ref_model_ready",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  0.809s][viro_ref_model_ready] PASSED",
+    "raw": {
+      "scenarioId": "viro_ref_model_ready",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_ref_model_transform",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  4.170s][viro_ref_model_transform] PASSED",
+    "raw": {
+      "scenarioId": "viro_ref_model_transform",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_ref_model_missing_asset",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  2.732s][viro_ref_model_missing_asset] PASSED",
+    "raw": {
+      "scenarioId": "viro_ref_model_missing_asset",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_ref_placement_ready",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  0.722s][viro_ref_placement_ready] PASSED",
+    "raw": {
+      "scenarioId": "viro_ref_placement_ready",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_ref_placement_confirm",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  2.319s][viro_ref_placement_confirm] PASSED",
+    "raw": {
+      "scenarioId": "viro_ref_placement_confirm",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_ref_placement_cancel",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  4.387s][viro_ref_placement_cancel] PASSED",
+    "raw": {
+      "scenarioId": "viro_ref_placement_cancel",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_ref_expected_failure",
+    "runner": "leaf-panel",
+    "status": "failed",
+    "pluginStatus": "failed",
+    "managerLine": "[  0.780s][viro_ref_expected_failure] FAILED - AssertionError: Expected: \"REF_EXPECTED_FAILURE: this title does not exist\" - Received: \"Workshop sensors\"",
+    "raw": {
+      "scenarioId": "viro_ref_expected_failure",
+      "status": "failed",
+      "target": "preview"
+    },
+    "expected": "failed",
+    "asExpected": true
+  }
+]

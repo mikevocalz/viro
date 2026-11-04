@@ -2,7 +2,7 @@ import { expect } from "Leaf.lspkg/Utils/common/Expect";
 import { findSceneObjectByName, sleep } from "Leaf.lspkg/Utils/common/Utils";
 import { VolumetricLine } from "VolumetricLine.lspkg/Scripts/VolumetricLine";
 import { ViroSpecsAnimationHost } from "../../ViroSpecs/lens/ViroSpecsAnimationHost";
-import { NavigationDataComponent } from "SpecsNavigationKit.lspkg/NavigationDataComponent/NavigationDataComponent";
+import { NavigationDataComponent } from "../../ViroSpecs/lens/ViroSpecsNavigationKit";
 import { ViroSpecsAssetRegistry } from "../../ViroSpecs/lens/ViroSpecsAssetRegistry";
 import { ViroSpecsNavigationRuntime } from "../../ViroSpecs/lens/ViroSpecsNavigationRuntime";
 import { ViroSpecsNavigationHost } from "../../ViroSpecs/lens/ViroSpecsNavigationHost";

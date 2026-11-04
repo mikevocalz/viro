@@ -406,7 +406,7 @@ describe("preview ModelViewer: load ring, Reset model, autoRotate", () => {
   };
   const yawDeg = (o: Object3D): number => (new Euler().setFromQuaternion(o.quaternion, "YXZ").y * 180) / Math.PI;
 
-  it("spins a quarter ring at the model's origin, facing the wearer, while its asset loads; hides it once loaded", async () => {
+  it("spins a quarter ring at the model's origin, facing the wearer, while its asset loads; hides it under the loading panel and once loaded", async () => {
     const { stage, experience, clock, resolve } = heldSetup();
     stage.controller.present(modelScene({ autoRotate: false, resettable: false }));
     expect(stage.controller.isAssetPending("mv-model")).toBe(true);
@@ -429,11 +429,21 @@ describe("preview ModelViewer: load ring, Reset model, autoRotate", () => {
     expect(first.position.length()).toBeCloseTo((diameter - thickness) / 2, 6);
     expect(first.renderOrder).toBe(101);
     expect((first.material as MeshBasicMaterial).depthTest).toBe(false);
-    // One quarter turn after a quarter of progressLoopMs.
+    // Turns one revolution per progressLoopMs: 100 ms in, before the loading
+    // panel opens at motion.fast.
+    expect(tokens.motion.fastMs).toBeGreaterThan(100);
     const before = r?.quaternion.clone() ?? new Quaternion();
-    clock.now += tokens.motion.progressLoopMs / 4;
+    clock.now += 100;
     experience.update();
-    expect(((before.angleTo(r?.quaternion ?? new Quaternion())) * 180) / Math.PI).toBeCloseTo(90, 4);
+    expect(((before.angleTo(r?.quaternion ?? new Quaternion())) * 180) / Math.PI).toBeCloseTo((100 / tokens.motion.progressLoopMs) * 360, 4);
+
+    // Once the loading panel opens it reports the asset, and the model's own
+    // ring goes away (Lens viroSpecsShowModelRing): two rings at overlay
+    // order 101 overlapped the panel title.
+    clock.now += tokens.motion.fastMs;
+    experience.update();
+    expect(experience.controller.view().loading.visible).toBe(true);
+    expect(r?.visible).toBe(false);
 
     await resolve();
     expect(stage.controller.isAssetPending("mv-model")).toBe(false);

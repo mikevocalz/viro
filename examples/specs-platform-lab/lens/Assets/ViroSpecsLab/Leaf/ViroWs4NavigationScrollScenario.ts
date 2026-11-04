@@ -28,7 +28,7 @@ import {
   withSlowAssets,
 } from "./ViroLabExperienceSupport";
 import { galleryScene } from "../Gallery/ViroLabGallery";
-import { Interactable } from "SpectaclesInteractionKit.lspkg/Components/Interaction/Interactable/Interactable";
+import { Interactable } from "../../ViroSpecs/lens/ViroSpecsInteractionKit";
 
 function presentDoc(edit: (doc: ReturnType<typeof galleryScene>) => void): ReturnType<typeof galleryScene> {
   const doc = galleryScene("navigation");

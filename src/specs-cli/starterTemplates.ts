@@ -114,7 +114,13 @@ const LENS_SCRIPT = `#!/usr/bin/env node
 // Runs viro-specs against the Lens Studio project named in package.json
 // ("viroSpecs.lensProject"), so the path lives in one place.
 //
-//   node scripts/lens.mjs sync|doctor|host|watch [extra viro-specs args]
+//   node scripts/lens.mjs sync|doctor|host|watch|setup [extra viro-specs args]
+//
+// setup drives Lens Studio through its MCP server (LENS_STUDIO_MCP_URL and
+// LENS_STUDIO_MCP_TOKEN, or LENS_STUDIO_MCP_CONFIG naming an MCP config file):
+// it saves a Spectacles project into the Lens folder when there is none,
+// installs the packages, syncs the runtime, compiles the host, wires the
+// components and runs Preview.
 import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -139,8 +145,8 @@ const commands = {
   watch: ["watch", "--strict", "--entry", entry, "--out-dir", generated, "--format", "lens-ts,scene-json"],
 };
 const command = process.argv[2];
-if (!Object.hasOwn(commands, command ?? "")) {
-  console.error("Usage: node scripts/lens.mjs sync|doctor|host|watch [args]");
+if (command !== "setup" && !Object.hasOwn(commands, command ?? "")) {
+  console.error("Usage: node scripts/lens.mjs sync|doctor|host|watch|setup [args]");
   process.exit(1);
 }
 
@@ -162,8 +168,23 @@ try {
   console.error("@reactvision/react-viro is not installed. Run npm install first.");
   process.exit(1);
 }
-const result = spawnSync(process.execPath, [cli, ...commands[command], ...process.argv.slice(3)], { cwd: root, stdio: "inherit" });
-process.exit(result.status ?? 1);
+const run = (args) => spawnSync(process.execPath, [cli, ...args], { cwd: root, stdio: "inherit" }).status ?? 1;
+if (command === "setup") {
+  // Lens Studio side first (project, packages, runtime), then the host
+  // compiles into it, then the components are wired and Preview runs.
+  const setup = ["setup", "--project", lensProject, "--evidence", path.join(root, "build", "lens-setup")];
+  const steps = [
+    [...setup, ...(isLensProject ? [] : ["--create"]), "--steps", "preflight,packages,sync", ...process.argv.slice(3)],
+    commands.host,
+    [...setup, "--steps", "recompile,materials,wire,device,preview", ...process.argv.slice(3)],
+  ];
+  for (const args of steps) {
+    const status = run(args);
+    if (status !== 0) process.exit(status);
+  }
+  process.exit(0);
+}
+process.exit(run([...commands[command], ...process.argv.slice(3)]));
 `;
 
 const GITIGNORE = `node_modules/
@@ -191,6 +212,7 @@ function packageJson(input: StarterTemplateInput): string {
           "lens:doctor": "node scripts/lens.mjs doctor",
           "lens:host": "node scripts/lens.mjs host",
           "lens:watch": "node scripts/lens.mjs watch",
+          "lens:setup": "node scripts/lens.mjs setup",
         },
         viroSpecs: { lensProject: input.lensProject, entry: STARTER_ENTRY },
         dependencies: input.dependencies,
@@ -272,23 +294,20 @@ in the react-viro docs, \`docs/specs-error-reference.md\`.
 
 ## Run it in Lens Studio
 
-1. \`${lens}/\` holds the Lens side of the app (\`Assets/ViroSpecs/\`), not a
-   full Lens Studio project. Create a Lens Studio 5.22+ project targeting
-   Spectacles, save it, and set \`viroSpecs.lensProject\` in \`package.json\`
-   to its folder. (\`viro-specs init --lens-project <folder>\` does this when
-   the project exists before you run init.)
-2. From the Asset Library install Spectacles Interaction Kit, Spectacles UI
-   Kit, SurfacePlacement, VolumetricLine and SpecsNavigationKit (versions in
-   the react-viro docs, \`docs/specs-compatibility.md\`).
-3. \`npm run lens:doctor\` names anything missing or too old.
-4. \`npm run lens:sync\` then \`npm run lens:host\`. \`npm run lens:watch\`
-   rebuilds the host on every save.
-5. In Lens Studio add \`ViroSpecsAssetRegistry\` and
-   \`ViroSpecsSceneControllerHost\` to one SceneObject and point the
-   controller's \`assetRegistryObject\` at the registry. Add
-   \`ViroGeneratedSceneHost\` to another SceneObject and set
-   \`sceneHostObject\` to the first one.
-6. Press Preview. Problems show as \`VS5xxx\` lines in the Lens log.
+1. Open Lens Studio 5.22+ and turn on its MCP server (AI Assistant > AI
+   Model Context Protocol > Configure Server). Export the URL and key as
+   \`LENS_STUDIO_MCP_URL\` and \`LENS_STUDIO_MCP_TOKEN\`, or point
+   \`LENS_STUDIO_MCP_CONFIG\` at an MCP config file with a \`lens-studio\`
+   server.
+2. \`npm run lens:setup\`. When \`${lens}/\` has no \`.esproj\` yet it saves
+   a new Spectacles project there; then it installs the Asset Library
+   packages, syncs the runtime, compiles \`${STARTER_ENTRY}\`, wires
+   \`ViroSpecsAssetRegistry\`, \`ViroSpecsSceneControllerHost\`,
+   \`ViroGeneratedSceneHost\` and the experience layer, sets Preview to a
+   SPECS device and refreshes it. It exits 1 on any compile error or
+   \`VS5xxx\` error, and saves a capture to \`build/lens-setup/preview.png\`.
+3. After that, \`npm run lens:host\` (or \`npm run lens:watch\`) updates the
+   scene, and \`npm run lens:doctor\` names anything missing or too old.
 
 ## Run it on a phone
 

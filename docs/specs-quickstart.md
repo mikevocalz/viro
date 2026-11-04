@@ -75,48 +75,53 @@ What the preview does and does not show is in
 
 ## 3. Set up the Lens Studio project
 
-`lens/` holds the Lens side of the app, not a full Lens Studio project.
-Create a Lens Studio 5.22+ project targeting Spectacles, save it, and set
-`viroSpecs.lensProject` in the app's `package.json` to its folder. (If the
-project already exists, `init --lens-project <folder>` sets it for you.)
-
-Install from the Asset Library: Spectacles Interaction Kit 2.0.0,
-Spectacles UI Kit 2.0.0, SurfacePlacement 2.0.0, VolumetricLine 2.0.0 and
-SpecsNavigationKit 2.0.0. Then:
+Open Lens Studio 5.22+ and turn on its MCP server (AI Assistant > AI Model
+Context Protocol > Configure Server). Give the setup the server's URL and
+key, either as environment variables or through an MCP config file that has
+a `lens-studio` server entry:
 
 ```bash
-npm run lens:doctor
-npm run lens:sync
-npm run lens:host
+export LENS_STUDIO_MCP_URL=http://localhost:50040/mcp
+export LENS_STUDIO_MCP_TOKEN=<key from Configure Server>
+# or: export LENS_STUDIO_MCP_CONFIG=/path/to/mcp-config.json
+npm run lens:setup
 ```
 
-`lens:doctor` exits 1 and names each missing or too-old package; before
-`viroSpecs.lensProject` points at a saved Lens Studio project it exits 1
-and says so. `lens:sync`
-copies the production Lens runtime into `Assets/ViroSpecs/lens/` and records
-what it owns, so a later sync never overwrites your edits. `lens:host`
-compiles `src/HelloScene.tsx` with `--strict` into
-`Assets/ViroSpecs/generated/ViroGeneratedSceneHost.ts`; a failed build
-writes nothing. While you edit, `npm run lens:watch` rebuilds on every save
-([specs-watch.md](specs-watch.md)).
+`lens:setup` runs these steps and stops at the first failure:
 
-## 4. Wire the host in Lens Studio
+1. When `viroSpecs.lensProject` (`lens/` by default) has no `.esproj`, it
+   saves a new Spectacles project there; otherwise that project must be the
+   one open in Lens Studio.
+2. Installs Spectacles Interaction Kit 2.0.0, Spectacles UI Kit 2.0.0,
+   SurfacePlacement 2.0.0, VolumetricLine 2.0.0 and SpecsNavigationKit 2.0.0
+   from the Asset Library when they are missing, plus AI Preview Agent
+   Inspect 2.0.1 for the Preview capture.
+3. Syncs the Lens runtime into `Assets/ViroSpecs/lens/` and runs the doctor.
+4. Compiles `src/HelloScene.tsx` into
+   `Assets/ViroSpecs/generated/ViroGeneratedSceneHost.ts` (`--strict`).
+5. Sets Preview to a SPECS device with Interactive input in the Sunlit Room,
+   recompiles TypeScript in Lens Studio, creates the registry materials,
+   and wires `ViroSpecsAssetRegistry`, `ViroSpecsSceneControllerHost`,
+   `ViroGeneratedSceneHost` and the experience layer under a
+   `ViroSpecsRuntime` SceneObject, with the Interaction Kit prefab at the
+   root.
+6. Refreshes Preview and fails on any compile error, script error or `VS5xxx`
+   error. The capture is `build/lens-setup/preview.png`.
 
-Add `ViroSpecsAssetRegistry` and `ViroSpecsSceneControllerHost` to one
-SceneObject and point the controller's `assetRegistryObject` at the
-registry. Attach `ViroGeneratedSceneHost` to another SceneObject and set its
-one input, `sceneHostObject`, to the first.
-[specs-generated-host.md](specs-generated-host.md) has the details,
+After setup, `npm run lens:host` rebuilds the host and `npm run lens:watch`
+rebuilds it on every save ([specs-watch.md](specs-watch.md)).
+`npm run lens:doctor` names any missing or too-old package.
+[specs-generated-host.md](specs-generated-host.md) explains the wiring,
 including registering materials and fonts.
 
-## 5. Run in Preview
+## 4. Run in Preview
 
 Press Preview with the SPECS 27 Interactive Preview. A problem shows as a
 `VS5xxx` line in the Lens log and, for scene-level errors, as a readable
 panel; the Lens keeps running. A missing model renders a tinted placeholder
 box (`VS5003`).
 
-## 6. Handle a pinch
+## 5. Handle a pinch
 
 React callbacks do not run in the Lens. Declare typed actions with
 `defineSpecsActions`, attach one to a node with its `specsAction` prop and

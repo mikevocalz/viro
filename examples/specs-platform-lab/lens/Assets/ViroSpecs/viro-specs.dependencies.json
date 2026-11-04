@@ -20,9 +20,9 @@
   "requiredPackages": [
     "SpectaclesInteractionKit.lspkg",
     "SpectaclesUIKit.lspkg",
+    "SpecsNavigationKit.lspkg",
     "SurfacePlacement.lspkg",
-    "VolumetricLine.lspkg",
-    "SpecsNavigationKit.lspkg"
+    "VolumetricLine.lspkg"
   ],
   "packageRequirements": [
     {
@@ -34,15 +34,15 @@
       "minVersion": "2.0.0"
     },
     {
+      "package": "SpecsNavigationKit.lspkg",
+      "minVersion": "2.0.0"
+    },
+    {
       "package": "SurfacePlacement.lspkg",
       "minVersion": "2.0.0"
     },
     {
       "package": "VolumetricLine.lspkg",
-      "minVersion": "2.0.0"
-    },
-    {
-      "package": "SpecsNavigationKit.lspkg",
       "minVersion": "2.0.0"
     }
   ],

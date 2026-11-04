@@ -115,6 +115,12 @@ describe("viro-specs init", () => {
       expect(range).not.toMatch(/^(workspace:|file:|link:)/);
     }
     expect(pkg.viroSpecs).toEqual({ lensProject: "lens", entry: "src/HelloScene.tsx" });
+    // lens:setup wires the Lens Studio project through its MCP server, so no Inspector steps remain.
+    expect(pkg.scripts["lens:setup"]).toBe("node scripts/lens.mjs setup");
+    const lensScript = fs.readFileSync(path.join(app, "scripts", "lens.mjs"), "utf8");
+    expect(lensScript).toContain('"--steps", "preflight,packages,sync"');
+    expect(lensScript).toContain('"--steps", "recompile,materials,wire,device,preview"');
+    expect(fs.readFileSync(path.join(app, "README.md"), "utf8")).toContain("npm run lens:setup");
 
     const outputs: Record<string, string> = {};
     for (const format of ["json", "scene-json", "lens-ts"]) {

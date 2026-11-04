@@ -135,9 +135,11 @@ render orders 100, 101 and 102 with depth test and depth write off, as the
 Lens adapter's `OVERLAY_ORDER` does, so scene content never covers a panel.
 
 A ModelViewer gets the parts the Lens adapter's `drawModels` draws. While
-its asset loads, a ring of three body ems spins at the model's origin,
-facing the wearer (lit every third segment and still under reduced
-motion). With `resettable`, a Reset model button sits `space.sm` under the
+its asset loads and the scene loading panel is closed, a ring of three body
+ems spins at the model's origin, facing the wearer (lit every third segment
+and still under reduced motion). Once the loading panel opens it reports the
+asset and the model's ring goes away (`viroSpecsShowModelRing`; in Lens
+Studio Preview the two rings overlapped the panel title). With `resettable`, a Reset model button sits `space.sm` under the
 loaded model's bounds (`layoutViroSpecsModelReset`); pressing it eases the
 model back to its authored transform over `motion.base`
 (`viroSpecsResetProgress`, at once under reduced motion). With
@@ -227,9 +229,5 @@ Lens Studio Preview:
 - A PanelButton's backing sits 0.5 cm in front of the button
   (`depth.raisedMeters`), and the compiler puts a card's PanelImage 0.3 cm
   in front. In the Navigation scene the backing covers the card images.
-- A ModelViewer's load ring and the loading panel's ring both show while
-  the model loads, and both draw at overlay order 101. In the ModelViewer
-  Loading story, where the model sits in front of the panel, the two rings
-  overlap the panel title.
 - The Specs display window over the viewport assumes a 46 degree diagonal
   (Spectacles 2024) and a 1:1 aspect. It is a framing aid.
