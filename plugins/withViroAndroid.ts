@@ -113,6 +113,19 @@ const withBranchAndroid: ConfigPlugin<ViroConfigurationOptions> = (config, props
         );
       }
 
+      // A prebuild over an existing android/ keeps the packages an earlier
+      // xRMode registered. Drop the ones this build no longer selects, or a
+      // QUEST to ANDROID_XR switch registers both platforms in one APK.
+      data = data
+        .split("\n")
+        .filter((line) => {
+          const match = line.match(
+            /^\s*(?:packages\.)?add\((?:new )?ReactViroPackage\(ReactViroPackage\.ViroPlatform\.(\w+)\)\);?\s*$/
+          );
+          return !match || xrModes.includes(match[1] as XrMode);
+        })
+        .join("\n");
+
       let target = "";
       for (const viroConfig of xrModes) {
         if (isJava) {
@@ -593,14 +606,20 @@ const withViroManifest: ConfigPlugin<ViroConfigurationOptions> = (config, props)
         },
       });
 
+      // Viro owns this entry: drop it first so a later non-Android-XR prebuild
+      // over the same android/ does not keep the Google runtime declaration.
+      if (application["uses-native-library"]) {
+        application["uses-native-library"] = application["uses-native-library"].filter(
+          (entry: any) => entry.$?.["android:name"] !== "libopenxr.google.so"
+        );
+        if (application["uses-native-library"].length === 0) delete application["uses-native-library"];
+      }
       if (androidXrBuild) {
         contents.manifest["uses-feature"].push({ $: {
           "android:name": "android.software.xr.api.openxr",
           "android:required": "true",
         } });
-        application["uses-native-library"] = (application["uses-native-library"] ?? []).filter(
-          (entry: any) => entry.$?.["android:name"] !== "libopenxr.google.so"
-        );
+        application["uses-native-library"] ??= [];
         application["uses-native-library"].push({ $: {
           "android:name": "libopenxr.google.so", "android:required": "false",
         } });
@@ -1045,12 +1064,40 @@ class VRActivity : ReactActivity() {
     );
     if (vrActivity) removeMainActionFromActivity(vrActivity as any);
 
-    if (androidXrBuild && vrActivity) {
-      const immersiveActivity = vrActivity as any;
-      const propertyName = "android.window.PROPERTY_XR_ACTIVITY_START_MODE";
+    // The entry above is only written once, so an android/ prebuilt for the
+    // other runtime keeps its launch declarations. Rewrite them for this mode.
+    const immersiveActivity = vrActivity as any;
+    const propertyName = "android.window.PROPERTY_XR_ACTIVITY_START_MODE";
+    if (immersiveActivity) {
+      const launchCategories = [
+        "com.oculus.intent.category.VR",
+        "org.khronos.openxr.intent.category.IMMERSIVE_HMD",
+      ];
+      for (const filter of immersiveActivity["intent-filter"] ?? []) {
+        if (!filter.action?.some((a: any) => a.$?.["android:name"] === VR_ACTIVITY_ACTION)) continue;
+        filter.category = [
+          ...(filter.category ?? []).filter(
+            (c: any) => !launchCategories.includes(c.$?.["android:name"])
+          ),
+          { $: { "android:name": launchCategories[androidXrBuild ? 1 : 0] } },
+        ];
+      }
+      immersiveActivity["meta-data"] = (immersiveActivity["meta-data"] ?? []).filter(
+        (entry: any) => entry.$?.["android:name"] !== "com.oculus.vr.focusaware"
+      );
+      if (!androidXrBuild) {
+        immersiveActivity["meta-data"].push({ $: {
+          "android:name": "com.oculus.vr.focusaware", "android:value": "true",
+        } });
+      }
       immersiveActivity.property = (immersiveActivity.property ?? []).filter(
         (entry: any) => entry.$?.["android:name"] !== propertyName
       );
+      if (immersiveActivity.property.length === 0) delete immersiveActivity.property;
+    }
+
+    if (androidXrBuild && immersiveActivity) {
+      immersiveActivity.property ??= [];
       immersiveActivity.property.push({ $: {
         "android:name": propertyName,
         "android:value": "XR_ACTIVITY_START_MODE_FULL_SPACE_UNMANAGED",

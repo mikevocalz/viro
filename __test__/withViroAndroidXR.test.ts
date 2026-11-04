@@ -122,6 +122,31 @@ describe("Android XR Expo prebuild", () => {
     expect(fs.readFileSync(path.join(files.android, "settings.gradle"), "utf8").match(/include ':react_viro'/g)).toHaveLength(1);
   });
 
+  test.each([
+    ["QUEST", "ANDROID_XR"],
+    ["ANDROID_XR", "QUEST"],
+  ])("a %s android/ re-prebuilt as %s keeps only the new runtime", async (from, to) => {
+    const files = project();
+    await prebuild(files.root, { xRMode: [from] });
+    const { manifest } = await prebuild(files.root, { xRMode: [to] });
+    const app = manifest.application![0] as any;
+    const vr = app.activity.find((activity: any) => activity.$["android:name"] === ".VRActivity");
+    const categories = vr["intent-filter"].flatMap((filter: any) =>
+      (filter.category ?? []).map((c: any) => c.$["android:name"])
+    );
+    const source = fs.readFileSync(path.join(files.java, "MainApplication.kt"), "utf8");
+    const toAndroidXr = to === "ANDROID_XR";
+    expect(source.match(/ViroPlatform\.\w+/g)).toEqual([`ViroPlatform.${to}`]);
+    expect(categories).toEqual([toAndroidXr
+      ? "org.khronos.openxr.intent.category.IMMERSIVE_HMD"
+      : "com.oculus.intent.category.VR"]);
+    expect(JSON.stringify(vr)).toMatch(toAndroidXr ? /PROPERTY_XR_ACTIVITY_START_MODE/ : /com\.oculus\.vr\.focusaware/);
+    expect(JSON.stringify(vr)).not.toMatch(toAndroidXr ? /com\.oculus/ : /PROPERTY_XR_ACTIVITY_START_MODE/);
+    expect(JSON.stringify(app["uses-native-library"] ?? [])).toBe(toAndroidXr
+      ? JSON.stringify([{ $: { "android:name": "libopenxr.google.so", "android:required": "false" } }])
+      : "[]");
+  });
+
   test.each(["QUEST", "PICO", "AR", "GVR"])("rejects a combined Android XR and %s build", (mode) => {
     expect(() => withViroAndroid(
       { name: "fixture", slug: "fixture" },
