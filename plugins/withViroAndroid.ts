@@ -244,7 +244,7 @@ const withViroAppBuildGradle = (
       assertDirectAppDependency(config.modRequest.projectRoot, "@metavr/layout-compat");
       assertDirectAppDependency(config.modRequest.projectRoot, "@metavr/layout-window-compat");
       const bomVersion =
-        props.android.metaSpatialLayoutBomVersion ?? "1.2026.0.0";
+        props.android.metaSpatialLayoutBomVersion ?? "1.2026.1.0";
       metaSpatialDependencies = renderMetaSpatialLayoutDependencies(bomVersion);
     }
 

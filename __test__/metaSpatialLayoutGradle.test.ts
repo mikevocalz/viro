@@ -111,7 +111,7 @@ describe("android.metaSpatialLayout", () => {
   test("single-variant app gets the Layout SDK as implementation", async () => {
     const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
     const gradle = await prebuild(makeProject(PLAIN_APP_GRADLE));
-    expect(gradle).toContain("implementation platform('com.meta.metavrx:metavrx-bom:1.2026.0.0')");
+    expect(gradle).toContain("implementation platform('com.meta.metavrx:metavrx-bom:1.2026.1.0')");
     expect(gradle).toContain("implementation 'com.meta.metavrx.layout:layout-react-compat'");
     expect(gradle).toContain("implementation 'com.meta.metavrx.layout:layout-window-react-compat'");
     expect(warn).not.toHaveBeenCalledWith(META_SPATIAL_LAYOUT_FLAVOR_WARNING);

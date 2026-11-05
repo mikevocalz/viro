@@ -20,7 +20,7 @@ The two Meta JavaScript packages must be direct dependencies of the consuming
 app so React Native autolinking and codegen can discover both registrations:
 
 ```bash
-npm install @metavr/layout-compat@^1.0.0 @metavr/layout-window-compat@^1.0.0
+npm install @metavr/layout-compat@^1.1.0 @metavr/layout-window-compat@^1.1.0
 ```
 
 Enable the native Maven side through Viro's Expo plugin:
@@ -42,7 +42,7 @@ The plugin injects Meta's BOM plus:
 - `com.meta.metavrx.layout:layout-react-compat`
 - `com.meta.metavrx.layout:layout-window-react-compat`
 
-The default BOM is `1.2026.0.0`. Override it with
+The default BOM is `1.2026.1.0`. Override it with
 `android.metaSpatialLayoutBomVersion` only when Meta publishes a compatible
 replacement and the JavaScript packages are updated with it.
 

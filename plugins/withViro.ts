@@ -255,7 +255,7 @@ export interface ViroConfigurationOptions {
     /**
      * MetaVRX BOM version used when metaSpatialLayout is enabled.
      *
-     * DEFAULTS TO: "1.2026.0.0"
+     * DEFAULTS TO: "1.2026.1.0"
      */
     metaSpatialLayoutBomVersion?: string;
     /**
