@@ -60,10 +60,12 @@ jobs:
       - name: Config plugin loads under plain Node require
         run: npm run test:plugin-load
 
-      # Consumers link this repo straight from git, so the committed
-      # dist/plugins is what expo prebuild loads.
-      - name: Committed dist/plugins matches the build
-        run: git diff --exit-code -- dist/plugins
+      # dist/ is gitignored. A git install (github:mikevocalz/viro#<ref>)
+      # gets dist/ from the `prepare` script, which npm runs on the cloned
+      # repo before packing it. A tracked dist/ file would be stale the
+      # moment the sources change, so fail if one gets committed.
+      - name: dist/ is not tracked
+        run: test -z "$(git ls-files dist)"
 
       - name: Pack smoke test
         run: npm pack --dry-run
