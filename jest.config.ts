@@ -166,15 +166,23 @@ const config: Config = {
   // testLocationInResults: false,
 
   // The glob patterns Jest uses to detect test files
-  // testMatch: [
-  //   "**/__tests__/**/*.[jt]s?(x)",
-  //   "**/?(*.)+(spec|test).[tj]s?(x)"
-  // ],
+  // Jest 30 widened the default to .mjs/.cjs, which picks up
+  // scripts/visionos-plugin.test.cjs. That file is a node:test suite run by
+  // node, not by Jest, so keep Jest 29's extension list.
+  testMatch: [
+    "**/__tests__/**/*.[jt]s?(x)",
+    "**/?(*.)+(spec|test).[jt]s?(x)",
+  ],
 
   // An array of regexp pattern strings that are matched against all test paths, matched tests are skipped
-  // testPathIgnorePatterns: [
-  //   "/node_modules/"
-  // ],
+  // The Specs suites need jest.specs.config.cjs (npm run test:specs) and the
+  // web preview has its own package (web-harness/specs-preview, npm test there);
+  // specs-public-api.yml runs both.
+  testPathIgnorePatterns: [
+    "/node_modules/",
+    "<rootDir>/__test__/ViroSpecs",
+    "<rootDir>/web-harness/specs-preview/",
+  ],
 
   // The regexp pattern or array of patterns that Jest uses to detect test files
   // testRegex: [],

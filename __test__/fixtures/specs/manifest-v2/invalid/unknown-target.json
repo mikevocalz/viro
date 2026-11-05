@@ -1,0 +1,1 @@
+{"description":"interaction on a missing node","expectSchemaValid":true,"expectCodes":["VS1010"],"manifest":{"version":2,"nodes":[],"interactions":[{"nodeId":"x","interactable":true,"manipulation":false,"events":["select"]}]}}

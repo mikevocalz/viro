@@ -1,0 +1,4 @@
+{
+  "description": ".map() over a const array expands with item and index bound.",
+  "parity": true
+}

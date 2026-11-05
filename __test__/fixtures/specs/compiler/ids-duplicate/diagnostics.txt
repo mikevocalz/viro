@@ -1,0 +1,1 @@
+scene.tsx:10:7 error VS1007 [dup]: ID "dup" is already used at /nodes/0/id. First declared at scene.tsx:9:7.

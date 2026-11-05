@@ -1,0 +1,30 @@
+{
+  "byteOffset": 2429963,
+  "errors": [
+    "W 07:46:22.622 ${CONFIG_DIR}/Bundle/Plugins/[ChatTool] LEAF Plugin@5.23.0@362f6c78a8b5e47e6431049afb6a7109/dist/main.js:802 log] [LeafPlugin][LeafPlugin] Skipping plugin state save: instance was destroyed before its state finished loading. (×3)",
+    "W 07:46:27.169 [CamPlat.LensCore.Scn.Rendering.SnapGraphics] Depth format Depth24UnormStencil8 is not renderable; using Depth32FloatStencil8."
+  ],
+  "errorsCapped": false,
+  "firstActivityAtMs": 111,
+  "logFile": "~/Library/Preferences/Snap/Lens Studio/logs/LensStudioLog-2026-10-28-07-08-05-361-a3223.txt",
+  "mode": "refresh",
+  "newBytes": 7098,
+  "prints": [
+    "I 07:46:24.776 [Preview 1] [Packages/SpectaclesInteractionKit.lspkg/Utils/logger.ts:21] FrameCache: Initialized global cache flushing for FrameCache",
+    "I 07:46:26.011 [Preview 1] [Packages/SpectaclesInteractionKit.lspkg/Core/ConfigurationValidator/ConfigurationValidator.ts:16] SIK Version : 0.18.0",
+    "I 07:46:26.624 [Preview 1] [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.305s]Register scenario: viro_lab_render",
+    "I 07:46:26.625 [Preview 1] [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.306s]Register scenario: viro_lab_select",
+    "I 07:46:26.625 [Preview 1] [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.306s]Register scenario: viro_lab_select_ik",
+    "I 07:46:26.625 [Preview 1] [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.306s]Register scenario: viro_lab_drag",
+    "I 07:46:26.625 [Preview 1] [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.306s]Register scenario: viro_lab_navigate",
+    "I 07:46:26.625 [Preview 1] [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.306s]Register scenario: viro_lab_deliberate_failure"
+  ],
+  "printsCapped": false,
+  "rotated": false,
+  "settleElapsedMs": 6049,
+  "settleMaxMs": 6000,
+  "settleMaxRaised": false,
+  "status": "success",
+  "tail": "I 07:46:22.619 Lens has been reset\nI 07:46:22.624 ${CONFIG_DIR}/Bundle/Plugins/[ChatTool] LEAF Plugin@5.23.0@362f6c78a8b5e47e6431049afb6a7109/dist/main.js:805 log] [LeafPlugin][DefaultSettingsRepository] Loading settings from \"<repo>/examples/specs-platform-lab/lens/leaf_plugin_settings.json\"\nD 07:46:24.125 Http request cancellation not implemented\nD 07:46:24.125 Http request cancellation not implemented\nD 07:46:24.127 Http request cancellation not implemented\nD 07:46:24.127 Http request cancellation not implemented\nI 07:46:28.297 Lens has been reset\nI 07:46:28.302 ${CONFIG_DIR}/Bundle/Plugins/[ChatTool] LEAF Plugin@5.23.0@362f6c78a8b5e47e6431049afb6a7109/dist/main.js:805 log] [LeafPlugin][DefaultSettingsRepository] Loading settings from \"<repo>/examples/specs-platform-lab/lens/leaf_plugin_settings.json\"\nI 07:46:28.448 Lens has been reset\nI 07:46:28.450 ${CONFIG_DIR}/Bundle/Plugins/[ChatTool] LEAF Plugin@5.23.0@362f6c78a8b5e47e6431049afb6a7109/dist/main.js:805 log] [LeafPlugin][DefaultSettingsRepository] Loading settings from \"<repo>/examples/specs-platform-lab/lens/leaf_plugin_settings.json\"",
+  "truncated": false
+}

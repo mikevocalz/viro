@@ -3,7 +3,9 @@ import {
   AppState,
   NativeModules,
   PermissionsAndroid,
+  Pressable,
   StyleSheet,
+  Text,
   View,
   ViewProps,
 } from "react-native";
@@ -25,6 +27,10 @@ import {
 } from "./VisionOS/ViroVisionOSModule";
 import { VRQuestNavigatorBridge } from "./Utilities/VRQuestNavigatorBridge";
 import { VRCapture, VRModuleOpenXR } from "./Utilities/VRModuleOpenXR";
+import {
+  sendViroUsagePing,
+  ViroUsagePingSuppressed,
+} from "./Utilities/ViroUsagePing";
 import type { Viro3DPoint } from "./Types/ViroUtils";
 
 const ViroSceneNavigatorModule = NativeModules.VRTSceneNavigatorModule as
@@ -53,12 +59,20 @@ const MIN_RN_FOR_VR = { major: 0, minor: 83 };
 // them. USE_ANCHOR_API/USE_SCENE gate plane & anchor data (needed now that the
 // ViroARScene root mounts on Quest too); HEADSET_CAMERA gates the passthrough
 // Camera2 feed ViroObjectDetector reads. Requested once before the first VR
-// launch; denial degrades gracefully elsewhere (no planes / no passthrough
-// feed, see QuestPassthroughCamera) rather than blocking VR.
-const QUEST_RUNTIME_PERMISSIONS = [
-  "horizonos.permission.USE_ANCHOR_API",
-  "com.oculus.permission.USE_SCENE",
-  "horizonos.permission.HEADSET_CAMERA",
+// launch, as questPermissions picks; denial degrades gracefully elsewhere (no
+// planes / no passthrough feed, see QuestPassthroughCamera) rather than
+// blocking VR.
+export type QuestRuntimePermission = "spatialData" | "headsetCamera";
+const QUEST_RUNTIME_PERMISSIONS: Record<QuestRuntimePermission, string[]> = {
+  spatialData: [
+    "horizonos.permission.USE_ANCHOR_API",
+    "com.oculus.permission.USE_SCENE",
+  ],
+  headsetCamera: ["horizonos.permission.HEADSET_CAMERA"],
+};
+const DEFAULT_QUEST_PERMISSIONS: QuestRuntimePermission[] = [
+  "spatialData",
+  "headsetCamera",
 ];
 
 function checkRNVersionForVR(): void {
@@ -84,6 +98,35 @@ function checkRNVersionForVR(): void {
   );
 }
 
+function launchVR(): void {
+  VRQuestNavigatorBridge.setVRActive(true);
+  VRLauncher?.launchVRScene?.();
+}
+
+/** The default `renderQuestPanel`. */
+function QuestPanel({
+  onEnter,
+  style,
+}: {
+  onEnter: () => void;
+  style?: ViewProps["style"];
+}) {
+  return (
+    <View style={[styles.questPanel, style]}>
+      <Pressable
+        accessibilityRole="button"
+        onPress={onEnter}
+        style={({ pressed }) => [
+          styles.questEnterButton,
+          pressed && styles.questEnterButtonPressed,
+        ]}
+      >
+        <Text style={styles.questEnterLabel}>Enter immersive view</Text>
+      </Pressable>
+    </View>
+  );
+}
+
 type SceneFactory = { scene: () => React.JSX.Element };
 
 type Props = ViewProps & {
@@ -106,10 +149,13 @@ type Props = ViewProps & {
    * The scene root may be either:
    *  - `ViroScene`   → fully-virtual VR.
    *  - `ViroARScene` → mixed reality: passthrough is enabled automatically and
-   *    real-time plane detection (XR_EXT_plane_detection, Quest 3 / 3S) drives
-   *    `onAnchorFound` and `ViroARPlane`, exactly as on phone AR. A single
-   *    AR-rooted `initialScene` therefore runs on phones (ARCore) and Quest (OpenXR)
-   *    with no per-platform changes. See docs/QUEST_SETUP.md §7b.
+   *    planes drive `onAnchorFound` and `ViroARPlane` as on phone AR. On Meta
+   *    Quest the planes are the room model the wearer made in Space Setup
+   *    (XR_FB_scene) rather than live detection, and arrive only with the
+   *    spatial data permission (`questPermissions`). A runtime with
+   *    XR_EXT_plane_detection detects them live instead. A single AR-rooted
+   *    `initialScene` therefore runs on phones (ARCore) and Quest (OpenXR)
+   *    with no per-platform changes.
    */
   vrInitialScene?: SceneFactory;
 
@@ -132,6 +178,26 @@ type Props = ViewProps & {
    */
   trackingOrigin?: "eye" | "floor";
   onExitViro?: () => void;
+
+  // ── Meta Quest panel ───────────────────────────────────────────────────────
+  /**
+   * What the app's 2D panel shows on Meta Quest, where the scene runs in the
+   * headset view instead. Horizon OS brings the panel forward whenever the
+   * headset view closes: the Back button, quitting from the system menu, going
+   * Home or opening another app's panel. The headset view is not reopened on
+   * its own, because none of those can be told apart here from the wearer
+   * reopening the app. Call `enter` to reopen it. Defaults to an "Enter
+   * immersive view" button.
+   */
+  renderQuestPanel?: (enter: () => void) => React.ReactNode;
+  /**
+   * The Meta Quest runtime permissions asked for before the headset view first
+   * opens: "spatialData" for the room's planes and anchors, "headsetCamera" for
+   * the passthrough feed ViroObjectDetector reads. Horizon OS skips a permission
+   * the manifest does not declare, so ask only for what the app declares and
+   * uses; [] asks for nothing. Defaults to both.
+   */
+  questPermissions?: QuestRuntimePermission[];
 
   // ── visionOS ───────────────────────────────────────────────────────────────
   /**
@@ -167,7 +233,8 @@ type Props = ViewProps & {
  *  - **Meta Quest** → launches VRActivity via `VRLauncher.launchVRScene()` and
  *    forwards all navigator operations (push/pop/etc.) to the
  *    `ViroVRSceneNavigator` running there via `VRQuestNavigatorBridge`.
- *    Render output is null — VRActivity owns the display.
+ *    VRActivity owns the display; what renders here is the app's 2D panel
+ *    (`renderQuestPanel`).
  *
  * Pass `arInitialScene` / `vrInitialScene` when the AR and VR scenes differ.
  * When only `initialScene` is provided it is used for both modes.
@@ -212,6 +279,8 @@ export const ViroXRSceneNavigator = React.forwardRef<unknown, Props>(
       trackingOrigin,
       onExitViro,
       debug,
+      renderQuestPanel,
+      questPermissions = DEFAULT_QUEST_PERMISSIONS,
       visionOSImmersionStyle = "mixed",
       ...rest
     } = props;
@@ -311,26 +380,28 @@ export const ViroXRSceneNavigator = React.forwardRef<unknown, Props>(
       return arRef.current as any;
     }, []);
 
-    // Track AppState so we can detect background → active transitions.
-    const appStateRef = React.useRef(AppState.currentState);
     // Identity of this navigator for ImmersiveSpace ownership. A symbol rather than a
     // counter: it cannot collide, and it means nothing outside this comparison.
     const visionOSOwnerRef = React.useRef<symbol>(Symbol("ViroXRSceneNavigator"));
-    // Timestamp at which AppState last left "active". Lets us distinguish a
-    // genuine Quest-menu return (background lasts seconds) from racy
-    // background→active bounces caused by the dual-Activity ReactHost
-    // transitioning state (background lasts <500ms). Only the former should
-    // re-launch VR; the latter would trigger a no-op startActivity that can
-    // contribute to the lifecycle storm in some configurations.
-    const leftActiveAtRef = React.useRef(0);
+
+    React.useEffect(() => {
+      sendViroUsagePing("xr", {
+        occlusion_mode: rest.occlusionMode,
+        passthrough_enabled: passthroughEnabled,
+        hand_tracking_enabled: handTrackingEnabled,
+        immersion_style: isVisionOS ? visionOSImmersionStyle : undefined,
+      });
+      // One usage ping per mount, with the configuration it mounted with.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // On visionOS: open the ImmersiveSpace on mount and close it on unmount.
     //
     // This mirrors what the Quest branch does with VRActivity — in both cases something other
     // than the React view hierarchy owns the display. The difference is that VRActivity runs its
-    // own React host, so Quest forwards the scene across a bridge and renders null here, whereas
-    // the visionOS ImmersiveSpace shares this runtime: the scene tree below stays mounted, and
-    // the native side hands its VRTScene to the CompositorServices render loop.
+    // own React host, so Quest forwards the scene across a bridge and renders only its panel
+    // here, whereas the visionOS ImmersiveSpace shares this runtime: the scene tree below stays
+    // mounted, and the native side hands its VRTScene to the CompositorServices render loop.
     React.useEffect(() => {
       if (!isVisionOS) return;
       // An AR-rooted scene has nothing to put in the space — ViroARScene cannot mount on visionOS
@@ -362,10 +433,9 @@ export const ViroXRSceneNavigator = React.forwardRef<unknown, Props>(
         });
       open();
 
-      // Quest re-launches VRActivity when the app comes back from the system menu, because the
-      // Activity finishes on the way out. visionOS closes the ImmersiveSpace on the same
-      // transition, so it is reopened for the same reason — and only by whoever owns it, or two
-      // mounted navigators would both reopen and fight over the one surface.
+      // visionOS closes the ImmersiveSpace when the app leaves the foreground, so it is reopened
+      // when the app is active again. Only by whoever owns it, or two mounted navigators would
+      // both reopen and fight over the one surface.
       const appStateSub = AppState.addEventListener("change", (nextState) => {
         if (nextState === "active" && ownsImmersiveSpace(owner)) {
           open();
@@ -383,13 +453,14 @@ export const ViroXRSceneNavigator = React.forwardRef<unknown, Props>(
           });
         }
       };
+      // The space opens once per mount with the immersion style it mounted with;
+      // reopening on a prop change would fight the AppState reopen above.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // On Quest AND PICO: register the intent (scene + renderer config)
-    // then launch VRActivity. The VR activity owns the immersive display;
-    // MainActivity stays the 2D panel surface (Horizon-parity on PICO so
-    // a 2D RN UI never bleeds into the XR scene). VRActivity auto-finishes
-    // when MainActivity resumes, so we re-launch on background→active.
+    // then launch VRActivity. Only on mount; renderQuestPanel says why it
+    // is not relaunched.
     React.useEffect(() => {
       if (!isMetaHorizonXR && !isPico) return;
       checkRNVersionForVR();
@@ -411,43 +482,36 @@ export const ViroXRSceneNavigator = React.forwardRef<unknown, Props>(
             debug,
           });
         }
-        VRQuestNavigatorBridge.setVRActive(true);
-        VRLauncher?.launchVRScene?.();
+        launchVR();
       };
 
       // Request the runtime grants once before the first launch. Caught and
       // ignored on failure — a denied/unavailable permission should degrade
       // (no planes, no passthrough camera), not block VR from opening at all.
-      PermissionsAndroid.requestMultiple(QUEST_RUNTIME_PERMISSIONS as any)
+      const permissions = questPermissions.flatMap(
+        (permission) => QUEST_RUNTIME_PERMISSIONS[permission]
+      );
+      (permissions.length > 0
+        ? PermissionsAndroid.requestMultiple(permissions as any)
+        : Promise.resolve()
+      )
         .catch(() => undefined)
         .then(registerIntentAndLaunch);
-
-      const sub = AppState.addEventListener("change", (nextState) => {
-        const prev = appStateRef.current;
-        appStateRef.current = nextState;
-        if (prev === "active" && nextState !== "active") {
-          leftActiveAtRef.current = Date.now();
-        }
-        // Re-launch VR when the app returns from being backgrounded by the system
-        // (Quest menu, home, recents). Explicit exitVRScene() clears isVRActive()
-        // before finishing VRActivity, so Activity-transition-driven background→active
-        // cycles are ignored here.
-        if (prev !== "active" && nextState === "active" && VRQuestNavigatorBridge.isVRActive()) {
-          // Skip if we were only briefly out of "active" — that's a racy
-          // dual-Activity ReactHost bounce, not a genuine menu return.
-          const backgroundedFor = Date.now() - leftActiveAtRef.current;
-          if (leftActiveAtRef.current > 0 && backgroundedFor < 1500) return;
-          VRQuestNavigatorBridge.setVRActive(true);
-          VRLauncher?.launchVRScene?.();
-        }
-      });
-      return () => sub.remove();
+      // Launch only on mount; renderQuestPanel handles re-entry.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Quest AND PICO render nothing here — VRActivity owns the display.
-    // The XR scene runs in a dedicated immersive activity so MainActivity
-    // can stay a 2D panel (no React Native UI bleed into the XR scene).
-    if (isMetaHorizonXR || isPico) return null;
+    // The panel is only seen while the headset view is closed. Re-entry keeps the
+    // intent registered on mount. PICO takes the same explicit re-entry model —
+    // the XR scene runs in a dedicated immersive activity, so nothing a 2D
+    // panel renders here can bleed into the XR scene.
+    if (isMetaHorizonXR || isPico) {
+      return renderQuestPanel ? (
+        renderQuestPanel(launchVR)
+      ) : (
+        <QuestPanel onEnter={launchVR} style={rest.style} />
+      );
+    }
 
     if (isVisionOS) {
       // The visionOS renderer has no AR subsystem — every VROAR* class is excluded from the
@@ -471,13 +535,15 @@ export const ViroXRSceneNavigator = React.forwardRef<unknown, Props>(
       // native VRTScene reaches the renderer.
       const { style: _ignoredStyle, ...visionRest } = rest as { style?: unknown };
       return (
-        <View style={styles.visionOSHost} pointerEvents="none">
-          <ViroSceneNavigator
-            ref={visionRef}
-            initialScene={visionScene}
-            {...(visionRest as object)}
-          />
-        </View>
+        <ViroUsagePingSuppressed.Provider value={true}>
+          <View style={styles.visionOSHost} pointerEvents="none">
+            <ViroSceneNavigator
+              ref={visionRef}
+              initialScene={visionScene}
+              {...(visionRest as object)}
+            />
+          </View>
+        </ViroUsagePingSuppressed.Provider>
       );
     }
 
@@ -489,16 +555,18 @@ export const ViroXRSceneNavigator = React.forwardRef<unknown, Props>(
       return null;
     }
     return (
-      <ViroARSceneNavigator
-        ref={arRef}
-        initialScene={scene}
-        hdrEnabled={hdrEnabled}
-        pbrEnabled={pbrEnabled}
-        bloomEnabled={bloomEnabled}
-        shadowsEnabled={shadowsEnabled}
-        multisamplingEnabled={multisamplingEnabled}
-        {...rest}
-      />
+      <ViroUsagePingSuppressed.Provider value={true}>
+        <ViroARSceneNavigator
+          ref={arRef}
+          initialScene={scene}
+          hdrEnabled={hdrEnabled}
+          pbrEnabled={pbrEnabled}
+          bloomEnabled={bloomEnabled}
+          shadowsEnabled={shadowsEnabled}
+          multisamplingEnabled={multisamplingEnabled}
+          {...rest}
+        />
+      </ViroUsagePingSuppressed.Provider>
     );
   }
 );
@@ -510,5 +578,25 @@ const styles = StyleSheet.create({
     width: 0,
     height: 0,
     opacity: 0,
+  },
+  questPanel: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#000000",
+  },
+  questEnterButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 24,
+    backgroundColor: "#FFFFFF",
+  },
+  questEnterButtonPressed: {
+    opacity: 0.7,
+  },
+  questEnterLabel: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#000000",
   },
 });

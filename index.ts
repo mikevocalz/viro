@@ -9,8 +9,10 @@ import {
   StudioARScene,
   StudioRecordingIndicator,
   StudioPlacementIndicator,
+  StudioColocationIndicator,
   useStudioRecording,
   useStudioPlacement,
+  useStudioColocation,
 } from "./components/Studio";
 import {
   ViroVisionOSModule,
@@ -38,6 +40,7 @@ import {
   setColocationLocalPose,
   getColocationState,
   getColocationPeers,
+  getColocationDeviceId,
   VIRO_POSE_INTERVAL_MS,
 } from "./components/AR/ViroColocation";
 import { useViroColocation } from "./components/hooks/useViroColocation";
@@ -82,6 +85,22 @@ import { ViroARObjectMarker } from "./components/AR/ViroARObjectMarker";
 import { ViroARTrackingTargets } from "./components/AR/ViroARTrackingTargets";
 import { ViroARPlane } from "./components/AR/ViroARPlane";
 import { ViroARPlaneSelector } from "./components/AR/ViroARPlaneSelector";
+import { ViroVPS } from "./components/AR/ViroVPS";
+import { ViroVPSAnchor } from "./components/AR/ViroVPSAnchor";
+import {
+  findNearbyLocations,
+  getLocationMapDownload,
+  fetchMapBytes,
+  findNearestMap,
+  getLocationWorldMeshDownload,
+  fetchAssetBytes,
+  getLocationSemanticDownload,
+  fetchLocationSemanticObjects,
+} from "./components/AR/ViroVPSMapDownload";
+import { queryLocationsByImage } from "./components/AR/ViroVPSQuery";
+import { uploadScanRecording, getScan } from "./components/AR/ViroVPSScanUpload";
+import { ViroVPSError } from "./components/AR/ViroVPSClient";
+import { createUserTokenCredentials } from "./components/AR/ViroUserTokenCredentials";
 import { ViroARScene } from "./components/AR/ViroARScene";
 import { ViroARSceneNavigator } from "./components/AR/ViroARSceneNavigator";
 import { ViroBox } from "./components/ViroBox";
@@ -121,6 +140,9 @@ import {
 import { ViroMaterialVideo } from "./components/ViroMaterialVideo";
 import { ViroCameraTexture } from "./components/ViroCameraTexture";
 import { ViroExternalVideo } from "./components/ViroExternalVideo";
+export type { ViroExternalVideoProps } from "./components/ViroExternalVideo";
+export { VIRO_EXTERNAL_VIDEO_UNAVAILABLE_ERROR } from "./components/Utilities/externalVideoUnavailableError";
+export type { ViroExternalVideoSourceClass } from "./components/Types/ViroExternalVideoSourceClass";
 export type {
   ViroCameraPosition,
   ViroCameraReadyEvent,
@@ -131,6 +153,48 @@ export type {
 } from "./components/useViroMapCamera";
 export type { ViroARCloudAnchorProps } from "./components/AR/ViroARCloudAnchor";
 export type { ViroSharedFrameProps } from "./components/AR/ViroSharedFrame";
+export type {
+  ViroVPSProps,
+  ViroVPSTrackingStateEvent,
+  ViroVPSLocalizedEvent,
+  ViroVPSWorldMeshEvent,
+  ViroVPSStartTrackingResult,
+  ViroVPSNavigator,
+  ViroVPSErrorDetail,
+} from "./components/AR/ViroVPS";
+export type { ViroVPSTrackingState } from "./components/AR/ViroVPSTracking";
+export type {
+  ViroVPSAnchorProps,
+  ViroVPSAnchorState,
+  ViroVPSAnchorStateEvent,
+} from "./components/AR/ViroVPSAnchor";
+export type {
+  ViroVPSNearbyLocation,
+  ViroVPSMapDownload,
+  ViroVPSAssetDownload,
+  ViroVPSAssetKind,
+  ViroVPSSemanticObject,
+} from "./components/AR/ViroVPSMapDownload";
+export type { ViroVPSQueryCandidate, ViroVPSQueryOptions } from "./components/AR/ViroVPSQuery";
+export type { ViroVPSQueryFrame, ViroVPSQueryFrameResult } from "./components/Types/ViroEvents";
+export type {
+  ViroVPSScanTarget,
+  ViroVPSScan,
+  ViroVPSScanOutput,
+  ViroVPSScanUploadOptions,
+} from "./components/AR/ViroVPSScanUpload";
+export type {
+  ViroVPSConnection,
+  ViroVPSCredentials,
+  ViroVPSCredentialsProvider,
+  ViroVPSCredentialsRequest,
+  ViroVPSCredentialsSource,
+} from "./components/AR/ViroVPSClient";
+export type {
+  ViroUserToken,
+  ViroUserTokenCredentials,
+  ViroUserTokenCredentialsOptions,
+} from "./components/AR/ViroUserTokenCredentials";
 export type {
   ViroColocationState,
   ViroColocationPeer,
@@ -173,6 +237,13 @@ export type {
 } from "./components/AR/ViroFrameSource";
 export type { ViroLocationTransform } from "./components/AR/ViroLocationFrame";
 export type {
+  ViroWorldMeshConfig,
+  ViroWorldMeshSource,
+  ViroWorldMeshStats,
+  ViroWorldMeshStatsResult,
+  ViroWorldMeshUpdatedEvent,
+} from "./components/Types/ViroWorldMesh";
+export type {
   ViroSmoothingOptions,
   ViroEntitySmoothingOptions,
   ViroSmoothedFields,
@@ -191,6 +262,7 @@ export type {
   ViroDetectorReadyEvent,
   ViroDetectorErrorEvent,
 } from "./components/ViroObjectDetector";
+export { VIRO_OBJECT_DETECTOR_UNAVAILABLE_ERROR } from "./components/ViroObjectDetector";
 import { ViroNode } from "./components/ViroNode";
 import { ViroOmniLight } from "./components/ViroOmniLight";
 import { ViroOrbitCamera } from "./components/ViroOrbitCamera";
@@ -369,6 +441,7 @@ import {
 import { ViroSurface } from "./components/ViroSurface";
 import { ViroSceneNavigator } from "./components/ViroSceneNavigator";
 import { VIRO_VERSION } from "./components/Utilities/ViroVersion";
+import { ViroTelemetry } from "./components/Utilities/ViroUsagePing";
 import { ViroQuestEntryPoint } from "./components/ViroQuestEntryPoint";
 import { VRQuestNavigatorBridge } from "./components/Utilities/VRQuestNavigatorBridge";
 import {
@@ -378,9 +451,11 @@ import {
   setPassthroughStyle,
   triggerHaptic,
   getOpenXRRuntimeCapabilities,
+  onRoomMoved,
 } from "./components/Utilities/VRModuleOpenXR";
 import type {
   VRModuleOpenXRType,
+  ViroCaptureResult,
   ViroPassthroughStyle,
   ViroHapticHand,
   ViroTrackingOrigin,
@@ -417,6 +492,7 @@ import { AppRegistry } from "react-native";
 AppRegistry.registerComponent("VRQuestScene", () => ViroQuestEntryPoint);
 
 export {
+  ViroSpecsScene,
   ViroSpatialSceneProvider,
   ViroSpatialWindow,
   getViroSpatialLayoutSupport,
@@ -431,6 +507,7 @@ export {
   setColocationLocalPose,
   getColocationState,
   getColocationPeers,
+  getColocationDeviceId,
   VIRO_POSE_INTERVAL_MS,
   useViroColocation,
   useViroColocationRoom,
@@ -453,6 +530,21 @@ export {
   ViroARTrackingTargets,
   ViroARPlane,
   ViroARPlaneSelector,
+  ViroVPS,
+  ViroVPSAnchor,
+  findNearbyLocations,
+  getLocationMapDownload,
+  fetchMapBytes,
+  findNearestMap,
+  getLocationWorldMeshDownload,
+  fetchAssetBytes,
+  getLocationSemanticDownload,
+  fetchLocationSemanticObjects,
+  queryLocationsByImage,
+  uploadScanRecording,
+  getScan,
+  ViroVPSError,
+  createUserTokenCredentials,
   ViroARScene,
   ViroARSceneNavigator,
   ViroBox,
@@ -535,6 +627,7 @@ export {
   setPassthroughStyle,
   triggerHaptic,
   getOpenXRRuntimeCapabilities,
+  onRoomMoved,
   Viro3DSceneNavigator,
   // Streaming audio
   StreamingAudioManager,
@@ -638,6 +731,7 @@ export {
   ViroShaderUniform,
   ViroShaderModifier,
   VIRO_VERSION,
+  ViroTelemetry,
   // Provider Types
   ViroProvider,
   // Cloud Anchor Types
@@ -650,6 +744,7 @@ export {
   // Geospatial Types
   ViroGeospatialAnchorProvider,
   ViroEarthTrackingState,
+  ViroRecordingStatus,
   ViroVPSAvailability,
   ViroGeospatialAnchorType,
   ViroQuaternion,
@@ -677,8 +772,10 @@ export {
   StudioARScene,
   StudioRecordingIndicator,
   StudioPlacementIndicator,
+  StudioColocationIndicator,
   useStudioRecording,
   useStudioPlacement,
+  useStudioColocation,
   // VisionOS
   ViroVisionOSModule,
   isVisionOS,
@@ -693,6 +790,7 @@ export {
 
 export type {
   VRModuleOpenXRType,
+  ViroCaptureResult,
   ViroPassthroughStyle,
   ViroHapticHand,
   ViroTrackingOrigin,
@@ -717,6 +815,14 @@ export type {
   StudioSceneNavigatorProps,
   StudioApiError,
   StudioApiErrorFields,
+  StudioColocationErrorCode,
+  StudioColocationOptions,
+  StudioColocationRoom,
+  StudioColocationState,
+  StudioQuestMenuItem,
+  StudioVpsLocalization,
+  StudioVpsState,
+  StudioVpsStateEvent,
 } from "./components/Studio";
 
 export { isStudioApiError } from "./components/Studio";
@@ -753,3 +859,171 @@ export type {
   ViroSpecsPlacementPose,
 } from "./components/Specs/ViroSpecsAR";
 export type { ViroSpecsAnimationPlan } from "./components/Specs/ViroSpecsCompiler";
+
+// Specs typed actions and state
+export {
+  VIRO_SPECS_ACTION_ID_PATTERN,
+  checkSpecsActionPayload,
+  defineSpecsActions,
+  specsTrigger,
+} from "./components/Specs/core/actions";
+export type {
+  ViroSpecsActionDeclaration,
+  ViroSpecsActionField,
+  ViroSpecsActionFieldType,
+  ViroSpecsActionPayload,
+  ViroSpecsActionPayloads,
+  ViroSpecsActionSet,
+  ViroSpecsActionSpec,
+  ViroSpecsActionTrigger,
+  ViroSpecsActionTriggerEvent,
+  ViroSpecsActionValue,
+} from "./components/Specs/core/actions";
+export {
+  bindSpecsActionsToStore,
+  createSpecsActionDispatcher,
+  resolveSpecsTriggers,
+} from "./components/Specs/ViroSpecsActions";
+export type {
+  ViroSpecsActionDispatcher,
+  ViroSpecsActionDispatcherOptions,
+  ViroSpecsActionEvent,
+  ViroSpecsActionHandlers,
+  ViroSpecsActionReducers,
+  ViroSpecsStateStore,
+} from "./components/Specs/ViroSpecsActions";
+export type { ViroSpecsCompileOptions } from "./components/Specs/ViroSpecsCompiler";
+export type { ViroSpecsScroll } from "./components/Specs/core/manifest";
+
+// Specs manifest v2 and diagnostics
+export {
+  VIRO_SPECS_DIAGNOSTICS,
+} from "./components/Specs/core/diagnosticCodes";
+export type {
+  ViroSpecsDiagnosticCode,
+  ViroSpecsDiagnosticDefinition,
+  ViroSpecsDiagnosticSeverity,
+} from "./components/Specs/core/diagnosticCodes";
+export {
+  createViroSpecsDiagnostic,
+  formatViroSpecsDiagnostic,
+  hasViroSpecsErrors,
+} from "./components/Specs/core/diagnostic";
+export type {
+  ViroSpecsDiagnostic,
+  ViroSpecsDiagnosticDetails,
+} from "./components/Specs/core/diagnostic";
+export {
+  VIRO_SPECS_MANIFEST_SCHEMA_ID,
+  VIRO_SPECS_MANIFEST_VERSION,
+  VIRO_SPECS_SCENE_PROTOCOL_VERSION,
+  VIRO_SPECS_SCENE_DOCUMENT_PROTOCOL_VERSION,
+} from "./components/Specs/core/manifest";
+export type {
+  ViroSpecsSceneDocument,
+  ViroSpecsSceneDocumentNode,
+  ViroSpecsAmbientLight,
+  ViroSpecsAnimationTarget,
+  ViroSpecsAnimationTrack,
+  ViroSpecsButtonAuthoredState,
+  ViroSpecsButtonVisualState,
+  ViroSpecsComponentSpec,
+  ViroSpecsComponentType,
+  ViroSpecsDirectionalLight,
+  ViroSpecsEasing,
+  ViroSpecsExtents,
+  ViroSpecsGroupNode,
+  ViroSpecsImageNode,
+  ViroSpecsLight,
+  ViroSpecsManifestAnimation,
+  ViroSpecsManifestGenerator,
+  ViroSpecsManifestInteraction,
+  ViroSpecsManifestNode,
+  ViroSpecsManifestPolyline,
+  ViroSpecsManifestV1,
+  ViroSpecsManifestV2,
+  ViroSpecsMaterial,
+  ViroSpecsModelFormat,
+  ViroSpecsModelViewerSpec,
+  ViroSpecsPanelButtonSpec,
+  ViroSpecsPanelImageSpec,
+  ViroSpecsPanelTextSpec,
+  ViroSpecsScrollViewSpec,
+  ViroSpecsSpatialPanelSpec,
+  ViroSpecsTextRole,
+  ViroSpecsModelNode,
+  ViroSpecsNodeKind,
+  ViroSpecsOmniLight,
+  ViroSpecsPanelNode,
+  ViroSpecsQuat,
+  ViroSpecsSoundNode,
+  ViroSpecsSpotLight,
+  ViroSpecsTextNode,
+  ViroSpecsTextStyle,
+  ViroSpecsVec3,
+  ViroSpecsVideoNode,
+  ViroSpecsWireNode,
+  ViroSpecsWireNodeKind,
+  ViroSpecsWireSceneSnapshot,
+} from "./components/Specs/core/manifest";
+export { migrateSpecsManifest } from "./components/Specs/core/migrate";
+export {
+  parseSpecsManifest,
+  parseSpecsManifestJson,
+} from "./components/Specs/core/parse";
+export {
+  validateSpecsManifestV2,
+  validateSpecsSceneSnapshot,
+} from "./components/Specs/core/validate";
+export type {
+  ViroSpecsValidationContext,
+  ViroSpecsValidationResult,
+} from "./components/Specs/core/validate";
+export { toSpecsSceneDocument, toSpecsSceneSnapshot } from "./components/Specs/core/lower";
+export {
+  checkSpecsExperience,
+  VIRO_SPECS_EXPERIENCE_CODES,
+  VIRO_SPECS_TEXT_EM_METERS_PER_POINT,
+} from "./components/Specs/core/experience";
+export {
+  resolveSpecsTokens,
+  specsAngleToMeters,
+  specsMetersToAngle,
+  VIRO_SPECS_DEFAULT_THEME,
+  VIRO_SPECS_HIGH_CONTRAST_TOKENS,
+  VIRO_SPECS_SPATIAL_TOKENS,
+} from "./components/Specs/core/tokens";
+export type {
+  ViroSpecsExperiencePreferences,
+  ViroSpecsHighContrastTokens,
+  ViroSpecsSpatialTokens,
+  ViroSpecsTheme,
+} from "./components/Specs/core/tokens";
+export {
+  ModelViewer,
+  PanelButton,
+  PanelImage,
+  PanelText,
+  SpatialPanel,
+  SpatialScrollView,
+} from "./components/Specs/premium";
+export type {
+  ModelViewerProps,
+  PanelButtonProps,
+  PanelImageProps,
+  PanelTextProps,
+  PremiumBaseProps,
+  SpatialPanelProps,
+  SpatialScrollViewProps,
+} from "./components/Specs/premium";
+export type { ViroSpecsLoweredScene } from "./components/Specs/core/lower";
+export {
+  VIRO_SPECS_UNSUPPORTED_FEATURE_STATUS,
+} from "./components/Specs/core/capabilities";
+export type {
+  ViroSpecsCapabilityStatus,
+  ViroSpecsEvidenceLabel,
+  ViroSpecsUnsupportedFeature,
+} from "./components/Specs/core/capabilities";
+export { applySpecsManifest } from "./components/Specs/applySpecsManifest";
+export type { ViroSpecsApplyResult } from "./components/Specs/applySpecsManifest";

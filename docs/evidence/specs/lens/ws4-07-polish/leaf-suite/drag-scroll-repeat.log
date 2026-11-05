@@ -1,0 +1,12 @@
+VIRO_LAB_LEAF drag frames=15 dragEvents=19 movedCm=13.316
+[viro_lab_drag] PASSED
+VIRO_LAB_LEAF scroll_window moved staged=25.696622848510742 control=20.065889358520508
+[viro_lab_scroll_window] PASSED
+VIRO_LAB_LEAF drag frames=15 dragEvents=19 movedCm=13.295
+[viro_lab_drag] PASSED
+VIRO_LAB_LEAF scroll_window moved staged=25.158523559570312 control=20.073402404785156
+[viro_lab_scroll_window] PASSED
+VIRO_LAB_LEAF drag frames=15 dragEvents=19 movedCm=13.318
+[viro_lab_drag] PASSED
+VIRO_LAB_LEAF scroll_window moved staged=25.158523559570312 control=20.059005737304688
+[viro_lab_scroll_window] PASSED

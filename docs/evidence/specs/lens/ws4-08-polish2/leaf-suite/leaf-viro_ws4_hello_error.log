@@ -1,0 +1,23 @@
+16:15:34.162 [Packages/SpectaclesInteractionKit.lspkg/Utils/logger.ts:21] FrameCache: Initialized global cache flushing for FrameCache
+16:15:34.441 [Packages/SpectaclesInteractionKit.lspkg/Core/ConfigurationValidator/ConfigurationValidator.ts:16] SIK Version : 0.18.0
+16:15:34.846 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:15:34.847 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:15:34.908 [LeafPlugin][PluginViewModel] Loaded 39 scenario(s) from preview.
+16:15:34.908 [LeafPlugin][PluginViewModel] Running scenario: viro_ws4_hello_error
+16:16:08.084 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_ws4_hello_error with args: [(hold_ms: 0)]
+16:16:08.084 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.001s]Running with runner config: {"__leaf__log_level":"INFO","__leaf__timeout_secs":"600","__leaf__diagnostic_policy":"fallback","__leaf__diagnostic_report_duration_ms":"-1"}
+16:16:08.319 [Assets/ViroSpecsLab/Leaf/ViroLabExperienceSupport.ts:43] VIRO_WS4 experience started placementScene=false panelMesh=Unit Plane panelMaterial=ViroExperiencePanel
+16:16:08.323 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:16:08.324 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:16:08.324 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5003 (stage) node platform-lab-model: No model asset is registered for "examples/visionos-sweep/assets/missing.glb" (node "platform-lab-model"). A placeholder is shown.
+16:16:08.337 [Assets/ViroSpecsLab/Leaf/ViroWs4HelloErrorScenario.ts:56] VIRO_WS4 hello_error diagnostics=["VS5008 platform-lab-title","VS5008 hello-body","VS5003 platform-lab-model"]
+16:16:08.343 [Assets/ViroSpecsLab/Leaf/ViroWs4HelloErrorScenario.ts:65] VIRO_WS4 hello_error rows title=1 body=2 detail=1
+16:16:08.637 [Assets/ViroSpecsLab/Leaf/ViroWs4HelloErrorScenario.ts:83] VIRO_WS4 hello_error ray hits=["backing<ViroSpecsExperience-error@147","viro-interactable:hello-next<viro:hello-next@154"]
+16:16:08.637 [Assets/ViroSpecsLab/Leaf/ViroLabExperienceSupport.ts:213] VIRO_WS4_HOLD hello_error 0
+16:16:09.370 [Assets/ViroSpecsLab/Leaf/ViroWs4HelloErrorScenario.ts:94] VIRO_WS4 hello_error retried=["platform-lab-model"]
+16:16:09.371 [Assets/ViroSpecsLab/Leaf/ViroWs4HelloErrorScenario.ts:96] VIRO_WS4 hello_error PASS
+16:16:09.374 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:16:09.374 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:16:09.608 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  1.525s]PASSED: viro_ws4_hello_error
+16:16:09.608 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  1.525s][viro_ws4_hello_error] PASSED
+16:16:09.609 [LeafPlugin][PluginViewModel] ✅ Scenario viro_ws4_hello_error completed successfully.

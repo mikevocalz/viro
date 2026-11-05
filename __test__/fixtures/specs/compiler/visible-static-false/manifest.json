@@ -1,0 +1,26 @@
+{
+  "$schema": "https://github.com/mikevocalz/viro/blob/main/schemas/viro-specs-manifest.v2.json",
+  "version": 2,
+  "generator": {
+    "name": "viro-specs-compile"
+  },
+  "source": "__test__/fixtures/specs/compiler/visible-static-false/scene.tsx",
+  "nodes": [
+    {
+      "id": "shown",
+      "kind": "group"
+    },
+    {
+      "id": "hidden",
+      "kind": "text",
+      "parentId": "shown",
+      "visible": false,
+      "text": "hidden"
+    }
+  ],
+  "polylines": [],
+  "lights": [],
+  "materials": [],
+  "interactions": [],
+  "animations": []
+}

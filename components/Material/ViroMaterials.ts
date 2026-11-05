@@ -19,7 +19,7 @@ import {
 } from "react-native";
 
 // @ts-ignore
-import { getAssetByID } from "react-native/Libraries/Image/AssetRegistry";
+import { getAssetByID } from "react-native/asset-registry";
 
 // @ts-ignore
 import resolveAssetSource from "react-native/Libraries/Image/resolveAssetSource";
@@ -130,9 +130,9 @@ export type ViroMaterial = {
   lightingModel?: "Phong" | "Blinn" | "Lambert" | "Constant" | "PBR";
   writesToDepthBuffer?: boolean;
   readsFromDepthBuffer?: boolean;
-  colorWritesMask?: "None" | "Red" | "Green" | "Blue" | "Alpha" | "All";
+  colorWriteMask?: ("None" | "Red" | "Green" | "Blue" | "Alpha" | "All")[];
   cullMode?: "None" | "Back" | "Front";
-  blendMode?: "None" | "Alpha" | "Add" | "Subtract" | "Multiply" | "Screen";
+  blendMode?: "None" | "Alpha" | "Add" | "Subtract" | "Multiply" | "Screen" | "PremultiplyAlpha";
   /** Material transparency, 0 to 1. Multiplied with the node's opacity and with
    *  the diffuse colour's own alpha. Setting it under 1 also turns depth writing
    *  off unless `writesToDepthBuffer` says otherwise. */

@@ -1,0 +1,1 @@
+scene.tsx:12:7 warning VS3017 [idle]: Node "idle" is 0.00 m from the wearer; the band is 0.6-3 m.

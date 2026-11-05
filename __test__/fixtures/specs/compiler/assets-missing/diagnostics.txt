@@ -1,0 +1,2 @@
+scene.tsx:9:45 error VS2018 [ghost]: Viro3DObject source `require("../assets/missing.glb")` cannot be resolved statically: "../assets/missing.glb" does not exist (resolved to ../assets/missing.glb).
+scene.tsx error VS2002: <ViroSpecsScene> in scene.tsx has no compiled content.

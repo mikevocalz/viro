@@ -1,0 +1,16 @@
+Viro Specs Lens project doctor
+------------------------------
+Project: <repo>/examples/specs-platform-lab/lens
+Project file: ViroSpecsPlatformLab.esproj
+Lens Studio: 5.24.1
+Target: Spectacles
+Packages present: 16
+Runtime synced: no
+
+Warnings:
+ - Preview validation package not found in Packages/: AiPreviewAgentInspect.lspkg
+ - Preview validation package not found in Packages/: AiPreviewAgentInteract.lspkg
+ - Viro Specs runtime has not been synced to Assets/ViroSpecs/lens.
+
+Core project checks passed.
+exit=0

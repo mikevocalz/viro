@@ -1,0 +1,27 @@
+16:20:54.814 [Packages/SpectaclesInteractionKit.lspkg/Utils/logger.ts:21] FrameCache: Initialized global cache flushing for FrameCache
+16:20:55.147 [Packages/SpectaclesInteractionKit.lspkg/Core/ConfigurationValidator/ConfigurationValidator.ts:16] SIK Version : 0.18.0
+16:20:55.470 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:20:55.470 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:20:55.526 [LeafPlugin][PluginViewModel] Loaded 39 scenario(s) from preview.
+16:20:55.527 [LeafPlugin][PluginViewModel] Running scenario: viro_ws4_navigation_scroll
+16:21:26.776 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_ws4_navigation_scroll with args: [(hold_ms: 0)]
+16:21:26.777 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.001s]Running with runner config: {"__leaf__log_level":"INFO","__leaf__timeout_secs":"600","__leaf__diagnostic_policy":"fallback","__leaf__diagnostic_report_duration_ms":"-1"}
+16:21:27.018 [Assets/ViroSpecsLab/Leaf/ViroLabExperienceSupport.ts:43] VIRO_WS4 experience started placementScene=false panelMesh=Unit Plane panelMaterial=ViroExperiencePanel
+16:21:27.027 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node nav-title: Text "nav-title" maxLines 2 is approximated.
+16:21:27.033 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node nav-detail-title: Text "nav-detail-title" maxLines 2 is approximated.
+16:21:27.034 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node nav-detail-body: Text "nav-detail-body" maxLines 4 is approximated.
+16:21:27.348 [Assets/ViroSpecsLab/Leaf/ViroWs4NavigationScrollScenario.ts:69] VIRO_WS4 navigation top ["nav-card-1","nav-card-2","nav-card-3","nav-card-4"]
+16:21:27.354 [Assets/ViroSpecsLab/Leaf/ViroWs4NavigationScrollScenario.ts:77] VIRO_WS4 navigation rounded image enabled=true square image enabled=false
+16:21:27.354 [Assets/ViroSpecsLab/Leaf/ViroLabExperienceSupport.ts:213] VIRO_WS4_HOLD navigation_top 0
+16:21:28.563 [Assets/ViroSpecsLab/Leaf/ViroWs4NavigationScrollScenario.ts:93] VIRO_WS4 navigation drag 1 -> -1.0001709461212158
+16:21:28.897 [Assets/ViroSpecsLab/Leaf/ViroWs4NavigationScrollScenario.ts:98] VIRO_WS4 navigation scroll 1 -> -1 visible ["nav-card-5","nav-card-6","nav-card-7","nav-card-8"]
+16:21:28.904 [Assets/ViroSpecsLab/Leaf/ViroLabExperienceSupport.ts:213] VIRO_WS4_HOLD navigation_bottom 0
+16:21:29.690 [Assets/ViroSpecsLab/Leaf/ViroLabExperienceSupport.ts:213] VIRO_WS4_HOLD navigation_detail 0
+16:21:31.245 [Assets/ViroSpecsLab/Leaf/ViroWs4NavigationScrollScenario.ts:140] VIRO_WS4 navigation back scroll=-1 visible ["nav-card-5","nav-card-6","nav-card-7","nav-card-8"]
+16:21:31.252 [Assets/ViroSpecsLab/Leaf/ViroLabExperienceSupport.ts:213] VIRO_WS4_HOLD navigation_back 0
+16:21:31.252 [Assets/ViroSpecsLab/Leaf/ViroWs4NavigationScrollScenario.ts:144] VIRO_WS4 navigation_scroll PASS
+16:21:31.255 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:21:31.255 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:21:31.463 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  4.687s]PASSED: viro_ws4_navigation_scroll
+16:21:31.463 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  4.687s][viro_ws4_navigation_scroll] PASSED
+16:21:31.465 [LeafPlugin][PluginViewModel] ✅ Scenario viro_ws4_navigation_scroll completed successfully.

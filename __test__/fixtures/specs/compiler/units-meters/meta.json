@@ -1,0 +1,4 @@
+{
+  "description": "Positions, extents and polyline radius stay in meters; the Lens host multiplies by 100.",
+  "parity": true
+}

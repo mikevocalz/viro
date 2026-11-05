@@ -1,6 +1,7 @@
 import { ConfigPlugin } from "@expo/config-plugins";
 import { withViroAndroid } from "./withViroAndroid";
 import { withViroIos } from "./withViroIos";
+import type { OpenXRRenderQualityOptions } from "./util/openxrRenderQuality";
 import { withViroSpatialShell, type SpatialShellOptions } from "./withViroSpatialShell";
 
 const CAMERA_USAGE = "Allow $(PRODUCT_NAME) to use your camera";
@@ -105,6 +106,17 @@ export interface ViroConfigurationOptions {
    */
   geospatialAnchorProvider?: GeospatialAnchorProvider;
 
+  /**
+   * Whether each scene navigator sends ReactVision an anonymous usage ping when it mounts
+   * (see "Usage data" in the README).
+   * `false` writes `ViroTelemetryEnabled` = false to Info.plist and the
+   * com.reactvision.ViroTelemetryEnabled meta-data as "false" to AndroidManifest.
+   * `true` or omitted removes both. `ViroTelemetry.setEnabled(false)` turns it off from JS.
+   *
+   * DEFAULTS TO: true
+   */
+  telemetry?: boolean;
+
   ios?: {
     /**
      * String for app to use for camera usage.
@@ -185,12 +197,21 @@ export interface ViroConfigurationOptions {
      */
     questTargetSdkVersion?: number;
     /**
+     * minSdkVersion floor applied when xRMode includes "QUEST". The Meta
+     * Quest Store accepts 29 to 34 and recommends 32; above 32 excludes
+     * headsets on Horizon OS before v76. Only ever raises the value.
+     *
+     * DEFAULTS TO: 32
+     */
+    questMinSdkVersion?: number;
+    /**
      * Build arm64-v8a only when xRMode includes "QUEST". Quest hardware is
      * 64-bit and the store warns on 32-bit libraries.
      *
      * DEFAULTS TO: true
      */
     questArm64Only?: boolean;
+    /**
     /**
      * Mark the QUEST/OpenXR build as ready for Meta VR Glasses delivery.
      *
@@ -223,6 +244,12 @@ export interface ViroConfigurationOptions {
      * SDK is a Standard Android panel/window feature; Viro's immersive OpenXR
      * scene path remains separate.
      *
+     * The dependencies are plain `implementation`, for single-variant apps.
+     * An app with a `quest` product flavor (expo-horizon-core) should leave
+     * this off and enable `metaLayoutSdk` in @expo-pico/core, which links the
+     * SDK into the quest flavor only. When this is on and a quest flavor
+     * exists, prebuild drops Viro's lines from app/build.gradle and warns.
+     *
      * DEFAULTS TO: false
      */
     metaSpatialLayout?: boolean;
@@ -232,6 +259,64 @@ export interface ViroConfigurationOptions {
      * DEFAULTS TO: "1.2026.0.0"
      */
     metaSpatialLayoutBomVersion?: string;
+    /**
+     * Optional Meta Quest capabilities, declared when xRMode includes "QUEST".
+     * Store review checks every declared permission against what the app does
+     * with it, so turn off the ones the app does not use.
+     */
+    questFeatures?: {
+      /**
+       * Shared spatial anchors for co-location:
+       * horizonos.permission.IMPORT_EXPORT_IOT_MAP_DATA.
+       *
+       * DEFAULTS TO: true
+       */
+      colocation?: boolean;
+      /**
+       * Quest Pro eye gaze as a hover source: com.oculus.permission.EYE_TRACKING
+       * and the oculus.software.eye_tracking feature.
+       *
+       * DEFAULTS TO: true
+       */
+      eyeTracking?: boolean;
+      /**
+       * The headset cameras through Camera2, which ViroObjectDetector reads:
+       * android.permission.CAMERA and horizonos.permission.HEADSET_CAMERA.
+       *
+       * DEFAULTS TO: true
+       */
+      passthroughCamera?: boolean;
+      /**
+       * The runtime's own controller models (XR_FB_render_model):
+       * com.oculus.permission.RENDER_MODEL and the com.oculus.feature.RENDER_MODEL
+       * feature. Off, the renderer draws its bundled fallback controller mesh.
+       *
+       * DEFAULTS TO: true
+       */
+      renderModel?: boolean;
+    };
+    /**
+     * The Horizon OS SDK versions written to the manifest as
+     * <horizonos:uses-horizonos-sdk> when xRMode includes "QUEST". Horizon OS
+     * warns that an app without it will lose access to its SDK managers.
+     *
+     * DEFAULTS TO: minSdkVersion 69, and targetSdkVersion equal to minSdkVersion
+     */
+    questHorizonOsSdk?: {
+      minSdkVersion?: number;
+      targetSdkVersion?: number;
+    };
+    /**
+     * Startup render quality for the OpenXR renderer: the eye-buffer scale,
+     * the foveation the session starts with, and an optional display refresh
+     * rate request. Requires xRMode to include
+     * "QUEST" or "PICO". Written to AndroidManifest as com.viro.openxr.*
+     * meta-data and validated at prebuild.
+     *
+     * DEFAULTS TO: eyeBufferScale 1.3, foveation { level: "low", dynamic: true },
+     * no displayRefreshRate request
+     */
+    openxr?: OpenXRRenderQualityOptions;
     /**
      * The spatial shell for headset builds: the left navigation rail, the
      * detail panel and the XR entry fixes from `@viro-external/spatial-shell`.

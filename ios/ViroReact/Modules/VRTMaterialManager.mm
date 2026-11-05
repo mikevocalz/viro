@@ -791,6 +791,8 @@ RCT_EXPORT_METHOD(updateShaderUniform:(NSString *)materialName
         return VROBlendMode::Multiply;
     } else if([@"Screen" caseInsensitiveCompare:name] == NSOrderedSame) {
         return VROBlendMode::Screen;
+    } else if([@"PremultiplyAlpha" caseInsensitiveCompare:name] == NSOrderedSame) {
+        return VROBlendMode::PremultiplyAlpha;
     }
     return VROBlendMode::None;
 }

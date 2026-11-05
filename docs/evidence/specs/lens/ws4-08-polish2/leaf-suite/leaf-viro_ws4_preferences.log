@@ -1,0 +1,24 @@
+16:22:42.260 [Packages/SpectaclesInteractionKit.lspkg/Utils/logger.ts:21] FrameCache: Initialized global cache flushing for FrameCache
+16:22:42.565 [Packages/SpectaclesInteractionKit.lspkg/Core/ConfigurationValidator/ConfigurationValidator.ts:16] SIK Version : 0.18.0
+16:22:42.920 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:22:42.921 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:22:43.043 [LeafPlugin][PluginViewModel] Loaded 39 scenario(s) from preview.
+16:22:43.043 [LeafPlugin][PluginViewModel] Running scenario: viro_ws4_preferences
+16:23:17.510 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_ws4_preferences with args: [(hold_ms: 0)]
+16:23:17.510 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.001s]Running with runner config: {"__leaf__log_level":"INFO","__leaf__timeout_secs":"600","__leaf__diagnostic_policy":"fallback","__leaf__diagnostic_report_duration_ms":"-1"}
+16:23:17.747 [Assets/ViroSpecsLab/Leaf/ViroLabExperienceSupport.ts:43] VIRO_WS4 experience started placementScene=false panelMesh=Unit Plane panelMaterial=ViroExperiencePanel
+16:23:17.749 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:23:17.750 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:23:18.261 [Assets/ViroSpecsLab/Leaf/ViroWs4PreferencesScenario.ts:47] VIRO_WS4 preferences surface=#000000 text=#ffffff
+16:23:18.692 [Assets/ViroSpecsLab/Leaf/ViroWs4PreferencesScenario.ts:54] VIRO_WS4 preferences hover width 24.43687629699707 -> 24.43687629699707
+16:23:18.693 [Assets/ViroSpecsLab/Leaf/ViroLabExperienceSupport.ts:213] VIRO_WS4_HOLD preferences_ready 0
+16:23:18.696 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:23:18.696 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:23:18.902 [Assets/ViroSpecsLab/Leaf/ViroWs4PreferencesScenario.ts:64] VIRO_WS4 preferences loading={"visible":true,"title":"Loading scene","line":"Loading 0 of 1","progress":0,"indicator":"arc-static","accessibilityLabel":"Loading scene, 0 percent"}
+16:23:18.902 [Assets/ViroSpecsLab/Leaf/ViroLabExperienceSupport.ts:213] VIRO_WS4_HOLD preferences_loading 0
+16:23:20.696 [Assets/ViroSpecsLab/Leaf/ViroWs4PreferencesScenario.ts:69] VIRO_WS4 preferences PASS
+16:23:20.700 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:23:20.700 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:23:20.901 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  3.392s]PASSED: viro_ws4_preferences
+16:23:20.902 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  3.392s][viro_ws4_preferences] PASSED
+16:23:20.903 [LeafPlugin][PluginViewModel] ✅ Scenario viro_ws4_preferences completed successfully.

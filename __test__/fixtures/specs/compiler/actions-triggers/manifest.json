@@ -1,0 +1,102 @@
+{
+  "$schema": "https://github.com/mikevocalz/viro/blob/main/schemas/viro-specs-manifest.v2.json",
+  "version": 2,
+  "generator": {
+    "name": "viro-specs-compile"
+  },
+  "source": "__test__/fixtures/specs/compiler/actions-triggers/scene.tsx",
+  "route": "list",
+  "actions": [
+    {
+      "id": "exhibit.open",
+      "payload": {
+        "exhibitId": {
+          "type": "string"
+        }
+      }
+    },
+    {
+      "id": "settings.units",
+      "payload": {
+        "units": {
+          "type": "string",
+          "enum": [
+            "metric",
+            "imperial"
+          ]
+        }
+      }
+    },
+    {
+      "id": "nav.back"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "list",
+      "kind": "group",
+      "scroll": {
+        "width": 0.4,
+        "height": 0.3,
+        "contentHeight": 0.9
+      }
+    },
+    {
+      "id": "card-orrery",
+      "kind": "text",
+      "parentId": "list",
+      "text": "Orrery"
+    },
+    {
+      "id": "units",
+      "kind": "text",
+      "parentId": "list",
+      "text": "Imperial"
+    }
+  ],
+  "polylines": [],
+  "lights": [],
+  "materials": [],
+  "interactions": [
+    {
+      "nodeId": "card-orrery",
+      "interactable": true,
+      "manipulation": false,
+      "events": [
+        "select"
+      ],
+      "triggers": [
+        {
+          "on": "select",
+          "actionId": "exhibit.open",
+          "payload": {
+            "exhibitId": "orrery"
+          }
+        }
+      ]
+    },
+    {
+      "nodeId": "units",
+      "interactable": true,
+      "manipulation": false,
+      "events": [
+        "hover",
+        "select"
+      ],
+      "triggers": [
+        {
+          "on": "select",
+          "actionId": "settings.units",
+          "payload": {
+            "units": "imperial"
+          }
+        },
+        {
+          "on": "hover-enter",
+          "actionId": "nav.back"
+        }
+      ]
+    }
+  ],
+  "animations": []
+}

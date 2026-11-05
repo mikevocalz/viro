@@ -1,0 +1,1 @@
+scene.tsx:12:7 warning VS3020 [grow]: Animation "goldenScaleMix" on "grow" uses ease-out.

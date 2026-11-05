@@ -1,0 +1,37 @@
+{
+  "inputs": {
+    "ActionsLab": {
+      "controllerHostObject": "SceneHost",
+      "forwardActions": "true"
+    },
+    "AssetRegistry": {
+      "defaultImageMaterial": "ViroImageMaterial",
+      "defaultLineMaterial": "ViroDefaultLine",
+      "defaultMaterial": "ViroDefaultMaterial",
+      "fontIds": "[]",
+      "fonts": "[]",
+      "imageIds": "[\"examples/visionos-sweep/assets/button.png\"]",
+      "imageTextures": "button",
+      "modelIds": "[\"examples/visionos-sweep/assets/shiba.glb\"]",
+      "modelPrefabs": "shiba",
+      "placeholderMaterial": "ViroPlaceholder"
+    },
+    "ExperienceHost": {
+      "cameraObject": "Camera Object",
+      "panelMaterial": "ViroExperiencePanel",
+      "panelMesh": "Unit Plane",
+      "sceneHostObject": "SceneHost"
+    },
+    "GeneratedHost": {
+      "sceneHostObject": "SceneHost"
+    },
+    "SceneHost": {
+      "assetRegistryObject": "AssetRegistry",
+      "root": "ViroGeneratedContent"
+    }
+  },
+  "steps": [
+    "disable ExperienceHost",
+    "save"
+  ]
+}

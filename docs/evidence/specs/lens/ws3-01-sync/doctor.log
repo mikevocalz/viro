@@ -1,0 +1,12 @@
+Viro Specs Lens project doctor
+------------------------------
+Project: <repo>/examples/specs-platform-lab/lens
+Project file: ViroSpecsPlatformLab.esproj
+Lens Studio: 5.24.1
+Target: Spectacles
+Packages present: 22
+Interaction Kit: SpectaclesInteractionKit.lspkg
+Runtime synced: yes
+
+Project checks passed.
+exit=0

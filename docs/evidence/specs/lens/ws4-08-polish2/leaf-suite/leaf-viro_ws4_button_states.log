@@ -1,0 +1,21 @@
+16:19:00.464 [Packages/SpectaclesInteractionKit.lspkg/Utils/logger.ts:21] FrameCache: Initialized global cache flushing for FrameCache
+16:19:00.743 [Packages/SpectaclesInteractionKit.lspkg/Core/ConfigurationValidator/ConfigurationValidator.ts:16] SIK Version : 0.18.0
+16:19:01.167 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:19:01.168 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:19:01.227 [LeafPlugin][PluginViewModel] Loaded 39 scenario(s) from preview.
+16:19:01.227 [LeafPlugin][PluginViewModel] Running scenario: viro_ws4_button_states
+16:19:29.743 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_ws4_button_states with args: [(hold_ms: 0)]
+16:19:29.743 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]Running with runner config: {"__leaf__log_level":"INFO","__leaf__timeout_secs":"600","__leaf__diagnostic_policy":"fallback","__leaf__diagnostic_report_duration_ms":"-1"}
+16:19:29.980 [Assets/ViroSpecsLab/Leaf/ViroLabExperienceSupport.ts:43] VIRO_WS4 experience started placementScene=false panelMesh=Unit Plane panelMaterial=ViroExperiencePanel
+16:19:29.982 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node ix-title: Text "ix-title" maxLines 2 is approximated.
+16:19:29.982 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node ix-body: Text "ix-body" maxLines 2 is approximated.
+16:19:30.311 [Assets/ViroSpecsLab/Leaf/ViroWs4ButtonStatesScenario.ts:53] VIRO_WS4 button_states labels ["ix-btn-a=idle:Option A","ix-btn-b=selected:✓ Option B","ix-btn-disabled=disabled:Option C","ix-btn-retry=error:! Retry","ix-reset=idle:Reset model","ix-next=idle:Next scene"]
+16:19:30.313 [Assets/ViroSpecsLab/Leaf/ViroWs4ButtonStatesScenario.ts:56] VIRO_WS4 button_states retry tree:
+16:19:30.314 [Assets/ViroSpecsLab/Leaf/ViroLabExperienceSupport.ts:213] VIRO_WS4_HOLD interaction_buttons 0
+16:19:31.086 [Assets/ViroSpecsLab/Leaf/ViroWs4ButtonStatesScenario.ts:74] VIRO_WS4 button_states commits ix-btn-a:hover-enter,ix-btn-a:hover-move,ix-btn-a:hover-move,ix-btn-a:hover-move,ix-btn-a:hover-move,ix-btn-a:hover-exit,ix-btn-a:hover-enter,ix-btn-a:hover-move,ix-btn-a:hover-move,ix-btn-a:select-start,ix-btn-a:hover-move,ix-btn-a:hover-move,ix-btn-a:select-end,ix-btn-a:hover-move,ix-btn-a:hover-exit
+16:19:31.086 [Assets/ViroSpecsLab/Leaf/ViroWs4ButtonStatesScenario.ts:80] VIRO_WS4 button_states disabled=ix-btn-disabled PASS
+16:19:31.090 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:19:31.090 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:19:31.325 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  1.582s]PASSED: viro_ws4_button_states
+16:19:31.325 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  1.582s][viro_ws4_button_states] PASSED
+16:19:31.326 [LeafPlugin][PluginViewModel] ✅ Scenario viro_ws4_button_states completed successfully.

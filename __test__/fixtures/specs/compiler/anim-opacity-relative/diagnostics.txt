@@ -1,0 +1,2 @@
+scene.tsx:12:7 warning VS3017 [fade]: Node "fade" is 0.00 m from the wearer; the band is 0.6-3 m.
+scene.tsx:12:7 warning VS3020 [fade]: Animation "goldenFade" on "fade" uses linear.

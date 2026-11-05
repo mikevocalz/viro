@@ -1,0 +1,26 @@
+{
+  "startedAt": "2026-10-28T11:02:19.730Z",
+  "project": "examples/specs-platform-lab/lens",
+  "steps": {
+    "packages": {
+      "ok": true,
+      "ms": 1897,
+      "result": [
+        "SpectaclesInteractionKit: present",
+        "SpectaclesUIKit: present",
+        "SurfacePlacement: present",
+        "VolumetricLine: present",
+        "SpecsNavigationKit: present",
+        "Leaf: present",
+        "AiPreviewAgentInspect: installed 2.0.1",
+        "AiPreviewAgentInteract: installed 2.0.1"
+      ]
+    },
+    "recompile": {
+      "ok": true,
+      "ms": 3699,
+      "result": "lens-compiled"
+    }
+  },
+  "finishedAt": "2026-10-28T11:02:25.356Z"
+}

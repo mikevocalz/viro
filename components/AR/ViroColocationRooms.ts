@@ -23,6 +23,15 @@
 
 "use strict";
 
+import {
+  PLATFORM_ENDPOINT,
+  PLATFORM_FUNCTION_REGION,
+  platformRegionAnswers,
+  platformUndelivered,
+} from "./ViroPlatformRegion";
+import type { ViroVPSCredentialsSource } from "./ViroVPSClient";
+import { USER_TOKEN_REFUSALS, readCredentials, renewedToken } from "./ViroUserTokens";
+
 export type ViroFrameKind = "cloud_anchor" | "meta_group" | "visionos_space";
 
 export type ViroColocationRoom = {
@@ -48,11 +57,12 @@ export type ViroRoomFrame =
   | { frameKind: "visionos_space" };
 
 export type ViroColocationRoomsConfig = {
-  /** Required unless `headers` is given. */
+  /** Required unless `headers` or `credentials` are given. */
   apiKey?: string;
   /**
-   * Sent as `x-project-id`. Required with `apiKey`. With `headers` it may be
-   * left out of a lookup by code, which then finds the room from the code alone.
+   * Sent as `x-project-id`. Required with `apiKey`; `credentials` carry their
+   * own, which this replaces. With `headers` it may be left out of a lookup
+   * by code, which then finds the room from the code alone.
    */
   projectId?: string;
   /**
@@ -62,6 +72,15 @@ export type ViroColocationRoomsConfig = {
   endpoint?: string;
   /** Credentials sent verbatim in place of `apiKey`. */
   headers?: Record<string, string>;
+  /**
+   * Credentials as `<ViroVPS credentials>` takes them, in place of `apiKey`
+   * and `headers`, read for every request. A user token from
+   * createUserTokenCredentials() is sent as `Authorization: Bearer` with no
+   * `x-api-key`. When Studio refuses it with 401 `APP_USER_TOKEN_EXPIRED` or
+   * `INVALID_APP_USER_TOKEN` and the credentials give a new one, the request
+   * is sent once more with it.
+   */
+  credentials?: ViroVPSCredentialsSource;
 };
 
 export type ViroColocationRoomResult =
@@ -74,7 +93,8 @@ export type ViroColocationRoomResult =
       status?: number;
     };
 
-const DEFAULT_ENDPOINT = "https://platform.reactvision.xyz";
+const DEFAULT_ENDPOINT = PLATFORM_ENDPOINT;
+const DEFAULT_FUNCTION_REGION = PLATFORM_FUNCTION_REGION;
 
 /**
  * The 30 characters a code can hold. O and 0, I and 1 and L, and U against V
@@ -144,7 +164,29 @@ async function request(
   const url = `${base}/functions/v1/colocation${path}`;
 
   let headers: Record<string, string>;
-  if (config.headers) {
+  let token: string | undefined;
+  if (config.credentials !== undefined) {
+    let credentials;
+    try {
+      credentials = await readCredentials(config.credentials);
+    } catch (e: any) {
+      return {
+        success: false,
+        error: `Could not get credentials: ${e?.message ?? String(e)}`,
+        code: "CREDENTIALS_UNAVAILABLE",
+      };
+    }
+    headers = {
+      "content-type": "application/json",
+      "x-project-id": config.projectId ?? credentials.projectId,
+    };
+    if ("accessToken" in credentials) {
+      token = credentials.accessToken;
+      headers.authorization = `Bearer ${token}`;
+    } else {
+      headers["x-api-key"] = credentials.apiKey;
+    }
+  } else if (config.headers) {
     headers = { "content-type": "application/json", ...config.headers };
     if (config.projectId) headers["x-project-id"] = config.projectId;
   } else if (!config.apiKey) {
@@ -169,9 +211,43 @@ async function request(
     };
   }
 
+  let answer = await exchange(base, url, method, headers, body);
+  if ("error" in answer) return answer;
+  if (
+    token !== undefined &&
+    answer.response.status === 401 &&
+    USER_TOKEN_REFUSALS.has(answer.parsed?.error?.code)
+  ) {
+    const renewed = await renewedToken(config.credentials!, token);
+    if (renewed !== undefined) {
+      answer = await exchange(base, url, method, { ...headers, authorization: `Bearer ${renewed}` }, body);
+      if ("error" in answer) return answer;
+    }
+  }
+  const { response, parsed } = answer;
+
+  if (!response.ok || !parsed?.room) {
+    return {
+      success: false,
+      error: parsed?.error?.message ?? `Request failed (${response.status})`,
+      code: parsed?.error?.code,
+      status: response.status,
+    };
+  }
+
+  return { success: true, room: toRoom(parsed.room) };
+}
+
+async function exchange(
+  base: string,
+  url: string,
+  method: string,
+  headers: Record<string, string>,
+  body: Record<string, unknown> | undefined
+): Promise<{ response: Response; parsed: any } | { success: false; error: string }> {
   let response: Response;
   try {
-    response = await fetch(url, {
+    response = await fetchInRegion(base, url, {
       method,
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
@@ -184,19 +260,47 @@ async function request(
   try {
     parsed = await response.json();
   } catch {
-    // Falls through to the status-only message below.
+    // Falls through to the status-only message in request().
   }
+  return { response, parsed };
+}
 
-  if (!response.ok || !parsed?.room) {
-    return {
-      success: false,
-      error: parsed?.error?.message ?? `Request failed (${response.status})`,
-      code: parsed?.error?.code,
-      status: response.status,
-    };
+/**
+ * Pins by the query parameter on the default platform and by any `x-region`
+ * the caller's headers carry. The platform does not fail a pinned region over,
+ * so a call the region could not take is sent once more unpinned: an
+ * undelivered answer, or a network error (how a browser sees a gateway page
+ * without CORS headers) while the region also fails a probe.
+ */
+async function fetchInRegion(
+  base: string,
+  url: string,
+  init: { method: string; headers: Record<string, string>; body?: string }
+): Promise<Response> {
+  const regionHeader = Object.keys(init.headers).find(
+    (name) => name.toLowerCase() === "x-region"
+  );
+  const region = regionHeader
+    ? init.headers[regionHeader]
+    : base === DEFAULT_ENDPOINT
+      ? DEFAULT_FUNCTION_REGION
+      : undefined;
+  if (!region) return fetch(url, init);
+
+  const pinned =
+    base === DEFAULT_ENDPOINT
+      ? `${url}?forceFunctionRegion=${DEFAULT_FUNCTION_REGION}`
+      : url;
+  try {
+    const response = await fetch(pinned, init);
+    if (!platformUndelivered(response)) return response;
+  } catch (e) {
+    if (!(e instanceof TypeError) || (await platformRegionAnswers(base, region)))
+      throw e;
   }
-
-  return { success: true, room: toRoom(parsed.room) };
+  const headers = { ...init.headers };
+  if (regionHeader) delete headers[regionHeader];
+  return fetch(url, { ...init, headers });
 }
 
 function toRoom(raw: any): ViroColocationRoom {

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://github.com/mikevocalz/viro/blob/main/schemas/viro-specs-manifest.v2.json",
+  "version": 2,
+  "generator": {
+    "name": "viro-specs-compile"
+  },
+  "source": "__test__/fixtures/specs/compiler/text-extents-maxlines/scene.tsx",
+  "nodes": [
+    {
+      "id": "box",
+      "kind": "text",
+      "text": "A longer caption",
+      "extents": {
+        "width": 0.6,
+        "height": 0.2
+      },
+      "maxLines": 2
+    }
+  ],
+  "polylines": [],
+  "lights": [],
+  "materials": [],
+  "interactions": [],
+  "animations": []
+}

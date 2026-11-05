@@ -1,0 +1,31 @@
+{
+  "$schema": "https://github.com/mikevocalz/viro/blob/main/schemas/viro-specs-manifest.v2.json",
+  "version": 2,
+  "generator": {
+    "name": "viro-specs-compile"
+  },
+  "source": "__test__/fixtures/specs/compiler/nested-fragments/scene.tsx",
+  "nodes": [
+    {
+      "id": "outer",
+      "kind": "group"
+    },
+    {
+      "id": "one",
+      "kind": "text",
+      "parentId": "outer",
+      "text": "one"
+    },
+    {
+      "id": "two",
+      "kind": "text",
+      "parentId": "outer",
+      "text": "two"
+    }
+  ],
+  "polylines": [],
+  "lights": [],
+  "materials": [],
+  "interactions": [],
+  "animations": []
+}

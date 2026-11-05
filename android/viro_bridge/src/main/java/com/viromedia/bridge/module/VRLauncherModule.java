@@ -1,15 +1,23 @@
 package com.viromedia.bridge.module;
 
 import android.app.Activity;
+import android.app.PendingIntent;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
+import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
+import com.facebook.react.bridge.ReadableArray;
+import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.internal.featureflags.ReactNativeFeatureFlags;
 import com.facebook.react.internal.featureflags.ReactNativeNewArchitectureFeatureFlagsDefaults;
+import com.facebook.react.modules.core.PermissionAwareActivity;
 
 /**
  * VRLauncherModule
@@ -29,6 +37,7 @@ public class VRLauncherModule extends ReactContextBaseJavaModule {
     // Component name that VRActivity will mount.
     // Must match AppRegistry.registerComponent("VRQuestScene", ...) in the app's entry.
     private static final String VR_COMPONENT = "VRQuestScene";
+    private static final int PERMISSIONS_REQUEST_CODE = 0x5652;
 
     public VRLauncherModule(ReactApplicationContext reactContext) {
         super(reactContext);
@@ -84,8 +93,8 @@ public class VRLauncherModule extends ReactContextBaseJavaModule {
     }
 
     /**
-     * Finish any live VRActivity in this process, returning the user to whatever
-     * Activity is below it in the task (typically MainActivity, the panel app).
+     * Finish any live VRActivity in this process and return the user to the
+     * app's panel (MainActivity) through Home.
      *
      * Why we don't use {@code getReactApplicationContext().getCurrentActivity()}:
      *   In dual-Activity Quest setups the ReactHost lifecycle is binary-state.
@@ -106,26 +115,111 @@ public class VRLauncherModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void exitVRScene() {
         new Handler(Looper.getMainLooper()).post(() -> {
-            try {
-                Class<?> threadCls = Class.forName("android.app.ActivityThread");
-                Object thread = threadCls.getMethod("currentActivityThread").invoke(null);
-                java.lang.reflect.Field activitiesField = threadCls.getDeclaredField("mActivities");
-                activitiesField.setAccessible(true);
-                Object activities = activitiesField.get(thread);
-                if (!(activities instanceof java.util.Map)) {
-                    return;
-                }
-                for (Object record : ((java.util.Map<?, ?>) activities).values()) {
-                    java.lang.reflect.Field activityField = record.getClass().getDeclaredField("activity");
-                    activityField.setAccessible(true);
-                    Object a = activityField.get(record);
-                    if (!(a instanceof Activity)) continue;
-                    Activity act = (Activity) a;
-                    if (!"VRActivity".equals(act.getClass().getSimpleName())) continue;
-                    if (act.isFinishing() || act.isDestroyed()) continue;
-                    act.finish();
-                }
-            } catch (Throwable ignored) {}
+            java.util.List<Activity> vrActivities = liveVRActivities();
+            if (vrActivities.isEmpty()) return;
+            launchPanelThroughHome(vrActivities.get(0));
+            for (Activity act : vrActivities) {
+                act.finish();
+            }
         });
+    }
+
+    /**
+     * Asks for runtime permissions through the live VRActivity, so Horizon OS
+     * opens the prompt over the headset view. PermissionsAndroid asks through
+     * the React context's current activity, which stays MainActivity while VR
+     * runs (see exitVRScene): the prompt then opens over the panel, the headset
+     * view closes, and VRActivity finishes when MainActivity resumes.
+     *
+     * Resolves each permission to "granted", "denied" or "never_ask_again", as
+     * PermissionsAndroid.requestMultiple does, or null when no VRActivity is
+     * live.
+     */
+    @ReactMethod
+    public void requestPermissions(ReadableArray permissions, Promise promise) {
+        new Handler(Looper.getMainLooper()).post(() -> {
+            java.util.List<Activity> vrActivities = liveVRActivities();
+            if (vrActivities.isEmpty() || !(vrActivities.get(0) instanceof PermissionAwareActivity)) {
+                promise.resolve(null);
+                return;
+            }
+            Activity vr = vrActivities.get(0);
+            String[] names = new String[permissions.size()];
+            for (int i = 0; i < names.length; i++) {
+                names[i] = permissions.getString(i);
+            }
+            ((PermissionAwareActivity) vr).requestPermissions(names, PERMISSIONS_REQUEST_CODE,
+                (requestCode, requested, grantResults) -> {
+                    if (requestCode != PERMISSIONS_REQUEST_CODE) return false;
+                    WritableMap results = Arguments.createMap();
+                    for (int i = 0; i < names.length; i++) {
+                        // A cancelled request returns no results.
+                        if (i < grantResults.length && grantResults[i] == PackageManager.PERMISSION_GRANTED) {
+                            results.putString(names[i], "granted");
+                        } else if (vr.shouldShowRequestPermissionRationale(names[i])) {
+                            results.putString(names[i], "denied");
+                        } else {
+                            results.putString(names[i], "never_ask_again");
+                        }
+                    }
+                    promise.resolve(results);
+                    return true;
+                });
+        });
+    }
+
+    /**
+     * Live VRActivities, found through {@code ActivityThread.mActivities} (the
+     * React context's current activity cannot be trusted, see exitVRScene).
+     */
+    static java.util.List<Activity> liveVRActivities() {
+        java.util.List<Activity> vrActivities = new java.util.ArrayList<>();
+        try {
+            Class<?> threadCls = Class.forName("android.app.ActivityThread");
+            Object thread = threadCls.getMethod("currentActivityThread").invoke(null);
+            java.lang.reflect.Field activitiesField = threadCls.getDeclaredField("mActivities");
+            activitiesField.setAccessible(true);
+            Object activities = activitiesField.get(thread);
+            if (!(activities instanceof java.util.Map)) {
+                return vrActivities;
+            }
+            for (Object record : ((java.util.Map<?, ?>) activities).values()) {
+                java.lang.reflect.Field activityField = record.getClass().getDeclaredField("activity");
+                activityField.setAccessible(true);
+                Object a = activityField.get(record);
+                if (!(a instanceof Activity)) continue;
+                Activity act = (Activity) a;
+                if (!"VRActivity".equals(act.getClass().getSimpleName())) continue;
+                if (act.isFinishing() || act.isDestroyed()) continue;
+                vrActivities.add(act);
+            }
+        } catch (Throwable ignored) {}
+        return vrActivities;
+    }
+
+    /**
+     * Finishing VRActivity on its own lets Horizon OS place the app's panel
+     * again, often away from where the wearer left it. Meta's hybrid-app sample
+     * (HybridSample, launchPanelModeInHome) returns through Home instead, handing
+     * it the panel as a pending intent. A failure here leaves the plain finish.
+     */
+    private static void launchPanelThroughHome(Activity from) {
+        try {
+            Intent panel = from.getPackageManager()
+                .getLaunchIntentForPackage(from.getPackageName());
+            if (panel == null) return;
+            panel.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            PendingIntent pendingPanel = PendingIntent.getActivity(
+                from, 0, panel,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            );
+            Intent home = new Intent(Intent.ACTION_MAIN)
+                .addCategory(Intent.CATEGORY_HOME)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                .putExtra("extra_launch_in_home_pending_intent", pendingPanel);
+            from.startActivity(home);
+        } catch (Throwable t) {
+            Log.w(MODULE_NAME, "Could not return to the panel through Home", t);
+        }
     }
 }

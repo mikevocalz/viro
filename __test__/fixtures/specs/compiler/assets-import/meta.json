@@ -1,0 +1,4 @@
+{
+  "description": "import of an asset gets the same ID as require().",
+  "parity": true
+}

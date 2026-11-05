@@ -1,0 +1,145 @@
+[
+  {
+    "id": "viro_lab_render",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "managerLine": "[  1.708s][viro_lab_render] PASSED",
+    "raw": {
+      "scenarioId": "viro_lab_render",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_lab_select",
+    "runner": "leaf-panel",
+    "status": "failed",
+    "managerLine": "[  4.942s][viro_lab_select] FAILED - AssertionError: Expected: \"true\" - Received: \"false\"",
+    "raw": {
+      "scenarioId": "viro_lab_select",
+      "status": "failed",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": false
+  },
+  {
+    "id": "viro_lab_select_ik",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "managerLine": "[  5.052s][viro_lab_select_ik] PASSED",
+    "raw": {
+      "scenarioId": "viro_lab_select_ik",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_lab_drag",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "managerLine": "[  1.138s][viro_lab_drag] PASSED",
+    "raw": {
+      "scenarioId": "viro_lab_drag",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_lab_navigate",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "managerLine": "[  0.684s][viro_lab_navigate] PASSED",
+    "raw": {
+      "scenarioId": "viro_lab_navigate",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_lab_missing_asset",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "managerLine": "[  0.864s][viro_lab_missing_asset] PASSED",
+    "raw": {
+      "scenarioId": "viro_lab_missing_asset",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_lab_state_update",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "managerLine": "[  0.865s][viro_lab_state_update] PASSED",
+    "raw": {
+      "scenarioId": "viro_lab_state_update",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_lab_scene_replacement",
+    "runner": "leaf-panel",
+    "status": "failed",
+    "managerLine": "[  0.584s][viro_lab_scene_replacement] FAILED - AssertionError: Expected: \"to be a truthy value (anything but false, 0, \"\", null, undefined, or NaN)\" - Received: \"undefined\"",
+    "raw": {
+      "scenarioId": "viro_lab_scene_replacement",
+      "status": "failed",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": false
+  },
+  {
+    "id": "viro_lab_interaction_phases",
+    "runner": "leaf-panel",
+    "status": "failed",
+    "managerLine": "[  6.300s][viro_lab_interaction_phases] FAILED - AssertionError: Expected: \"\" - Received: \"hover-enter,hover-move,hover-exit\"",
+    "raw": {
+      "scenarioId": "viro_lab_interaction_phases",
+      "status": "failed",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": false
+  },
+  {
+    "id": "viro_lab_scroll_window",
+    "runner": "leaf-panel",
+    "status": "failed",
+    "managerLine": "[  2.330s][viro_lab_scroll_window] FAILED - AssertionError: Expected: \"> 0.5\" - Received: \"0\"",
+    "raw": {
+      "scenarioId": "viro_lab_scroll_window",
+      "status": "failed",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": false
+  },
+  {
+    "id": "viro_lab_deliberate_failure",
+    "runner": "leaf-panel",
+    "status": "failed",
+    "managerLine": "[  0.266s][viro_lab_deliberate_failure] FAILED - AssertionError: Expected: \"DELIBERATE_FAILURE_EXPECTED\" - Received: \"Viro Cross-Platform Lab\"",
+    "raw": {
+      "scenarioId": "viro_lab_deliberate_failure",
+      "status": "failed",
+      "target": "preview"
+    },
+    "expected": "failed",
+    "asExpected": true
+  }
+]

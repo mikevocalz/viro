@@ -73,6 +73,7 @@ FOUNDATION_EXPORT const unsigned char ViroKitVersionString[];
 #import <ViroKit/VROMaterialVisual.h>
 #import <ViroKit/VROAnimatedTextureOpenGL.h>
 #import <ViroKit/VROTexture.h>
+#import <ViroKit/VROTextureSubstrate.h>
 #import <ViroKit/VROLight.h>
 #import <ViroKit/VROImage.h>
 #import <ViroKit/VROImageiOS.h>
@@ -203,6 +204,7 @@ FOUNDATION_EXPORT const unsigned char ViroKitVersionString[];
 #import <ViroKit/VROARDeclarativeImageNode.h>
 #import <ViroKit/VROARDeclarativeObjectNode.h>
 #import <ViroKit/VROARDeclarativePlane.h>
+#import <ViroKit/VROVPSAnchorNode.h>
 #import <ViroKit/VROARDeclarativeNode.h>
 #import <ViroKit/VROARNodeDelegateiOS.h>
 #import <ViroKit/VROARSceneDelegateiOS.h>

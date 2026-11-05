@@ -1,0 +1,4 @@
+{
+  "description": "Fragments are transparent: children keep the enclosing parentId.",
+  "parity": true
+}

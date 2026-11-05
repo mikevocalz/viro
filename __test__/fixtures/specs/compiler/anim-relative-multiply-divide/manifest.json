@@ -1,0 +1,55 @@
+{
+  "$schema": "https://github.com/mikevocalz/viro/blob/main/schemas/viro-specs-manifest.v2.json",
+  "version": 2,
+  "generator": {
+    "name": "viro-specs-compile"
+  },
+  "source": "__test__/fixtures/specs/compiler/anim-relative-multiply-divide/scene.tsx",
+  "nodes": [
+    {
+      "id": "grow",
+      "kind": "group",
+      "scale": [
+        0.5,
+        2,
+        1
+      ]
+    }
+  ],
+  "polylines": [],
+  "lights": [],
+  "materials": [],
+  "interactions": [],
+  "animations": [
+    {
+      "nodeId": "grow",
+      "name": "goldenScaleMix",
+      "plan": {
+        "engine": "AnimationPlayer",
+        "backendPackage": "AnimationExamples",
+        "durationSeconds": 0.3,
+        "delaySeconds": 0,
+        "easing": "ease-out",
+        "playbackMode": "single",
+        "completionEvent": "viro-animation-complete:grow:goldenScaleMix",
+        "tracks": [
+          {
+            "target": "transform.scale.x",
+            "from": "current",
+            "to": 1
+          },
+          {
+            "target": "transform.scale.y",
+            "from": "current",
+            "to": 0.5
+          },
+          {
+            "target": "transform.scale.z",
+            "from": "current",
+            "to": 3
+          }
+        ]
+      }
+    }
+  ]
+}

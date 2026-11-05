@@ -1,0 +1,4 @@
+{
+  "description": "onHover, onClick and onDrag become events; onDrag sets manipulation.",
+  "parity": true
+}

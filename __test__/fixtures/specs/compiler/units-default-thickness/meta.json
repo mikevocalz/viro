@@ -1,0 +1,4 @@
+{
+  "description": "ViroPolyline without thickness uses 0.01 m, so radius 0.005 m.",
+  "parity": true
+}

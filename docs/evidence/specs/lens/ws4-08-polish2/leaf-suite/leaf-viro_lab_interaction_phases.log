@@ -1,0 +1,14 @@
+16:09:54.395 [Packages/SpectaclesInteractionKit.lspkg/Utils/logger.ts:21] FrameCache: Initialized global cache flushing for FrameCache
+16:09:54.726 [Packages/SpectaclesInteractionKit.lspkg/Core/ConfigurationValidator/ConfigurationValidator.ts:16] SIK Version : 0.18.0
+16:09:55.186 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:09:55.187 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:09:55.251 [LeafPlugin][PluginViewModel] Loaded 39 scenario(s) from preview.
+16:09:55.251 [LeafPlugin][PluginViewModel] Running scenario: viro_lab_interaction_phases
+16:10:33.811 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_lab_interaction_phases with args: []
+16:10:33.811 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.001s]Running with runner config: {"__leaf__log_level":"INFO","__leaf__timeout_secs":"600","__leaf__diagnostic_policy":"fallback","__leaf__diagnostic_report_duration_ms":"-1"}
+16:10:36.222 [Assets/ViroSpecsLab/Leaf/ViroLabInteractionPhasesScenario.ts:81] VIRO_LAB_LEAF interaction_phases phases=hover-enter,hover-move,hover-move,hover-move,hover-move,hover-move,hover-move,hover-move,hover-move,hover-move,hover-move,hover-exit,hover-enter,hover-move,hover-move,select-start,drag,drag,hover-move,drag,hover-move,drag,select-end,hover-move,hover-exit,hover-enter,hover-move,hover-move,hover-move,select-start,drag,drag,hover-move,drag,hover-move,drag,hover-move,drag,hover-move,drag,hover-move,drag,hover-move,drag,hover-move,drag,hover-move,drag,hover-move,drag,hover-move,drag,select-end,hover-move,hover-exit,hover-enter,hover-move,select-start,drag,drag,hover-move,drag,hover-move,drag,hover-move,drag,hover-move,drag,hover-exit,cancel,drag sources=synthetic missing=
+16:10:36.225 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:10:36.225 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:10:36.460 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  2.650s]PASSED: viro_lab_interaction_phases
+16:10:36.460 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  2.650s][viro_lab_interaction_phases] PASSED
+16:10:36.461 [LeafPlugin][PluginViewModel] ✅ Scenario viro_lab_interaction_phases completed successfully.

@@ -44,6 +44,13 @@ function mockMakeRenderer(canvas: HTMLCanvasElement) {
   };
 }
 
+// The navigators send a usage ping on mount. Its native-side reader imports
+// react-native, which this jsdom suite does not load, and the ping is not under
+// test here.
+jest.mock("../components/Utilities/ViroUsagePing", () => ({
+  useViroUsagePing: () => {},
+}));
+
 jest.mock("@reactvision/viro-web-renderer", () => {
   const actual = jest.requireActual("@reactvision/viro-web-renderer");
   return {

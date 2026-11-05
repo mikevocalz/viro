@@ -1,0 +1,44 @@
+{
+  "$schema": "https://github.com/mikevocalz/viro/blob/main/schemas/viro-specs-manifest.v2.json",
+  "version": 2,
+  "generator": { "name": "hand-written", "version": "1" },
+  "source": "scenes/gallery.json",
+  "nodes": [
+    { "id": "root", "kind": "group", "position": [0, 0, -1.5], "rotation": [0, 0.7071068, 0, 0.7071068], "scale": [1, 1, 1], "visible": true },
+    { "id": "panel", "kind": "panel", "parentId": "root", "extents": { "width": 0.6, "height": 0.4 }, "materialId": "panel-surface", "opacity": 0.9 },
+    {
+      "id": "title", "kind": "text", "parentId": "panel", "text": "Hello Specs",
+      "style": { "fontFamily": "Inter", "fontSize": 24, "fontWeight": "600", "fontStyle": "normal", "color": "#ffffffff", "textAlign": "center", "textAlignVertical": "top" },
+      "extents": { "width": 0.5, "height": 0.1 }, "maxLines": 2
+    },
+    { "id": "poster", "kind": "image", "parentId": "panel", "source": "assets/poster.png", "extents": { "width": 0.3, "height": 0.2 } },
+    { "id": "model", "kind": "model", "parentId": "root", "source": "assets/shiba.glb", "format": "glb", "position": [-0.2, -0.05, 0] }
+  ],
+  "polylines": [
+    { "id": "route", "points": [[0, 0, -1], [0.5, 0, -1.2]], "radiusMeters": 0.004, "materialId": "route-line", "primitive": "volumetric-line", "backendPackage": "VolumetricLine" }
+  ],
+  "lights": [
+    { "id": "ambient", "type": "ambient", "color": "#ffffff", "intensity": 300 },
+    { "id": "sun", "type": "directional", "direction": [0, -1, -0.2] },
+    { "id": "lamp", "type": "omni", "parentId": "root", "position": [0, 1, 0], "intensity": 800 },
+    { "id": "spot", "type": "spot", "position": [0, 2, 0], "direction": [0, -1, 0], "innerAngle": 10, "outerAngle": 40 }
+  ],
+  "materials": [
+    { "id": "panel-surface", "color": "#1b1b1f", "opacity": 0.95, "lightingModel": "constant" },
+    { "id": "route-line", "color": "#3bd4ff", "texture": "assets/dash.png" }
+  ],
+  "interactions": [
+    { "nodeId": "model", "interactable": true, "manipulation": true, "events": ["hover", "select", "drag"] }
+  ],
+  "animations": [
+    {
+      "nodeId": "title", "name": "pulse",
+      "plan": {
+        "engine": "AnimationPlayer", "backendPackage": "AnimationExamples",
+        "durationSeconds": 0.5, "delaySeconds": 0, "easing": "ease-in-out", "playbackMode": "loop",
+        "completionEvent": "viro-animation-complete:title:pulse",
+        "tracks": [ { "target": "transform.scale.x", "from": "current", "to": 1.15 }, { "target": "material.opacity", "from": "current", "to": 0.8 } ]
+      }
+    }
+  ]
+}

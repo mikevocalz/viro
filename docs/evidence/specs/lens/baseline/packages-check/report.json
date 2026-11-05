@@ -1,0 +1,12 @@
+{
+  "startedAt": "2026-10-28T10:49:13.841Z",
+  "project": "examples/specs-platform-lab/lens",
+  "steps": {
+    "packages": {
+      "ok": false,
+      "ms": 68,
+      "error": "SpectaclesUIKit, SurfacePlacement, VolumetricLine, SpecsNavigationKit, Leaf import InteractionKit.lspkg (the 4.0.0 package line), which the Viro runtime cannot use. Remove those packages from the project and rerun to install the pinned 2.x versions."
+    }
+  },
+  "finishedAt": "2026-10-28T10:49:13.946Z"
+}

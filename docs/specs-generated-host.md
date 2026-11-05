@@ -10,18 +10,41 @@ viro-specs compile \
   --format lens-ts
 ```
 
-The generated component imports the validated runtime hosts already synced by
-`@viro-external/specs` and performs the final wiring:
+The generated component is a thin orchestrator over
+`ViroSpecsSceneControllerHost` from `@viro-external/specs` (0.3 or later,
+synced into the project). It embeds the scene as a scene protocol 2
+document (`toSpecsSceneDocument`) and calls `present()` on start and
+`clear()` on destroy. The controller does the rest:
 
-- applies the portable scene to `ViroSpecsRuntimeHost`;
-- enables SIK interaction on nodes with Viro hover/click/drag handlers;
-- enables manipulation for draggable nodes;
-- plays statically registered Viro animations through
-  `ViroSpecsAnimationHost` / Lens AnimationPlayer;
-- presents ViroPolyline geometry through `ViroSpecsNavigationHost`.
+- validates the document, stages it under a disabled root, commits, then
+  retires the previous scene; a failure keeps the previous scene;
+- renders text style, extents, maxLines, opacity, materials and lights;
+- shows a tinted placeholder box for a missing asset (`VS5003`) instead of
+  stopping the Lens;
+- binds SIK one frame after commit and forwards all seven interaction
+  phases;
+- starts animations once every asset has loaded;
+- presents ViroPolyline geometry with its `materialId`.
 
-Attach `ViroGeneratedSceneHost` to a SceneObject and assign the four host
-objects in the Inspector.
+Nothing in the generated file throws. Problems are written to the Lens log
+as `VS5xxx` diagnostics (see [specs-diagnostics.md](specs-diagnostics.md)).
+
+Attach `ViroGeneratedSceneHost` to a SceneObject and assign one input,
+`sceneHostObject`: the SceneObject holding `ViroSpecsSceneControllerHost`,
+whose own input is the `ViroSpecsAssetRegistry` object.
+
+### Migrating from the four-input host
+
+Hosts generated before this change had `runtimeHostObject`,
+`interactionHostObject`, `animationHostObject` and `navigationHostObject`,
+and applied a protocol 1 snapshot. Regenerate the host, add
+`ViroSpecsSceneControllerHost` to a SceneObject, point its
+`assetRegistryObject` at the existing registry, and assign that SceneObject
+to `sceneHostObject`. Register `placeholderMaterial`, `defaultMaterial`,
+`defaultLineMaterial` and fonts on the registry to get placeholders,
+scene-defined materials, polylines without a `materialId` and font
+families. The old hosts stay in the package for apps that drive them
+directly.
 
 ## Static animation support
 

@@ -39,6 +39,7 @@ import com.viromedia.bridge.utility.ViroEventEmitter;
 import com.viromedia.bridge.utility.ViroEvents;
 
 import java.lang.reflect.Method;
+import java.util.UUID;
 
 /**
  * VRTExternalVideo binds an app-fed video producer to a Viro material.
@@ -51,7 +52,14 @@ import java.lang.reflect.Method;
  * The offer is decoupled by reflection so react_viro has no compile-time
  * dependency on any producer package. A producer library (e.g. a patched
  * react-native-webrtc that renders a remote WebRTC VideoTrack) opts in by
- * shipping a class {@code <sourceClass>} with two static methods:
+ * shipping a class {@code <sourceClass>} with static methods. The preferred
+ * contract carries a per-component consumer id, so one source can feed several
+ * materials without one component revoking another:
+ *
+ *   public static void provideSurface(String sourceKey, String consumerId, Surface s, int w, int h)
+ *   public static void revokeSurface(String sourceKey, String consumerId)
+ *
+ * Producers that only implement the original pair are still supported:
  *
  *   public static void provideSurface(String sourceKey, Surface s, int w, int h)
  *   public static void revokeSurface(String sourceKey)
@@ -71,14 +79,20 @@ public class VRTExternalVideo extends VRTComponent {
             "com.oney.WebRTCModule.ExternalVideoSurfaces";
 
     private ExternalSurfaceTexture mTexture = null;
+    private Material mBoundMaterial = null;
     private String mMaterialName = null;
     private String mSourceKey = null;
     private String mSourceClass = DEFAULT_SOURCE_CLASS;
     private int mPxWidth = 1280;
     private int mPxHeight = 720;
 
-    // The key currently provided to the producer, so prop changes revoke cleanly.
+    // Unique consumer identity lets one stream feed multiple Viro surfaces
+    // without one component revoking another.
+    private final String mConsumerId = UUID.randomUUID().toString();
+
+    // The key/class currently provided to the producer, so prop changes revoke cleanly.
     private String mProvidedKey = null;
+    private String mProvidedClass = null;
 
     public VRTExternalVideo(ReactContext reactContext) {
         super(reactContext.getBaseContext(), null, -1, -1, reactContext);
@@ -99,19 +113,34 @@ public class VRTExternalVideo extends VRTComponent {
     // -----------------------------------------------------------------------
 
     public void setMaterial(String materialName) {
+        if (materialName == null ? mMaterialName == null : materialName.equals(mMaterialName)) {
+            return;
+        }
+        unbindMaterial();
         mMaterialName = materialName;
         bindToMaterial();
     }
 
     public void setSourceKey(String sourceKey) {
-        if (sourceKey == null || sourceKey.equals(mSourceKey)) return;
+        if (sourceKey == null ? mSourceKey == null : sourceKey.equals(mSourceKey)) {
+            return;
+        }
         revokeFromProducer();
         mSourceKey = sourceKey;
         offerToProducer();
     }
 
     public void setSourceClass(String sourceClass) {
-        mSourceClass = (sourceClass != null) ? sourceClass : DEFAULT_SOURCE_CLASS;
+        String next = (sourceClass != null) ? sourceClass : DEFAULT_SOURCE_CLASS;
+        if (next.equals(mSourceClass)) {
+            return;
+        }
+
+        // Revoke through the OLD class before switching provider. Otherwise a
+        // live renderer remains attached to the old producer forever.
+        revokeFromProducer();
+        mSourceClass = next;
+        offerToProducer();
     }
 
     /** Producer pixel size. Recreates the texture if it already exists. */
@@ -161,9 +190,21 @@ public class VRTExternalVideo extends VRTComponent {
 
         Material material = materialManager.getMaterial(mMaterialName);
         if (material != null) {
+            mBoundMaterial = material;
             material.setDiffuseTexture(mTexture);
         } else {
             emitError("Material '" + mMaterialName + "' not found");
+        }
+    }
+
+    private void unbindMaterial() {
+        if (mBoundMaterial != null) {
+            try {
+                mBoundMaterial.setDiffuseTexture(null);
+            } catch (Exception ignored) {
+                // Material may already be disposed during scene teardown.
+            }
+            mBoundMaterial = null;
         }
     }
 
@@ -174,13 +215,22 @@ public class VRTExternalVideo extends VRTComponent {
 
         try {
             Class<?> cls = Class.forName(mSourceClass);
-            Method provide = cls.getMethod("provideSurface",
-                    String.class, Surface.class, int.class, int.class);
-            provide.invoke(null, mSourceKey, surface, mPxWidth, mPxHeight);
+            try {
+                // v2 contract: source + consumer identity supports fan-out.
+                Method provide = cls.getMethod("provideSurface",
+                        String.class, String.class, Surface.class, int.class, int.class);
+                provide.invoke(null, mSourceKey, mConsumerId, surface, mPxWidth, mPxHeight);
+            } catch (NoSuchMethodException legacy) {
+                // Backward compatibility with the original Danger Room provider.
+                Method provide = cls.getMethod("provideSurface",
+                        String.class, Surface.class, int.class, int.class);
+                provide.invoke(null, mSourceKey, surface, mPxWidth, mPxHeight);
+            }
             mProvidedKey = mSourceKey;
+            mProvidedClass = mSourceClass;
         } catch (ClassNotFoundException e) {
             emitError("Producer class not found: " + mSourceClass
-                    + " (is the producer library installed/patched?)");
+                    + " (is the producer adapter installed?)");
         } catch (Exception e) {
             Log.e(TAG, "provideSurface failed", e);
             emitError("provideSurface failed: " + e.getMessage());
@@ -190,13 +240,21 @@ public class VRTExternalVideo extends VRTComponent {
     private void revokeFromProducer() {
         if (mProvidedKey == null) return;
         try {
-            Class<?> cls = Class.forName(mSourceClass);
-            Method revoke = cls.getMethod("revokeSurface", String.class);
-            revoke.invoke(null, mProvidedKey);
+            String providerClass = mProvidedClass != null ? mProvidedClass : mSourceClass;
+            Class<?> cls = Class.forName(providerClass);
+            try {
+                Method revoke = cls.getMethod(
+                        "revokeSurface", String.class, String.class);
+                revoke.invoke(null, mProvidedKey, mConsumerId);
+            } catch (NoSuchMethodException legacy) {
+                Method revoke = cls.getMethod("revokeSurface", String.class);
+                revoke.invoke(null, mProvidedKey);
+            }
         } catch (Exception e) {
             Log.w(TAG, "revokeSurface failed (producer gone?)", e);
         }
         mProvidedKey = null;
+        mProvidedClass = null;
     }
 
     private void emitError(String message) {
@@ -212,6 +270,7 @@ public class VRTExternalVideo extends VRTComponent {
     @Override
     public void onTearDown() {
         revokeFromProducer();
+        unbindMaterial();
         if (mTexture != null) {
             mTexture.dispose();
             mTexture = null;

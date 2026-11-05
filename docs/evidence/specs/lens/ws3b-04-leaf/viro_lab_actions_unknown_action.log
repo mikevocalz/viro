@@ -1,0 +1,14 @@
+10:05:26.830 [Packages/SpectaclesInteractionKit.lspkg/Utils/logger.ts:21] FrameCache: Initialized global cache flushing for FrameCache
+10:05:27.894 [Packages/SpectaclesInteractionKit.lspkg/Core/ConfigurationValidator/ConfigurationValidator.ts:16] SIK Version : 0.18.0
+10:05:31.215 [LeafPlugin][PluginViewModel] Loaded 14 scenario(s) from preview.
+10:05:31.216 [LeafPlugin][PluginViewModel] Running scenario: viro_lab_actions_unknown_action
+10:06:58.514 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_lab_actions_unknown_action with args: []
+10:06:58.515 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.003s]Running with runner config: {"__leaf__log_level":"INFO","__leaf__timeout_secs":"90","__leaf__diagnostic_policy":"fallback","__leaf__diagnostic_report_duration_ms":"-1"}
+10:06:58.965 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:43] [viro-specs-host] error VS5015 (validate) /interactions/0/triggers/0/actionId: Action "item.drop" is not declared in the scene's actions.
+10:06:59.239 [Assets/ViroSpecsLab/Leaf/ViroLabActionsUnknownActionScenario.ts:47] VIRO_LAB_LEAF actions_unknown_action present=rejected [{"code":"VS5015","severity":"error","phase":"validate","message":"Action \"item.drop\" is not declared in the scene's actions.","hint":"Declare the action ID in the scene's actions list and in the ViroSpecsActionRegistry. The trigger or dispatch was dropped.","nodeId":"pick","fieldPath":"/interactions/0/triggers/0/actionId","sceneRevision":2}]
+10:06:59.720 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:43] [viro-specs-host] error VS5015 (action): Action exhibit.teleport is not declared; it was dropped.
+10:06:59.961 [Assets/ViroSpecsLab/Leaf/ViroLabActionsUnknownActionScenario.ts:62] VIRO_LAB_LEAF actions_unknown_action dispatch accepted=false ["VS5015:Action exhibit.teleport is not declared; it was dropped."]
+10:06:59.961 [Assets/ViroSpecsLab/Leaf/ViroLabActionsUnknownActionScenario.ts:66] VIRO_LAB_LEAF actions_unknown_action PASS
+10:07:00.243 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  1.731s]PASSED: viro_lab_actions_unknown_action
+10:07:00.244 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  1.732s][viro_lab_actions_unknown_action] PASSED
+10:07:00.358 [LeafPlugin][PluginViewModel] ✅ Scenario viro_lab_actions_unknown_action completed successfully.

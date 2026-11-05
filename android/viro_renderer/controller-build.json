@@ -1,8 +1,1 @@
-{
-  "sourceRepository": "mikevocalz/virocore",
-  "sourceCommit": "034d3b977754c94c23fa12d3a7e8c24d26f56b41",
-  "workflowRun": 36354633068,
-  "sha256": "08c22843d1311cbc52ae973b8a97dd8186a86c72d3682312a50a00c198506a3b",
-  "packaging": "Lossless standard ZIP deflate recompression; every decompressed member verified byte-identical to CI artifact.",
-  "validation": "C++ sample policy replay; Android release build and 16KB native alignment; no headset latency measurement."
-}
+{"sourceRepository": "mikevocalz/virocore", "sourceCommit": "881e5da89 (sync/upstream-3.1.0: ReactVision feature/vps-advanced 3.1.0 merged into fork main)", "workflowRun": null, "sha256": "ca8711dc9644c63a815829be99f8b5ecd7455386444b2b56fdacedc7a5907b12", "packaging": "Local :viroreact:assembleRelease --no-daemon under JDK 17, NDK 27.1.12297006; rive-runtime archives for pin 8b3ca41b reused from a prior build (same pin and premake flags); not a CI artifact.", "validation": "Release build EXIT=0; 16KB alignment 14 arm64 libraries 0 failures. No headset run."}

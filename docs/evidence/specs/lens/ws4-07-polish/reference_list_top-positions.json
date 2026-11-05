@@ -1,0 +1,16 @@
+{
+  "scenario": "viro_lab_actions_reference_flow",
+  "hold": "reference_list_top",
+  "note": "QueryRuntimeSceneTool during the hold, after rows start at -ROW_HEIGHT / 2 (viro e8e9d8ad, viro-external ViroSpecsReferenceFlow). World cm. The window shows y -16..12; Orrery through Planetarium are inside it when the list opens. Compare before/reference_list_top-positions.json. The Viro text in this lab scene is font size 22, too small to read in the Preview capture, so positions are the evidence.",
+  "window": { "centerY": -2, "height": 28, "top": 12, "bottom": -16 },
+  "cardLabelsY": {
+    "orrery": 8.5,
+    "pendulum": 1.5,
+    "tesla-coil": -5.5,
+    "planetarium": -12.5,
+    "wind-tunnel": -19.5,
+    "seismograph": -26.5,
+    "cloud-chamber": -33.5,
+    "lighthouse-lens": -40.5
+  }
+}

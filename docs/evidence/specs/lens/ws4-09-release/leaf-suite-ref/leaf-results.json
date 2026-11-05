@@ -1,0 +1,142 @@
+[
+  {
+    "id": "viro_ref_dashboard_ready",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  0.768s][viro_ref_dashboard_ready] PASSED",
+    "raw": {
+      "scenarioId": "viro_ref_dashboard_ready",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_ref_dashboard_range",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  2.929s][viro_ref_dashboard_range] PASSED",
+    "raw": {
+      "scenarioId": "viro_ref_dashboard_range",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_ref_dashboard_ik",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  5.833s][viro_ref_dashboard_ik] PASSED",
+    "raw": {
+      "scenarioId": "viro_ref_dashboard_ik",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_ref_model_ready",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  1.935s][viro_ref_model_ready] PASSED",
+    "raw": {
+      "scenarioId": "viro_ref_model_ready",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_ref_model_transform",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  5.834s][viro_ref_model_transform] PASSED",
+    "raw": {
+      "scenarioId": "viro_ref_model_transform",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_ref_model_missing_asset",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  2.900s][viro_ref_model_missing_asset] PASSED",
+    "raw": {
+      "scenarioId": "viro_ref_model_missing_asset",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_ref_placement_ready",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  0.765s][viro_ref_placement_ready] PASSED",
+    "raw": {
+      "scenarioId": "viro_ref_placement_ready",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_ref_placement_confirm",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  2.336s][viro_ref_placement_confirm] PASSED",
+    "raw": {
+      "scenarioId": "viro_ref_placement_confirm",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_ref_placement_cancel",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "pluginStatus": "succeeded",
+    "managerLine": "[  4.640s][viro_ref_placement_cancel] PASSED",
+    "raw": {
+      "scenarioId": "viro_ref_placement_cancel",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_ref_expected_failure",
+    "runner": "leaf-panel",
+    "status": "failed",
+    "pluginStatus": "failed",
+    "managerLine": "[  0.774s][viro_ref_expected_failure] FAILED - AssertionError: Expected: \"REF_EXPECTED_FAILURE: this title does not exist\" - Received: \"Workshop sensors\"",
+    "raw": {
+      "scenarioId": "viro_ref_expected_failure",
+      "status": "failed",
+      "target": "preview"
+    },
+    "expected": "failed",
+    "asExpected": true
+  }
+]

@@ -1,0 +1,45 @@
+{
+  "$schema": "https://github.com/mikevocalz/viro/blob/main/schemas/viro-specs-manifest.v2.json",
+  "version": 2,
+  "generator": {
+    "name": "viro-specs-compile"
+  },
+  "source": "__test__/fixtures/specs/compiler/anim-translate-offset/scene.tsx",
+  "nodes": [
+    {
+      "id": "lift",
+      "kind": "group",
+      "position": [
+        0,
+        1,
+        -1
+      ]
+    }
+  ],
+  "polylines": [],
+  "lights": [],
+  "materials": [],
+  "interactions": [],
+  "animations": [
+    {
+      "nodeId": "lift",
+      "name": "goldenLift",
+      "plan": {
+        "engine": "AnimationPlayer",
+        "backendPackage": "AnimationExamples",
+        "durationSeconds": 0.25,
+        "delaySeconds": 0,
+        "easing": "ease-in",
+        "playbackMode": "single",
+        "completionEvent": "viro-animation-complete:lift:goldenLift",
+        "tracks": [
+          {
+            "target": "transform.position.y",
+            "from": "current",
+            "to": 1.2
+          }
+        ]
+      }
+    }
+  ]
+}

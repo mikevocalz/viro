@@ -1,0 +1,4 @@
+{
+  "description": "Named, namespace, re-exported and JSON imports resolve statically.",
+  "parity": true
+}

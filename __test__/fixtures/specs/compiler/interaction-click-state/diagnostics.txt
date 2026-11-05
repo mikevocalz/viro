@@ -1,0 +1,2 @@
+scene.tsx:9:7 warning VS3016 [toggle]: Node "toggle" responds to select but has no label.
+scene.tsx:9:7 warning VS3017 [toggle]: Node "toggle" is 0.00 m from the wearer; the band is 0.6-3 m.

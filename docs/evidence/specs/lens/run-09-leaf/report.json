@@ -1,0 +1,33 @@
+{
+  "startedAt": "2026-10-28T11:17:52.199Z",
+  "project": "examples/specs-platform-lab/lens",
+  "steps": {
+    "recompile": {
+      "ok": true,
+      "ms": 268,
+      "result": "lens-compiled"
+    },
+    "preview": {
+      "ok": true,
+      "ms": 5158,
+      "result": {
+        "errors": 1,
+        "prints": 8,
+        "firstActivityAtMs": 121
+      }
+    },
+    "leaf": {
+      "ok": true,
+      "ms": 54877,
+      "result": [
+        "viro_lab_render: succeeded",
+        "viro_lab_select: succeeded",
+        "viro_lab_select_ik: succeeded",
+        "viro_lab_drag: succeeded",
+        "viro_lab_navigate: succeeded",
+        "viro_lab_deliberate_failure: failed"
+      ]
+    }
+  },
+  "finishedAt": "2026-10-28T11:18:52.546Z"
+}

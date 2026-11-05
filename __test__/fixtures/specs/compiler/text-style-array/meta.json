@@ -1,0 +1,4 @@
+{
+  "description": "Style arrays merge in order and skip falsy entries, as React Native does.",
+  "parity": true
+}

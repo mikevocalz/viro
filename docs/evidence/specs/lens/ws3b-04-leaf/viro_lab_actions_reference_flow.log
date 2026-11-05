@@ -1,0 +1,19 @@
+09:55:47.677 [Packages/SpectaclesInteractionKit.lspkg/Utils/logger.ts:21] FrameCache: Initialized global cache flushing for FrameCache
+09:55:48.595 [Packages/SpectaclesInteractionKit.lspkg/Core/ConfigurationValidator/ConfigurationValidator.ts:16] SIK Version : 0.18.0
+09:55:51.629 [LeafPlugin][PluginViewModel] Loaded 14 scenario(s) from preview.
+09:55:51.631 [LeafPlugin][PluginViewModel] Running scenario: viro_lab_actions_reference_flow
+09:56:26.153 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_lab_actions_reference_flow with args: []
+09:56:26.154 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.003s]Running with runner config: {"__leaf__log_level":"INFO","__leaf__timeout_secs":"90","__leaf__diagnostic_policy":"fallback","__leaf__diagnostic_report_duration_ms":"-1"}
+09:56:27.393 [Assets/ViroSpecsLab/Leaf/ViroLabActionsReferenceFlowScenario.ts:61] VIRO_LAB_LEAF actions_reference_flow scroll 1 -> 0.4000000059604645
+09:56:27.394 [Assets/ViroSpecsLab/Leaf/ViroLabActionsReferenceFlowScenario.ts:82] VIRO_LAB_LEAF actions_reference_flow picked card-seismograph dy=2.1000003814697266
+09:56:28.103 [Assets/ViroSpecs/lens/ViroSpecsActionsLab.ts:60] [viro-specs-actions] exhibit.open {"exhibitId":"seismograph"}
+09:56:28.999 [Assets/ViroSpecs/lens/ViroSpecsActionsLab.ts:60] [viro-specs-actions] settings.set-units {"units":"imperial"}
+09:56:29.370 [Assets/ViroSpecsLab/Leaf/ViroLabActionsReferenceFlowScenario.ts:101] VIRO_LAB_LEAF actions_reference_flow toggle tree:
+09:56:29.962 [Assets/ViroSpecs/lens/ViroSpecsActionsLab.ts:60] [viro-specs-actions] nav.back {}
+09:56:31.012 [Assets/ViroSpecsLab/Leaf/ViroLabActionsReferenceFlowScenario.ts:112] VIRO_LAB_LEAF actions_reference_flow scroll restored 0.4000000059604645 (left 0.4000000059604645)
+09:56:31.013 [Assets/ViroSpecsLab/Leaf/ViroLabActionsReferenceFlowScenario.ts:118] VIRO_LAB_LEAF actions_reference_flow retired card=true toggle=false back=true
+09:56:31.013 [Assets/ViroSpecsLab/Leaf/ViroLabActionsReferenceFlowScenario.ts:128] VIRO_LAB_LEAF actions_reference_flow actions=["exhibit.open {\"exhibitId\":\"seismograph\"} card-seismograph synthetic","settings.set-units {\"units\":\"imperial\"} units-toggle synthetic","nav.back {} back-button synthetic"] problems=[]
+09:56:31.013 [Assets/ViroSpecsLab/Leaf/ViroLabActionsReferenceFlowScenario.ts:130] VIRO_LAB_LEAF actions_reference_flow PASS
+09:56:31.302 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  5.151s]PASSED: viro_lab_actions_reference_flow
+09:56:31.302 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  5.151s][viro_lab_actions_reference_flow] PASSED
+09:56:31.397 [LeafPlugin][PluginViewModel] ✅ Scenario viro_lab_actions_reference_flow completed successfully.

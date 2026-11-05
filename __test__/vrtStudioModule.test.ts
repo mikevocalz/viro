@@ -43,6 +43,24 @@ describe("VRTStudioModule.rvSetStudioSession", () => {
     expect(rvSetStudioSession).toHaveBeenCalledWith(null);
   });
 
+  test("passes a native rejection of an invalid config to the caller", async () => {
+    // Native rejects a non-https baseUrl or a malformed functionRegion with
+    // E_INVALID_STUDIO_SESSION; the wrapper must not swallow it.
+    const rejection = Object.assign(
+      new Error("baseUrl must use https; http is allowed only for localhost, 127.0.0.1 and 10.0.2.2"),
+      { code: "E_INVALID_STUDIO_SESSION" },
+    );
+    const rvSetStudioSession = jest.fn().mockRejectedValue(rejection);
+    const wrapper = loadWrapper({ rvSetStudioSession });
+
+    await expect(
+      wrapper.rvSetStudioSession({
+        baseUrl: "http://project.supabase.co",
+        accessToken: "jwt-token",
+      }),
+    ).rejects.toMatchObject({ code: "E_INVALID_STUDIO_SESSION" });
+  });
+
   test("resolves without throwing when the native module is unavailable", async () => {
     const wrapper = loadWrapper(undefined);
 

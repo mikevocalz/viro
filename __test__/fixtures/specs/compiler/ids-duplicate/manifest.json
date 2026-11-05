@@ -1,0 +1,24 @@
+{
+  "$schema": "https://github.com/mikevocalz/viro/blob/main/schemas/viro-specs-manifest.v2.json",
+  "version": 2,
+  "generator": {
+    "name": "viro-specs-compile"
+  },
+  "source": "__test__/fixtures/specs/compiler/ids-duplicate/scene.tsx",
+  "nodes": [
+    {
+      "id": "dup",
+      "kind": "group"
+    },
+    {
+      "id": "dup",
+      "kind": "text",
+      "text": "again"
+    }
+  ],
+  "polylines": [],
+  "lights": [],
+  "materials": [],
+  "interactions": [],
+  "animations": []
+}

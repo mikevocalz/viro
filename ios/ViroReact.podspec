@@ -20,12 +20,25 @@ Pod::Spec.new do |s|
   # behind an availability check, so this is the version the code actually requires today.
   s.visionos.deployment_target = '26.0'
 
+  s.resource_bundles = { 'ViroReact_privacy' => ['PrivacyInfo.xcprivacy'] }
+
   # visionOS: CompositorServices drives the immersive render loop.
-  s.visionos.frameworks = ['Metal', 'MetalKit', 'CompositorServices', 'ARKit']
+  s.visionos.frameworks = [
+    'Metal', 'MetalKit', 'CompositorServices', 'ARKit',
+    'CoreImage', 'CoreVideo', 'ImageIO'
+  ]
 
   # iOS: frameworks required by source files compiled from the pod
-  # (VRTObjectDetectorView uses AVFoundation + Accelerate; CoreVideo for CVPixelBuffer)
-  s.ios.frameworks = ['AVFoundation', 'Accelerate', 'CoreVideo']
+  # (VRTObjectDetectorView uses AVFoundation + Accelerate; CoreVideo for CVPixelBuffer; ARKit for
+  # the ARSession and ARFrame it reads the camera through; VRTExternalVideo converts producer
+  # frames with CoreImage and ImageIO orientations)
+  s.ios.frameworks = [
+    'AVFoundation', 'Accelerate', 'CoreVideo', 'ARKit',
+    'CoreImage', 'ImageIO'
+  ]
+
+  # zlib: VRTARSceneNavigatorModule computes the CRC-32 of the VPS scan zip with crc32().
+  s.libraries = 'z'
 
   # Base source files (always included)
   source_files_array = ['ViroReact/**/*.{h,m,mm,swift}']
@@ -78,8 +91,38 @@ Pod::Spec.new do |s|
   # xros at all. iOS still links the prebuilt one, so its implementation files must be kept out
   # of the compile or every symbol would be defined twice — once here, once in the archive.
   # Headers stay: 32 files import them, and public_header_files still needs them present.
+  #
+  # The archive is only as current as its last rebuild, and a file added to ViroReact/ is not in
+  # it until someone rebuilds. The files below are the ones a rebuild has not carried yet; each
+  # one is built from source on iOS for as long as the archive lacks its class, and goes back to
+  # coming from the archive the moment a rebuild carries it. A view manager must stay next to its
+  # view: the manager references the view's class directly and links only with it.
+  # scripts/check-ios-bridge.sh reads this list, so keep it one quoted path per line.
+  archive_fallback_sources = [
+    # Built by the ViroReactExternalVideo pod (ViroReactExternalVideo.podspec) when the archive
+    # lacks VRTExternalVideo. Upstream's archives lack it; the fork's rebuilt archive carries it,
+    # and that pod then compiles nothing.
+    'ViroReact/Views/VRTExternalVideo.mm',
+    'ViroReact/VRTExternalVideoManager.mm',
+    # Added 2026-08 but never added to the Xcode target, so the rebuilds since skipped it and
+    # 3.0.2 shipped without the view ("View config not found for component VRTObjectDetectorView").
+    # Not built by this pod (see below); a companion pod has to compile it when the archive
+    # lacks the class, the way ViroReactExternalVideo does for VRTExternalVideo.
+    'ViroReact/Views/VRTObjectDetectorView.mm',
+    'ViroReact/Views/VRTObjectDetectorViewManager.mm',
+  ]
+
   if File.exist?(File.join(__dir__, 'dist/lib/libViroReact.a'))
-    ios_exclude_files << 'ViroReact/**/*.{m,mm}'
+    # With the prebuilt archive present, iOS compiles none of these files: the
+    # archive is the whole implementation. The pod must stay header-only on
+    # iOS. If it compiled even one file, CocoaPods would build a second
+    # libViroReact.a next to the vendored one and `pod install` would stop
+    # with "target has libraries with conflicting names: libviroreact.a".
+    # That is why archive_fallback_sources are compiled by separately named
+    # pods rather than here.
+    ios_exclude_files.concat(
+      Dir.chdir(__dir__) { Dir.glob('ViroReact/**/*.{m,mm}') }
+    )
   end
 
   s.ios.exclude_files = ios_exclude_files

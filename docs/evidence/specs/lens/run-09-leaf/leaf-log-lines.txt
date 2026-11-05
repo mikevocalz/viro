@@ -1,0 +1,30 @@
+I 07:18:05.536 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.021s][viro_lab_render] PASSED
+I 07:18:08.441 [Packages/SpectaclesInteractionKit.lspkg/Core/ConfigurationValidator/ConfigurationValidator.ts:16] SIK Version : 0.18.0
+I 07:18:09.480 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_lab_select with args: []
+I 07:18:09.480 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.002s]Running with runner config: {"__leaf__log_level":"INFO","__leaf__timeout_secs":"600","__leaf__diagnostic_policy":"fallback","__leaf__diagnostic_report_duration_ms":"-1"}
+I 07:18:10.426 [Assets/ViroSpecsLab/Leaf/ViroLabSelectScenario.ts:29] VIRO_LAB_LEAF select PASS phases=hover-enter,hover-exit,hover-enter,select-start,drag,drag,drag,drag,select-end,hover-exit
+I 07:18:10.426 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.948s]PASSED: viro_lab_select
+I 07:18:10.427 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.948s][viro_lab_select] PASSED
+I 07:18:12.689 [Packages/SpectaclesInteractionKit.lspkg/Core/ConfigurationValidator/ConfigurationValidator.ts:16] SIK Version : 0.18.0
+I 07:18:34.014 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.001s]RUNS: viro_lab_select_ik with args: []
+I 07:18:34.015 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.004s]Running with runner config: {"__leaf__log_level":"INFO","__leaf__timeout_secs":"600","__leaf__diagnostic_policy":"fallback","__leaf__diagnostic_report_duration_ms":"-1"}
+I 07:18:39.382 [Assets/ViroSpecsLab/Leaf/ViroLabSelectIKScenario.ts:29] VIRO_LAB_LEAF select_ik PASS phases=hover-enter,select-start,drag,drag,drag,drag,drag,select-end,hover-exit
+I 07:18:39.382 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  5.371s]PASSED: viro_lab_select_ik
+I 07:18:39.382 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  5.371s][viro_lab_select_ik] PASSED
+I 07:18:42.475 [Packages/SpectaclesInteractionKit.lspkg/Core/ConfigurationValidator/ConfigurationValidator.ts:16] SIK Version : 0.18.0
+I 07:18:43.847 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_lab_drag with args: []
+I 07:18:43.848 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.002s]Running with runner config: {"__leaf__log_level":"INFO","__leaf__timeout_secs":"600","__leaf__diagnostic_policy":"fallback","__leaf__diagnostic_report_duration_ms":"-1"}
+I 07:18:44.872 [Assets/ViroSpecsLab/Leaf/ViroLabDragScenario.ts:35] VIRO_LAB_LEAF drag PASS movedCm=4.64 phases=hover-enter,select-start,drag,drag,drag,drag,drag,drag,drag,drag,drag,drag,select-end,hover-exit
+I 07:18:44.873 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  1.028s]PASSED: viro_lab_drag
+I 07:18:44.873 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  1.028s][viro_lab_drag] PASSED
+I 07:18:46.787 [Packages/SpectaclesInteractionKit.lspkg/Core/ConfigurationValidator/ConfigurationValidator.ts:16] SIK Version : 0.18.0
+I 07:18:48.090 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_lab_navigate with args: []
+I 07:18:48.091 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.002s]Running with runner config: {"__leaf__log_level":"INFO","__leaf__timeout_secs":"600","__leaf__diagnostic_policy":"fallback","__leaf__diagnostic_report_duration_ms":"-1"}
+I 07:18:48.110 [Assets/ViroSpecsLab/Leaf/ViroLabNavigateScenario.ts:25] VIRO_LAB_LEAF navigate PASS points=3
+I 07:18:48.111 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.022s]PASSED: viro_lab_navigate
+I 07:18:48.111 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.022s][viro_lab_navigate] PASSED
+I 07:18:50.820 [Packages/SpectaclesInteractionKit.lspkg/Core/ConfigurationValidator/ConfigurationValidator.ts:16] SIK Version : 0.18.0
+I 07:18:52.459 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_lab_deliberate_failure with args: []
+I 07:18:52.459 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.001s]Running with runner config: {"__leaf__log_level":"INFO","__leaf__timeout_secs":"600","__leaf__diagnostic_policy":"fallback","__leaf__diagnostic_report_duration_ms":"-1"}
+I 07:18:52.467 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] E [DefaultLeafScenarioManager] [  0.008s]FAILED: viro_lab_deliberate_failure - AssertionError: Expected: "DELIBERATE_FAILURE_EXPECTED" - Received: "Viro Cross-Platform Lab"
+I 07:18:52.467 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] E [DefaultLeafScenarioManager] [  0.009s][viro_lab_deliberate_failure] FAILED - AssertionError: Expected: "DELIBERATE_FAILURE_EXPECTED" - Received: "Viro Cross-Platform Lab"

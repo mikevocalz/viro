@@ -1,0 +1,45 @@
+{
+  "$schema": "https://github.com/mikevocalz/viro/blob/main/schemas/viro-specs-manifest.v2.json",
+  "version": 2,
+  "generator": {
+    "name": "viro-specs-compile"
+  },
+  "source": "__test__/fixtures/specs/compiler/imports-constants/scene.tsx",
+  "nodes": [
+    {
+      "id": "imported",
+      "kind": "group",
+      "position": [
+        0,
+        1.2,
+        -1.5
+      ]
+    },
+    {
+      "id": "title",
+      "kind": "text",
+      "parentId": "imported",
+      "text": "Imported title",
+      "style": {
+        "fontSize": 32,
+        "color": "#111111"
+      }
+    },
+    {
+      "id": "subtitle",
+      "kind": "text",
+      "parentId": "imported",
+      "position": [
+        0,
+        -0.15,
+        0
+      ],
+      "text": "From JSON"
+    }
+  ],
+  "polylines": [],
+  "lights": [],
+  "materials": [],
+  "interactions": [],
+  "animations": []
+}

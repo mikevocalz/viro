@@ -1,0 +1,2 @@
+scene.tsx:9:79 error VS3013 [legacy]: Viro3DObject legacy uses VRX.
+scene.tsx error VS2002: <ViroSpecsScene> in scene.tsx has no compiled content.

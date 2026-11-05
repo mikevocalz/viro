@@ -1,0 +1,1 @@
+scene.tsx:12:13 warning VS3018 [leaf]: Text "leaf" is 0.56 degrees tall at 1.12 m (fontSize 48); the minimum is 1.2 degrees.

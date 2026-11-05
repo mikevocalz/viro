@@ -1,0 +1,12 @@
+16:07:44.120 [Packages/SpectaclesInteractionKit.lspkg/Utils/logger.ts:21] FrameCache: Initialized global cache flushing for FrameCache
+16:07:44.429 [Packages/SpectaclesInteractionKit.lspkg/Core/ConfigurationValidator/ConfigurationValidator.ts:16] SIK Version : 0.18.0
+16:07:44.767 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:07:44.767 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:07:44.821 [LeafPlugin][PluginViewModel] Loaded 39 scenario(s) from preview.
+16:07:44.821 [LeafPlugin][PluginViewModel] Running scenario: viro_lab_navigate
+16:08:14.996 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_lab_navigate with args: []
+16:08:14.996 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.001s]Running with runner config: {"__leaf__log_level":"INFO","__leaf__timeout_secs":"600","__leaf__diagnostic_policy":"fallback","__leaf__diagnostic_report_duration_ms":"-1"}
+16:08:15.125 [Assets/ViroSpecsLab/Leaf/ViroLabNavigateScenario.ts:24] VIRO_LAB_LEAF navigate PASS points=3
+16:08:15.126 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.131s]PASSED: viro_lab_navigate
+16:08:15.126 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.131s][viro_lab_navigate] PASSED
+16:08:15.200 [LeafPlugin][PluginViewModel] ✅ Scenario viro_lab_navigate completed successfully.

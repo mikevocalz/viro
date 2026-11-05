@@ -1,0 +1,21 @@
+{
+  "startedAt": "2026-10-28T11:06:10.773Z",
+  "project": "examples/specs-platform-lab/lens",
+  "steps": {
+    "recompile": {
+      "ok": true,
+      "ms": 183,
+      "result": "lens-compiled"
+    },
+    "preview": {
+      "ok": true,
+      "ms": 25918,
+      "result": {
+        "errors": 0,
+        "prints": 0,
+        "firstActivityAtMs": 124
+      }
+    }
+  },
+  "finishedAt": "2026-10-28T11:06:36.910Z"
+}

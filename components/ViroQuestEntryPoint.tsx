@@ -10,6 +10,7 @@ import { StudioSceneErrorBoundary } from "./Studio/StudioSceneErrorBoundary";
 import { ViroScene } from "./ViroScene";
 import { ViroAmbientLight } from "./ViroAmbientLight";
 import { ViroText } from "./ViroText";
+import { ViroUsagePingSuppressed } from "./Utilities/ViroUsagePing";
 
 // Rendered in place of the crashed scene. Has to be a full, valid Viro scene
 // (not a plain RN <View>) — VRActivity's display is exclusively driven by the
@@ -23,11 +24,15 @@ function QuestCrashFallbackScene() {
         position={[0, 0, -2]}
         width={3}
         height={1}
-        style={{ fontFamily: "Arial", fontSize: 20, color: "#FFFFFF", textAlign: "center" }}
+        style={{ fontFamily: "sans-serif", fontSize: 20, color: "#FFFFFF", textAlign: "center" }}
       />
     </ViroScene>
   );
 }
+
+// Counted because a re-entry can mount the next VRActivity's surface before the
+// finishing one has unmounted.
+let mountedEntryPoints = 0;
 
 /**
  * Drop-in root component for VRActivity on Meta Quest.
@@ -48,6 +53,19 @@ export function ViroQuestEntryPoint() {
 
   React.useEffect(() => VRQuestNavigatorBridge.onIntent(setIntent), []);
 
+  // VRActivity also ends without exitVRScene(), when the wearer quits from the
+  // system menu or Horizon OS brings the panel forward, and its surface unmounts
+  // either way. The flag clears when the last surface unmounts, even if the
+  // "vrDestroyed" emit never reached JS, so the panel cannot resurrect VR after
+  // an OS-level quit; a re-entry that mounts first keeps it set.
+  React.useEffect(() => {
+    mountedEntryPoints++;
+    VRQuestNavigatorBridge.setVRActive(true);
+    return () => {
+      if (--mountedEntryPoints === 0) VRQuestNavigatorBridge.setVRActive(false);
+    };
+  }, []);
+
   // Wire hardware back button to exit VR. Apps that need custom back behaviour
   // can call AppRegistry.registerComponent('VRQuestScene', ...) to override.
   //
@@ -64,14 +82,6 @@ export function ViroQuestEntryPoint() {
     });
     return () => sub.remove();
   }, []);
-
-  // A stopped surface means VRActivity is gone even if the "vrDestroyed"
-  // emit never reached JS — clear the flag so the panel-side AppState
-  // relaunch can't resurrect VR after an OS-level quit.
-  React.useEffect(
-    () => () => VRQuestNavigatorBridge.setVRActive(false),
-    []
-  );
 
   // Forward bridge ops (push/pop/etc.) to the live navigator.
   React.useEffect(() => {
@@ -104,23 +114,26 @@ export function ViroQuestEntryPoint() {
 
   const { initialScene, rendererConfig } = intent;
 
+  // The intent comes from ViroXRSceneNavigator, which has already sent the ping for this scene.
   return (
-    <StudioSceneErrorBoundary
-      onError={(error) => VRQuestNavigatorBridge.reportQuestError(error)}
-      renderError={() => (
+    <ViroUsagePingSuppressed.Provider value={true}>
+      <StudioSceneErrorBoundary
+        onError={(error) => VRQuestNavigatorBridge.reportQuestError(error)}
+        renderError={() => (
+          <ViroVRSceneNavigator
+            initialScene={{ scene: QuestCrashFallbackScene }}
+            style={StyleSheet.absoluteFill}
+          />
+        )}
+      >
         <ViroVRSceneNavigator
-          initialScene={{ scene: QuestCrashFallbackScene }}
+          ref={navRef}
+          key={intent.intentKey}
+          initialScene={initialScene}
+          {...rendererConfig}
           style={StyleSheet.absoluteFill}
         />
-      )}
-    >
-      <ViroVRSceneNavigator
-        ref={navRef}
-        key={intent.intentKey}
-        initialScene={initialScene}
-        {...rendererConfig}
-        style={StyleSheet.absoluteFill}
-      />
-    </StudioSceneErrorBoundary>
+      </StudioSceneErrorBoundary>
+    </ViroUsagePingSuppressed.Provider>
   );
 }

@@ -11,7 +11,7 @@
   <a href="https://www.npmjs.com/package/@reactvision/react-viro">
     <img src="https://img.shields.io/npm/dm/@reactvision/react-viro?colour=purple" alt="downloads">
   </a>
-  <a href="https://discord.gg/yqqEGUjK">
+  <a href="https://discord.gg/A6TaFNqwVc">
     <img src="https://img.shields.io/discord/774471080713781259?label=Discord" alt="Discord">
   </a>
 </p>
@@ -28,9 +28,11 @@ ViroReact is MIT licensed and free forever.
 | -------------------- | ------------ | ----- |
 | iOS (ARKit)          | ✅ | Deployment target 15.1 |
 | Android (ARCore)     | ✅ | |
-| Meta Horizon OS      | ✅ | Quest 3 / 3S mixed reality through OpenXR |
-| Apple visionOS       | ✅ | |
+| Meta Horizon OS      | ✅ | Quest 2 / Pro / 3 / 3S through OpenXR; mixed reality on Quest 3 / 3S |
+| Apple visionOS       | ✅ | Needs the optional `@reactvision/react-native-visionos` peer; deployment target 26.0 |
 | Web (WebGL2 / WASM)  | ✅ | Needs the optional `@reactvision/viro-web-renderer` peer |
+
+On Meta Quest, `StudioSceneNavigator` renders with HDR off, because the HDR composite hides the passthrough layer there. PBR needs HDR, so a material with the `PBR` lighting model, which Studio materials and glTF models use by default, is shaded as `Blinn`: its roughness, metalness and ambient occlusion map have no effect, and a Studio scene looks flatter than it does on a phone.
 
 ViroReact works with both **React Native CLI** and **Expo** projects.
 
@@ -45,9 +47,22 @@ npm install @reactvision/react-viro
 For Expo projects, the easiest way to start is to clone the official starter kit:
 
 - **Expo + TypeScript starter kit:** <https://github.com/ReactVision/expo-starter-kit-typescript>
-- **React Native CLI starter kit:** <https://github.com/ReactVision/starter-kit>
 
 For step-by-step setup instructions, including platform-specific permissions and build configuration, see the full installation guide in the docs: <https://viro-community.readme.io/docs/installation-instructions>
+
+### iOS Simulator builds
+
+Viro's iOS binaries (`ios/dist/lib/libViroReact.a` and `ViroKit.framework`) are built for arm64 devices only and have no simulator slice. The Expo config plugin writes every Viro pod into the Podfile inside an `if ENV['VIRO_IOS_PODS'] != 'skip'` block, so a simulator build can leave them out:
+
+```bash
+cd ios
+VIRO_IOS_PODS=skip pod install   # before a simulator build
+pod install                      # before a device build, to bring the Viro pods back
+```
+
+With the pods skipped, the app has no Viro native modules. Viro's JS still imports, but scenes cannot render, so guard Viro screens behind a check such as `isARSupportedOnDevice()` (it resolves `{ isARSupported: false }` when the native module is missing).
+
+The block is regenerated on every `expo prebuild`; there is no need to edit the Podfile by hand. Earlier plugin versions also set `EXCLUDED_ARCHS[sdk=iphonesimulator*] = arm64` on the app target, which made Apple-silicon simulators reject the app. The plugin now removes that setting on the next prebuild.
 
 ## MCP Server
 
@@ -67,15 +82,17 @@ ViroReact ships with a complete spatial computing toolkit out of the box — no 
 - Image and object recognition triggers
 - Cloud Anchors for persistent, multi-user shared AR content _(Platform feature)_
 - Geospatial Anchors that pin content to real-world latitude, longitude, and altitude _(Platform feature)_
-- Co-location: two devices in the same room agreeing on where the scene is, with replicated state on top
+- Co-location: two devices in the same room agreeing on where the scene is, with replicated state on top _(Platform feature)_
 - VPS: scan a whole room to define its own persistent coordinate frame, then localise back into it later or from another device, with an optional world mesh for occlusion and physics _(Platform feature)_
+- Advanced VPS: continuous localisation against a place's map that improves with every scan, matched on the device or on ReactVision's servers _(Platform feature)_
+- World mesh and depth: a mesh of the real surroundings from LiDAR, ARCore depth or monocular depth, fused across frames, for occlusion and physics
 
 **Rendering**
 
 - PBR lighting, HDR environment maps, and real-time shadow casting
 - 360° photo and video environments
 - Portal rendering for immersive pass-through experiences
-- OBJ, FBX, and GLTF/GLB model loading with embedded animations
+- OBJ, GLTF/GLB and VRX (FBX converted to VRX offline) model loading with embedded animations
 - Custom procedural geometry and custom GPU shaders
 
 **Interaction and motion**
@@ -91,12 +108,25 @@ ViroReact ships with a complete spatial computing toolkit out of the box — no 
 
 ## Platform Features
 
-Cloud Anchors, Geospatial Anchors, and AI-powered 3D asset creation are powered by **ReactVision Platform** — managed cloud infrastructure built directly into ViroReact. Add your `rvApiKey` and `rvProjectId` and the platform handles hosting, resolution, and geospatial infrastructure for you.
+Cloud Anchors, Geospatial Anchors, co-location, Advanced VPS and AI-powered 3D asset creation are powered by **ReactVision Platform** — managed cloud infrastructure built directly into ViroReact. Add your `rvApiKey` and `rvProjectId` and the platform handles hosting, resolution, the co-location relay and geospatial infrastructure for you. Co-location and Advanced VPS server mode need a paid plan.
 
 You can get a Studio account, which includes Platform access, for free at <https://studio.reactvision.xyz>.
 
+Co-location and VPS can also run on a user token instead of `rvApiKey`, for an app with its own sign-in. Its backend mints a short-lived token for the signed-in user with a secret key (`POST /functions/v1/app-user-tokens`), and the app passes viro a function that fetches it. viro renews the token before it expires:
+
+```tsx
+import { createUserTokenCredentials, useViroColocation } from "@reactvision/react-viro";
+
+// fetchToken calls your backend and returns what app-user-tokens answered.
+const credentials = useMemo(() => createUserTokenCredentials({ projectId: PROJECT_ID, fetchToken }), [userId]);
+
+useViroColocation({ roomId, credentials }); // also useViroColocationRoom, useViroReplicatedState
+<StudioSceneNavigator sceneId={sceneId} colocation={{ mode: "join", code, credentials }} />
+<ViroVPS arSceneNavigator={nav} credentials={credentials} />
+```
+
 - Cloud Anchors guide: <https://viro-community.readme.io/docs/cloud-anchors>
-- Geospatial Anchors guide: <https://viro-community.readme.io/docs/geospatial-anchors>
+- Geospatial Anchors guide: <https://viro-community.readme.io/docs/geospatial>
 
 ## Optional Packages
 
@@ -124,6 +154,26 @@ Drop the `StudioSceneNavigator` component into your ViroReact app, point it at a
 **Getting started**
 
 Full walkthrough — including Studio setup, exporting a scene, and wiring `StudioSceneNavigator` into a React Native app — is in our blog: <https://updates.reactvision.xyz/how-to-build-your-first-ar-vr-app-with-studio-and-react-native-f2421ecce9ae>
+
+## Usage data
+
+Each scene navigator sends ReactVision one request every time it mounts, so we can see which platforms, navigators and ViroReact versions are in use. That covers `ViroARSceneNavigator`, `Viro3DSceneNavigator`, `ViroVRSceneNavigator`, `ViroSceneNavigator`, the web AR, 3D and scene navigators, and `ViroXRSceneNavigator`, which counts once whichever navigator it renders. The request is sent in the background after the navigator mounts. It is never retried, and a failure is ignored.
+
+Each request carries:
+
+- a random install id, created on first use and kept in the app's own storage (`NSUserDefaults` on iOS and visionOS, a file in the no-backup directory on Android, `localStorage` on web), and a random id for the request itself
+- the app's bundle id or package name, version and build number (on web, the page's hostname)
+- the platform, OS version and device model (on web, the OS family and the browser)
+- the navigator, the ViroReact and React Native versions, and whether it is a development build
+- whether `RVApiKey` is set (never the key itself), and `RVProjectId` when it is set
+- a few of the navigator's own settings, such as the anchor provider or the occlusion mode, and never ids, keys, URLs or scene content
+
+A web page served from `localhost`, `127.0.0.1`, `[::1]`, `0.0.0.0` or a `.local` host sends nothing. The iOS privacy manifest declares this data as Device ID, Product Interaction and Other Diagnostic Data, used for analytics, not linked to the user and not used for tracking.
+
+To turn it off, use either of these:
+
+- The Expo plugin option `"telemetry": false`. It writes `ViroTelemetryEnabled` = `false` to Info.plist and the `com.reactvision.ViroTelemetryEnabled` meta-data with the value `false` to AndroidManifest.xml. Without Expo, and in a visionOS app's Info.plist, set those keys yourself.
+- `ViroTelemetry.setEnabled(false)` from `@reactvision/react-viro`, called before the first navigator mounts. It works on every platform, web included.
 
 ## Documentation
 

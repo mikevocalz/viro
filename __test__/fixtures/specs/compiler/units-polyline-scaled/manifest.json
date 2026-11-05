@@ -1,0 +1,48 @@
+{
+  "$schema": "https://github.com/mikevocalz/viro/blob/main/schemas/viro-specs-manifest.v2.json",
+  "version": 2,
+  "generator": {
+    "name": "viro-specs-compile"
+  },
+  "source": "__test__/fixtures/specs/compiler/units-polyline-scaled/scene.tsx",
+  "nodes": [
+    {
+      "id": "scaled",
+      "kind": "group",
+      "position": [
+        0,
+        0,
+        -1
+      ],
+      "scale": [
+        2,
+        0.5,
+        1
+      ]
+    }
+  ],
+  "polylines": [
+    {
+      "id": "line",
+      "primitive": "volumetric-line",
+      "backendPackage": "VolumetricLine",
+      "points": [
+        [
+          0,
+          0,
+          -1
+        ],
+        [
+          1,
+          0.25,
+          -1
+        ]
+      ],
+      "radiusMeters": 0.01
+    }
+  ],
+  "lights": [],
+  "materials": [],
+  "interactions": [],
+  "animations": []
+}

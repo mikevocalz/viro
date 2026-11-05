@@ -1,0 +1,4 @@
+{
+  "description": "run: false emits no manifest animation (the runtime sends stopAnimation).",
+  "parity": true
+}

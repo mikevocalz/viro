@@ -1,0 +1,55 @@
+{
+  "startedAt": "2026-10-28T11:42:59.120Z",
+  "project": "examples/specs-platform-lab/lens",
+  "steps": {
+    "recompile": {
+      "ok": true,
+      "ms": 790,
+      "result": "lens-compiled"
+    },
+    "materials": {
+      "ok": true,
+      "ms": 5810,
+      "result": [
+        "created ViroPlaceholder",
+        "created ViroDefaultMaterial",
+        "created ViroDefaultLine"
+      ]
+    },
+    "wire": {
+      "ok": true,
+      "ms": 2029,
+      "result": {
+        "inputs": {
+          "AssetRegistry": {
+            "defaultLineMaterial": "ViroDefaultLine",
+            "defaultMaterial": "ViroDefaultMaterial",
+            "fontIds": "[]",
+            "fonts": "[]",
+            "modelIds": "[\"examples/visionos-sweep/assets/shiba.glb\"]",
+            "modelPrefabs": "shiba",
+            "placeholderMaterial": "ViroPlaceholder"
+          },
+          "GeneratedHost": {
+            "sceneHostObject": "SceneHost"
+          },
+          "SceneHost": {
+            "assetRegistryObject": "AssetRegistry",
+            "root": "ViroGeneratedContent"
+          }
+        },
+        "steps": [
+          "disable package demo root Example Surface",
+          "create ViroSpecsRuntime/SceneHost",
+          "attach ViroSpecsSceneControllerHost to SceneHost",
+          "disable legacy RuntimeHost",
+          "disable legacy InteractionHost",
+          "disable legacy AnimationHost",
+          "disable legacy Navigation",
+          "save"
+        ]
+      }
+    }
+  },
+  "finishedAt": "2026-10-28T11:43:07.787Z"
+}

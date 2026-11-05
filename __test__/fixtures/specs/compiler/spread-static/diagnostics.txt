@@ -1,0 +1,1 @@
+scene.tsx:10:7 warning VS3018 [spread]: Text "spread" is 0.14 degrees tall at 1.12 m (fontSize 12); the minimum is 1.2 degrees.

@@ -1,0 +1,4 @@
+{
+  "description": "Unknown keys (VS3002) and named colors (VS3009) are reported and left out.",
+  "parity": true
+}

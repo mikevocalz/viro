@@ -1,0 +1,1 @@
+{"description":"position with two numbers","expectSchemaValid":false,"expectCodes":["VS1004"],"manifest":{"version":2,"nodes":[{"id":"a","kind":"group","position":[0,0]}]}}

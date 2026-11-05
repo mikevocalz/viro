@@ -1,0 +1,28 @@
+{
+  "$schema": "https://github.com/mikevocalz/viro/blob/main/schemas/viro-specs-manifest.v2.json",
+  "version": 2,
+  "generator": {
+    "name": "viro-specs-compile"
+  },
+  "source": "__test__/fixtures/specs/compiler/spread-static/scene.tsx",
+  "nodes": [
+    {
+      "id": "spread",
+      "kind": "text",
+      "position": [
+        0,
+        0.5,
+        -1
+      ],
+      "text": "override",
+      "style": {
+        "fontSize": 12
+      }
+    }
+  ],
+  "polylines": [],
+  "lights": [],
+  "materials": [],
+  "interactions": [],
+  "animations": []
+}

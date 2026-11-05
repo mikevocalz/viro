@@ -1,0 +1,30 @@
+{
+  "inputs": {
+    "ActionsLab": {
+      "controllerHostObject": "SceneHost",
+      "forwardActions": "true"
+    },
+    "AssetRegistry": {
+      "defaultLineMaterial": "ViroDefaultLine",
+      "defaultMaterial": "ViroDefaultMaterial",
+      "fontIds": "[]",
+      "fonts": "[]",
+      "modelIds": "[\"examples/visionos-sweep/assets/shiba.glb\"]",
+      "modelPrefabs": "shiba",
+      "placeholderMaterial": "ViroPlaceholder"
+    },
+    "GeneratedHost": {
+      "sceneHostObject": "SceneHost"
+    },
+    "SceneHost": {
+      "assetRegistryObject": "AssetRegistry",
+      "root": "ViroGeneratedContent"
+    }
+  },
+  "steps": [
+    "create ViroSpecsRuntime/ActionsLab",
+    "attach ViroSpecsActionsLab to ActionsLab",
+    "disable ActionsLab",
+    "save"
+  ]
+}

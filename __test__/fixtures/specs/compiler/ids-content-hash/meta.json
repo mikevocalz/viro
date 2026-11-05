@@ -1,0 +1,4 @@
+{
+  "description": "Elements without viroTag get content-hash IDs; identical twins differ by ordinal (VS3012).",
+  "parity": true
+}

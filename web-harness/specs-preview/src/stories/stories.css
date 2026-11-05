@@ -1,0 +1,69 @@
+/* Story chrome only. The canvas content is the preview's own rendering. */
+.specs-story {
+  --room: #2b313a;
+  --bench: #e6e9ed;
+  --ink: #1d2430;
+  --muted: #5b6576;
+  --warn: #b7790c;
+  --error: #b93a34;
+  --ready: #2c8655;
+  margin: 0;
+  height: 100dvh;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  background: var(--bench);
+  color: var(--ink);
+  font: 400 14px/1.45 "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+}
+
+.specs-story-frame {
+  min-height: 0;
+  background: var(--room);
+}
+
+.specs-story-frame canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.specs-story figcaption {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  align-items: center;
+  padding: 10px 16px;
+  border-top: 1px solid #c9cfd7;
+}
+
+.specs-story-state {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  font-weight: 700;
+}
+
+.specs-story-state::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.specs-story-state[data-state="ready"]::before {
+  background: var(--ready);
+}
+
+.specs-story-state[data-state="degraded"]::before,
+.specs-story-state[data-state="loading"]::before {
+  background: var(--warn);
+}
+
+.specs-story-state[data-state="error"]::before {
+  background: var(--error);
+}
+
+.specs-story-codes {
+  color: var(--muted);
+}

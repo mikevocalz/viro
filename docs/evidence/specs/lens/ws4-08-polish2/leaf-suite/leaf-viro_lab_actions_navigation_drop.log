@@ -1,0 +1,18 @@
+16:11:53.118 [Packages/SpectaclesInteractionKit.lspkg/Utils/logger.ts:21] FrameCache: Initialized global cache flushing for FrameCache
+16:11:53.468 [Packages/SpectaclesInteractionKit.lspkg/Core/ConfigurationValidator/ConfigurationValidator.ts:16] SIK Version : 0.18.0
+16:11:53.887 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:11:53.888 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:11:53.953 [LeafPlugin][PluginViewModel] Loaded 39 scenario(s) from preview.
+16:11:53.954 [LeafPlugin][PluginViewModel] Running scenario: viro_lab_actions_navigation_drop
+16:12:33.394 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_lab_actions_navigation_drop with args: []
+16:12:33.395 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.002s]Running with runner config: {"__leaf__log_level":"INFO","__leaf__timeout_secs":"600","__leaf__diagnostic_policy":"fallback","__leaf__diagnostic_report_duration_ms":"-1"}
+16:12:33.918 [Assets/ViroSpecsLab/Leaf/ViroLabLeafSupport.ts:263] VIRO_LAB_LEAF visible card-pendulum dy=3.5
+16:12:34.253 [Assets/ViroSpecsValidation/lens/ViroSpecsActionsLab.ts:60] [viro-specs-actions] exhibit.open {"exhibitId":"orrery"}
+16:12:34.253 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] info VS5018 (action) node card-pendulum: Action exhibit.open from node "card-pendulum" was dropped: scene 2 was retired before it ran.
+16:12:34.682 [Assets/ViroSpecsLab/Leaf/ViroLabActionsNavigationDropScenario.ts:53] VIRO_LAB_LEAF actions_navigation_drop diagnostics=["VS5018:card-pendulum:Action exhibit.open from node \"card-pendulum\" was dropped: scene 2 was retired before it ran."]
+16:12:34.682 [Assets/ViroSpecsLab/Leaf/ViroLabActionsNavigationDropScenario.ts:57] VIRO_LAB_LEAF actions_navigation_drop PASS
+16:12:34.684 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:12:34.684 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:12:34.917 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  1.524s]PASSED: viro_lab_actions_navigation_drop
+16:12:34.917 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  1.524s][viro_lab_actions_navigation_drop] PASSED
+16:12:34.918 [LeafPlugin][PluginViewModel] ✅ Scenario viro_lab_actions_navigation_drop completed successfully.

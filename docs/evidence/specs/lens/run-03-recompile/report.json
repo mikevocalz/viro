@@ -1,0 +1,19 @@
+{
+  "startedAt": "2026-10-28T11:01:36.989Z",
+  "project": "examples/specs-platform-lab/lens",
+  "steps": {
+    "compile": {
+      "ok": true,
+      "ms": 664,
+      "result": {
+        "ms": 664
+      }
+    },
+    "recompile": {
+      "ok": false,
+      "ms": 534,
+      "error": "TypeScript recompile failed: [\"Assets/ViroSpecs/lens/ViroSpecsAgentValidation.ts(1,36): error TS2307: Cannot find module 'AiPreviewAgentInspect.lspkg/AgentInspectScript' or its corresponding type declarations.\\n\",\"Assets/ViroSpecs/lens/ViroSpecsAgentValidation.ts(2,37): error TS2307: Cannot find module 'AiPreviewAgentInteract.lspkg/AgentInteractScript' or its corresponding type declarations.\\n\"]"
+    }
+  },
+  "finishedAt": "2026-10-28T11:01:38.217Z"
+}

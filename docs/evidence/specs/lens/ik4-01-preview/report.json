@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-28",
+  "lensStudio": "5.24.1.26100516",
+  "project": "copy of examples/specs-platform-lab/lens with every 2.x package replaced by the Asset Library 4.0.0 archive under its 4.0.0 name",
+  "packages": {
+    "InteractionKit.lspkg": "4.0.0", "UIKit.lspkg": "4.0.0", "NavigationKit.lspkg": "4.0.0",
+    "SurfacePlacement.lspkg": "4.0.0", "VolumetricLine.lspkg": "4.0.0", "Leaf.lspkg": "4.0.0",
+    "AiPreviewAgentInspect.lspkg": "4.0.0", "AiPreviewAgentInteract.lspkg": "4.0.0",
+    "Utilities.lspkg": "4.0.0", "SnapDecorators.lspkg": "4.0.0", "Icons.lspkg": "4.0.0", "Motion.lspkg": "4.0.0"
+  },
+  "packageMinimumLensStudio": "5.25.0 (StudioVersion in every 4.0.0 package.native)",
+  "sync": "specs:sync --interaction-kit 4 --with-validation rewrote ViroSpecsInteractionKit.ts, ViroSpecsUIKit.ts, ViroSpecsNavigationKit.ts",
+  "doctor": "Project checks passed (kit module paths verified after the first open)",
+  "compile_with_leaf": {
+    "status": "failed",
+    "errors": ["Packages/Leaf.lspkg/Scenarios/decorator/ScenarioIndexDecorator.ts(91,17): error TS2352: Conversion of type 'string' to type 'TypeName<Scenario>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first."],
+    "note": "The only error is inside Leaf 4.0.0, which declares Lens Studio 5.25.0; this machine has 5.24.1. Every Viro runtime file and the IK, UI Kit and Navigation Kit 4.0.0 imports compiled."
+  },
+  "compile_without_leaf": {
+    "status": "succeeded",
+    "removed": ["Packages/Leaf.lspkg", "Packages/AiPreviewAgentInteract.lspkg", "Assets/ViroSpecsLab/Leaf", "Assets/ViroSpecsRefApps", "Assets/ViroSpecsValidation"]
+  },
+  "preview": {
+    "prints": [
+      "[Packages/InteractionKit.lspkg/Core/ConfigurationValidator/ConfigurationValidator.ts:16] IK Version : 4.0.0",
+      "[Packages/InteractionKit.lspkg/Utils/logger.ts:21] InteractionRuntime: Interaction runtime selected: legacy Physics.",
+      "[viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text \"platform-lab-title\" maxLines 2 is approximated.",
+      "[viro-specs-host] warning VS5008 (stage) node hello-body: Text \"hello-body\" maxLines 3 is approximated."
+    ],
+    "errors": [],
+    "interactables": ["viro-interactable:platform-lab-model (Interactable, InteractableManipulation)", "viro-interactable:hello-next (Interactable)"],
+    "capture": "hello-front.jpg: Hello panel text, model prefab, VolumetricLine route"
+  },
+  "leafSuite": "not run: Leaf 4.0.0 does not compile on Lens Studio 5.24.1"
+}

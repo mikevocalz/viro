@@ -1,0 +1,20 @@
+{
+  "startedAt": "2026-10-28T10:58:24.055Z",
+  "project": "examples/specs-platform-lab/lens",
+  "steps": {
+    "packages": {
+      "ok": true,
+      "ms": 24027,
+      "result": [
+        "removed: SpectaclesInteractionKit.lspkg, SpectaclesUIKit.lspkg, SurfacePlacement.lspkg, VolumetricLine.lspkg, SpecsNavigationKit.lspkg, Leaf.lspkg, Icons.lspkg, Motion.lspkg, SnapDecorators.lspkg, Utilities.lspkg",
+        "SpectaclesInteractionKit: installed 2.0.0",
+        "SpectaclesUIKit: installed 2.0.0",
+        "SurfacePlacement: installed 2.0.0",
+        "VolumetricLine: installed 2.0.0",
+        "SpecsNavigationKit: installed 2.0.0",
+        "Leaf: installed 2.0.2"
+      ]
+    }
+  },
+  "finishedAt": "2026-10-28T10:58:48.105Z"
+}

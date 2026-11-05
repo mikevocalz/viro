@@ -1,0 +1,80 @@
+[
+  {
+    "id": "viro_lab_render",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "managerLine": "[  0.021s][viro_lab_render] PASSED",
+    "raw": {
+      "scenarioId": "viro_lab_render",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_lab_select",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "managerLine": "[  0.948s][viro_lab_select] PASSED",
+    "raw": {
+      "scenarioId": "viro_lab_select",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_lab_select_ik",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "managerLine": "[  5.371s][viro_lab_select_ik] PASSED",
+    "raw": {
+      "scenarioId": "viro_lab_select_ik",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_lab_drag",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "managerLine": "[  1.028s][viro_lab_drag] PASSED",
+    "raw": {
+      "scenarioId": "viro_lab_drag",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_lab_navigate",
+    "runner": "leaf-panel",
+    "status": "succeeded",
+    "managerLine": "[  0.022s][viro_lab_navigate] PASSED",
+    "raw": {
+      "scenarioId": "viro_lab_navigate",
+      "status": "succeeded",
+      "target": "preview"
+    },
+    "expected": "succeeded",
+    "asExpected": true
+  },
+  {
+    "id": "viro_lab_deliberate_failure",
+    "runner": "leaf-panel",
+    "status": "failed",
+    "managerLine": "[  0.009s][viro_lab_deliberate_failure] FAILED - AssertionError: Expected: \"DELIBERATE_FAILURE_EXPECTED\" - Received: \"Viro Cross-Platform Lab\"",
+    "raw": {
+      "scenarioId": "viro_lab_deliberate_failure",
+      "status": "failed",
+      "target": "preview"
+    },
+    "expected": "failed",
+    "asExpected": true
+  }
+]

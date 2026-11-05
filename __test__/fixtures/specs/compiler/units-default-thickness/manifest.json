@@ -1,0 +1,33 @@
+{
+  "$schema": "https://github.com/mikevocalz/viro/blob/main/schemas/viro-specs-manifest.v2.json",
+  "version": 2,
+  "generator": {
+    "name": "viro-specs-compile"
+  },
+  "source": "__test__/fixtures/specs/compiler/units-default-thickness/scene.tsx",
+  "nodes": [],
+  "polylines": [
+    {
+      "id": "thin",
+      "primitive": "volumetric-line",
+      "backendPackage": "VolumetricLine",
+      "points": [
+        [
+          0,
+          0,
+          -1
+        ],
+        [
+          0,
+          1,
+          -1
+        ]
+      ],
+      "radiusMeters": 0.005
+    }
+  ],
+  "lights": [],
+  "materials": [],
+  "interactions": [],
+  "animations": []
+}

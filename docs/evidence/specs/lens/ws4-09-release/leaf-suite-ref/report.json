@@ -1,0 +1,23 @@
+{
+  "startedAt": "2026-10-28T23:41:04.042Z",
+  "project": "examples/specs-platform-lab/lens",
+  "steps": {
+    "leaf": {
+      "ok": true,
+      "ms": 400615,
+      "result": [
+        "viro_ref_dashboard_ready: succeeded",
+        "viro_ref_dashboard_range: succeeded",
+        "viro_ref_dashboard_ik: succeeded",
+        "viro_ref_model_ready: succeeded",
+        "viro_ref_model_transform: succeeded",
+        "viro_ref_model_missing_asset: succeeded",
+        "viro_ref_placement_ready: succeeded",
+        "viro_ref_placement_confirm: succeeded",
+        "viro_ref_placement_cancel: succeeded",
+        "viro_ref_expected_failure: failed"
+      ]
+    }
+  },
+  "finishedAt": "2026-10-28T23:47:44.690Z"
+}

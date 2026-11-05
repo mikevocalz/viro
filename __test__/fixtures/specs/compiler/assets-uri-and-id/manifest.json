@@ -1,0 +1,26 @@
+{
+  "$schema": "https://github.com/mikevocalz/viro/blob/main/schemas/viro-specs-manifest.v2.json",
+  "version": 2,
+  "generator": {
+    "name": "viro-specs-compile"
+  },
+  "source": "__test__/fixtures/specs/compiler/assets-uri-and-id/scene.tsx",
+  "nodes": [
+    {
+      "id": "remote",
+      "kind": "model",
+      "source": "https://cdn.example.com/robot.glb",
+      "format": "glb"
+    },
+    {
+      "id": "lens-asset",
+      "kind": "image",
+      "source": "lens:poster-texture"
+    }
+  ],
+  "polylines": [],
+  "lights": [],
+  "materials": [],
+  "interactions": [],
+  "animations": []
+}

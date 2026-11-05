@@ -1,0 +1,42 @@
+{
+  "$schema": "https://github.com/mikevocalz/viro/blob/main/schemas/viro-specs-manifest.v2.json",
+  "version": 2,
+  "generator": {
+    "name": "viro-specs-compile"
+  },
+  "source": "__test__/fixtures/specs/compiler/anim-opacity-relative/scene.tsx",
+  "nodes": [
+    {
+      "id": "fade",
+      "kind": "text",
+      "opacity": 0.75,
+      "text": "fade"
+    }
+  ],
+  "polylines": [],
+  "lights": [],
+  "materials": [],
+  "interactions": [],
+  "animations": [
+    {
+      "nodeId": "fade",
+      "name": "goldenFade",
+      "plan": {
+        "engine": "AnimationPlayer",
+        "backendPackage": "AnimationExamples",
+        "durationSeconds": 0.2,
+        "delaySeconds": 0,
+        "easing": "linear",
+        "playbackMode": "single",
+        "completionEvent": "viro-animation-complete:fade:goldenFade",
+        "tracks": [
+          {
+            "target": "material.opacity",
+            "from": "current",
+            "to": 0.5
+          }
+        ]
+      }
+    }
+  ]
+}

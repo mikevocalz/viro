@@ -15,6 +15,8 @@ import {
   type ViroReplicationState,
   type ViroWriteOptions,
 } from "../AR/ViroReplication";
+import type { ViroVPSCredentialsRequest } from "../AR/ViroVPSClient";
+import { useCredentialsKey } from "./useCredentialsKey";
 
 export type UseViroReplicatedStateOptions = ViroReplicationConfig & {
   /** Set false to stay disconnected — typically until the frame is established. */
@@ -62,7 +64,16 @@ export type UseViroReplicatedStateResult = {
  * // Grab it, then move it — while held, nobody else can.
  * claim('cube');
  * if (isMine('cube')) set('cube', { position: [0, 0, -1] }, { optimistic: true });
+ *
+ * // An app with its own sign-in: a user token in place of the key.
+ * const credentials = useMemo(
+ *   () => createUserTokenCredentials({ projectId, fetchToken }), [userId]);
+ * useViroReplicatedState({ roomId: cloudAnchorId, credentials, enabled: frameReady });
  * ```
+ *
+ * The socket is closed and opened again when `credentials` is another
+ * createUserTokenCredentials() object, or at its clear(). The handshake reads
+ * the credentials again, so it fails when nobody is signed in by then.
  *
  * Positions stored here are **location-frame** coordinates, same as the
  * channel: world coordinates are per-session and mean nothing to a peer.
@@ -76,6 +87,7 @@ export function useViroReplicatedState(
     projectId,
     endpoint,
     headers,
+    credentials,
     enabled = true,
     onReject,
   } = options;
@@ -85,12 +97,20 @@ export function useViroReplicatedState(
 
   // Kept in a ref so changing the handler does not tear down the connection.
   const rejectRef = useRef(onReject);
+  // eslint-disable-next-line react-hooks/refs -- latest-value ref: read only in effects and callbacks, never for output
   rejectRef.current = onReject;
   // Same for the header provider, which the client calls again on every
   // reconnect anyway.
   const headersRef = useRef(headers);
+  // eslint-disable-next-line react-hooks/refs -- latest-value ref: read only in effects and callbacks, never for output
   headersRef.current = headers;
   const hasHeaders = headers !== undefined;
+  // Same for credentials, read through the ref so a reconnect uses the latest;
+  // useCredentialsKey says when to connect again.
+  const credentialsRef = useRef(credentials);
+  // eslint-disable-next-line react-hooks/refs -- latest-value ref: read only in effects and callbacks, never for output
+  credentialsRef.current = credentials;
+  const [credentialsKey, credentialsCleared] = useCredentialsKey(credentials);
 
   useEffect(() => {
     client.onReject = (r) => rejectRef.current?.(r);
@@ -103,7 +123,13 @@ export function useViroReplicatedState(
         projectId,
         endpoint,
         headers: hasHeaders ? () => headersRef.current?.() ?? {} : undefined,
-      });
+        credentials: credentialsRef.current !== undefined
+          ? (request?: ViroVPSCredentialsRequest) => {
+              const current = credentialsRef.current!;
+              return typeof current === "function" ? current(request) : current;
+            }
+          : undefined,
+      } as ViroReplicationConfig);
     }
 
     return () => {
@@ -111,7 +137,7 @@ export function useViroReplicatedState(
       client.onReject = undefined;
       client.disconnect();
     };
-  }, [client, roomId, apiKey, projectId, endpoint, hasHeaders, enabled]);
+  }, [client, roomId, apiKey, projectId, endpoint, hasHeaders, credentialsKey, credentialsCleared, enabled]);
 
   return {
     state: client.state,

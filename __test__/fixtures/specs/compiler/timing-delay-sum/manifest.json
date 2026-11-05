@@ -1,0 +1,41 @@
+{
+  "$schema": "https://github.com/mikevocalz/viro/blob/main/schemas/viro-specs-manifest.v2.json",
+  "version": 2,
+  "generator": {
+    "name": "viro-specs-compile"
+  },
+  "source": "__test__/fixtures/specs/compiler/timing-delay-sum/scene.tsx",
+  "nodes": [
+    {
+      "id": "late",
+      "kind": "text",
+      "text": "late"
+    }
+  ],
+  "polylines": [],
+  "lights": [],
+  "materials": [],
+  "interactions": [],
+  "animations": [
+    {
+      "nodeId": "late",
+      "name": "goldenDelayed",
+      "plan": {
+        "engine": "AnimationPlayer",
+        "backendPackage": "AnimationExamples",
+        "durationSeconds": 0.75,
+        "delaySeconds": 0.3,
+        "easing": "linear",
+        "playbackMode": "loop",
+        "completionEvent": "viro-animation-complete:late:goldenDelayed",
+        "tracks": [
+          {
+            "target": "transform.scale.x",
+            "from": "current",
+            "to": 1.1
+          }
+        ]
+      }
+    }
+  ]
+}

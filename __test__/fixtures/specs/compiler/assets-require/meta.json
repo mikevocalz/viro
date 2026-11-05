@@ -1,0 +1,4 @@
+{
+  "description": "require() assets get IDs relative to the nearest package.json, with forward slashes.",
+  "parity": true
+}

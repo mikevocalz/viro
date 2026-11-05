@@ -1,0 +1,18 @@
+{
+  // Expo config plugins are loaded with require() by @expo/config-plugins, so
+  // they must compile to CommonJS. The root tsconfig emits `module: preserve`
+  // for the Metro/webpack-resolved runtime, which leaves ESM syntax and
+  // extensionless relative imports that Node cannot load.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "rootDir": ".",
+    "outDir": "./dist",
+    "jsx": "preserve",
+    // TS 6+/7 no longer auto-includes every @types package; the plugins need Node's.
+    "types": ["node"]
+  },
+  "include": ["plugins/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

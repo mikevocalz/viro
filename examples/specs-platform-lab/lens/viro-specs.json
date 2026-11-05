@@ -1,0 +1,5 @@
+{
+  "viroRoot": "../../..",
+  "entry": "../SpecsPlatformLab.tsx",
+  "generatedHost": "Assets/ViroSpecs/generated/ViroGeneratedSceneHost.ts"
+}

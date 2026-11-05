@@ -1,0 +1,29 @@
+{
+  "$schema": "https://github.com/mikevocalz/viro/blob/main/schemas/viro-specs-manifest.v2.json",
+  "version": 2,
+  "generator": {
+    "name": "viro-specs-compile"
+  },
+  "source": "__test__/fixtures/specs/compiler/interaction-click-state/scene.tsx",
+  "nodes": [
+    {
+      "id": "toggle",
+      "kind": "text",
+      "text": "toggle"
+    }
+  ],
+  "polylines": [],
+  "lights": [],
+  "materials": [],
+  "interactions": [
+    {
+      "nodeId": "toggle",
+      "interactable": true,
+      "manipulation": false,
+      "events": [
+        "select"
+      ]
+    }
+  ],
+  "animations": []
+}

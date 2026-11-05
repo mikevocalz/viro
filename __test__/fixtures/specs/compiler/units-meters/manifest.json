@@ -1,0 +1,58 @@
+{
+  "$schema": "https://github.com/mikevocalz/viro/blob/main/schemas/viro-specs-manifest.v2.json",
+  "version": 2,
+  "generator": {
+    "name": "viro-specs-compile"
+  },
+  "source": "__test__/fixtures/specs/compiler/units-meters/scene.tsx",
+  "nodes": [
+    {
+      "id": "root",
+      "kind": "group",
+      "position": [
+        0.25,
+        1.5,
+        -2
+      ]
+    },
+    {
+      "id": "label",
+      "kind": "text",
+      "parentId": "root",
+      "position": [
+        0.25,
+        0,
+        0
+      ],
+      "text": "25 cm right",
+      "extents": {
+        "width": 0.4,
+        "height": 0.1
+      }
+    }
+  ],
+  "polylines": [
+    {
+      "id": "ruler",
+      "primitive": "volumetric-line",
+      "backendPackage": "VolumetricLine",
+      "points": [
+        [
+          0.25,
+          1.5,
+          -2
+        ],
+        [
+          1.25,
+          1.5,
+          -2
+        ]
+      ],
+      "radiusMeters": 0.01
+    }
+  ],
+  "lights": [],
+  "materials": [],
+  "interactions": [],
+  "animations": []
+}

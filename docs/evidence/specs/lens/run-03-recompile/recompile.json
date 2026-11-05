@@ -1,0 +1,8 @@
+{
+  "errors": [
+    "Assets/ViroSpecs/lens/ViroSpecsAgentValidation.ts(1,36): error TS2307: Cannot find module 'AiPreviewAgentInspect.lspkg/AgentInspectScript' or its corresponding type declarations.\n",
+    "Assets/ViroSpecs/lens/ViroSpecsAgentValidation.ts(2,37): error TS2307: Cannot find module 'AiPreviewAgentInteract.lspkg/AgentInteractScript' or its corresponding type declarations.\n"
+  ],
+  "logFile": "~/Library/Preferences/Snap/Lens Studio/logs/LensStudioLog-2026-10-28-00-44-13-484-1fe92.txt",
+  "status": "failed"
+}

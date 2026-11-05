@@ -8,6 +8,7 @@ import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
+import com.facebook.react.bridge.ReadableType;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.Arguments;
 import com.reactvision.cca.RVHttpClient;
@@ -15,6 +16,9 @@ import com.viro.core.ReactVisionAuth;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * VRTStudioModule
@@ -35,6 +39,14 @@ public class VRTStudioModule extends ReactContextBaseJavaModule {
 
     private static final String MODULE_NAME       = "VRTStudio";
     private static final String BASE_URL          = "https://platform.reactvision.xyz";
+    // BASE_URL's database region, sent as x-region so its edge functions run
+    // beside the database instead of nearest the device. A session on another
+    // base URL is pinned only when it brings its own functionRegion.
+    private static final String FUNCTION_REGION   = "eu-west-2";
+    // Sent as x-rv-capabilities: what this runtime renders that an older one
+    // cannot, so the scenes function can refuse such a scene to an older one
+    // rather than have it drawn in the wrong place.
+    private static final String CAPABILITIES      = "vps";
     private static final String API_KEY_META      = "com.reactvision.RVApiKey";
     private static final String PROJECT_ID_META   = "com.reactvision.RVProjectId";
     private static final int    TIMEOUT_SEC       = 30;
@@ -50,10 +62,12 @@ public class VRTStudioModule extends ReactContextBaseJavaModule {
         final String baseUrl;
         final String accessToken;
         final String clientTag; // nullable
-        StudioSession(String baseUrl, String accessToken, String clientTag) {
+        final String functionRegion; // nullable
+        StudioSession(String baseUrl, String accessToken, String clientTag, String functionRegion) {
             this.baseUrl = baseUrl;
             this.accessToken = accessToken;
             this.clientTag = clientTag;
+            this.functionRegion = functionRegion;
         }
     }
 
@@ -61,7 +75,7 @@ public class VRTStudioModule extends ReactContextBaseJavaModule {
     private static final class RequestAuth {
         final String baseUrl;
         final String apiKey;         // null in session mode
-        final String[] headerNames;  // null in api-key mode
+        final String[] headerNames;  // the credential in session mode, x-region when one resolves, x-rv-capabilities
         final String[] headerValues;
         RequestAuth(String baseUrl, String apiKey, String[] headerNames, String[] headerValues) {
             this.baseUrl = baseUrl;
@@ -120,27 +134,50 @@ public class VRTStudioModule extends ReactContextBaseJavaModule {
     }
 
     // @internal — sets/clears the first-party session auth (see studioSession).
-    // A map { baseUrl, accessToken, clientTag? } enables session mode; null /
-    // malformed reverts to manifest RVApiKey mode. The renderer keeps its own
-    // copy, which cloud anchors and the co-location channel read.
+    // A map { baseUrl, accessToken, clientTag?, functionRegion? } enables session mode; null,
+    // or a missing or empty baseUrl or accessToken, reverts to manifest RVApiKey mode. A config
+    // that breaks a rule (wrong type, non-https baseUrl, malformed functionRegion) is rejected
+    // with E_INVALID_STUDIO_SESSION and also clears the session, so a bad config never leaves
+    // an older token pointed at an older host. The renderer keeps its own copy, which cloud
+    // anchors and the co-location channel read.
     @ReactMethod
     public void rvSetStudioSession(ReadableMap config, Promise promise) {
-        String baseUrl = config != null && config.hasKey("baseUrl")
-                ? config.getString("baseUrl") : null;
-        String accessToken = config != null && config.hasKey("accessToken")
-                ? config.getString("accessToken") : null;
-        if (baseUrl == null || baseUrl.isEmpty() || accessToken == null || accessToken.isEmpty()) {
+        StudioSession session;
+        try {
+            session = parseSession(config);
+        } catch (IllegalArgumentException invalid) {
             studioSession = null;
             pushSessionToRenderer(null);
-            promise.resolve(null);
+            promise.reject("E_INVALID_STUDIO_SESSION", invalid.getMessage());
             return;
         }
-        while (baseUrl.endsWith("/")) baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
-        String clientTag = config.hasKey("clientTag") ? config.getString("clientTag") : null;
-        StudioSession session = new StudioSession(baseUrl, accessToken, clientTag);
         studioSession = session;
         pushSessionToRenderer(session);
         promise.resolve(null);
+    }
+
+    // Returns null for "clear the session". Throws IllegalArgumentException naming the rule
+    // the config breaks.
+    private static StudioSession parseSession(ReadableMap config) {
+        if (config == null) return null;
+        String baseUrl = optionalString(config, "baseUrl");
+        String accessToken = optionalString(config, "accessToken");
+        String clientTag = optionalString(config, "clientTag");
+        String functionRegion = optionalString(config, "functionRegion");
+        if (baseUrl == null || baseUrl.isEmpty() || accessToken == null || accessToken.isEmpty()) {
+            return null;
+        }
+        return new StudioSession(StudioSessionRules.baseUrl(baseUrl), accessToken,
+                clientTag, StudioSessionRules.functionRegion(functionRegion));
+    }
+
+    // Absent and null both read as null; any other non-string type is rejected.
+    private static String optionalString(ReadableMap config, String key) {
+        if (!config.hasKey(key) || config.isNull(key)) return null;
+        if (config.getType(key) != ReadableType.String) {
+            throw new IllegalArgumentException(key + " must be a string");
+        }
+        return config.getString(key);
     }
 
     // @internal Credentials for JS clients that talk to the platform or the
@@ -154,13 +191,10 @@ public class VRTStudioModule extends ReactContextBaseJavaModule {
         if (auth == null) {
             r.putString("mode", "none");
             r.putNull("baseUrl");
-        } else if (auth.apiKey != null) {
-            r.putString("mode", "api_key");
-            r.putString("baseUrl", auth.baseUrl);
-            headers.putString("x-api-key", auth.apiKey);
         } else {
-            r.putString("mode", "session");
+            r.putString("mode", auth.apiKey != null ? "api_key" : "session");
             r.putString("baseUrl", auth.baseUrl);
+            if (auth.apiKey != null) headers.putString("x-api-key", auth.apiKey);
             for (int i = 0; i < auth.headerNames.length; i++) {
                 headers.putString(auth.headerNames[i], auth.headerValues[i]);
             }
@@ -199,11 +233,11 @@ public class VRTStudioModule extends ReactContextBaseJavaModule {
         String url = auth.baseUrl + "/functions/v1/scene-api-request";
         new Thread(() -> {
             try {
-                String[] result = RVHttpClient.send(
-                        "POST", url, auth.apiKey,
+                String[] result = send(
+                        "POST", url, auth,
                         "application/json",
                         bodyJson.getBytes(StandardCharsets.UTF_8),
-                        API_REQUEST_TIMEOUT_SEC, auth.headerNames, auth.headerValues);
+                        API_REQUEST_TIMEOUT_SEC);
                 int status = Integer.parseInt(result[0]);
                 boolean ok = status >= 200 && status < 300;
                 resolve(promise, ok, ok ? result[1] : null,
@@ -221,10 +255,7 @@ public class VRTStudioModule extends ReactContextBaseJavaModule {
     private void runGet(String url, RequestAuth auth, Promise promise, boolean parseWatermark) {
         new Thread(() -> {
             try {
-                String[] result = RVHttpClient.send(
-                        "GET", url, auth.apiKey,
-                        null, null,
-                        TIMEOUT_SEC, auth.headerNames, auth.headerValues);
+                String[] result = send("GET", url, auth, null, null, TIMEOUT_SEC);
                 int status = Integer.parseInt(result[0]);
                 boolean ok = status >= 200 && status < 300;
                 if (parseWatermark && ok) {
@@ -238,26 +269,67 @@ public class VRTStudioModule extends ReactContextBaseJavaModule {
         }).start();
     }
 
+    // What the gateway answers when it never reached a function. With a non-JSON
+    // body (every platform function answers JSON) nothing ran, so a resend cannot
+    // run a request twice. 500, 504, 520, 524 and 546 are left out: a function may
+    // have run before any of them.
+    private static boolean undelivered(String status, String body) {
+        switch (status) {
+            case "502": case "503": case "521": case "522": case "523": case "525": case "526": case "530":
+                return body == null || !body.trim().startsWith("{");
+            default:
+                return false;
+        }
+    }
+
+    // The platform does not fail a pinned region over, so an undelivered pinned
+    // request is sent once more without x-region.
+    private static String[] send(String method, String url, RequestAuth auth,
+                                 String contentType, byte[] body, int timeoutSec) {
+        String[] result = RVHttpClient.send(method, url, auth.apiKey, contentType, body,
+                timeoutSec, auth.headerNames, auth.headerValues);
+        int region = Arrays.asList(auth.headerNames).indexOf("x-region");
+        if (region < 0 || !undelivered(result[0], result[1])) return result;
+        List<String> names  = new ArrayList<>(Arrays.asList(auth.headerNames));
+        List<String> values = new ArrayList<>(Arrays.asList(auth.headerValues));
+        names.remove(region);
+        values.remove(region);
+        return RVHttpClient.send(method, url, auth.apiKey, contentType, body, timeoutSec,
+                names.toArray(new String[0]), values.toArray(new String[0]));
+    }
+
     // Session (if set) wins over the manifest key: sends Bearer + optional marker
     // with apiKey=null so RVHttpClient omits x-api-key and the server takes the
     // JWT path. Returns null when neither a session nor a manifest key exists.
     private RequestAuth resolveAuth() {
         StudioSession session = studioSession;
         if (session != null) {
-            String[] names;
-            String[] values;
+            List<String> names  = new ArrayList<>();
+            List<String> values = new ArrayList<>();
+            names.add("Authorization");
+            values.add("Bearer " + session.accessToken);
             if (session.clientTag != null && !session.clientTag.isEmpty()) {
-                names  = new String[]{"Authorization", "x-rv-client"};
-                values = new String[]{"Bearer " + session.accessToken, session.clientTag};
-            } else {
-                names  = new String[]{"Authorization"};
-                values = new String[]{"Bearer " + session.accessToken};
+                names.add("x-rv-client");
+                values.add(session.clientTag);
             }
-            return new RequestAuth(session.baseUrl, null, names, values);
+            String region = session.functionRegion;
+            if ((region == null || region.isEmpty()) && BASE_URL.equals(session.baseUrl)) {
+                region = FUNCTION_REGION;
+            }
+            if (region != null && !region.isEmpty()) {
+                names.add("x-region");
+                values.add(region);
+            }
+            names.add("x-rv-capabilities");
+            values.add(CAPABILITIES);
+            return new RequestAuth(session.baseUrl, null,
+                    names.toArray(new String[0]), values.toArray(new String[0]));
         }
         String apiKey = readApiKey();
         if (apiKey == null) return null;
-        return new RequestAuth(BASE_URL, apiKey, null, null);
+        return new RequestAuth(BASE_URL, apiKey,
+                new String[]{"x-region", "x-rv-capabilities"},
+                new String[]{FUNCTION_REGION, CAPABILITIES});
     }
 
     // Throwable, not Exception: a missing renderer library surfaces as
@@ -268,7 +340,8 @@ public class VRTStudioModule extends ReactContextBaseJavaModule {
             if (session == null) {
                 ReactVisionAuth.clearSession();
             } else {
-                ReactVisionAuth.setSession(session.baseUrl, session.accessToken, session.clientTag);
+                ReactVisionAuth.setSession(session.baseUrl, session.accessToken, session.clientTag,
+                        session.functionRegion);
             }
         } catch (Throwable ignored) {
         }

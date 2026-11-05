@@ -1,0 +1,35 @@
+{
+  "$schema": "https://github.com/mikevocalz/viro/blob/main/schemas/viro-specs-manifest.v2.json",
+  "version": 2,
+  "generator": {
+    "name": "viro-specs-compile"
+  },
+  "source": "__test__/fixtures/specs/compiler/ids-key-hash/scene.tsx",
+  "nodes": [
+    {
+      "id": "left",
+      "kind": "group"
+    },
+    {
+      "id": "text-a2f8032a5152",
+      "kind": "text",
+      "parentId": "left",
+      "text": "same"
+    },
+    {
+      "id": "right",
+      "kind": "group"
+    },
+    {
+      "id": "text-f440e6d39695",
+      "kind": "text",
+      "parentId": "right",
+      "text": "same"
+    }
+  ],
+  "polylines": [],
+  "lights": [],
+  "materials": [],
+  "interactions": [],
+  "animations": []
+}

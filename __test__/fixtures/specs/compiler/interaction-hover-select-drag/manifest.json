@@ -1,0 +1,44 @@
+{
+  "$schema": "https://github.com/mikevocalz/viro/blob/main/schemas/viro-specs-manifest.v2.json",
+  "version": 2,
+  "generator": {
+    "name": "viro-specs-compile"
+  },
+  "source": "__test__/fixtures/specs/compiler/interaction-hover-select-drag/scene.tsx",
+  "nodes": [
+    {
+      "id": "card",
+      "kind": "group"
+    },
+    {
+      "id": "caption",
+      "kind": "text",
+      "parentId": "card",
+      "text": "drag me"
+    }
+  ],
+  "polylines": [],
+  "lights": [],
+  "materials": [],
+  "interactions": [
+    {
+      "nodeId": "card",
+      "interactable": true,
+      "manipulation": true,
+      "events": [
+        "hover",
+        "select",
+        "drag"
+      ]
+    },
+    {
+      "nodeId": "caption",
+      "interactable": true,
+      "manipulation": false,
+      "events": [
+        "select"
+      ]
+    }
+  ],
+  "animations": []
+}

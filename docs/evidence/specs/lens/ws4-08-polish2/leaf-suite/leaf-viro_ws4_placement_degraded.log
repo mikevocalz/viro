@@ -1,0 +1,19 @@
+16:17:53.788 [Packages/SpectaclesInteractionKit.lspkg/Utils/logger.ts:21] FrameCache: Initialized global cache flushing for FrameCache
+16:17:54.071 [Packages/SpectaclesInteractionKit.lspkg/Core/ConfigurationValidator/ConfigurationValidator.ts:16] SIK Version : 0.18.0
+16:17:54.419 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:17:54.420 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:17:54.474 [LeafPlugin][PluginViewModel] Loaded 39 scenario(s) from preview.
+16:17:54.475 [LeafPlugin][PluginViewModel] Running scenario: viro_ws4_placement_degraded
+16:18:25.460 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.000s]RUNS: viro_ws4_placement_degraded with args: [(hold_ms: 0)]
+16:18:25.460 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  0.001s]Running with runner config: {"__leaf__log_level":"INFO","__leaf__timeout_secs":"600","__leaf__diagnostic_policy":"fallback","__leaf__diagnostic_report_duration_ms":"-1"}
+16:18:25.702 [Assets/ViroSpecsLab/Leaf/ViroLabExperienceSupport.ts:43] VIRO_WS4 experience started placementScene=true panelMesh=Unit Plane panelMaterial=ViroExperiencePanel
+16:18:25.710 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node placement-title: Text "placement-title" maxLines 2 is approximated.
+16:18:25.713 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] info VS5021 (experience): world-query is unsupported; hidden: reticle, surface tint, placement label.
+16:18:26.455 [Assets/ViroSpecsLab/Leaf/ViroWs4PlacementDegradedScenario.ts:57] VIRO_WS4 placement_degraded model distance m=1.529705810546875
+16:18:26.455 [Assets/ViroSpecsLab/Leaf/ViroLabExperienceSupport.ts:213] VIRO_WS4_HOLD placement_degraded 0
+16:18:26.456 [Assets/ViroSpecsLab/Leaf/ViroWs4PlacementDegradedScenario.ts:61] VIRO_WS4 placement_degraded PASS
+16:18:26.459 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node platform-lab-title: Text "platform-lab-title" maxLines 2 is approximated.
+16:18:26.460 [Assets/ViroSpecs/lens/ViroSpecsSceneControllerHost.ts:45] [viro-specs-host] warning VS5008 (stage) node hello-body: Text "hello-body" maxLines 3 is approximated.
+16:18:26.692 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  1.233s]PASSED: viro_ws4_placement_degraded
+16:18:26.692 [Packages/Leaf.lspkg/Utils/common/Logger.ts:89] I [DefaultLeafScenarioManager] [  1.233s][viro_ws4_placement_degraded] PASSED
+16:18:26.692 [LeafPlugin][PluginViewModel] ✅ Scenario viro_ws4_placement_degraded completed successfully.

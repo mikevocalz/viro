@@ -1,0 +1,1 @@
+{"description":"video is in the contract and has no Specs host","expectSchemaValid":true,"expectCodes":["VS4004"],"manifest":{"version":2,"nodes":[{"id":"v","kind":"video","source":"assets/clip.mp4"}]}}

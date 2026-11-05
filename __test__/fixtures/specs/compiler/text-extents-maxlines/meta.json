@@ -1,0 +1,4 @@
+{
+  "description": "width and height become extents; maxLines is carried.",
+  "parity": true
+}

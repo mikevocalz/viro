@@ -5,6 +5,7 @@ import {
   withAndroidManifest,
   withAppBuildGradle,
   withDangerousMod,
+  withFinalizedMod,
   withGradleProperties,
   withProjectBuildGradle,
   withSettingsGradle,
@@ -13,6 +14,27 @@ import type { ExpoConfig } from "@expo/config-types";
 import fs from "fs";
 import path from "path";
 import { insertLinesHelper } from "./util/insertLinesHelper";
+import {
+  assertOneLauncherTileOnDisk,
+  removeMainActionFromActivity,
+  VR_ACTIVITY_ACTION,
+  VR_ACTIVITY_NAME,
+} from "./util/launcherTiles";
+import { addQuestRenderModelEntries } from "./util/questRenderModel";
+import {
+  META_SPATIAL_LAYOUT_FLAVOR_WARNING,
+  removeMetaSpatialLayoutFromFlavoredApp,
+  renderMetaSpatialLayoutDependencies,
+} from "./util/metaSpatialLayoutGradle";
+import {
+  disabledQuestEntryNames,
+  isMetaOnlyName,
+  syncQuestFlavorManifest,
+} from "./util/questFlavorManifest";
+import {
+  OPENXR_RENDER_QUALITY_META_NAMES,
+  resolveOpenXRRenderQualityMetaData,
+} from "./util/openxrRenderQuality";
 import { ViroConfigurationOptions, XrMode } from "./withViro";
 import { assertMetaVrGlassesXrMode, resolveMetaDefaultDeviceTargets } from "./metaTargeting";
 let viroPluginConfig = ["AR", "GVR"];
@@ -223,11 +245,7 @@ const withViroAppBuildGradle = (
       assertDirectAppDependency(config.modRequest.projectRoot, "@metavr/layout-window-compat");
       const bomVersion =
         props.android.metaSpatialLayoutBomVersion ?? "1.2026.0.0";
-      metaSpatialDependencies = `
-    // Meta VR Layout SDK (React Native spatial windows)
-    implementation platform('com.meta.metavrx:metavrx-bom:${bomVersion}')
-    implementation 'com.meta.metavrx.layout:layout-react-compat'
-    implementation 'com.meta.metavrx.layout:layout-window-react-compat'`;
+      metaSpatialDependencies = renderMetaSpatialLayoutDependencies(bomVersion);
     }
 
     // ViroReact New Architecture (Fabric) Dependencies
@@ -248,17 +266,37 @@ const withViroAppBuildGradle = (
     implementation 'com.google.android.gms:play-services-location:21.0.1'${metaSpatialDependencies}
     // ========================================================================`;
 
+    // A prebuild over an existing android/ already has the block.
+    const hasViroDependencies = config.modResults.contents.includes(
+      "implementation project(path: ':react_viro')"
+    );
     // Add Viro dependencies for legacy architecture (fallback)
-    config.modResults.contents = config.modResults.contents.replace(
+    if (!hasViroDependencies) config.modResults.contents = config.modResults.contents.replace(
       /implementation "com.facebook.react:react-native:\+"  \/\/ From node_modules/,
       `implementation "com.facebook.react:react-native:+"  // From node_modules${viroNewArchDependencies}`
     );
 
     // Add Viro dependencies for new architecture (primary)
-    config.modResults.contents = config.modResults.contents.replace(
+    if (!hasViroDependencies) config.modResults.contents = config.modResults.contents.replace(
       /implementation\("com.facebook.react:react-android"\)/,
       `implementation("com.facebook.react:react-android")${viroNewArchDependencies}`
     );
+    // :react_viro and :viro_renderer declare a "device" flavor dimension
+    // (mobile, pico, quest). An app without that dimension cannot pick a
+    // variant, so default it from xRMode. An app that defines its own
+    // device flavors overrides this per flavor.
+    if (
+      !config.modResults.contents.includes("missingDimensionStrategy 'device'") &&
+      !/flavorDimensions[^\n]*"device"/.test(config.modResults.contents)
+    ) {
+      const configured = props?.android?.xRMode ?? [];
+      const modes = Array.isArray(configured) ? configured : [configured as XrMode];
+      const device = modes.includes("QUEST") ? "quest" : modes.includes("PICO") ? "pico" : "mobile";
+      config.modResults.contents = config.modResults.contents.replace(
+        /defaultConfig\s*\{/,
+        (match) => `${match}\n        missingDimensionStrategy 'device', '${device}'`
+      );
+    }
     return config;
   });
 
@@ -348,6 +386,27 @@ const withViroManifest = (config: ExpoConfig) =>
 
       // Add Google Cloud API key for ARCore Cloud Anchors and Geospatial API if configured
 
+      // Derive active XR modes from the config at apply-time.
+      // `viroPluginConfig` (module-level) is updated by withBranchAndroid's
+      // withDangerousMod callback, which runs *after* withAndroidManifest
+      // callbacks — so it is still ["AR","GVR"] here. Read from config.plugins
+      // directly instead.
+      const activeXrModes = (() => {
+        const p = (newConfig.plugins ?? []).find(
+          (plugin: any) => Array.isArray(plugin) && plugin[0] === "@reactvision/react-viro"
+        );
+        if (Array.isArray(p) && p[1]?.android?.xRMode) {
+          const xrMode = p[1].android.xRMode;
+          return Array.isArray(xrMode) ? (xrMode as string[]) : [xrMode as string];
+        }
+        return viroPluginConfig;
+      })();
+      const questBuild = activeXrModes.includes("QUEST");
+      const questFeatures = Array.isArray(viroPlugin)
+        ? (viroPlugin[1] as ViroConfigurationOptions | undefined)?.android?.questFeatures
+        : undefined;
+      const questPassthroughCamera = questFeatures?.passthroughCamera !== false;
+
       if (Array.isArray(viroPlugin) && viroPlugin.length > 1) {
         const pluginOptions = viroPlugin[1] as ViroConfigurationOptions;
 
@@ -392,8 +451,13 @@ const withViroManifest = (config: ExpoConfig) =>
           });
         }
 
-        // Add location permissions when geospatial provider is active
-        if (geospatialAnchorProvider === "arcore" || geospatialAnchorProvider === "reactvision") {
+        // Add location permissions when geospatial provider is active. A Quest
+        // has no GPS, so a Quest build (headset-only, see android.hardware.vr.headtracking
+        // below) would declare location it can never use.
+        if (
+          (geospatialAnchorProvider === "arcore" || geospatialAnchorProvider === "reactvision") &&
+          !questBuild
+        ) {
           const existingPermissions: string[] = (contents.manifest["uses-permission"] || [])
             .map((p: any) => p.$?.["android:name"]);
           if (!existingPermissions.includes("android.permission.ACCESS_FINE_LOCATION")) {
@@ -409,21 +473,22 @@ const withViroManifest = (config: ExpoConfig) =>
         }
       }
 
-      // Derive active XR modes from the config at apply-time.
-      // `viroPluginConfig` (module-level) is updated by withBranchAndroid's
-      // withDangerousMod callback, which runs *after* withAndroidManifest
-      // callbacks — so it is still ["AR","GVR"] here. Read from config.plugins
-      // directly instead.
-      const activeXrModes = (() => {
-        const p = (newConfig.plugins ?? []).find(
-          (plugin: any) => Array.isArray(plugin) && plugin[0] === "@reactvision/react-viro"
-        );
-        if (Array.isArray(p) && p[1]?.android?.xRMode) {
-          const xrMode = p[1].android.xRMode;
-          return Array.isArray(xrMode) ? (xrMode as string[]) : [xrMode as string];
-        }
-        return viroPluginConfig;
-      })();
+      // Removed before it is written, or a later `telemetry: true` would leave "false" behind.
+      const telemetry = Array.isArray(viroPlugin)
+        ? (viroPlugin[1] as ViroConfigurationOptions | undefined)?.telemetry
+        : undefined;
+      const application = contents.manifest.application[0];
+      application["meta-data"] = (application["meta-data"] as any[]).filter(
+        (meta) => meta.$?.["android:name"] !== "com.reactvision.ViroTelemetryEnabled"
+      );
+      if (telemetry === false) {
+        application["meta-data"].push({
+          $: {
+            "android:name": "com.reactvision.ViroTelemetryEnabled",
+            "android:value": "false",
+          },
+        });
+      }
 
       if (
         activeXrModes.includes("GVR") ||
@@ -454,40 +519,47 @@ const withViroManifest = (config: ExpoConfig) =>
       }
 
       if (usesArcore) {
-        // Preserve query entries contributed by other platform plugins (notably
-        // @expo-pico/core's OpenXR broker query). Replacing the whole array made
-        // Quest/AR + PICO multi-platform prebuilds depend on plugin ordering.
-        const queries = contents.manifest.queries ?? [];
-        const hasArCoreQuery = queries.some((query: any) =>
+        // Added to the app's <queries>, not replacing it: the template's https
+        // intent there is what lets Linking.canOpenURL see a browser, and other
+        // platform plugins (notably @expo-pico/core's OpenXR broker query) add
+        // entries of their own, so the result must not depend on plugin order.
+        if (!contents.manifest.queries) contents.manifest.queries = [{}];
+        const hasArCoreQuery = contents.manifest.queries.some((query: any) =>
           query.package?.some(
             (pkg: any) => pkg.$?.["android:name"] === "com.google.ar.core"
           )
         );
         if (!hasArCoreQuery) {
-          queries.push({
-            package: [
-              {
-                $: {
-                  "android:name": "com.google.ar.core",
-                },
-              },
-            ],
-          });
+          const queries = contents.manifest.queries[0];
+          if (!queries.package) queries.package = [];
+          queries.package.push({ $: { "android:name": "com.google.ar.core" } });
         }
-        contents.manifest.queries = queries;
       }
 
       contents.manifest["uses-feature"] = [];
 
-      contents.manifest["uses-permission"].push({
-        $: {
-          "android:name": "android.permission.CAMERA",
-        },
-      });
+      // On a Quest build the camera is only the passthrough Camera2 feed, and
+      // not every Quest has one, so the feature is never required there.
+      const hasCameraPermission = contents.manifest["uses-permission"].some(
+        (p: any) => p.$?.["android:name"] === "android.permission.CAMERA"
+      );
+      if (!hasCameraPermission && (!questBuild || questPassthroughCamera)) {
+        contents.manifest["uses-permission"].push({
+          $: {
+            "android:name": "android.permission.CAMERA",
+          },
+        });
+      }
       contents.manifest["uses-feature"].push({
-        $: {
-          "android:name": "android.hardware.camera",
-        },
+        $: questBuild
+          ? {
+              "android:name": "android.hardware.camera",
+              "android:required": "false",
+              "tools:replace": "required",
+            }
+          : {
+              "android:name": "android.hardware.camera",
+            },
       });
       contents.manifest["uses-feature"].push({
         $: {
@@ -548,23 +620,46 @@ const withViroManifest = (config: ExpoConfig) =>
             "android:required": "false",
           },
         });
-        // Required when com.oculus.permission.EYE_TRACKING is declared.
-        contents.manifest["uses-feature"].push({
-          $: {
-            "android:name": "oculus.software.eye_tracking",
-            "android:required": "false",
-          },
-        });
-        const existingPermissions: string[] = (contents.manifest["uses-permission"] || [])
-          .map((p: any) => p.$?.["android:name"]);
-        if (!existingPermissions.includes("com.oculus.permission.HAND_TRACKING")) {
-          contents.manifest["uses-permission"].push({
-            $: { "android:name": "com.oculus.permission.HAND_TRACKING" },
+        // Required when com.oculus.permission.EYE_TRACKING is declared. The
+        // viro_renderer AAR no longer declares either (virocore #109), so an
+        // opt-out just leaves them out.
+        const eyeTracking = questFeatures?.eyeTracking !== false;
+        if (eyeTracking) {
+          contents.manifest["uses-feature"].push({
+            $: { "android:name": "oculus.software.eye_tracking", "android:required": "false" },
           });
         }
-        if (!existingPermissions.includes("com.oculus.permission.EYE_TRACKING")) {
+        // Drop the opted-out entries, and the tools:node="remove" markers
+        // older versions wrote for eye tracking, so a second prebuild without
+        // --clean follows the current options.
+        const disabledNames = disabledQuestEntryNames(questFeatures);
+        contents.manifest["uses-permission"] = (contents.manifest["uses-permission"] || []).filter(
+          (p: any) =>
+            !disabledNames.includes(p.$?.["android:name"]) &&
+            !(isMetaOnlyName(p.$?.["android:name"]) && p.$?.["tools:node"] === "remove")
+        );
+        const existingPermissions: string[] = (contents.manifest["uses-permission"] || [])
+          .map((p: any) => p.$?.["android:name"]);
+        // Horizon OS logs com.oculus.permission.HAND_TRACKING as deprecated and
+        // asks for this name instead. Its runtime logs that warning even when
+        // only this name is declared: its permission check treats the two names
+        // as one and tests the old name first.
+        if (!existingPermissions.includes("horizonos.permission.HAND_TRACKING")) {
           contents.manifest["uses-permission"].push({
-            $: { "android:name": "com.oculus.permission.EYE_TRACKING" },
+            $: { "android:name": "horizonos.permission.HAND_TRACKING" },
+          });
+        }
+        if (eyeTracking && !existingPermissions.includes("com.oculus.permission.EYE_TRACKING")) {
+          contents.manifest["uses-permission"].push({
+            $: eyeTracking
+              ? { "android:name": "com.oculus.permission.EYE_TRACKING" }
+              : { "android:name": "com.oculus.permission.EYE_TRACKING", "tools:node": "remove" },
+          });
+        }
+        // The viro_renderer AAR declares NFC to detect a Cardboard viewer.
+        if (!existingPermissions.includes("android.permission.NFC")) {
+          contents.manifest["uses-permission"].push({
+            $: { "android:name": "android.permission.NFC", "tools:node": "remove" },
           });
         }
         // Spatial Data / Scene permissions — required for the Meta OpenXR runtime
@@ -578,7 +673,7 @@ const withViroManifest = (config: ExpoConfig) =>
           // Meta Passthrough Camera API (Quest 3 / 3S, Horizon OS v74+): grants the
           // app the headset RGB cameras via Camera2, used by ViroObjectDetector to
           // run on-device object detection over passthrough. Runtime-granted.
-          "horizonos.permission.HEADSET_CAMERA",
+          ...(questPassthroughCamera ? ["horizonos.permission.HEADSET_CAMERA"] : []),
           // Co-location (CL-H). Without this the Meta runtime does not merely
           // refuse the calls — it hides the extension from
           // xrEnumerateInstanceExtensionProperties entirely, logging
@@ -586,13 +681,21 @@ const withViroManifest = (config: ExpoConfig) =>
           // missing uses-permission string ...". So the app sees a headset that
           // does not support shared anchors, which is indistinguishable from an
           // older device. Found on a Quest 3; it is not visible from the code.
-          "horizonos.permission.IMPORT_EXPORT_IOT_MAP_DATA",
+          ...(questFeatures?.colocation !== false
+            ? ["horizonos.permission.IMPORT_EXPORT_IOT_MAP_DATA"]
+            : []),
+          // Hidden the same way without this: XR_META_boundary_visibility, which
+          // the renderer uses to hide the boundary while passthrough is on.
+          "com.oculus.permission.BOUNDARY_VISIBILITY",
         ];
         for (const perm of sceneAnchorPerms) {
           if (!existingPermissions.includes(perm)) {
             contents.manifest["uses-permission"].push({ $: { "android:name": perm } });
           }
         }
+        // XR_FB_render_model controller GLBs. Not in the viro_renderer AAR
+        // manifest, which would carry them into PICO builds.
+        addQuestRenderModelEntries(contents.manifest, activeXrModes, questFeatures?.renderModel);
       }
 
       return newConfig;
@@ -737,8 +840,7 @@ class VRActivity : ReactActivity() {
     // single MainActivity.onPause that the NEW_TASK ordering schedules late.
     // Without one-shot semantics, every subsequent foreign pause would re-fire
     // ReactHostImpl.onHostResume, which re-fires every LifecycleEventListener
-    // (AppState → "active" → ViroXRSceneNavigator's AppState handler calls
-    // launchVRScene() again → visible scene flicker).
+    // and sends JS a spurious AppState "active".
     private var expectingForeignPause = false
 
     override fun getMainComponentName(): String = "VRQuestScene"
@@ -852,20 +954,33 @@ class VRActivity : ReactActivity() {
   // rootProject.ext from gradle.properties (`android.targetSdkVersion`), so a
   // rewrite of app/build.gradle never matched anything. Only ever lower it.
   // Quest hardware is arm64-only; the other ABIs roughly double the APK and the
-  // store warns on 32-bit libraries.
+  // store warns on 32-bit libraries. The store's upload check rejects a
+  // minSdkVersion outside 29-34, and React Native's default is 24; only ever
+  // raise it.
   const questTargetSdk = props?.android?.questTargetSdkVersion ?? 34;
+  const questMinSdk = props?.android?.questMinSdkVersion ?? 32;
   const questArm64Only = props?.android?.questArm64Only ?? true;
   config = withGradleProperties(config, (config) => {
-    const current = config.modResults.find(
-      (item) => item.type === "property" && item.key === "android.targetSdkVersion"
-    );
-    const currentSdk =
-      current?.type === "property" ? parseInt(current.value, 10) : NaN;
+    const readSdk = (key: string) => {
+      const item = config.modResults.find(
+        (item) => item.type === "property" && item.key === key
+      );
+      return item?.type === "property" ? parseInt(item.value, 10) : NaN;
+    };
+    const currentSdk = readSdk("android.targetSdkVersion");
     if (Number.isNaN(currentSdk) || currentSdk > questTargetSdk) {
       AndroidConfig.BuildProperties.updateAndroidBuildProperty(
         config.modResults,
         "android.targetSdkVersion",
         String(questTargetSdk)
+      );
+    }
+    const currentMinSdk = readSdk("android.minSdkVersion");
+    if (Number.isNaN(currentMinSdk) || currentMinSdk < questMinSdk) {
+      AndroidConfig.BuildProperties.updateAndroidBuildProperty(
+        config.modResults,
+        "android.minSdkVersion",
+        String(questMinSdk)
       );
     }
     if (questArm64Only) {
@@ -886,22 +1001,27 @@ class VRActivity : ReactActivity() {
     if (!app.activity) app.activity = [];
 
     const alreadyAdded = app.activity.some(
-      (a: any) => a.$?.["android:name"] === ".VRActivity"
+      (a: any) => a.$?.["android:name"] === VR_ACTIVITY_NAME
     );
 
     if (!alreadyAdded) {
       (app.activity as any[]).push({
         $: {
-          "android:name": ".VRActivity",
+          "android:name": VR_ACTIVITY_NAME,
           "android:screenOrientation": "landscape",
           "android:exported": "false",
+          // Meta's recommended set: a change missing from it recreates the
+          // activity, which tears down the running scene.
           "android:configChanges":
-            "keyboard|keyboardHidden|orientation|screenSize|uiMode",
+            "density|keyboard|keyboardHidden|navigation|orientation|screenLayout|screenSize|uiMode",
           "android:launchMode": "singleTask",
         },
+        // Never android.intent.action.MAIN: Horizon OS and PICO OS list every
+        // MAIN activity with a VR category as its own library tile, and
+        // VRLauncher starts this activity with an explicit intent anyway.
         "intent-filter": [
           {
-            action: [{ $: { "android:name": "android.intent.action.MAIN" } }],
+            action: [{ $: { "android:name": VR_ACTIVITY_ACTION } }],
             category: [
               { $: { "android:name": "com.oculus.intent.category.VR" } },
             ],
@@ -917,6 +1037,11 @@ class VRActivity : ReactActivity() {
         ],
       });
     }
+    // An android/ from an older plugin version still has MAIN here.
+    const vrActivity = app.activity.find(
+      (a: any) => a.$?.["android:name"] === VR_ACTIVITY_NAME
+    );
+    if (vrActivity) removeMainActionFromActivity(vrActivity as any);
 
     // Quest store validator requires all activities to be landscape.
     // Only apply when targeting Quest (questAppId present); AR/phone apps use portrait.
@@ -924,6 +1049,26 @@ class VRActivity : ReactActivity() {
     const mainActivity = app.activity?.[0];
     if (questAppId && mainActivity?.$ && mainActivity.$["android:name"] !== ".VRActivity") {
       mainActivity.$["android:screenOrientation"] = "landscape";
+    }
+
+    // The store's manifest rules require excludeFromRecents on the activity
+    // that launches the app, and Horizon OS reads from each activity's intent
+    // filter whether it renders in a panel (2D) or an immersive view (VR).
+    const hasName = (items: any[] | undefined, name: string) =>
+      items?.some((item: any) => item.$?.["android:name"] === name) ?? false;
+    for (const activity of app.activity as any[]) {
+      const launcherFilter = activity["intent-filter"]?.find(
+        (filter: any) =>
+          hasName(filter.action, "android.intent.action.MAIN") &&
+          hasName(filter.category, "android.intent.category.LAUNCHER")
+      );
+      if (!launcherFilter) continue;
+      activity.$["android:excludeFromRecents"] = "true";
+      if (!hasName(launcherFilter.category, "com.oculus.intent.category.2D")) {
+        launcherFilter.category.push({
+          $: { "android:name": "com.oculus.intent.category.2D" },
+        });
+      }
     }
 
     // Inject com.oculus.app_id into <application> for Meta Quest App Name
@@ -978,21 +1123,233 @@ class VRActivity : ReactActivity() {
       }
     }
 
+    const manifest = config.modResults.manifest as any;
+    // Required by the store's manifest check, to allow installs to an SD card.
+    if (!manifest.$["android:installLocation"]) {
+      manifest.$["android:installLocation"] = "auto";
+    }
+
+    // Horizon OS logs that an app without this "must fix this to continue to
+    // access this SDK" when it first reads a Horizon SDK manager. Meta now
+    // documents <metavr:uses-metavr-sdk> and still accepts this older element,
+    // which headsets on an OS from before the rename also read, so the fork keeps
+    // it (upstream 3.1.0 switched to the metavr element). syncQuestFlavorManifest
+    // moves this element into the quest flavor. 69 is the first version with
+    // hybrid (panel + immersive) apps.
+    manifest.$["xmlns:horizonos"] = "http://schemas.horizonos/sdk";
+    if (!manifest["horizonos:uses-horizonos-sdk"]) {
+      const minSdkVersion = props?.android?.questHorizonOsSdk?.minSdkVersion ?? 69;
+      manifest["horizonos:uses-horizonos-sdk"] = [
+        {
+          $: {
+            "horizonos:minSdkVersion": String(minSdkVersion),
+            "horizonos:targetSdkVersion": String(
+              props?.android?.questHorizonOsSdk?.targetSdkVersion ?? minSdkVersion
+            ),
+          },
+        },
+      ];
+    }
+
     return config;
   });
 
+  // 4. The store requires a network security config (VRC.Quest.Packaging.4).
+  // On API 24+ one overrides android:usesCleartextTraffic, so each source set
+  // gets a copy holding its own manifest's value: plain http stays allowed in
+  // the debug builds, which load the JS bundle over it, and blocked wherever it
+  // was. A finalized mod, so it sees that value whichever plugin set it.
+  config = withFinalizedMod(config, [
+    "android",
+    async (config) => {
+      const srcDir = path.join(config.modRequest.platformProjectRoot, "app", "src");
+      const mainManifestPath = path.join(srcDir, "main", "AndroidManifest.xml");
+      const mainManifest = await AndroidConfig.Manifest.readAndroidManifestAsync(mainManifestPath);
+      const mainApp = mainManifest.manifest.application?.[0] as any;
+      const resource = "@xml/viro_network_security_config";
+      const existing = mainApp?.$?.["android:networkSecurityConfig"];
+      // The app's own config is left alone.
+      if (!mainApp || (existing && existing !== resource)) return config;
+
+      for (const sourceSet of fs.readdirSync(srcDir)) {
+        const manifestPath = path.join(srcDir, sourceSet, "AndroidManifest.xml");
+        if (!fs.existsSync(manifestPath)) continue;
+        const manifest =
+          sourceSet === "main"
+            ? mainManifest
+            : await AndroidConfig.Manifest.readAndroidManifestAsync(manifestPath);
+        const cleartext = (manifest.manifest.application?.[0] as any)?.$?.[
+          "android:usesCleartextTraffic"
+        ];
+        if (sourceSet !== "main" && cleartext === undefined) continue;
+        const xmlDir = path.join(srcDir, sourceSet, "res", "xml");
+        fs.mkdirSync(xmlDir, { recursive: true });
+        fs.writeFileSync(
+          path.join(xmlDir, "viro_network_security_config.xml"),
+          `<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+  <base-config cleartextTrafficPermitted="${cleartext === "true"}" />
+</network-security-config>
+`,
+          "utf-8"
+        );
+      }
+
+      if (!existing) {
+        mainApp.$["android:networkSecurityConfig"] = resource;
+        await AndroidConfig.Manifest.writeAndroidManifestAsync(mainManifestPath, mainManifest);
+      }
+      return config;
+    },
+  ]);
+
   return config;
+};
+
+/**
+ * Moves the Meta-only entries the mods above wrote into main over to
+ * app/src/quest/AndroidManifest.xml when app/build.gradle has a quest flavor,
+ * so the mobile and pico flavors build without them.
+ *
+ * A finalized mod, because expo-horizon-core writes the quest manifest from
+ * scratch in a dangerous mod and the flavors in an app build.gradle mod; only
+ * a finalized mod is sure to see both on disk, and the main manifest written.
+ */
+const withViroQuestFlavorManifest: ConfigPlugin<ViroConfigurationOptions> = (config, props) => {
+  const configured = props?.android?.xRMode ?? [];
+  const modes = Array.isArray(configured) ? configured : [configured as XrMode];
+  if (!modes.includes("QUEST")) return config;
+  const disabled = disabledQuestEntryNames(props?.android?.questFeatures);
+  return withFinalizedMod(config, [
+    "android",
+    async (config) => {
+      await syncQuestFlavorManifest(config.modRequest.platformProjectRoot, disabled);
+      return config;
+    },
+  ]);
+};
+
+/**
+ * Keeps android.metaSpatialLayout out of flavored apps. See
+ * util/metaSpatialLayoutGradle.ts for why a quest flavor needs @expo-pico/core's
+ * metaLayoutSdk instead of these lines.
+ */
+const withViroMetaSpatialLayoutFlavors: ConfigPlugin<ViroConfigurationOptions> = (
+  config,
+  props
+) => {
+  if (!props?.android?.metaSpatialLayout) return config;
+  return withFinalizedMod(config, [
+    "android",
+    async (config) => {
+      if (removeMetaSpatialLayoutFromFlavoredApp(config.modRequest.platformProjectRoot)) {
+        console.warn(META_SPATIAL_LAYOUT_FLAVOR_WARNING);
+      }
+      return config;
+    },
+  ]);
+};
+
+/**
+ * Writes android.openxr as com.viro.openxr.* meta-data. Validation runs when
+ * the plugin is applied, so a bad value fails `expo prebuild` (and `expo
+ * config`) before any native file is touched. Existing entries with the same
+ * names are replaced, so a prebuild over an existing android/ stays idempotent.
+ */
+const withViroOpenXRRenderQuality: ConfigPlugin<ViroConfigurationOptions> = (
+  config,
+  props
+) => {
+  const configured = props?.android?.xRMode ?? ["GVR", "AR"];
+  const modes = Array.isArray(configured) ? configured : [configured as XrMode];
+  const entries = resolveOpenXRRenderQualityMetaData(props?.android?.openxr, modes);
+  return withAndroidManifest(config, async (config) => {
+    const application = config.modResults.manifest.application?.[0];
+    if (!application) return config;
+    const kept = (application["meta-data"] ?? []).filter(
+      (entry) => !OPENXR_RENDER_QUALITY_META_NAMES.includes(entry.$["android:name"])
+    );
+    application["meta-data"] = [
+      ...kept,
+      ...entries.map((entry) => ({
+        $: { "android:name": entry.name, "android:value": entry.value },
+      })),
+    ];
+    return config;
+  });
+};
+
+const ONE_LAUNCHER_TILE_MARKER = "// @reactvision/react-viro: one launcher tile check";
+
+/**
+ * Returns app/build.gradle with exactly one `apply from:` line for
+ * android/one-launcher-tile.gradle, placed at the end. `scriptPath` is
+ * relative to the app module directory. Idempotent.
+ */
+export function applyOneLauncherTileGradle(contents: string, scriptPath: string): string {
+  const kept = contents
+    .split("\n")
+    .filter((line, i, lines) => {
+      if (line.trim() === ONE_LAUNCHER_TILE_MARKER) return false;
+      return !(lines[i - 1]?.trim() === ONE_LAUNCHER_TILE_MARKER && line.includes("one-launcher-tile.gradle"));
+    })
+    .join("\n")
+    .replace(/\n+$/, "");
+  return `${kept}\n\n${ONE_LAUNCHER_TILE_MARKER}\napply from: "${scriptPath}"\n`;
+}
+
+/**
+ * Keeps every Viro app at one headset library tile. VRActivity never gets
+ * android.intent.action.MAIN (an older android/ is cleaned), the prebuild
+ * fails when the main manifest, alone or with any flavor manifest, has more
+ * than one launcher-visible activity, and app/build.gradle applies the
+ * Gradle check that reads each variant's merged manifest, library manifests
+ * included. Runs for every xRMode: the second tile came from a PICO build.
+ */
+const withViroOneLauncherTile: ConfigPlugin<ViroConfigurationOptions> = (config) => {
+  config = withAndroidManifest(config, (config) => {
+    const app = config.modResults.manifest.application?.[0];
+    const vrActivity = app?.activity?.find(
+      (a: any) => a.$?.["android:name"] === VR_ACTIVITY_NAME
+    );
+    if (vrActivity) removeMainActionFromActivity(vrActivity as any);
+    return config;
+  });
+  config = withAppBuildGradle(config, (config) => {
+    const viroAndroidRoot = resolveViroAndroidRelativePath(
+      config.modRequest.projectRoot,
+      path.join(config.modRequest.platformProjectRoot, "app")
+    );
+    config.modResults.contents = applyOneLauncherTileGradle(
+      config.modResults.contents,
+      `${viroAndroidRoot}/one-launcher-tile.gradle`
+    );
+    return config;
+  });
+  return withFinalizedMod(config, [
+    "android",
+    async (config) => {
+      await assertOneLauncherTileOnDisk(config.modRequest.platformProjectRoot);
+      return config;
+    },
+  ]);
 };
 
 export const withViroAndroid: ConfigPlugin<ViroConfigurationOptions> = (
   config,
   props
 ) => {
+  // Registered first so its mods run last: Expo runs the most recently
+  // registered mod of each type first, then the earlier ones.
+  config = withViroOneLauncherTile(config, props) as typeof config;
   config = withBranchAndroid(config, props) as typeof config;
   config = withViroProjectBuildGradle(config) as typeof config;
   config = withViroManifest(config) as typeof config;
+  config = withViroOpenXRRenderQuality(config, props) as typeof config;
   config = withViroSettingsGradle(config) as typeof config;
   config = withViroAppBuildGradle(config, props) as typeof config;
   config = withViroQuestActivity(config, props) as typeof config;
+  config = withViroQuestFlavorManifest(config, props) as typeof config;
+  config = withViroMetaSpatialLayoutFlavors(config, props) as typeof config;
   return config;
 };

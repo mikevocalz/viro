@@ -1,0 +1,3 @@
+scene.tsx:12:7 warning VS3017 [late]: Node "late" is 0.00 m from the wearer; the band is 0.6-3 m.
+scene.tsx:12:7 warning VS3019 [late]: Animation "goldenDelayed" on "late" runs 750 ms; the cap is 500 ms.
+scene.tsx:12:7 warning VS3020 [late]: Animation "goldenDelayed" on "late" uses linear.

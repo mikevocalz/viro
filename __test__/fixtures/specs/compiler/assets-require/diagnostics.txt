@@ -1,0 +1,2 @@
+scene.tsx:9:7 warning VS3017 [cube]: Node "cube" is 0.00 m from the wearer; the band is 0.6-3 m.
+scene.tsx:10:7 warning VS3017 [poster]: Node "poster" is 0.00 m from the wearer; the band is 0.6-3 m.

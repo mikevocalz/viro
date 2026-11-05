@@ -1,0 +1,29 @@
+{
+  "startedAt": "2026-10-28T11:13:39.652Z",
+  "project": "examples/specs-platform-lab/lens",
+  "steps": {
+    "preflight": {
+      "ok": true,
+      "ms": 810,
+      "result": {
+        "open": "<repo>/examples/specs-platform-lab/lens/ViroSpecsPlatformLab.esproj",
+        "tools": 40
+      }
+    },
+    "recompile": {
+      "ok": true,
+      "ms": 132,
+      "result": "lens-compiled"
+    },
+    "preview": {
+      "ok": true,
+      "ms": 19162,
+      "result": {
+        "errors": 5,
+        "prints": 1,
+        "firstActivityAtMs": 124
+      }
+    }
+  },
+  "finishedAt": "2026-10-28T11:13:59.793Z"
+}

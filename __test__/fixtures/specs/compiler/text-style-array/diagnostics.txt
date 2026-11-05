@@ -1,0 +1,1 @@
+scene.tsx:10:7 warning VS3017 [merged]: Node "merged" is 0.00 m from the wearer; the band is 0.6-3 m.

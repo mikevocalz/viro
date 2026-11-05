@@ -1,0 +1,1 @@
+{"description":"named colors are not stored","expectSchemaValid":false,"expectCodes":["VS1004"],"manifest":{"version":2,"nodes":[],"materials":[{"id":"m","color":"white"}]}}

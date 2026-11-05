@@ -1,0 +1,4 @@
+{
+  "description": "A static spread merges in source order; later attributes override it.",
+  "parity": true
+}

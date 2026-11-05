@@ -1,0 +1,2 @@
+scene.tsx:14:16 warning VS3018 [row-top]: Text "row-top" is 0.61 degrees tall at 1.02 m (fontSize 48); the minimum is 1.2 degrees.
+scene.tsx:14:16 warning VS3018 [row-bottom]: Text "row-bottom" is 0.61 degrees tall at 1.02 m (fontSize 48); the minimum is 1.2 degrees.

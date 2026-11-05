@@ -1,0 +1,27 @@
+{
+  "startedAt": "2026-10-28T13:00:41.502Z",
+  "project": "examples/specs-platform-lab/lens",
+  "steps": {
+    "preflight": {
+      "ok": true,
+      "ms": 642,
+      "result": {
+        "open": "<repo>/examples/specs-platform-lab/lens/ViroSpecsPlatformLab.esproj",
+        "tools": 40
+      }
+    },
+    "sync": {
+      "ok": true,
+      "ms": 314,
+      "result": "synced; doctor passed"
+    },
+    "compile": {
+      "ok": true,
+      "ms": 947,
+      "result": {
+        "ms": 947
+      }
+    }
+  },
+  "finishedAt": "2026-10-28T13:00:43.448Z"
+}

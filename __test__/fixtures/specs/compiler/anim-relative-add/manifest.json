@@ -1,0 +1,46 @@
+{
+  "$schema": "https://github.com/mikevocalz/viro/blob/main/schemas/viro-specs-manifest.v2.json",
+  "version": 2,
+  "generator": {
+    "name": "viro-specs-compile"
+  },
+  "source": "__test__/fixtures/specs/compiler/anim-relative-add/scene.tsx",
+  "nodes": [
+    {
+      "id": "slide",
+      "kind": "text",
+      "position": [
+        0.25,
+        0,
+        -1
+      ],
+      "text": "slide"
+    }
+  ],
+  "polylines": [],
+  "lights": [],
+  "materials": [],
+  "interactions": [],
+  "animations": [
+    {
+      "nodeId": "slide",
+      "name": "goldenAddSlide",
+      "plan": {
+        "engine": "AnimationPlayer",
+        "backendPackage": "AnimationExamples",
+        "durationSeconds": 0.4,
+        "delaySeconds": 0,
+        "easing": "linear",
+        "playbackMode": "single",
+        "completionEvent": "viro-animation-complete:slide:goldenAddSlide",
+        "tracks": [
+          {
+            "target": "transform.position.x",
+            "from": "current",
+            "to": 0.75
+          }
+        ]
+      }
+    }
+  ]
+}

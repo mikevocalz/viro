@@ -1,0 +1,61 @@
+{
+  "startedAt": "2026-10-28T11:05:42.800Z",
+  "project": "examples/specs-platform-lab/lens",
+  "steps": {
+    "compile": {
+      "ok": true,
+      "ms": 820,
+      "result": {
+        "ms": 820
+      }
+    },
+    "wire": {
+      "ok": true,
+      "ms": 2330,
+      "result": {
+        "inputs": {
+          "AnimationHost": {
+            "runtimeHostObject": "RuntimeHost"
+          },
+          "AssetRegistry": {
+            "modelIds": "[\"examples/visionos-sweep/assets/shiba.glb\"]",
+            "modelPrefabs": "shiba"
+          },
+          "GeneratedHost": {
+            "animationHostObject": "AnimationHost",
+            "interactionHostObject": "InteractionHost",
+            "navigationHostObject": "Navigation",
+            "runtimeHostObject": "RuntimeHost"
+          },
+          "InteractionHost": {
+            "runtimeHostObject": "RuntimeHost"
+          },
+          "Navigation": {
+            "assetRegistryObject": "AssetRegistry",
+            "defaultLineMaterial": "PBR",
+            "generatedContentRoot": "ViroGeneratedContent",
+            "navigationObject": "Navigation",
+            "routeIcon": "baseColor"
+          },
+          "NavigationDataComponent": {
+            "userCamera": "Camera Object"
+          },
+          "RuntimeHost": {
+            "assetRegistryObject": "AssetRegistry",
+            "root": "ViroGeneratedContent"
+          }
+        },
+        "steps": [
+          "disable package demo root SurfacePlacement",
+          "disable package demo root VolumetricLine",
+          "disable package demo root NavigationKit",
+          "disable package demo root Example Surface",
+          "disable package demo root VolumetricLineExample",
+          "disable package demo root NavigationKit",
+          "save"
+        ]
+      }
+    }
+  },
+  "finishedAt": "2026-10-28T11:05:46.046Z"
+}

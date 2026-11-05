@@ -1,0 +1,74 @@
+[
+  {
+    "name": "list_leaf_scenarios",
+    "description": "List all LEAF scenarios registered by the lens on the current execution target, with their default configuration parameters. Use before run_leaf_scenario to discover valid scenarioId values.",
+    "input": {
+      "properties": {
+        "onDevice": {
+          "description": "Which lens to list scenarios from: true = the lens on the paired Spectacles device (pushes the lens first if none is running and waits for it to be ready), false = the Lens Studio preview. Omit to use the panel's current 'Execute on device' setting. Note: this switches the panel's setting, so it also applies to subsequent calls.",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    }
+  },
+  {
+    "name": "open_leaf_panel",
+    "description": "Ensure the LEAF plugin panel is open in the current Lens Studio workspace. If already open, this is a no-op. Required before list_leaf_scenarios or run_leaf_scenario can be used in a fresh session.",
+    "input": {
+      "properties": {},
+      "type": "object"
+    }
+  },
+  {
+    "name": "push_leaf_lens",
+    "description": "Push the current project's lens to the paired Spectacles device and, when 'Execute on device' is enabled, wait for it to become ready and reload the scenario list from it. Use to (re)deploy the lens after code changes; run_leaf_scenario only auto-pushes when no lens is running on the device.",
+    "input": {
+      "properties": {},
+      "type": "object"
+    }
+  },
+  {
+    "name": "run_leaf_scenario",
+    "description": "Run a LEAF integration-test scenario in the currently-open Lens Studio project. The LEAF panel must be open before calling this tool (it owns the lens bridge). Returns the final status reported by the lens once the scenario completes.",
+    "input": {
+      "properties": {
+        "onDevice": {
+          "description": "Where to run the scenario: true = on the paired Spectacles device (pushes the lens first if none is running and waits for it to be ready), false = in the Lens Studio preview. Omit to use the panel's current 'Execute on device' setting. Note: this switches the panel's setting, so it also applies to subsequent calls.",
+          "type": "boolean"
+        },
+        "parameters": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Optional config overrides keyed by parameter name. Keys must already exist in the scenario's default config; unknown keys are rejected.",
+          "type": "object"
+        },
+        "scenarioId": {
+          "description": "ID of the scenario to run. Must match a scenario registered by the lens. Use list_leaf_scenarios to discover available ids.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scenarioId"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "set_leaf_execution_target",
+    "description": "Switch where LEAF scenarios execute: the paired Spectacles device (onDevice=true) or the Lens Studio preview (onDevice=false). Equivalent to toggling the panel's 'Execute on device' checkbox: the setting persists, and the scenario list reloads from the new target (in device mode this is deferred until a lens is pushed when none is running). run_leaf_scenario and list_leaf_scenarios also accept onDevice per call; use this tool to switch explicitly or to verify the current target.",
+    "input": {
+      "properties": {
+        "onDevice": {
+          "description": "true = execute scenarios on the paired Spectacles device, false = execute in the Lens Studio preview.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "onDevice"
+      ],
+      "type": "object"
+    }
+  }
+]

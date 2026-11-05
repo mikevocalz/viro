@@ -1,0 +1,4 @@
+{
+  "description": "visible={false} is carried as visible: false.",
+  "parity": true
+}

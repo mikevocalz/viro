@@ -1,0 +1,94 @@
+body.gallery-page {
+  background: var(--bench);
+  height: auto;
+}
+
+.gallery-head {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 36px 24px 8px;
+}
+
+.gallery-head h1 {
+  margin: 0;
+  font-size: 34px;
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+}
+
+.gallery-head p {
+  max-width: 68ch;
+  color: var(--muted);
+}
+
+.gallery-head a,
+.card a {
+  color: var(--ink);
+}
+
+.gallery {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 16px 24px 48px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 28px 24px;
+}
+
+.card canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  background: var(--room);
+}
+
+.card h2 {
+  margin: 12px 0 4px;
+  font-size: 18px;
+}
+
+.card p {
+  margin: 0 0 6px;
+  max-width: 60ch;
+}
+
+.card .card-state {
+  font-weight: 700;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.card .card-state::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.card .card-state[data-state="ready"]::before {
+  background: var(--ready);
+}
+
+.card .card-state[data-state="degraded"]::before {
+  background: var(--warn);
+}
+
+.card .card-codes {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+@media (max-width: 420px) {
+  .gallery,
+  .gallery-head {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .gallery {
+    grid-template-columns: 1fr;
+  }
+}

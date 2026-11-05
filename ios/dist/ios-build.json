@@ -1,0 +1,22 @@
+{
+  "ViroKit.framework": {
+    "path": "ios/dist/ViroRenderer/ViroKit.framework/ViroKit",
+    "sha256": "6195a69bb8e163a0e6b83b0fe704dee276682cc1e0d4ac8346564b618b4e9742",
+    "sourceRepository": "mikevocalz/virocore",
+    "sourceCommit": "881e5da8900836e64904c0dddbbfb643259d22a6 (sync/upstream-3.1.0: ReactVision feature/vps-advanced 3.1.0 merged into fork main)",
+    "workflowRun": null,
+    "packaging": "Local scripts/build_ios_framework.sh (xcodebuild ViroRenderer.xcworkspace, scheme ViroKit, Release, iphoneos, arm64 only) under Xcode 27.1 (27A9269), iPhoneOS 27.1 SDK; pod install with CocoaPods 1.16.2 first. Not a CI artifact.",
+    "replaces": "b88bfe9dc91bbc18cd6a9549686b4fe7122b742bbbed597a28b70940f7ea041b (ReactVision's 3.1.0 build)",
+    "validation": "Build EXIT=0. Fork-only symbol present: VROGLTFLoader::getKTX2Texture (KHR_texture_basisu), absent from the build it replaces. Also new: VROExternalSurfaceTexture, VROInputControllerBase::cancelSource/applyDragTransform, the viro_engine_accessor_* backend. Headers match the replaced framework plus VROTextureSubstrate.h.",
+    "knownGap": "ReactVisionCCA is not linked: its headers live in ReactVision's private reactvisioncca repository, so the __has_include guards compile the iOS cloud-anchor, geospatial, co-location and VPS providers out and they report themselves unavailable. The replaced ReactVision build exported 173 ReactVisionCCA symbols. The fork's Android builds have the same gap (libviro_renderer.so does not link libreactvisioncca.so)."
+  },
+  "libViroReact.a": {
+    "path": "ios/dist/lib/libViroReact.a",
+    "sha256": "b714953dca04bc4d298d7920e8b9d8da4b6f138c18f68ff86cdc3cbd5fd209fd",
+    "sourceRepository": "mikevocalz/viro",
+    "sourceCommit": "7fdfd2391ccf2da772d2fc999ed93498c0abd2fc (sync/upstream-3.1.0-v2 after merging fork main)",
+    "packaging": "Local xcodebuild ViroReact.xcworkspace, scheme ViroReact, Release, iphoneos, ARCHS=arm64, against the ViroKit.framework above and react-native 0.88.0 pods. HEADER_SEARCH_PATHS overridden on the command line to the Pods paths plus $(SRCROOT)/ViroReact/**: the target's recursive $(inherited)/** pulls Pods/ReactNativeDependencies/Headers/folly in as a system include directory, and folly/math.h then shadows <math.h>.",
+    "replaces": "b85eceb202a911e7a12ae42feb31df6e598d8300458fbe6608f07ead94d0ae32 (ReactVision's 3.1.0 build)",
+    "validation": "Build EXIT=0. 158 Objective-C classes: the 156 of the replaced archive plus VRTExternalVideo and VRTExternalVideoManager, which ViroReactExternalVideo.podspec now skips when the archive carries them. Every external VRO/Viro symbol resolves against the ViroKit above. scripts/check-ios-bridge.sh passes. No device run."
+  }
+}
