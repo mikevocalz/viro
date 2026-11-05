@@ -52,6 +52,51 @@ After changing these dependencies, regenerate native Android files:
 npx expo prebuild --clean
 ```
 
+## The spatial shell is applied for headset builds
+
+When `android.xRMode` includes `"QUEST"` or `"PICO"`, Viro's plugin also runs
+the config plugin from `@viro-external/spatial-shell` if the app has it
+installed. That package holds the rail, main panel and detail panel layout
+that ran on a Quest 3S and a PICO 4 Ultra in expo-pico #45:
+
+- the navigation rail on the main panel's left (its own Layout SDK window on
+  Quest, a strip of the main window on PICO), never a bottom tab bar on a
+  headset;
+- the detail panel as a second activity beside the main panel, with a title
+  and Close;
+- the native pieces Enter XR needs: the `expo.modules.pico.IMMERSIVE_ACTIVITY`
+  marker on `.VRActivity`, the quest flavor declared above its
+  `questImplementation` dependencies, `metavr:uses-metavr-sdk` in the quest
+  manifest, and `skipActivityIdentityAssertionOnHostPause` in
+  `MainApplication.kt`.
+
+Install it and render `<SpatialShell>` at the app root:
+
+```bash
+npx expo install @viro-external/spatial-shell react-native-svg react-native-safe-area-context
+```
+
+Options go under `android.spatialShell` and are passed through, with
+`platforms` taken from `xRMode`:
+
+```json
+[
+  "@reactvision/react-viro",
+  {
+    "android": {
+      "xRMode": ["QUEST", "PICO"],
+      "spatialShell": { "detailPanel": { "defaultWidth": "480dp", "defaultHeight": "640dp" } }
+    }
+  }
+]
+```
+
+Set `"spatialShell": false` to opt out. Without the package installed, a
+headset prebuild prints one warning with the install command and continues;
+phone and AR builds are never affected. After prebuild,
+`npx viro-spatial-shell-doctor` fails a headset project that renders a bottom
+tab navigator, has no `<SpatialShell>`, or skipped the plugin.
+
 ## Cross-platform facade
 
 Viro exports a compatibility facade so app code can keep one component tree:

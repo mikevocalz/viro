@@ -1,4 +1,5 @@
 import { ConfigPlugin } from "@expo/config-plugins";
+import { type SpatialShellOptions } from "./withViroSpatialShell";
 export type XrMode = "GVR" | "AR" | "OVR_MOBILE" | "QUEST" | "PICO";
 /**
  * Anchor provider type.
@@ -210,6 +211,18 @@ export interface ViroConfigurationOptions {
          * DEFAULTS TO: "1.2026.0.0"
          */
         metaSpatialLayoutBomVersion?: string;
+        /**
+         * The spatial shell for headset builds: the left navigation rail, the
+         * detail panel and the XR entry fixes from `@viro-external/spatial-shell`.
+         *
+         * When xRMode includes "QUEST" or "PICO" and that package is installed,
+         * its config plugin runs automatically with these options. When it is not
+         * installed, prebuild prints one warning and continues. Set `false` to opt
+         * out. Phone and AR builds are never affected.
+         *
+         * DEFAULTS TO: {} (applied for QUEST and PICO)
+         */
+        spatialShell?: SpatialShellOptions | false;
     };
 }
 /**

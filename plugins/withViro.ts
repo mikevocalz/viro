@@ -1,6 +1,7 @@
 import { ConfigPlugin } from "@expo/config-plugins";
 import { withViroAndroid } from "./withViroAndroid";
 import { withViroIos } from "./withViroIos";
+import { withViroSpatialShell, type SpatialShellOptions } from "./withViroSpatialShell";
 
 const CAMERA_USAGE = "Allow $(PRODUCT_NAME) to use your camera";
 const MICROPHONE_USAGE = "Allow $(PRODUCT_NAME) to use your microphone";
@@ -231,6 +232,18 @@ export interface ViroConfigurationOptions {
      * DEFAULTS TO: "1.2026.0.0"
      */
     metaSpatialLayoutBomVersion?: string;
+    /**
+     * The spatial shell for headset builds: the left navigation rail, the
+     * detail panel and the XR entry fixes from `@viro-external/spatial-shell`.
+     *
+     * When xRMode includes "QUEST" or "PICO" and that package is installed,
+     * its config plugin runs automatically with these options. When it is not
+     * installed, prebuild prints one warning and continues. Set `false` to opt
+     * out. Phone and AR builds are never affected.
+     *
+     * DEFAULTS TO: {} (applied for QUEST and PICO)
+     */
+    spatialShell?: SpatialShellOptions | false;
   };
 }
 
@@ -266,6 +279,10 @@ const withViro: ConfigPlugin<ViroConfigurationOptions> = (config, props) => {
   // Apply platform-specific configurations
   config = withViroIos(config, props);
   config = withViroAndroid(config, props);
+  config = withViroSpatialShell(config, {
+    xRMode: props?.android?.xRMode ?? DEFAULTS.android.xRMode,
+    spatialShell: props?.android?.spatialShell,
+  });
 
   return config;
 };

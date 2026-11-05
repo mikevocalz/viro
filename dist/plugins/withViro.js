@@ -1,5 +1,6 @@
 import { withViroAndroid } from "./withViroAndroid";
 import { withViroIos } from "./withViroIos";
+import { withViroSpatialShell } from "./withViroSpatialShell";
 const CAMERA_USAGE = "Allow $(PRODUCT_NAME) to use your camera";
 const MICROPHONE_USAGE = "Allow $(PRODUCT_NAME) to use your microphone";
 const READ_PHOTOS_USAGE = "Allow $(PRODUCT_NAME) to access your photos";
@@ -35,6 +36,10 @@ const withViro = (config, props) => {
     // Apply platform-specific configurations
     config = withViroIos(config, props);
     config = withViroAndroid(config, props);
+    config = withViroSpatialShell(config, {
+        xRMode: props?.android?.xRMode ?? DEFAULTS.android.xRMode,
+        spatialShell: props?.android?.spatialShell,
+    });
     return config;
 };
 export default withViro;
