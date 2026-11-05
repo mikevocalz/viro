@@ -15,12 +15,12 @@ release.
 
 ## Authoring side (React Native app)
 
-| Component | Supported range | Latest on npm, 2026-10-28 | Checked by | Tier |
+| Component | Supported range | Latest on npm, 2026-11-04 | Checked by | Tier |
 | --- | --- | --- | --- | --- |
 | `@reactvision/react-viro` | this repo, 3.0.3-moyo.1 or later | 3.0.3 (upstream; the moyo line is not on npm) | `test:specs`, `test:specs-api`, `test:specs-consumer` | consumer-checked |
-| `react` | peer `^19.3.0` | 19.3.1 | consumer install with 19.3.1 | consumer-checked |
+| `react` | peer `^19.3.0` | 19.3.1 | consumer install with 19.3.0 (the Expo SDK 58 pin) | consumer-checked |
 | `react-native` | peer `>=0.88.0 <0.89.0` | 0.88.1 | consumer install with 0.88.1 | consumer-checked |
-| `expo` (optional) | peer `>=58.0.0 <59.0.0` | 58.0.21 | repo devDependency `~58.0.19` | declared |
+| `expo` (optional) | peer `>=58.0.0 <59.0.0` | 58.0.23 | repo devDependency `~58.0.23` | declared |
 | `react-native-web` (optional) | peer `^0.21.0` | 0.21.4 | not installed by the Specs checks | declared |
 | `@reactvision/react-native-visionos` (optional) | peer `>=0.86.0 <0.89.0` | 0.86.4 | not part of the Specs path | declared |
 | `@types/react` | `~19.3.0` (app devDependency) | 19.3.0 | consumer type-check | consumer-checked |
