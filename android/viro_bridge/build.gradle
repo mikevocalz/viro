@@ -105,6 +105,15 @@ dependencies {
     // jar — the same renderer surface the shipped bridge AAR was built
     // against. Bridge code paths that reach main-only symbols (cloud anchors,
     // scan callbacks) stay inert on the Pico renderer.
+    // Paired releases put the selected renderer's actual classes first. Keep the
+    // full compatibility JAR as a fallback; never replace it with a PICO-only jar.
+    if (project.hasProperty('viroRendererClassesJar')) {
+        def selectedRendererClasses = file(project.property('viroRendererClassesJar'))
+        if (!selectedRendererClasses.isFile()) {
+            throw new GradleException("viroRendererClassesJar does not exist: ${selectedRendererClasses}")
+        }
+        compileOnly files(selectedRendererClasses)
+    }
     compileOnly files('../viro_renderer/main-classes/viro-renderer-main-classes.jar')
     implementation 'com.google.android.exoplayer:exoplayer:2.19.1'
     implementation 'com.google.protobuf.nano:protobuf-javanano:3.1.0'
