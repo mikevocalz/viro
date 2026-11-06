@@ -225,6 +225,8 @@ class BuildFlowTests(unittest.TestCase):
         elif args[0].endswith("react-native"):
             return '{"dependencies":{}}'
         elif args[0] == "./gradlew":
+            self.assertIn("--max-workers=2", args)
+            self.assertIn("-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8", args)
             self.assertEqual((self.root / pico.RENDERER).read_bytes(), self.new_renderer)
             jar_arg = next(a for a in args if a.startswith("-PviroRendererClassesJar="))
             self.assertEqual(Path(jar_arg.split("=", 1)[1]).read_bytes(),

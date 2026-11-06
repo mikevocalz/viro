@@ -40,7 +40,9 @@ The build performs these steps:
 3. Stage that renderer, extract its Java classes into a temporary build input,
    and compile `:viro_bridge:assembleRelease` with those classes first. Preserve
    `android/viro_renderer/main-classes/viro-renderer-main-classes.jar` as the
-   compatibility fallback for the wider bridge surface.
+   compatibility fallback for the wider bridge surface. The bridge build uses
+   a 4GB Java heap and at most two Gradle workers so Jetifier can process React
+   Native's release AAR in clean CI; app-consumer Gradle settings are unchanged.
 4. Record both AAR hashes and source commits in `android/native-artifacts.json`,
    along with the selected renderer classes, compatibility JAR, installed React
    Native version and dependency-lock hash. Update the older

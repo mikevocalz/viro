@@ -181,7 +181,12 @@ def build_package(root, core, expected_core_commit, output):
             autolink_path.write_text(autolink)
             node = shutil.which("node")
             require(node, "Node.js is required")
-            run(["./gradlew", "--no-daemon", f"-PnodeExecutable={node}",
+            # React Native's release AAR exceeds the checkout's legacy 1536m
+            # Jetifier heap in a clean CI build. Keep this release-only and bound
+            # parallel transforms instead of changing app-consumer Gradle settings.
+            run(["./gradlew", "--no-daemon", "--max-workers=2",
+                 "-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8",
+                 f"-PnodeExecutable={node}",
                  f"-PviroRendererClassesJar={classes_path}",
                  ":viro_bridge:clean", ":viro_bridge:assembleRelease"], root / "android")
             bridge = (root / "android/viro_bridge/build/outputs/aar/viro_bridge-release.aar").read_bytes()
