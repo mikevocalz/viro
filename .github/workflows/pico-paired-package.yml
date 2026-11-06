@@ -1,0 +1,112 @@
+name: PICO paired package
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/pico-paired-package.yml'
+      - 'scripts/build-pico-package.py'
+      - 'scripts/test_build_pico_package.py'
+      - 'android/**'
+      - 'package.json'
+      - 'package-lock.json'
+  workflow_dispatch:
+    inputs:
+      virocore_commit:
+        description: 'Full 40-character mikevocalz/virocore source commit'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Test pair packaging and failure paths
+        run: python3 scripts/test_build_pico_package.py
+
+  package:
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      # PRs build this reviewed source snapshot; dispatches require an explicit SHA.
+      VIROCORE_COMMIT: ${{ inputs.virocore_commit || '8a5bdc47aa0f47d9c6249461ef5f07fe77fe60ac' }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: viro
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: viro
+          persist-credentials: false
+
+      - name: Require an immutable renderer source pin
+        run: '[[ "$VIROCORE_COMMIT" =~ ^[0-9a-f]{40}$ ]]'
+
+      - uses: actions/checkout@v4
+        with:
+          repository: mikevocalz/virocore
+          ref: ${{ env.VIROCORE_COMMIT }}
+          path: virocore
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: viro/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v4
+
+      - name: Install pinned Android tools
+        run: |
+          set -euo pipefail
+          NDK_VER="$(sed -nE 's/^[[:space:]]*ndkVersion[[:space:]]*=?[[:space:]]*"([0-9.]+)".*/\1/p' ../virocore/android/viroreact/build.gradle | head -1)"
+          test -n "$NDK_VER"
+          sdkmanager "ndk;$NDK_VER" "platforms;android-36" "build-tools;36.0.0"
+          test -d "$ANDROID_HOME/ndk/$NDK_VER"
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/$NDK_VER" >> "$GITHUB_ENV"
+
+      - name: Install renderer host dependencies
+        # Reuse ViroCore's build-pico-aar.sh, including its pinned Rive build.
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends uuid-dev ninja-build
+
+      - name: Install locked bridge and TypeScript dependencies
+        run: npm ci
+
+      - name: Test the renderer alignment gate
+        run: python3 ../virocore/scripts/test_verify_16kb_alignment.py
+
+      - name: Build, pair and verify the npm package
+        run: |
+          python3 scripts/build-pico-package.py build \
+            --virocore ../virocore \
+            --virocore-commit "$VIROCORE_COMMIT" \
+            --out "$RUNNER_TEMP/pico-package"
+
+      - name: Upload verified package and provenance
+        uses: actions/upload-artifact@v4
+        with:
+          name: viro-pico-package-${{ github.sha }}-${{ env.VIROCORE_COMMIT }}
+          retention-days: 14
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/pico-package/*.tgz
+            ${{ runner.temp }}/pico-package/native-artifacts.json
+            ${{ runner.temp }}/pico-package/package.sha256

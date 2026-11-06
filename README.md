@@ -183,6 +183,7 @@ To turn it off, use either of these:
 Guides that ship in this repository:
 
 - [`CHANGELOG.md`](./CHANGELOG.md) — what changed, by release
+- [`docs/PICO-NATIVE-RELEASE.md`](./docs/PICO-NATIVE-RELEASE.md) — packaged PICO AARs for apps and the paired native build for release owners
 
 Feature guides for VPS, visionOS, Quest, the web renderer, platform extensions, shaders, object
 detection, camera texture and session recording are on the documentation site above.
