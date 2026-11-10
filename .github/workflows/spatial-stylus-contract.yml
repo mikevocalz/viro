@@ -1,0 +1,24 @@
+name: Spatial stylus native pose contract
+
+on:
+  pull_request:
+    paths:
+      - 'ios/ViroReact/VisionOS/**'
+      - 'components/VisionOS/**'
+      - 'tooling/spatial-stylus/**'
+      - '.github/workflows/spatial-stylus-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pose:
+    runs-on: macos-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and execute the original native pose serializer
+        run: |
+          swiftc -parse-as-library ios/ViroReact/VisionOS/ViroSpatialStylusPose.swift tooling/spatial-stylus/PoseContract.swift -o "$RUNNER_TEMP/stylus-pose-contract"
+          "$RUNNER_TEMP/stylus-pose-contract"

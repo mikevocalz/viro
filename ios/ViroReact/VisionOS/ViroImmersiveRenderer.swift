@@ -51,7 +51,7 @@ public final class ViroImmersiveRenderer: @unchecked Sendable {
     private var stylusTracking: AccessoryTrackingProvider?
     private var lastStylusScan: TimeInterval = 0
     private var stylusVisible = false
-    private var stylusButtons = (tip: false, primary: false, secondary: false, pressure: Float(0))
+    private var stylusButtons = (tip: false, primary: false, secondary: false, pressure: Float(0), tipPressure: Optional<Float>.none)
     private static let stylusNotification = Notification.Name("ViroSpatialStylus")
 
     // Co-location (CL-I). Joins this session rather than opening its own: a
@@ -185,7 +185,7 @@ public final class ViroImmersiveRenderer: @unchecked Sendable {
         clearStylusTracking()
         activeStylus = nil
         stylusTracking = nil
-        stylusButtons = (false, false, false, 0)
+        stylusButtons = (false, false, false, 0, nil)
 
         if let connected, AccessoryTrackingProvider.isSupported {
             do {
@@ -230,7 +230,8 @@ public final class ViroImmersiveRenderer: @unchecked Sendable {
                     primary?.isPressed == true,
                     secondary?.isPressed == true,
                     max(Float(tip?.value ?? 0), Float(primary?.value ?? 0),
-                        Float(secondary?.value ?? 0))
+                        Float(secondary?.value ?? 0)),
+                    tip.map { Float($0.value) }
                 )
             }
         }
@@ -246,23 +247,23 @@ public final class ViroImmersiveRenderer: @unchecked Sendable {
         // reference as the device anchor and all Viro scene positions.
         let m = anchor.coordinateSpace(for: .aim, correction: .none)
             .ancestorFromSpaceTransformFloat().matrix
-        let p = m.columns.3
-        guard p.x.isFinite && p.y.isFinite && p.z.isFinite else {
+        guard let pose = ViroSpatialStylusPose(transform: m, timestampMs: CACurrentMediaTime() * 1000) else {
             clearStylusTracking()
             return
         }
 
         stylusVisible = true
         let buttons = stylusButtons
-        let sample: [String: Any] = [
+        var sample: [String: Any] = [
             "tracked": true,
-            "position": [p.x, p.y, p.z],
             "headPosition": [headPosition.x, headPosition.y, headPosition.z],
             "tipPressed": buttons.tip,
             "primaryPressed": buttons.primary,
             "secondaryPressed": buttons.secondary,
-            "pressure": min(max(buttons.pressure, 0), 1)
+            "pressure": min(max(buttons.pressure, 0), 1),
+            "tipPressure": buttons.tipPressure.map { min(max($0, 0), 1) as Any } ?? NSNull()
         ]
+        sample.merge(pose.fields) { _, value in value }
         DispatchQueue.main.async {
             NotificationCenter.default.post(name: Self.stylusNotification,
                                             object: nil, userInfo: sample)
@@ -275,11 +276,14 @@ public final class ViroImmersiveRenderer: @unchecked Sendable {
         let sample: [String: Any] = [
             "tracked": false,
             "position": NSNull(),
+            "orientation": NSNull(),
+            "poseTimestampMs": CACurrentMediaTime() * 1000,
             "headPosition": NSNull(),
             "tipPressed": false,
             "primaryPressed": false,
             "secondaryPressed": false,
-            "pressure": 0
+            "pressure": 0,
+            "tipPressure": NSNull()
         ]
         DispatchQueue.main.async {
             NotificationCenter.default.post(name: Self.stylusNotification,

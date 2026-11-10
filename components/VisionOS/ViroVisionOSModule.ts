@@ -133,6 +133,12 @@ export type ViroSpatialStylusSample = {
   tracked: boolean;
   position: readonly [number, number, number] | null;
   headPosition: readonly [number, number, number] | null;
+  /** Actual aim rotation [x,y,z,w], unit quaternion in Viro world space. Older providers omit it. */
+  orientation?: readonly [number, number, number, number] | null;
+  /** Monotonic native pose-read time in milliseconds; not a measured display latency. */
+  poseTimestampMs?: number;
+  /** Tip sensor force only. A valid zero is retained; null means unavailable. */
+  tipPressure?: number | null;
   tipPressed: boolean;
   primaryPressed: boolean;
   secondaryPressed: boolean;

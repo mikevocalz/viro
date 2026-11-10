@@ -66,10 +66,25 @@ Each sample contains:
 - `headPosition`: current headset position in the same world coordinates.
 - `tipPressed`, `primaryPressed`, `secondaryPressed`: current controls.
 - `pressure`: normalized maximum pressure across those controls.
+- `orientation`: actual aim rotation as a unit quaternion `[x, y, z, w]` in
+  the same world space. It is null when tracking is lost. Older provider builds
+  omit this field; consumers must report position-only capability in that case.
+- `poseTimestampMs`: native monotonic time when this pose was read. This is
+  useful for ordering and diagnostics; it is not a sensor or display latency measurement.
+- `tipPressure`: pressure from the tip sensor alone, retaining valid zero.
+  It is null when that input is unavailable. Drawing adapters should prefer it
+  to the legacy maximum-control `pressure`, so a side button cannot alter tip force.
 
 Cancel the current stroke when `tracked` becomes false. Unsubscribe when the
 drawing surface unmounts. The subscription is a no-op off visionOS.
 Canvas projection, tool selection and stroke ownership belong to the app.
+
+`ViroSpatialStylusPose` serializes translation and quaternion directly from the
+existing ARKit aim transform. It rejects nonfinite, scaled, reflected and
+nonrigid transforms before they can be reported as a tracked 6DoF pose.
+The spatial-stylus contract workflow compiles this original Swift source and
+executes its pose tests on macOS. That check does not certify physical Muse
+pairing, visionOS app linking or headset latency; the device checks below still apply.
 
 The MoyoBoard adapter projects the head-through-tip ray onto its paper while
 either side button is held, and accepts tip contact near the paper plane.
